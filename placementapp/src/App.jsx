@@ -1,35 +1,31 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Route, Routes } from "react-router-dom";
+import Dashboard from "./Layout/Dashboard";
+import Course from "./pages/Course";
+import ExamLeaderboard from "./pages/ExamLeaderboard";
+import ExamReports from "./pages/ExamReports";
+import Exams from "./pages/Exams";
+import Jobs from "./pages/Jobs";
+import Logout from "./pages/Logout";
+import Playground from "./pages/Playground";
+import Profile from "./pages/Profile";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+      <Routes>
+        <Route path="/" element={<Dashboard />}>
+          <Route index element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="jobs" element={<Jobs />} />
+          <Route path="course" element={<Course />} />
+          <Route path="exams" element={<Exams />} />
+          <Route path="exam-reports" element={<ExamReports />} />
+          <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
+          <Route path="playground" element={<Playground />} />
+          <Route path="logout" element={<Logout />} />
+
+        </Route>
+      </Routes>
+  );
 }
 
-export default App
+export default App;
