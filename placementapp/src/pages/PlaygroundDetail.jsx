@@ -5,98 +5,114 @@ import variablesImg from "../assets/variables.jpg";
 import operatorsImg from "../assets/operators.jpg";
 
 function PlaygroundDetail() {
+
   const navigate = useNavigate();
+
   const sessions = [
     {
       title: "Introduction to Variables, Comments and Usage",
       description:
-        "Explore the key concepts and subtopics under Introduction to Variables, Comments and Usage.",
+        "Learn how variables work in Python, how to write comments, and how they are used in real coding.",
       image: variablesImg,
     },
     {
       title: "Operators",
-      description: "Explore the key concepts and subtopics under Operators.",
+      description:
+        "Understand arithmetic, logical, and comparison operators used in Python programming.",
       image: operatorsImg,
     },
   ];
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      
-      {/* Top bar */}
-      <header className="w-full bg-white shadow-sm border-b border-gray-200">
-        <div className="relative max-w-6xl mx-auto px-4 py-4 flex items-center justify-center">
-          {/* Back button */}
+    <div className="min-h-screen bg-gray-50">
+
+      {/* Header */}
+      <header className="bg-white border-b shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+
           <button
-            type="button"
-            className="absolute left-4 btn btn-outline-primary btn-sm rounded-pill px-3 py-1"
             onClick={() => navigate("/playground")}
+            className="text-sm text-gray-600 hover:text-blue-600"
           >
             ← Back
           </button>
-          {/* Title */}
-          <div className="flex flex-col items-center justify-center text-center">
-            <span className="text-xl font-semibold text-blue-700">
-              Code Playground
-            </span>
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm rounded-full mt-2 text-blue-600 border-blue-400"
-            >
-              {"</>"}
-            </button>
+
+          <h1 className="text-xl font-semibold text-blue-700">
+            Code Playground
+          </h1>
+
+          <div className="text-blue-600 font-mono text-sm bg-blue-50 px-3 py-1 rounded-full">
+            {"</>"}
           </div>
+
         </div>
       </header>
-      {/* Main content */}
-      <main className="flex-1 w-full">
-        <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-          {/* Title and description */}
-          <div>
-            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1">
-              Python Essentials for Learning
-            </h3>
-            <p className="text-sm text-gray-600 max-w-3xl">
-              Dive into curated coding modules, complete sessions, and celebrate
-              your progress. Engage with structured modules, track completion,
-              and stay ahead in your journey.
-            </p>
-          </div>
-          {/* Sessions */}
-          <div className="space-y-4">
-            {sessions.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-4 md:px-6 md:py-5 flex items-center justify-between hover:shadow-md transition"
-              >
-                
-                <div className="flex items-start gap-4">
-                  {/* Image */}
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Text */}
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-900">
-                      {item.title}
-                    </h2>
-                    <p className="text-xs md:text-sm text-gray-600 mt-1">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-                {/* Start button */}
-                <button type="button"className="btn btn-primary btn-sm rounded-pill px-4"onClick={() => navigate("/exam")}>
-                  Start
-                  </button>
-              </div>
-            ))}
-          </div>
+
+
+      {/* Main Section */}
+      <main className="max-w-6xl mx-auto px-6 py-10">
+
+        {/* Page Title */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            Python Essentials for Learning
+          </h2>
+
+          <p className="text-gray-600 max-w-2xl">
+            Explore structured Python modules, practice coding concepts,
+            and track your progress through guided sessions.
+          </p>
         </div>
+
+
+        {/* Sessions */}
+        <div className="grid gap-6">
+
+          {sessions.map((item, index) => (
+
+            <div
+              key={index}
+              className="bg-white border rounded-xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition"
+            >
+
+              {/* Left Section */}
+              <div className="flex items-center gap-5">
+
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mt-1 max-w-md">
+                    {item.description}
+                  </p>
+                </div>
+
+              </div>
+
+
+              {/* Start Button */}
+              <button
+                onClick={() => navigate("/exam")}
+                className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm hover:bg-blue-700 transition"
+              >
+                Start
+              </button>
+
+            </div>
+
+          ))}
+
+        </div>
+
       </main>
+
     </div>
   );
 }
