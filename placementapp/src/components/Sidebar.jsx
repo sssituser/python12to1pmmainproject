@@ -7,6 +7,8 @@ return (
 <div className="sidebar">
     <div className="sidebar-menu">
     <NavLink to="/profile" className="sidebar-link">Profile</NavLink>
+      <NavLink to="/resume" className="sidebar-link">Resume</NavLink>
+
     <NavLink to="/jobs" className="sidebar-link">Jobs</NavLink>
     <NavLink to="/course" className="sidebar-link">Course</NavLink>
     <NavLink to="/exams" className="sidebar-link">Exams</NavLink>

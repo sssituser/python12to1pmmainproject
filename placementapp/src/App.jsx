@@ -8,6 +8,8 @@ import Jobs from "./pages/Jobs";
 import Logout from "./pages/Logout";
 import Playground from "./pages/Playground";
 import Profile from "./pages/Profile";
+import Resume from "./pages/Resume";
+
 
 function App() {
   return (
@@ -15,7 +17,8 @@ function App() {
         <Route path="/" element={<Dashboard />}>
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="jobs" element={<Jobs />} />
+          <Route path="resume" element={<Resume/>}/>
+         <Route path="jobs" element={<Jobs />} />
           <Route path="course" element={<Course />} />
           <Route path="exams" element={<Exams />} />
           <Route path="exam-reports" element={<ExamReports />} />
