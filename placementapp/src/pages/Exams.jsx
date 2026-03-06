@@ -1,97 +1,198 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from 'react'
 
 function Exams() {
-
-  const videoRef = useRef(null);
-
-  const questions = [
-    {q:"Python is developed by?",o:["Guido van Rossum","James Gosling","Dennis Ritchie","Bjarne"],a:0},
-    {q:"HTML stands for?",o:["Hyper Text Markup Language","High Text Machine","Home Tool","Hyperlink"],a:0},
-    {q:"React uses?",o:["Java","Python","JavaScript","C++"],a:2},
-    {q:"CSS is used for?",o:["Design","Database","Server","AI"],a:0},
-    {q:"JS extension?",o:[".java",".js",".py",".cpp"],a:1},
-    {q:"Frontend library?",o:["React","Node","Django","Flask"],a:0},
-    {q:"Database?",o:["MySQL","HTML","CSS","React"],a:0},
-    {q:"Backend runtime?",o:["NodeJS","Bootstrap","HTML","CSS"],a:0},
-    {q:"Vite is?",o:["Build tool","Database","Language","Framework"],a:0},
-    {q:"Programming language?",o:["Python","HTML","CSS","Bootstrap"],a:0},
-    {q:"Loop keyword?",o:["for","design","style","layout"],a:0},
-    {q:"React uses?",o:["Components","Tables","Servers","Routers"],a:0},
-    {q:"JS variable?",o:["let","design","style","grid"],a:0},
-    {q:"IDE?",o:["VS Code","Chrome","MySQL","HTML"],a:0},
-    {q:"Version control?",o:["Git","React","Node","CSS"],a:0}
-  ];
-
-  const [current,setCurrent] = useState(0);
-  const [time,setTime] = useState(90);
-
-  // TIMER
+  const [date, setDate] = useState(new Date());
   useEffect(()=>{
     const timer=setInterval(()=>{
-      setTime(prev=>{
-        if(prev<=1){
-          clearInterval(timer);
-          alert("Exam Finished");
-          return 0;
-        }
-        return prev-1;
-      });
-    },1000);
+      const today=new Date();
+    if(today.toLocaleDateString()!=date.toLocaleDateString()){
+      setDate(today);
+    }
+  },1000*60);
+  return () => clearInterval(timer);
+},[date]);
 
-    return ()=>clearInterval(timer);
-  },[]);
 
-  // WEBCAM
-  useEffect(()=>{
-    navigator.mediaDevices.getUserMedia({video:true})
-    .then(stream=>{
-      if(videoRef.current){
-        videoRef.current.srcObject=stream;
-      }
-    })
-    .catch(err=>{
-      console.log("Webcam error:",err);
-    });
-  },[]);
+
+
 
   return (
+    <div className='container mt-2'>
+      <h1>Finished Exams</h1>
+      <br />
+      <div className='row'>
+        <div className='col-lg-4'>
+          <div className='card rounded-bottom-4 rounded-top-4'>
+            <div className='card-header bg-primary text-white rounded-top-4 '>
+              <h2>Daily-Exam-1</h2>
+            </div>
+            <div className='card-body rounded-bottom-4'>
 
-    <div style={{padding:"20px"}}>
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-calendar"></i> Start Date</h5>
+                <h5>{date.toLocaleDateString()}</h5>
+              </div>
 
-      <h2>Online Exam</h2>
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock"></i> Window Start Time</h5>
+                <h5>7:00 PM</h5>
+              </div>
 
-      <h3>Time Left: {time} sec</h3>
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock-history"></i> Window End Time</h5>
+                <h5>11:00 PM</h5>
+              </div>
 
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        width="200"
-        style={{border:"2px solid black"}}
-      />
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-hourglass-split"></i> Duration</h5>
+                <h5>30 Mins</h5>
+              </div>
 
-      <hr/>
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-book"></i> Subjects</h5>
+                <h5>Statistics</h5>
+              </div>
 
-      <h3>{questions[current].q}</h3>
+              <div className='mt-3 justify-content-start d-flex'>
+                <h5 className='text-danger'>
+                   Unattempted
+                </h5>
+               <h5> <i className="bi bi-x-circle"></i></h5>
+              </div>
 
-      {questions[current].o.map((opt,i)=>(
-        <div key={i}>
-          <input type="radio" name="option"/>
-          {opt}
+            </div>
+          </div>
         </div>
-      ))}
+         <div className='col-lg-4'>
+          <div className='card rounded-top-4 rounded-bottom-4'>
+            <div className='card-header bg-primary text-white rounded-top-4'>
+              <h2>Daily-Exam-2</h2>
+            </div>
+            <div className='card-body rounded-bottom-4'>
 
-      <br/>
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-calendar"></i> Start Date</h5>
+                <h5>{date.toLocaleDateString()}</h5>
+              </div>
 
-      {current < questions.length-1 ? (
-        <button onClick={()=>setCurrent(current+1)}>Next</button>
-      ) : (
-        <button onClick={()=>alert("Exam Submitted")}>Submit</button>
-      )}
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock"></i> Window Start Time</h5>
+                <h5>7:00 PM</h5>
+              </div>
 
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock-history"></i> Window End Time</h5>
+                <h5>11:00 PM</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-hourglass-split"></i> Duration</h5>
+                <h5>30 Mins</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-book"></i> Subjects</h5>
+                <h5>Statistics</h5>
+              </div>
+
+              <div className='mt-3 justify-content-start d-flex'>
+                <h5 className='text-danger'>
+                   Unattempted
+                </h5>
+               <h5> <i className="bi bi-x-circle"></i></h5>
+              </div>
+
+            </div>
+          </div>
+        </div>
+         <div className='col-lg-4'>
+          <div className='card rounded-top-4 rounded-bottom-4'>
+            <div className='card-header bg-primary text-white rounded-top-4'>
+              <h2>Daily-Exam-3</h2>
+            </div>
+            <div className='card-body rounded-bottom-4'>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-calendar"></i> Start Date</h5>
+                <h5>{date.toLocaleDateString()}</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock"></i> Window Start Time</h5>
+                <h5>7:00 PM</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock-history"></i> Window End Time</h5>
+                <h5>11:00 PM</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-hourglass-split"></i> Duration</h5>
+                <h5>30 Mins</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-book"></i> Subjects</h5>
+                <h5>Statistics</h5>
+              </div>
+
+              <div className='mt-3 justify-content-start d-flex'>
+                <h5 className='text-danger'>
+                   Unattempted
+                </h5><br/>
+               <h5> <i className="bi bi-x-circle"></i></h5>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div className='col-lg-4 mt-3'>
+          <div className='card rounded-top-4 rounded-bottom-4'>
+            <div className='card-header bg-primary text-white rounded-top-4'>
+              <h2>Daily-Exam-3</h2>
+            </div>
+            <div className='card-body rounded-bottom-4'>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-calendar"></i> Start Date</h5>
+                <h5>{date.toLocaleDateString()}</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock"></i> Window Start Time</h5>
+                <h5>7:00 PM</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-clock-history"></i> Window End Time</h5>
+                <h5>11:00 PM</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-hourglass-split"></i> Duration</h5>
+                <h5>30 Mins</h5>
+              </div>
+
+              <div className='d-flex justify-content-between mt-3'>
+                <h5><i className="bi bi-book"></i> Subjects</h5>
+                <h5>Statistics</h5>
+              </div>
+
+              <div className='mt-3 justify-content-start d-flex'>
+                <h5 className='text-danger'>
+                   Unattempted
+                </h5><br/>
+               <h5> <i className="bi bi-x-circle"></i></h5>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        
+      </div>
     </div>
-  );
+  )
 }
 
-export default Exams;
+export default Exams

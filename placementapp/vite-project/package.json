@@ -1,5 +1,5 @@
 {
-  "name": "placementapp",
+  "name": "vite-project",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,20 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
-    "@fortawesome/fontawesome-svg-core": "^7.2.0",
-    "@fortawesome/free-solid-svg-icons": "^7.2.0",
-    "@fortawesome/react-fontawesome": "^3.2.0",
-    "axios": "^1.13.6",
-    "bootstrap": "^5.3.8",
-    "bootstrap-icons": "^1.13.1",
-    "icons": "^1.0.0",
-    "mdb-ui-kit": "^9.3.0",
-    "mdbootstrap": "^4.20.0",
-    "react": "^19.2.4",
-    "react-bootstrap": "^2.10.10",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
