@@ -21,7 +21,13 @@ function ExamLeaderboard() {
 
         <div className="col-md-3">
           <label>Batch</label>
-          <input type="text" className="form-control" placeholder="Batch"/>
+          <select className="form-control" onChange={(e)=>setBatch(e.target.value)}>
+            <option value="">All Batches</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+
         </div>
 
         <div className="col-md-3">
