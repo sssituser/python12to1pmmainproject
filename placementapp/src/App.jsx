@@ -16,6 +16,7 @@ import Resume from "./pages/Resume";
 
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
+import AppliedJobs from "./pages/AppliedJobs";
 
 
 
@@ -50,9 +51,9 @@ function App() {
         <Route path="playground" element={<Playground />} />
         <Route path="playground/:language" element={<PlaygroundDetail />} />
         {/* jobs */}
-        <Route path="jobs/:id" element={<JobDetails />} />
-
-        <Route path="logout" element={<Logout />} />
+        <Route path="jobs" element={<Jobs />} />
+        <Route path="jobs/all" element={<AllJobs />} />
+        <Route path="jobs/applied" element={<AppliedJobs />} />
 
       </Route>
     </Routes>

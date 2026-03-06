@@ -7,12 +7,17 @@ const navigate = useNavigate();
 
 const jobs = [
 
-{ id:1, company:"Postman", role:"Software Engineer", skills:"MySQL", location:"Hyderabad" },
-{ id:2, company:"Wipro", role:"Python Developer", skills:"Python", location:"Bangalore" },
-{ id:3, company:"Infosys", role:"Full Stack Developer", skills:"React", location:"Hyderabad" },
-{ id:4, company:"TCS", role:"Java Developer", skills:"Java", location:"Chennai" },
-{ id:5, company:"Amazon", role:"Backend Engineer", skills:"NodeJS", location:"Hyderabad" },
-{ id:6, company:"Google", role:"ML Engineer", skills:"Python", location:"Bangalore" }
+{ id:1, company:"Postman", role:"Software Engineer", skills:"MySQL", location:"Hyderabad", logo:"https://logo.clearbit.com/postman.com" },
+
+{ id:2, company:"Wipro", role:"Python Developer", skills:"Python", location:"Bangalore", logo:"https://logo.clearbit.com/wipro.com" },
+
+{ id:3, company:"Infosys", role:"Full Stack Developer", skills:"React", location:"Hyderabad", logo:"https://logo.clearbit.com/infosys.com" },
+
+{ id:4, company:"TCS", role:"Java Developer", skills:"Java", location:"Chennai", logo:"https://logo.clearbit.com/tcs.com" },
+
+{ id:5, company:"Amazon", role:"Backend Engineer", skills:"NodeJS", location:"Hyderabad", logo:"https://logo.clearbit.com/amazon.com" },
+
+{ id:6, company:"Google", role:"ML Engineer", skills:"Python", location:"Bangalore", logo:"https://logo.clearbit.com/google.com" }
 
 ]
 
@@ -54,7 +59,7 @@ placeholder="Search by role, skill, company"
 
 <div className="table-responsive" style={{maxHeight:"400px"}}>
 
-<table className="table table-bordered">
+<table className="table table-bordered align-middle">
 
 <thead className="table-primary">
 
@@ -90,9 +95,26 @@ records.map(job=>(
 
 <tr key={job.id}>
 
-<td>{job.company}</td>
+<td>
+
+<div className="d-flex align-items-center gap-2">
+
+<img
+src={job.logo}
+alt=""
+style={{width:"35px",height:"35px"}}
+/>
+
+{job.company}
+
+</div>
+
+</td>
+
 <td>{job.role}</td>
+
 <td>{job.skills}</td>
+
 <td>{job.location}</td>
 
 <td>
@@ -119,8 +141,6 @@ View
 </table>
 
 </div>
-
-{/* Pagination */}
 
 <nav>
 

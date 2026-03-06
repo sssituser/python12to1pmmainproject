@@ -12,33 +12,35 @@ function Sidebar() {
         <NavLink to="/profile" className="sidebar-link">Profile</NavLink>
 
         <NavLink to="/resume" className="sidebar-link">Resume</NavLink>
-
-        
         <div>
 
-          <div 
-          className="sidebar-link"
-          onClick={()=>setOpen(!open)}
-          style={{cursor:"pointer"}}
-          >
-            Jobs ▾
-          </div>
+<div 
+className="sidebar-link"
+onClick={()=>setOpen(!open)}
+style={{cursor:"pointer"}}
+>
+Jobs ▾
+</div>
 
-          {open && (
-            <div style={{paddingLeft:"15px"}}>
+{open && (
 
-            <div className="mb-1">
-              <NavLink to="/jobs" className="sidebar-link">
-                All Jobs
-              </NavLink></div> <br/>
+<div style={{paddingLeft:"15px"}}>
 
-              <div className="">
-                <NavLink to="/jobs/all" className="sidebar-link">
-                Applied Jobs
-              </NavLink>
-              </div>
+<div className="mb-2">
+<NavLink to="/jobs/all" className="sidebar-link">
+All Jobs
+</NavLink>
+</div>
 
-            </div>
+<div>
+<NavLink to="/jobs/applied" className="sidebar-link">
+Applied Jobs
+</NavLink>
+</div>
+
+</div>
+        
+        
           )}
 
         </div>
