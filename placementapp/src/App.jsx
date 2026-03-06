@@ -7,10 +7,11 @@ import Exams from "./pages/Exams";
 import Jobs from "./pages/Jobs";
 import Logout from "./pages/Logout";
 import Playground from "./pages/Playground";
-<<<<<<< HEAD
+
 import PlaygroundDetail from "./pages/PlaygroundDetail";
-=======
->>>>>>> a26ea995225c9dbeac880c69786a1cff387cef36
+
+import PlaygroundDetail from "./pages/PlaygroundDetail";
+
 import Profile from "./pages/Profile";
 
 function App() {
@@ -25,10 +26,11 @@ function App() {
           <Route path="exam-reports" element={<ExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
           <Route path="playground" element={<Playground />} />
-<<<<<<< HEAD
+
           <Route path="playground/python" element={<PlaygroundDetail />} />
-=======
->>>>>>> a26ea995225c9dbeac880c69786a1cff387cef36
+
+          <Route path="playground/python" element={<PlaygroundDetail />} />
+
           <Route path="logout" element={<Logout />} />
 
         </Route>

@@ -1,5 +1,5 @@
 import React from "react";
-<<<<<<< HEAD
+
 import { useNavigate } from "react-router-dom";
 
 function Playground() {
@@ -106,12 +106,7 @@ function Playground() {
   );
 }
 
+
 export default Playground;
-=======
 
-function Course() {
-  return <h2>Course Page</h2>;
-}
 
-export default Course;
->>>>>>> a26ea995225c9dbeac880c69786a1cff387cef36
