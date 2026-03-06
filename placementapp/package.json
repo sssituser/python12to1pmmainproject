@@ -16,6 +16,7 @@
     "@fortawesome/react-fontawesome": "^3.2.0",
     "axios": "^1.13.6",
     "bootstrap": "^5.3.8",
+    "framer-motion": "^12.35.0",
     "mdb-ui-kit": "^9.3.0",
     "mdbootstrap": "^4.20.0",
     "react": "^19.2.0",
