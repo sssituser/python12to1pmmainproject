@@ -10,8 +10,6 @@ import Playground from "./pages/Playground";
 
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 
-import PlaygroundDetail from "./pages/PlaygroundDetail";
-
 import Profile from "./pages/Profile";
 
 function App() {
@@ -27,9 +25,8 @@ function App() {
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
           <Route path="playground" element={<Playground />} />
 
-          <Route path="playground/python" element={<PlaygroundDetail />} />
 
-          <Route path="playground/python" element={<PlaygroundDetail />} />
+          <Route path="/playground/:language" element={<PlaygroundDetail />} />
 
           <Route path="logout" element={<Logout />} />
 

@@ -89,12 +89,9 @@ function PlaygroundDetail() {
                   </div>
                 </div>
                 {/* Start button */}
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm rounded-pill px-4"
-                >
+                <button type="button"className="btn btn-primary btn-sm rounded-pill px-4"onClick={() => navigate("/exam")}>
                   Start
-                </button>
+                  </button>
               </div>
             ))}
           </div>
