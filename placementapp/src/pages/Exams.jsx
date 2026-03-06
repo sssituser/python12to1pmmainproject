@@ -1,101 +1,97 @@
 import React, { useState, useEffect, useRef } from "react";
 
-function ExamPage() {
+function Exams() {
 
   const videoRef = useRef(null);
 
   const questions = [
-    {
-      question: "What does HTML stand for?",
-      options: [
-        "Hyper Text Markup Language",
-        "High Text Machine Language",
-        "Hyperlinks and Text Markup Language",
-        "Home Tool Markup Language"
-      ],
-      answer: 0
-    },
-    {
-      question: "Which language is used for React?",
-      options: ["Python", "Java", "JavaScript", "C++"],
-      answer: 2
-    }
+    {q:"Python is developed by?",o:["Guido van Rossum","James Gosling","Dennis Ritchie","Bjarne"],a:0},
+    {q:"HTML stands for?",o:["Hyper Text Markup Language","High Text Machine","Home Tool","Hyperlink"],a:0},
+    {q:"React uses?",o:["Java","Python","JavaScript","C++"],a:2},
+    {q:"CSS is used for?",o:["Design","Database","Server","AI"],a:0},
+    {q:"JS extension?",o:[".java",".js",".py",".cpp"],a:1},
+    {q:"Frontend library?",o:["React","Node","Django","Flask"],a:0},
+    {q:"Database?",o:["MySQL","HTML","CSS","React"],a:0},
+    {q:"Backend runtime?",o:["NodeJS","Bootstrap","HTML","CSS"],a:0},
+    {q:"Vite is?",o:["Build tool","Database","Language","Framework"],a:0},
+    {q:"Programming language?",o:["Python","HTML","CSS","Bootstrap"],a:0},
+    {q:"Loop keyword?",o:["for","design","style","layout"],a:0},
+    {q:"React uses?",o:["Components","Tables","Servers","Routers"],a:0},
+    {q:"JS variable?",o:["let","design","style","grid"],a:0},
+    {q:"IDE?",o:["VS Code","Chrome","MySQL","HTML"],a:0},
+    {q:"Version control?",o:["Git","React","Node","CSS"],a:0}
   ];
 
-  const [current, setCurrent] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [time, setTime] = useState(60);
+  const [current,setCurrent] = useState(0);
+  const [time,setTime] = useState(90);
 
   // TIMER
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) {
+  useEffect(()=>{
+    const timer=setInterval(()=>{
+      setTime(prev=>{
+        if(prev<=1){
           clearInterval(timer);
           alert("Exam Finished");
           return 0;
         }
-        return prev - 1;
+        return prev-1;
       });
-    }, 1000);
+    },1000);
 
-    return () => clearInterval(timer);
-  }, []);
+    return ()=>clearInterval(timer);
+  },[]);
 
   // WEBCAM
-  useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then((stream) => {
-        videoRef.current.srcObject = stream;
-      });
-  }, []);
+  useEffect(()=>{
+    navigator.mediaDevices.getUserMedia({video:true})
+    .then(stream=>{
+      if(videoRef.current){
+        videoRef.current.srcObject=stream;
+      }
+    })
+    .catch(err=>{
+      console.log("Webcam error:",err);
+    });
+  },[]);
 
   return (
-    <div style={{ padding: "20px" }}>
+
+    <div style={{padding:"20px"}}>
 
       <h2>Online Exam</h2>
 
-      {/* Timer */}
-      <h3>Time Left: {time} seconds</h3>
+      <h3>Time Left: {time} sec</h3>
 
-      {/* Webcam */}
       <video
         ref={videoRef}
         autoPlay
+        muted
+        playsInline
         width="200"
-        style={{ border: "2px solid black" }}
+        style={{border:"2px solid black"}}
       />
 
       <hr/>
 
-      {/* Question */}
-      <h3>{questions[current].question}</h3>
+      <h3>{questions[current].q}</h3>
 
-      {questions[current].options.map((opt, index) => (
-        <div key={index}>
-          <input
-            type="radio"
-            name="option"
-            onChange={() => setSelected(index)}
-          />
+      {questions[current].o.map((opt,i)=>(
+        <div key={i}>
+          <input type="radio" name="option"/>
           {opt}
         </div>
       ))}
 
       <br/>
 
-      {/* Next Button */}
-      <button
-        onClick={() => {
-          setSelected(null);
-          setCurrent(current + 1);
-        }}
-      >
-        Next
-      </button>
+      {current < questions.length-1 ? (
+        <button onClick={()=>setCurrent(current+1)}>Next</button>
+      ) : (
+        <button onClick={()=>alert("Exam Submitted")}>Submit</button>
+      )}
 
     </div>
   );
 }
 
-export default ExamPage;
+export default Exams;
