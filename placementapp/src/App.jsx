@@ -9,33 +9,37 @@ import Jobs from "./pages/Jobs";
 import Logout from "./pages/Logout";
 import Playground from "./pages/Playground";
 
+import AllJobs from "./pages/Alljobs";
+import JobDetails from "./pages/jobDetails";
+import AppliedJobs from "./pages/AppliedJobs";
+
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import LeaveRequest from "./pages/Leaverequest";
 
 import Profile from "./pages/Profile";
 
 function App() {
-  return (
-      <Routes>
+return (
+        <Routes>
         {/* Standalone exam page without sidebar */}
         <Route path="/exam" element={<Exams />} />
         
         {/* All other routes with Dashboard layout */}
         <Route path="/" element={<Dashboard />}>
-          <Route index element={<Profile />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="jobs" element={<Jobs />} />
-          <Route path="course" element={<Course />} />
-          <Route path="exams" element={<ExamsList />} />
-          <Route path="exam-reports" element={<ExamReports />} />
-          <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
-          <Route path="playground" element={<Playground />} />
-          <Route path="/playground/:language" element={<PlaygroundDetail />} />
-          <Route path="logout" element={<Logout />} />
-          <Route path="leave-request" element={<LeaveRequest />} />
+                <Route index element={<Profile />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="jobs" element={<Jobs />} />
+                <Route path="course" element={<Course />} />
+                <Route path="exams" element={<ExamsList />} />
+                <Route path="exam-reports" element={<ExamReports />} />
+                <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
+                <Route path="playground" element={<Playground />} />
+                <Route path="/playground/:language" element={<PlaygroundDetail />} />
+                <Route path="logout" element={<Logout />} />
+                <Route path="leave-request" element={<LeaveRequest />} />
         </Route>
-      </Routes>
-  );
+        </Routes>
+        );
 }
 
 export default App;

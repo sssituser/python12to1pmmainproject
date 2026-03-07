@@ -1,7 +1,7 @@
 import React from "react";
 
-function Course() {
-  return <h2>Course Page</h2>;
+function logout() {
+  return <h2>Logout Page</h2>;
 }
 
-export default Course;
+export default logout;
