@@ -7,17 +7,12 @@ const navigate = useNavigate();
 
 const jobs = [
 
-{ id:1, company:"Postman", role:"Software Engineer", skills:"MySQL", location:"Hyderabad", logo:"https://logo.clearbit.com/postman.com" },
-
-{ id:2, company:"Wipro", role:"Python Developer", skills:"Python", location:"Bangalore", logo:"https://logo.clearbit.com/wipro.com" },
-
-{ id:3, company:"Infosys", role:"Full Stack Developer", skills:"React", location:"Hyderabad", logo:"https://logo.clearbit.com/infosys.com" },
-
-{ id:4, company:"TCS", role:"Java Developer", skills:"Java", location:"Chennai", logo:"https://logo.clearbit.com/tcs.com" },
-
-{ id:5, company:"Amazon", role:"Backend Engineer", skills:"NodeJS", location:"Hyderabad", logo:"https://logo.clearbit.com/amazon.com" },
-
-{ id:6, company:"Google", role:"ML Engineer", skills:"Python", location:"Bangalore", logo:"https://logo.clearbit.com/google.com" }
+{ id:1, company:"Postman", role:"Software Engineer", skills:"MySQL", location:"Hyderabad" },
+{ id:2, company:"Wipro", role:"Python Developer", skills:"Python", location:"Bangalore" },
+{ id:3, company:"Infosys", role:"Full Stack Developer", skills:"React", location:"Hyderabad" },
+{ id:4, company:"TCS", role:"Java Developer", skills:"Java", location:"Chennai" },
+{ id:5, company:"Amazon", role:"Backend Engineer", skills:"NodeJS", location:"Hyderabad" },
+{ id:6, company:"Google", role:"ML Engineer", skills:"Python", location:"Bangalore" }
 
 ]
 
@@ -46,8 +41,7 @@ setLoading(false)
 
 }
 
-return(
-
+return (
 <div className="container mt-4">
 
 <h4 className="mb-3">All Job Openings</h4>
@@ -95,21 +89,7 @@ records.map(job=>(
 
 <tr key={job.id}>
 
-<td>
-
-<div className="d-flex align-items-center gap-2">
-
-<img
-src={job.logo}
-alt=""
-style={{width:"35px",height:"35px"}}
-/>
-
-{job.company}
-
-</div>
-
-</td>
+<td>{job.company}</td>
 
 <td>{job.role}</td>
 
@@ -121,7 +101,7 @@ style={{width:"35px",height:"35px"}}
 
 <button
 className="btn btn-sm btn-primary"
-onClick={()=>navigate(`/jobs/${job.id}`)}
+onClick={()=>navigate("/jobs/" + job.id)}
 >
 
 View
@@ -142,15 +122,17 @@ View
 
 </div>
 
+{/* Pagination */}
+
 <nav>
 
 <ul className="pagination mt-3">
 
-{[...Array(pages)].map((_,i)=>(
+{Array.from({length: pages}, (_,i) => (
 
 <li
 key={i}
-className={`page-item ${page===i+1?"active":""}`}
+className={"page-item " + (page===i+1?"active":"")}
 >
 
 <button
@@ -177,3 +159,4 @@ onClick={()=>changePage(i+1)}
 }
 
 export default AllJobs;
+

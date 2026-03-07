@@ -22,3 +22,4 @@ You have not applied to any jobs yet.
 }
 
 export default AppliedJobs;
+
