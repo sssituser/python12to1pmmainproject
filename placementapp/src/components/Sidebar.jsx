@@ -40,6 +40,11 @@ function Sidebar({ sidebarOpen }) {
           <span>Playground</span>
         </NavLink>
 
+        <NavLink to="leave-request" className="sidebar-link">
+        <i className="bi bi-calendar-check"></i>
+        <span>Leave Request</span>
+        </NavLink>
+
         <NavLink to="logout" className="sidebar-link">
           <i className="bi bi-box-arrow-right"></i>
           <span>Logout</span>
