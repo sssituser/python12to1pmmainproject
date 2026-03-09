@@ -1,4 +1,6 @@
-import { Route, Routes } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+
 import Dashboard from "./Layout/Dashboard";
 import Course from "./pages/Course";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
@@ -8,34 +10,56 @@ import ExamsList from "./pages/ExamsList";
 import Jobs from "./pages/Jobs";
 import Logout from "./pages/Logout";
 import Playground from "./pages/Playground";
+import PlaygroundDetail from "./pages/PlaygroundDetail";
+import LeaveRequest from "./pages/Leaverequest";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
-import PlaygroundDetail from "./pages/PlaygroundDetail";
-import LeaveRequest from "./pages/Leaverequest";
-import Profile from "./pages/Profile";
 
 function App() {
   return (
-    <Routes>
-      {/* Standalone exam page — no sidebar/layout */}
-      <Route path="/exam" element={<Exams />} />
+    <>
+      <ToastContainer position="top-right" autoClose={2000} />
 
-      {/* All routes wrapped in Dashboard layout */}
-      <Route path="/" element={<Dashboard />}>
-        <Route index element={<Profile />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="jobs" element={<Jobs />} />
-        <Route path="course" element={<Course />} />
-        <Route path="exams" element={<ExamsList />} />
-        <Route path="exam-reports" element={<ExamReports />} />
-        <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
-        <Route path="playground" element={<Playground />} />
-        <Route path="playground/:language" element={<PlaygroundDetail />} />  {/* relative path ✓ */}
-        <Route path="leave-request" element={<LeaveRequest />} />
-        <Route path="logout" element={<Logout />} />
-      </Route>
-    </Routes>
+      <Routes>
+
+        {/* Login Page */}
+        <Route path="/" element={<Login />} />
+
+        {/* Standalone Exam Page (No Dashboard Layout) */}
+        <Route path="/exam" element={<Exams />} />
+
+        {/* Dashboard Layout Routes */}
+        <Route path="/dashboard" element={<Dashboard />}>
+
+          <Route index element={<Profile />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
+
+          <Route path="/dashboard/jobs" element={<Jobs />} />
+          <Route path="/dashboard/alljobs" element={<AllJobs />} />
+          <Route path="/dashboard/appliedjobs" element={<AppliedJobs />} />
+          <Route path="/dashboard/jobdetails" element={<JobDetails />} />
+
+          <Route path="/dashboard/course" element={<Course />} />
+
+          <Route path="/dashboard/exams" element={<ExamsList />} />
+          <Route path="/dashboard/exam-reports" element={<ExamReports />} />
+          <Route path="/dashboard/exam-leaderboard" element={<ExamLeaderboard />} />
+
+          <Route path="/dashboard/playground" element={<Playground />} />
+          <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
+
+          <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
+
+          <Route path="/dashboard/logout" element={<Logout />} />
+
+        </Route>
+
+      </Routes>
+    </>
   );
 }
 

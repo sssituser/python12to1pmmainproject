@@ -14,25 +14,41 @@
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.2.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "axios": "^1.13.6",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-<<<<<<< HEAD
+
     "icons": "^1.0.0",
-=======
+
     "framer-motion": "^12.35.0",
->>>>>>> 228556d7841f47923355b72a448f20649c6c408c
+
     "mdb-ui-kit": "^9.3.0",
     "mdbootstrap": "^4.20.0",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.2.0",
+
     "react-router-dom": "^7.13.1",
     "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.2.1",
+
+    "react-icons": "^5.6.0",
+    "react-router-dom": "^7.13.1",
+    "react-toastify": "^11.0.5",
+    "react-tsparticles": "^2.12.2",
+    "three": "^0.183.2",
+    "tsparticles": "^3.9.1",
+    "tsparticles-engine": "^2.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/postcss": "^4.2.1",
+
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
