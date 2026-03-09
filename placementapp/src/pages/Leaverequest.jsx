@@ -20,10 +20,10 @@ function LeaveRequest() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [view, setView] = useState("form"); // "form" | "list"
   
-  // Simulation of logged-in user role
+  
   const [currentUserRole, setCurrentUserRole] = useState("Student"); 
 
-  // Load saved leave requests
+  
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -69,7 +69,7 @@ function LeaveRequest() {
   };
 
   const handleApproveReject = (id, newStatus) => {
-    // Only authorized roles can perform this action
+    
     const authorizedRoles = ["Faculty"];
     
     if (!authorizedRoles.includes(currentUserRole)) {
@@ -107,7 +107,7 @@ function LeaveRequest() {
 
   return (
     <div className="max-w-5xl mx-auto p-4">
-      {/* Role Switcher (For Development/Demo purposes) */}
+    
       <div className="mb-6 p-3 bg-gray-100 rounded-xl flex items-center gap-4 border border-gray-200">
         <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
           <FontAwesomeIcon icon={faUserShield} /> Logged in as:
@@ -216,7 +216,7 @@ function LeaveRequest() {
           </div>
 
           <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xl">
-            {/* Table Header */}
+          
             <div className="grid grid-cols-[1.5fr_1fr_1fr_2.5fr_1fr_1fr] gap-4 bg-[#1004ef] text-white px-6 py-4 font-bold text-xs uppercase tracking-wider">
               <div>Name</div>
               <div>Start Date</div>
@@ -226,7 +226,7 @@ function LeaveRequest() {
               <div>Approved By</div>
             </div>
 
-            {/* Table Content */}
+            
             {leaveRequests.length === 0 ? (
               <div className="flex flex-col items-center py-20 opacity-40">
                 <FontAwesomeIcon icon={faFaceSadTear} size="3x" />
@@ -249,7 +249,7 @@ function LeaveRequest() {
                         {req.status}
                       </span>
                       
-                      {/* Only show Action Buttons if status is Pending AND user is authorized */}
+                      
                       {req.status === "Pending" && ["Faculty"].includes(currentUserRole) && (
                         <div className="flex gap-2 mt-2">
                           <button onClick={() => handleApproveReject(req.id, "Approved")} className="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition shadow-sm">
