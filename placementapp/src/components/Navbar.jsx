@@ -1,25 +1,24 @@
-import React from "react";
-import { Navbar, Container } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faUser } from "@fortawesome/free-solid-svg-icons";
+function Navbar({ toggleSidebar }) {
+  return (
+    <div className="navbar">
 
-function TopNavbar() {
-    const username = "Karthik"
-return (
-    <Navbar expand="lg" className="top-navbar shadow">
-    <Container fluid>
-        <Navbar.Brand className="brand">SSSIT</Navbar.Brand>
-        <Navbar.Toggle />
-        <Navbar.Collapse className="justify-content-end">
-        <div className="navbar-user">
-            <FontAwesomeIcon icon={faBell} />
-            <FontAwesomeIcon icon={faUser} />
-            <span>{username}</span>
-        </div>
-        </Navbar.Collapse>
-    </Container>
-    </Navbar>
-);
+      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+        <button onClick={toggleSidebar} style={{fontSize:"22px"}}>
+          <i className="bi bi-list"></i>
+        </button>
+        <h2>Student Dashboard</h2>
+      </div>
+
+      <div style={{display:"flex",alignItems:"center",gap:"20px"}}>
+        <i className="bi bi-bell"></i>
+        <img
+          src="https://i.pravatar.cc/40"
+          style={{width:"35px",borderRadius:"50%"}}
+        />
+      </div>
+
+    </div>
+  );
 }
 
-export default TopNavbar;
+export default Navbar;
