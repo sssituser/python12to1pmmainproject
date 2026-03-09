@@ -1,23 +1,55 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
 
-function Sidebar() {
+function Sidebar({ sidebarOpen }) {
+  return (
+    <div className={`sidebar ${!sidebarOpen ? "collapsed" : ""}`}>
 
-return (
-<div className="sidebar">
-    <div className="sidebar-menu">
-    <NavLink to="/profile" className="sidebar-link">Profile</NavLink>
-    <NavLink to="/jobs" className="sidebar-link">Jobs</NavLink>
-    <NavLink to="/course" className="sidebar-link">Course</NavLink>
-    <NavLink to="/exams" className="sidebar-link">Exams</NavLink>
-    <NavLink to="/exam-reports" className="sidebar-link">Exam Reports</NavLink>
-    <NavLink to="/exam-leaderboard" className="sidebar-link">Exam Leaderboard</NavLink>
-    <NavLink to="/playground" className="sidebar-link">Code Playground</NavLink>
-    <NavLink to="/leave-request" className="sidebar-link">Leave request</NavLink>
-    <NavLink to="/logout" className="sidebar-link">Logout</NavLink>
+      <div className="sidebar-menu">
+
+        <NavLink to="/dashboard/profile" className="sidebar-link">
+          <i className="bi bi-person"></i>
+          <span>Profile</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/jobs" className="sidebar-link">
+          <i className="bi bi-briefcase"></i>
+          <span>Jobs</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/course" className="sidebar-link">
+          <i className="bi bi-book"></i>
+          <span>Course</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/exams" className="sidebar-link">
+          <i className="bi bi-pencil-square"></i>
+          <span>Exams</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/exam-reports" className="sidebar-link">
+          <i className="bi bi-bar-chart"></i>
+          <span>Reports</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/exam-leaderboard" className="sidebar-link">
+          <i className="bi bi-trophy"></i>
+          <span>Leaderboard</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/playground" className="sidebar-link">
+          <i className="bi bi-code-slash"></i>
+          <span>Playground</span>
+        </NavLink>
+
+        <NavLink to="/dashboard/logout" className="sidebar-link">
+          <i className="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </NavLink>
+
+      </div>
+
     </div>
-</div>
-);
+  );
 }
 
 export default Sidebar;

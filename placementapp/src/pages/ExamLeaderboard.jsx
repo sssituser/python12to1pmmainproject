@@ -4,10 +4,16 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
+
 const leaderboard = [
   { rank: 1, name: "Surya Kumar", score: 98, time: "20s" },
   { rank: 2, name: "Neha sri", score: 95, time: "22s" },
   { rank: 3, name: "Durga prasad", score: 92, time: "25s" },
+]
+const Examleaderboard = [
+  { rank: 1, name: "Neha", score: 98, time: "20s" },
+  { rank: 2, name: "Kumar", score: 95, time: "22s" },
+  { rank: 3, name: "Gangaprasad", score: 92, time: "25s" },
   { rank: 4, name: "Sai", score: 90, time: "30s" },
 ];
 
