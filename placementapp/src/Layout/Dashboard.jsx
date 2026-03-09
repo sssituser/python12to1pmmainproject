@@ -1,21 +1,22 @@
-import React from "react";
+import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import TopNavbar from "../components/Navbar";
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
 
 function Dashboard() {
+
+  const [sidebarOpen,setSidebarOpen] = useState(true);
+
   return (
-    <div>
-      <TopNavbar />
+    <>
+      <Navbar toggleSidebar={()=>setSidebarOpen(!sidebarOpen)} />
 
-      <div style={{ display: "flex" }}>
-        <Sidebar />
+      <Sidebar sidebarOpen={sidebarOpen}/>
 
-        <div style={{ flex: 1, padding: "20px" }}>
-          <Outlet />
-        </div>
+      <div className={`main-content ${!sidebarOpen ? "collapsed" : ""}`}>
+        <Outlet/>
       </div>
-    </div>
+    </>
   );
 }
 
