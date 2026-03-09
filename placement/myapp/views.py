@@ -18,5 +18,5 @@ def login_view(request):
     else:
         return Response({"error": "Invalid username or password"}, status=400)
     
-def profile_view(request):
+
     
