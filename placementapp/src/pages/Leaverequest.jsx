@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faClipboardList, 
-  faCalendarDays, 
-  faFaceSadTear, 
-  faPlus, 
-  faCheck, 
-  faTimes, 
-  faUserShield 
+import {
+  faClipboardList,
+  faCalendarDays,
+  faFaceSadTear,
+  faPlus,
+  faCheck,
+  faTimes,
+  faUserShield
 } from "@fortawesome/free-solid-svg-icons";
 
 const STORAGE_KEY = "placementapp_leave_requests";
@@ -80,10 +80,10 @@ function LeaveRequest() {
     setLeaveRequests((prev) => {
       const updated = prev.map((req) =>
         req.id === id
-          ? { 
-              ...req, 
-              status: newStatus, 
-              approvedBy: newStatus === "Pending" ? null : currentUserRole 
+          ? {
+              ...req,
+              status: newStatus,
+              approvedBy: newStatus === "Pending" ? null : currentUserRole
             }
           : req
       );
@@ -112,8 +112,8 @@ function LeaveRequest() {
         <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
           <FontAwesomeIcon icon={faUserShield} /> Logged in as:
         </span>
-        <select 
-          value={currentUserRole} 
+        <select
+          value={currentUserRole}
           onChange={(e) => setCurrentUserRole(e.target.value)}
           className="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
         >

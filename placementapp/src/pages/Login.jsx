@@ -28,7 +28,7 @@ function Login() {
     const data = await res.json();
     if(res.ok){
       localStorage.setItem("user", JSON.stringify(data.user));
-      toast.success(`Welcome ${data.user.username} 👋`);
+      toast.success(`Welcome ${data.user.username} `);
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
