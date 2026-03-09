@@ -50,7 +50,7 @@ function App() {
           <Route path="/dashboard/exam-leaderboard" element={<ExamLeaderboard />} />
 
           <Route path="/dashboard/playground" element={<Playground />} />
-          <Route path="/dashboard/playgroundDetail/:language" element={<PlaygroundDetail />} />
+          <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
 
           <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
 
