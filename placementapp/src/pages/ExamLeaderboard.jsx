@@ -70,8 +70,8 @@ function ExamLeaderboard() {
                     <li>Questions solved (more is better)</li>
                   </ul>
 
-                  <p><b>3. Difficulty Score</b></p>
-                  <p>Topper = 1 | Medium = 2 | Hard = 3</p>
+                  {/* <p><b>3. Difficulty Score</b></p>
+                  <p>Topper = 1 | Medium = 2 | Hard = 3</p> */}
 
                 </div>
 
