@@ -57,50 +57,67 @@ function Playground() {
         {/* Cards */}
         <div className="grid md:grid-cols-2 gap-6">
 
-          {/* Python Card */}
+          {/* Python Variables Card */}
           <div className="bg-white rounded-xl border shadow-sm p-6 hover:shadow-lg transition duration-300 flex flex-col justify-between">
 
             <div>
               <div className="flex items-center justify-between mb-3">
 
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Python Programming
+                  Introduction to Variables, Comments and Usage
                 </h3>
 
-                <span className="text-orange-500 text-xl">🔥</span>
+                <span className="text-green-500 text-xl">�</span>
 
               </div>
 
               <p className="text-sm text-gray-600 mb-5">
-                Learn Python fundamentals, variables, operators, and coding
-                concepts through interactive practice sessions.
+                Master the fundamentals of Python variables, comments, and their practical usage in programming.
               </p>
 
-              <span className="inline-block bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-                Beginner Friendly
+              <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
+                20 MCQs • 1:30 min
               </span>
             </div>
 
             <button
-              onClick={() => navigate("/playground/python")}
-              className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+              onClick={() => navigate("/dashboard/python-exam")}
+              className="mt-6 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition"
             >
-              Start Learning
+              Start
             </button>
 
           </div>
 
+          {/* Python Operators Card */}
+          <div className="bg-white rounded-xl border shadow-sm p-6 hover:shadow-lg transition duration-300 flex flex-col justify-between">
 
-          {/* Coming Soon Card */}
-          <div className="bg-white rounded-xl border shadow-sm p-6 flex flex-col justify-center items-center text-center opacity-80">
+            <div>
+              <div className="flex items-center justify-between mb-3">
 
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              More Languages Coming Soon
-            </h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Operators
+                </h3>
 
-            <p className="text-sm text-gray-500">
-              Java, C++, and JavaScript sessions will be available soon.
-            </p>
+                <span className="text-blue-500 text-xl">⚡</span>
+
+              </div>
+
+              <p className="text-sm text-gray-600 mb-5">
+                Test your knowledge of Python operators including arithmetic, logical, and comparison operators.
+              </p>
+
+              <span className="inline-block bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">
+                20 MCQs • 1:30 min
+              </span>
+            </div>
+
+            <button
+              onClick={() => navigate("/dashboard/python-exam")}
+              className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              Start
+            </button>
 
           </div>
 
