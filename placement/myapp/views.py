@@ -2,7 +2,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-
 from django.contrib.auth.models import User
 from .models import StudentProfile, Skill, Project
 from .serializers import StudentProfileSerializer
@@ -14,6 +13,10 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import ExamAttempt
 
 @api_view(['GET'])
 def home(request):
@@ -138,14 +141,8 @@ def upload_resume(request):
     profile.resume = resume
     profile.save()
     return Response({"message": "Resume uploaded"})
-
-
-
-
         #else:
         #return Response({"error": "Invalid username or password"}, status=400)
-
-
 @api_view(['GET'])
 def get_leave_requests(request):
     try:
@@ -214,6 +211,19 @@ def update_leave_request(request, request_id):
         return Response({'error': 'Leave request not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+        return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
+
+from .models import Job
+from .serializers import JobSerializer
+from rest_framework import viewsets
+
+
+
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
 
 
 @api_view(['DELETE'])
@@ -538,7 +548,6 @@ def update_code_snippet(request, snippet_id):
         snippet.code = data.get('code', snippet.code)
         snippet.language = data.get('language', snippet.language)
         snippet.save()
-        
         return Response({
             'message': 'Code snippet updated successfully',
             'snippet_id': snippet.id
@@ -929,3 +938,29 @@ def serve_react_app(request):
     """Serve the React app"""
     return render(request, 'index.html')
 
+class FinishedExamListView(APIView):
+    def get(self, request):
+        exams = ExamAttempt.objects.all()
+        data = [
+            {
+                "user": exam.user.username,
+                "exam": exam.exam.title,
+                "score": exam.score,
+                "attempted_at": exam.attempted_at
+            }
+            for exam in exams
+        ]
+        return Response(data)
+    
+class UpdateAttemptView(APIView):
+    def post(self, request, pk):
+        try:
+            attempt = ExamAttempt.objects.get(id=pk)
+        except ExamAttempt.DoesNotExist:
+            return Response({"error": "Attempt not found"}, status=404)
+        attempt.score = request.data.get("score", attempt.score)
+        attempt.save()
+        return Response({
+            "message": "Exam attempt updated",
+            "score": attempt.score
+        }, status=status.HTTP_200_OK)

@@ -103,7 +103,7 @@ function ExamLeaderboard() {
             value={date}
             onChange={(e) => {
               setDate(e.target.value);
-              toast.info("Date filter applied");
+              // toast.info("Date filter applied");
             }}
           />
         </div>
@@ -115,7 +115,7 @@ function ExamLeaderboard() {
             value={batch}
             onChange={(e) => {
               setBatch(e.target.value);
-              toast.info("Batch filter applied");
+              // toast.info("Batch filter applied");
             }}
           >
             <option value="">All Batches</option>
@@ -132,7 +132,7 @@ function ExamLeaderboard() {
             value={examType}
             onChange={(e) => {
               setExamType(e.target.value);
-              toast.info("Exam type selected");
+              // toast.info("Exam type selected");
             }}
           >
             <option value="">Select</option>
