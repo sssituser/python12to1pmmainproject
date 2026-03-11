@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Exam Playground - Django Backend</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@700&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveGrid 20s linear infinite;
+        }
+
+        @keyframes moveGrid {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Floating Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+        }
+
+        .orb1 {
+            width: 120px;
+            height: 120px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 70%);
+        }
+
+        .orb2 {
+            width: 180px;
+            height: 180px;
+            top: 70%;
+            right: 10%;
+            animation-delay: 2s;
+            background: radial-gradient(circle, rgba(240,147,251,0.3) 0%, rgba(240,147,251,0.1) 70%);
+        }
+
+        .orb3 {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 30%;
+            animation-delay: 4s;
+            background: radial-gradient(circle, rgba(79,172,254,0.3) 0%, rgba(79,172,254,0.1) 70%);
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) rotate(0deg) scale(1); 
+                opacity: 0.8;
+            }
+            25% { 
+                transform: translateY(-15px) rotate(90deg) scale(1.1); 
+                opacity: 1;
+            }
+            50% { 
+                transform: translateY(-25px) rotate(180deg) scale(1); 
+                opacity: 0.9;
+            }
+            75% { 
+                transform: translateY(-15px) rotate(270deg) scale(0.9); 
+                opacity: 1;
+            }
+        }
+
+        /* Main Container */
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+            padding: 4rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 1s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(80px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Header Section */
+        .header-section {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+            text-shadow: 0 0 80px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes titleGlow {
+            from { 
+                filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.6));
+                transform: translateY(0px);
+            }
+            to { 
+                filter: drop-shadow(0 0 50px rgba(118, 75, 162, 0.8));
+                transform: translateY(-5px);
+            }
+        }
+
+        .subtitle {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.4rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--success-gradient);
+            color: white;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+            animation: statusPulse 2s infinite, fadeInUp 1s ease-out 0.6s both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+            }
+            50% { 
+                transform: scale(1.05); 
+                box-shadow: 0 20px 45px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        /* API Data Section */
+        .api-section {
+            margin-bottom: 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #1e293b 0%, #667eea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .api-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .api-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            transform-origin: left;
+        }
+
+        .api-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            border-color: #667eea;
+        }
+
+        .api-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .api-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .api-endpoint {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #495057;
+            border: 1px solid #e9ecef;
+        }
+
+        .api-description {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .api-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.2rem;
+        }
+
+        /* Action Buttons */
+        .btn-custom {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+            color: white;
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+            color: white;
+            box-shadow: 0 10px 25px rgba(250, 112, 154, 0.3);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(250, 112, 154, 0.4);
+        }
+
+        /* Data Display */
+        .data-display {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+
+        .data-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .data-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .data-content {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-card {
+                padding: 2.5rem;
+            }
+            
+            .api-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="hero-card">
+            <!-- Header Section -->
+            <div class="header-section">
+                <h1 class="main-title">Python Exam Playground</h1>
+                <p class="subtitle">Django REST Framework Backend</p>
+                <div class="status-badge">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Backend API Running Successfully
+                </div>
+            </div>
+
+            <!-- Questions API Section -->
+            <div class="api-section">
+                <h2 class="section-title">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Questions Management API
+                </h2>
+                <div class="api-grid">
+                    <div class="api-card">
+                        <div class="api-title">
+                            <i class="fas fa-list me-2"></i>
+                            Get All Questions
+                        </div>
+                        <div class="api-endpoint">GET /api/questions/</div>
+                        <div class="api-description">
+                            Retrieve all Python questions with choices, difficulty levels, and marks
+                        </div>
+                        <div class="api-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="questions-count">0</div>
+                                <div class="stat-label">Questions</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="choices-count">0</div>
+                                <div class="stat-label">Choices</div>
+                            </div>
+                        </div>
+                        <button class="btn-custom btn-primary" onclick="loadQuestions()">
+                            <i class="fas fa-download me-2"></i>
+                            Load Questions
+                        </button>
+                        <button class="btn-custom btn-success" onclick="createQuestion()">
+                            <i class="fas fa-plus me-2"></i>
+                            Create Question
+                        </button>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="api-title">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Exam Sessions API
+                        </div>
+                        <div class="api-endpoint">GET /api/exam/sessions/</div>
+                        <div class="api-description">
+                            View all exam sessions with student details, scores, and timing
+                        </div>
+                        <div class="api-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="sessions-count">0</div>
+                                <div class="stat-label">Sessions</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="active-count">0</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                        </div>
+                        <button class="btn-custom btn-warning" onclick="loadSessions()">
+                            <i class="fas fa-eye me-2"></i>
+                            View Sessions
+                        </button>
+                        <button class="btn-custom btn-primary" onclick="startExam()">
+                            <i class="fas fa-rocket me-2"></i>
+                            Start New Exam
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Display -->
+                <div class="data-display" id="data-display">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading API data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="/" class="btn-custom btn-primary" style="margin: 0 1rem;">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- API Interaction Script -->
+    <script>
+        // API Base URL
+        const API_BASE = '/api';
+        
+        // Load questions from API
+        async function loadQuestions() {
+            try {
+                showLoading('Loading questions...');
+                const response = await fetch(`${API_BASE}/questions/`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayQuestions(data);
+                    updateStats('questions-count', data.length);
+                    updateStats('choices-count', data.reduce((sum, q) => sum + (q.choices ? q.choices.length : 0), 0));
+                } else {
+                    showError('Failed to load questions');
+                }
+            } catch (error) {
+                showError('Error loading questions: ' + error.message);
+            }
+        }
+        
+        // Load exam sessions from API
+        async function loadSessions() {
+            try {
+                showLoading('Loading exam sessions...');
+                const response = await fetch(`${API_BASE}/exam/sessions/`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySessions(data);
+                    updateStats('sessions-count', data.length);
+                    updateStats('active-count', data.filter(s => s.status === 'started' || s.status === 'in_progress').length);
+                } else {
+                    showError('Failed to load sessions');
+                }
+            } catch (error) {
+                showError('Error loading sessions: ' + error.message);
+            }
+        }
+        
+        // Create new question
+        async function createQuestion() {
+            const questionText = prompt('Enter question text:');
+            const questionType = prompt('Question type (multiple_choice/coding/short_answer):');
+            const difficulty = prompt('Difficulty (easy/medium/hard):');
+            const marks = parseInt(prompt('Marks:')) || 1;
+            
+            if (questionText && questionType) {
+                try {
+                    const response = await fetch(`${API_BASE}/questions/create/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            question_text: questionText,
+                            question_type: questionType,
+                            difficulty: difficulty,
+                            marks: marks
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert('Question created successfully!');
+                        loadQuestions(); // Reload questions
+                    } else {
+                        showError('Failed to create question: ' + result.error);
+                    }
+                } catch (error) {
+                    showError('Error creating question: ' + error.message);
+                }
+            }
+        }
+        
+        // Start new exam session
+        async function startExam() {
+            const studentName = prompt('Student name:');
+            const studentEmail = prompt('Student email:');
+            
+            if (studentName && studentEmail) {
+                try {
+                    const response = await fetch(`${API_BASE}/exam/start/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            student_name: studentName,
+                            student_email: studentEmail,
+                            webcam_enabled: true
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert(`Exam started! Session ID: ${result.session_id}`);
+                        loadSessions(); // Reload sessions
+                    } else {
+                        showError('Failed to start exam: ' + result.error);
+                    }
+                } catch (error) {
+                    showError('Error starting exam: ' + error.message);
+                }
+            }
+        }
+        
+        // Display questions data
+        function displayQuestions(questions) {
+            const container = document.getElementById('data-display');
+            let html = '<h3 style="margin-bottom: 1rem; color: #1e293b;">📚 Questions Data</h3>';
+            
+            questions.forEach((question, index) => {
+                html += `
+                    <div class="data-item">
+                        <div class="data-title">Question ${question.id}: ${question.question_type} (${question.difficulty})</div>
+                        <div class="data-content">${question.question_text}</div>
+                        <div style="margin-top: 0.5rem; color: #667eea; font-weight: 600;">
+                            Marks: ${question.marks} | Created: ${new Date(question.created_at).toLocaleDateString()}
+                        </div>
+                        ${question.choices && question.choices.length > 0 ? `
+                            <div style="margin-top: 1rem;">
+                                <strong>Choices:</strong>
+                                ${question.choices.map(choice => `
+                                    <div style="margin-left: 1rem; padding: 0.5rem; background: ${choice.is_correct ? '#d4edda' : '#f8f9fa'}; border-radius: 5px; margin: 0.25rem 0;">
+                                        ${choice.is_correct ? '✅' : '○'} ${choice.choice_text}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Display sessions data
+        function displaySessions(sessions) {
+            const container = document.getElementById('data-display');
+            let html = '<h3 style="margin-bottom: 1rem; color: #1e293b;">🎓 Exam Sessions</h3>';
+            
+            sessions.forEach((session, index) => {
+                const percentage = session.total_marks > 0 ? 
+                    Math.round((session.score / session.total_marks) * 100) : 0;
+                
+                html += `
+                    <div class="data-item">
+                        <div class="data-title">👤 ${session.student_name}</div>
+                        <div class="data-content">
+                            <div><strong>Email:</strong> ${session.student_email}</div>
+                            <div><strong>Status:</strong> <span style="color: ${getStatusColor(session.status)}">${session.status.toUpperCase()}</span></div>
+                            <div><strong>Score:</strong> ${session.score || 0}/${session.total_marks || 0}</div>
+                            <div><strong>Percentage:</strong> ${percentage}%</div>
+                            <div><strong>Started:</strong> ${new Date(session.start_time).toLocaleString()}</div>
+                            ${session.end_time ? `<div><strong>Ended:</strong> ${new Date(session.end_time).toLocaleString()}</div>` : ''}
+                            <div><strong>Webcam:</strong> ${session.webcam_enabled ? '🟢 Enabled' : '🔴 Disabled'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Get status color
+        function getStatusColor(status) {
+            const colors = {
+                'started': '#007bff',
+                'in_progress': '#ffc107',
+                'completed': '#28a745',
+                'terminated': '#dc3545'
+            };
+            return colors[status] || '#6c757d';
+        }
+        
+        // Update statistics
+        function updateStats(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+        
+        // Show loading
+        function showLoading(message) {
+            const container = document.getElementById('data-display');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        // Show error
+        function showError(message) {
+            const container = document.getElementById('data-display');
+            container.innerHTML = `
+                <div style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 10px; text-align: center;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+            `;
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Playground Django Backend loaded successfully');
+            // Auto-load some data
+            setTimeout(() => {
+                loadQuestions();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
