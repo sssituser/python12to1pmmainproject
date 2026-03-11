@@ -1,9 +1,20 @@
-from django.urls import path
+from django.urls import path, include
 from myapp.views import *
+from rest_framework.routers import DefaultRouter
+from .views import JobViewSet
+
+router = DefaultRouter()
+router.register(r'jobs', JobViewSet)
 
 urlpatterns = [
     # Leave Request URLs
     path('login/', login_view, name='login'),
+    path("profile/", Profile_view, name='profile'),
+    path("profile/update/", update_profile, name='profile'),
+    path("upload-resume/", upload_resume, name='resume'),
+    path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
+    path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
+    path('', include(router.urls)),
     path("profile/", Profile_view, name='profile'),
     path("profile/update/", update_profile, name='profile'),
     path("upload-resume/", upload_resume, name='resume'),
@@ -47,5 +58,4 @@ urlpatterns = [
     
     # Home
     path('', home, name='home'),
-
 ]

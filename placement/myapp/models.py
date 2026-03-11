@@ -51,7 +51,33 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} - {self.start_date} to {self.end_date}"
+
+        return f"{self.exam.title} - {self.status}"
+
+from django.db import models
+
+class Job(models.Model):
+
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.job_title
+
+
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+
 
 
 class PythonQuestion(models.Model):
@@ -168,4 +194,21 @@ class ExecutionSession(models.Model):
 
     def __str__(self):
         return f"Session {self.session_id} - {self.status}"
+
+class Exam(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    total_marks = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+class ExamAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
+    score = models.IntegerField()
+    attempted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.exam}"
 
