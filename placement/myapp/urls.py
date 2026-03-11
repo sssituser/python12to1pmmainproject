@@ -4,11 +4,11 @@ from myapp.views import *
 urlpatterns = [
     # Leave Request URLs
     path('login/', login_view, name='login'),
-<<<<<<< HEAD
+
     path("profile/", Profile_view, name='profile'),
     path("profile/update/", update_profile, name='profile'),
     path("upload-resume/", upload_resume, name='resume'),
-=======
+
     path('leave-requests/', get_leave_requests, name='get_leave_requests'),
     path('leave-requests/create/', create_leave_request, name='create_leave_request'),
     path('leave-requests/<int:request_id>/update/', update_leave_request, name='update_leave_request'),
@@ -49,5 +49,5 @@ urlpatterns = [
     
     # Home
     path('', home, name='home'),
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
+
 ]
