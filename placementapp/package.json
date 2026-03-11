@@ -33,6 +33,10 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.2.1",
+<<<<<<< HEAD
+    "@tailwindcss/vite": "^4.2.1",
+=======
+>>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
