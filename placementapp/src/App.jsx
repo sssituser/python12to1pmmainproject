@@ -47,12 +47,8 @@ function App() {
           <Route path="/dashboard/exam-leaderboard" element={<ExamLeaderboard />} />
           <Route path="/dashboard/playground" element={<Playground />} />
           <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
-<<<<<<< HEAD
-=======
           <Route path="/dashboard/python-exam" element={<PythonExam />} />
           <Route path="/dashboard/reports" element={<Reports />} />
-
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
           <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
           <Route path="/dashboard/logout" element={<Logout />} />
         </Route>
