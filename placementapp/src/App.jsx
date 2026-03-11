@@ -14,6 +14,8 @@ import PlaygroundDetail from "./pages/PlaygroundDetail";
 import LeaveRequest from "./pages/Leaverequest";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import PythonExam from "./pages/PythonExam";
+import Reports from "./pages/Reports";
 
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
@@ -51,6 +53,8 @@ function App() {
 
           <Route path="/dashboard/playground" element={<Playground />} />
           <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
+          <Route path="/dashboard/python-exam" element={<PythonExam />} />
+          <Route path="/dashboard/reports" element={<Reports />} />
 
           <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
 
