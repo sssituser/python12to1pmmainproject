@@ -1,19 +1,18 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.generics import ListAPIView    
-from rest_framework.views import APIView           
-from rest_framework import status                  
-from django.contrib.auth import authenticate
-from django.utils import timezone                  
-from .models import Exam, ExamAttempt              
-from .serializers import ExamSerializer            
+from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
+from rest_framework import status
+from django.utils import timezone
+from .models import Exam, ExamAttempt, User
+from .serializers import ExamSerializer
 
 @api_view(['POST'])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
-    user = authenticate(username=username, password=password)
-    if user is not None:
+    try:
+        user = User.objects.get(username=username, password=password)
         return Response({
             "message": "Login successful",
             "user": {
@@ -21,7 +20,7 @@ def login_view(request):
                 "email": user.email
             }
         })
-    else:
+    except User.DoesNotExist:
         return Response({"error": "Invalid username or password"}, status=400)
 
 
@@ -44,9 +43,7 @@ class UpdateAttemptView(APIView):
 
         attempt, _ = ExamAttempt.objects.get_or_create(exam=exam)
         new_status = request.data.get('status')
-
         attempt.status = new_status
         attempt.attempted_at = timezone.now() if new_status == 'attempted' else None
         attempt.save()
-
         return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
