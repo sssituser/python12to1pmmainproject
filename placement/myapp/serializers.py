@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Exam, ExamAttempt  # add Exam, ExamAttempt here
+from .models import User, Exam, ExamAttempt   # add Exam, ExamAttempt here
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,3 +25,11 @@ class ExamSerializer(serializers.ModelSerializer):
             'end_time', 'duration_minutes', 'is_finished',
             'attempt', 'created_at'
         ]
+# ============jobserializer=====================
+from .models import Job
+
+class JobSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Job
+        fields = "__all__"

@@ -50,3 +50,13 @@ class UpdateAttemptView(APIView):
         attempt.save()
 
         return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
+
+from .models import Job
+from .serializers import JobSerializer
+from rest_framework import viewsets
+
+
+
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer

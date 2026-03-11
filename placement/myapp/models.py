@@ -39,3 +39,27 @@ class ExamAttempt(models.Model):
 
     def __str__(self):
         return f"{self.exam.title} - {self.status}"
+
+from django.db import models
+
+class Job(models.Model):
+
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.job_title
+
+
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
