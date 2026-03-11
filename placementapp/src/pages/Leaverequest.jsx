@@ -9,8 +9,7 @@ import {
   faTimes,
   faUserShield
 } from "@fortawesome/free-solid-svg-icons";
-
-const STORAGE_KEY = "placementapp_leave_requests";
+import { leaveRequestAPI } from "../services/api";
 
 function LeaveRequest() {
   const [name, setName] = useState("");
@@ -19,29 +18,27 @@ function LeaveRequest() {
   const [reason, setReason] = useState("");
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [view, setView] = useState("form"); // "form" | "list"
-  
-  
+  const [loading, setLoading] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState("Student"); 
 
-  
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setLeaveRequests(Array.isArray(parsed) ? parsed : []);
-      }
-    } catch {
-      setLeaveRequests([]);
-    }
+    fetchLeaveRequests();
   }, []);
 
-  const saveLeaveRequests = (list) => {
-    setLeaveRequests(list);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  const fetchLeaveRequests = async () => {
+    try {
+      setLoading(true);
+      const data = await leaveRequestAPI.getAll();
+      setLeaveRequests(data);
+    } catch (error) {
+      console.error('Error fetching leave requests:', error);
+      alert('Failed to load leave requests. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !startDate || !endDate || !reason.trim()) {
       alert("Please fill in all fields.");
@@ -51,25 +48,46 @@ function LeaveRequest() {
       alert("End date must be on or after start date.");
       return;
     }
-    const newRequest = {
-      id: Date.now(),
-      name: name.trim(),
-      startDate,
-      endDate,
-      description: reason.trim(),
-      status: "Pending",
-      approvedBy: null,
-    };
-    saveLeaveRequests([newRequest, ...leaveRequests]);
-    setName("");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    setView("list");
+
+    try {
+      setLoading(true);
+      const leaveData = {
+        name: name.trim(),
+        startDate,
+        endDate,
+        reason: reason.trim()
+      };
+
+      const response = await leaveRequestAPI.create(leaveData);
+      
+      // Add new request to the list
+      const newRequest = {
+        id: response.id,
+        name: name.trim(),
+        startDate,
+        endDate,
+        description: reason.trim(),
+        status: "Pending",
+        approvedBy: null,
+      };
+      
+      setLeaveRequests([newRequest, ...leaveRequests]);
+      setName("");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+      setView("list");
+      
+      alert("Leave request submitted successfully!");
+    } catch (error) {
+      console.error('Error submitting leave request:', error);
+      alert('Failed to submit leave request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleApproveReject = (id, newStatus) => {
-    
+  const handleApproveReject = async (id, newStatus) => {
     const authorizedRoles = ["Faculty"];
     
     if (!authorizedRoles.includes(currentUserRole)) {
@@ -77,25 +95,46 @@ function LeaveRequest() {
       return;
     }
 
-    setLeaveRequests((prev) => {
-      const updated = prev.map((req) =>
-        req.id === id
-          ? {
-              ...req,
-              status: newStatus,
-              approvedBy: newStatus === "Pending" ? null : currentUserRole
-            }
-          : req
+    try {
+      const updateData = {
+        status: newStatus,
+        approved_by: newStatus === "Pending" ? null : currentUserRole
+      };
+
+      await leaveRequestAPI.update(id, updateData);
+      
+      // Update local state
+      setLeaveRequests(prev => 
+        prev.map(req => 
+          req.id === id 
+            ? { ...req, status: newStatus, approvedBy: updateData.approved_by }
+            : req
+        )
       );
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+    } catch (error) {
+      console.error('Error updating leave request:', error);
+      alert('Failed to update leave request. Please try again.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this leave request?")) {
+      return;
+    }
+
+    try {
+      await leaveRequestAPI.delete(id);
+      setLeaveRequests(prev => prev.filter(req => req.id !== id));
+      alert("Leave request deleted successfully!");
+    } catch (error) {
+      console.error('Error deleting leave request:', error);
+      alert('Failed to delete leave request. Please try again.');
+    }
   };
 
   const handleClearAll = () => {
     if (window.confirm("Remove all leave requests and start fresh?")) {
       setLeaveRequests([]);
-      localStorage.removeItem(STORAGE_KEY);
     }
   };
 
@@ -120,6 +159,11 @@ function LeaveRequest() {
           <option value="Student">Student (Apply Only)</option>
           <option value="Faculty">Faculty</option>
         </select>
+        {loading && (
+          <div className="ml-4">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+          </div>
+        )}
       </div>
 
       {view === "form" ? (
@@ -172,7 +216,7 @@ function LeaveRequest() {
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition resize-none"
-                required
+                required 
               />
               <button
                 type="submit"
