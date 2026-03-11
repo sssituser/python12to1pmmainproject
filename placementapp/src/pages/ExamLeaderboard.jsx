@@ -70,8 +70,8 @@ function ExamLeaderboard() {
                     <li>Questions solved (more is better)</li>
                   </ul>
 
-                  <p><b>3. Difficulty Score</b></p>
-                  <p>Topper = 1 | Medium = 2 | Hard = 3</p>
+                  {/* <p><b>3. Difficulty Score</b></p>
+                  <p>Topper = 1 | Medium = 2 | Hard = 3</p> */}
 
                 </div>
 
@@ -103,7 +103,7 @@ function ExamLeaderboard() {
             value={date}
             onChange={(e) => {
               setDate(e.target.value);
-              toast.info("Date filter applied");
+              // toast.info("Date filter applied");
             }}
           />
         </div>
@@ -115,7 +115,7 @@ function ExamLeaderboard() {
             value={batch}
             onChange={(e) => {
               setBatch(e.target.value);
-              toast.info("Batch filter applied");
+              // toast.info("Batch filter applied");
             }}
           >
             <option value="">All Batches</option>
@@ -132,7 +132,7 @@ function ExamLeaderboard() {
             value={examType}
             onChange={(e) => {
               setExamType(e.target.value);
-              toast.info("Exam type selected");
+              // toast.info("Exam type selected");
             }}
           >
             <option value="">Select</option>
