@@ -1,24 +1,22 @@
 from rest_framework import serializers
+<<<<<<< HEAD
 from .models import User, Exam, ExamAttempt   # add Exam, ExamAttempt here
+=======
+from .models import User
+from .models import StudentProfile, Skill, Project
+>>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
-
-
-class ExamAttemptSerializer(serializers.ModelSerializer):
+class SkillSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ExamAttempt
-        fields = ['id', 'status', 'attempted_at']
-
-
-class ExamSerializer(serializers.ModelSerializer):
-    attempt = ExamAttemptSerializer(read_only=True)
-    start_time = serializers.TimeField(format="%I:%M %p")
-    end_time = serializers.TimeField(format="%I:%M %p")
-
+        model = Skill
+        fields = '__all__'
+class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
+<<<<<<< HEAD
         model = Exam
         fields = [
             'id', 'title', 'start_date', 'start_time',
@@ -33,3 +31,16 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = "__all__"
+=======
+        model = Project
+        fields = '__all__'
+class StudentProfileSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField(source="user.username")
+    email = serializers.CharField(source="user.email")
+    skills = SkillSerializer(source="skill_set", many=True)
+    projects = ProjectSerializer(source="project_set", many=True)
+    class Meta:
+        model = StudentProfile
+        fields = '__all__'
+>>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
