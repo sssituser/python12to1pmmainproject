@@ -27,7 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -83,7 +86,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'placementdb',
         'USER': 'root',
+<<<<<<< HEAD
         'PASSWORD': 'root123',
+=======
+        'PASSWORD': '2003',
+>>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
         'HOST': 'localhost',
         'PORT': '3306',
     }
@@ -125,4 +132,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Templates
+# https://docs.djangoproject.com/en/6.0/topics/templates/
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
