@@ -2,13 +2,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-<<<<<<< HEAD
+
 from django.contrib.auth.models import User
 from .models import StudentProfile, Skill, Project
 from .serializers import StudentProfileSerializer
 from django.contrib.auth import login
 
-=======
+
 from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -78,7 +78,7 @@ def serve_react_app(request):
     that aren't handled by Django API endpoints.
     """
     return render(request, 'index.html')
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
+
 
 @api_view(['POST'])
 def login_view(request):
@@ -94,7 +94,7 @@ def login_view(request):
                 "email": user.email
             }
         })
-<<<<<<< HEAD
+
     return Response({"error": "Invalid username or password"}, status=400)
 
 
@@ -143,9 +143,8 @@ def upload_resume(request):
 
 
 
-=======
-    else:
-        return Response({"error": "Invalid username or password"}, status=400)
+
+    
 
 
 @api_view(['GET'])
@@ -540,7 +539,6 @@ def update_code_snippet(request, snippet_id):
         snippet.code = data.get('code', snippet.code)
         snippet.language = data.get('language', snippet.language)
         snippet.save()
-        
         return Response({
             'message': 'Code snippet updated successfully',
             'snippet_id': snippet.id
@@ -930,4 +928,4 @@ def playground_rest_framework(request):
 def serve_react_app(request):
     """Serve the React app"""
     return render(request, 'index.html')
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
+
