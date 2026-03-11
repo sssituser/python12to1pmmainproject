@@ -217,6 +217,19 @@ def update_leave_request(request, request_id):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+        return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
+
+from .models import Job
+from .serializers import JobSerializer
+from rest_framework import viewsets
+
+
+
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
+
+
 @api_view(['DELETE'])
 def delete_leave_request(request, request_id):
     try:
