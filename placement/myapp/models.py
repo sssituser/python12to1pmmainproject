@@ -43,6 +43,20 @@ class LeaveRequest(models.Model):
     end_date = models.DateField()
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=[
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected')
@@ -51,7 +65,6 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-<<<<<<< HEAD
         return f"{self.exam.title} - {self.status}"
 
 from django.db import models
@@ -77,7 +90,7 @@ class JobApplication(models.Model):
     user_id = models.IntegerField()
     applied_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50)
-=======
+    def __str__(self):
         return f"{self.name} - {self.start_date} to {self.end_date}"
 
 
@@ -196,4 +209,3 @@ class ExecutionSession(models.Model):
     def __str__(self):
         return f"Session {self.session_id} - {self.status}"
 
->>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
