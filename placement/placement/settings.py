@@ -27,10 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-]
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Application definition
@@ -86,7 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'placement_db',
         'USER': 'root',
-        'PASSWORD': '2004',
+        'PASSWORD': '2003',
         'HOST': 'localhost',
         'PORT': '3306',
     }

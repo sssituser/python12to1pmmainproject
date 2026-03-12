@@ -1,23 +1,9 @@
-from django.urls import path, include
+from django.urls import path
 from myapp.views import *
-from rest_framework.routers import DefaultRouter
-from .views import JobViewSet
-
-router = DefaultRouter()
-router.register(r'jobs', JobViewSet)
 
 urlpatterns = [
     # Leave Request URLs
     path('login/', login_view, name='login'),
-    path("profile/", Profile_view, name='profile'),
-    path("profile/update/", update_profile, name='profile'),
-    path("upload-resume/", upload_resume, name='resume'),
-    path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
-    path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
-    path('', include(router.urls)),
-    path("profile/", Profile_view, name='profile'),
-    path("profile/update/", update_profile, name='profile'),
-    path("upload-resume/", upload_resume, name='resume'),
     path('leave-requests/', get_leave_requests, name='get_leave_requests'),
     path('leave-requests/create/', create_leave_request, name='create_leave_request'),
     path('leave-requests/<int:request_id>/update/', update_leave_request, name='update_leave_request'),

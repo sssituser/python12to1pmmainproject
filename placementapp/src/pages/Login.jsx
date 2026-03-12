@@ -27,8 +27,19 @@ function Login() {
     });
     const data = await res.json();
     if(res.ok){
+      // Generate a random 4-digit ID for the user if they don't already have one
+      const existingUser = JSON.parse(localStorage.getItem(`user_${data.user.username}`) || '{}');
+      if (!existingUser.randomId) {
+        const randomId = Math.floor(1000 + Math.random() * 9000).toString();
+        data.user.randomId = randomId;
+        // Store the user with their random ID
+        localStorage.setItem(`user_${data.user.username}`, JSON.stringify(data.user));
+      } else {
+        data.user.randomId = existingUser.randomId;
+      }
+      
       localStorage.setItem("user", JSON.stringify(data.user));
-      toast.success(`Welcome ${data.user.username} `);
+      toast.success(`Welcome ${data.user.username} (ID: ${data.user.randomId})`);
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
