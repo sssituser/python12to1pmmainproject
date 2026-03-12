@@ -2,10 +2,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
-from .models import StudentProfile, Skill, Project
-from .serializers import StudentProfileSerializer
-from django.contrib.auth import login
 from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -13,10 +9,11 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import ExamAttempt
+# from .models import ExamAttempt
 from .models import AppliedJob
 from .serializers import AppliedJobSerializer
 @api_view(["POST"])
@@ -36,9 +33,11 @@ from .serializers import JobSerializer,AppliedJobSerializer
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
+    
 class AppliedJobViewSet(viewsets.ModelViewSet):
     queryset = AppliedJob.objects.all()
     serializer_class = AppliedJobSerializer
+
 
 @api_view(['GET'])
 def home(request):
@@ -102,14 +101,12 @@ def serve_react_app(request):
     """
     return render(request, 'index.html')
 
-
 @api_view(['POST'])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user is not None:
-        login(request, user)
         return Response({
             "message": "Login successful",
             "user": {
@@ -117,54 +114,10 @@ def login_view(request):
                 "email": user.email
             }
         })
-
-    return Response({"error": "Invalid username or password"}, status=400)
-
-
-
-@api_view(['GET'])
-def Profile_view(request):
-
-    if not request.user.is_authenticated:
-        return Response({"error": "User not authenticated"}, status=401)
-    profile, created = StudentProfile.objects.get_or_create(user=request.user)
-    serializer = StudentProfileSerializer(profile)
-    return Response(serializer.data)
+    else:
+        return Response({"error": "Invalid username or password"}, status=400)
 
 
-@api_view(['PUT'])
-def update_profile(request):
-    user = User.objects.get(username=request.data.get("username"))
-    profile = StudentProfile.objects.get(user=user)
-    serializer = StudentProfileSerializer(profile, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        # update skills
-        Skill.objects.filter(student=profile).delete()
-        skills = request.data.get("skills", [])
-        for s in skills:
-            Skill.objects.create(student=profile, name=s)
-        # update projects
-        Project.objects.filter(student=profile).delete()
-        projects = request.data.get("projects", [])
-        for p in projects:
-            Project.objects.create(
-                student=profile,
-                title=p.get("title"),
-                description=p.get("description")
-            )
-        return Response({"message": "Profile updated"})
-    return Response(serializer.errors)
-
-@api_view(['POST'])
-def upload_resume(request):
-    profile = StudentProfile.objects.get(user=request.user)
-    resume = request.FILES.get('resume')
-    profile.resume = resume
-    profile.save()
-    return Response({"message": "Resume uploaded"})
-        #else:
-        #return Response({"error": "Invalid username or password"}, status=400)
 @api_view(['GET'])
 def get_leave_requests(request):
     try:
@@ -233,19 +186,6 @@ def update_leave_request(request, request_id):
         return Response({'error': 'Leave request not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-        return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
-
-from .models import Job
-from .serializers import JobSerializer
-from rest_framework import viewsets
-
-
-
-class JobViewSet(viewsets.ModelViewSet):
-    queryset = Job.objects.all()
-    serializer_class = JobSerializer
 
 
 @api_view(['DELETE'])
@@ -570,6 +510,7 @@ def update_code_snippet(request, snippet_id):
         snippet.code = data.get('code', snippet.code)
         snippet.language = data.get('language', snippet.language)
         snippet.save()
+        
         return Response({
             'message': 'Code snippet updated successfully',
             'snippet_id': snippet.id
@@ -959,30 +900,3 @@ def playground_rest_framework(request):
 def serve_react_app(request):
     """Serve the React app"""
     return render(request, 'index.html')
-
-class FinishedExamListView(APIView):
-    def get(self, request):
-        exams = ExamAttempt.objects.all()
-        data = [
-            {
-                "user": exam.user.username,
-                "exam": exam.exam.title,
-                "score": exam.score,
-                "attempted_at": exam.attempted_at
-            }
-            for exam in exams
-        ]
-        return Response(data)
-    
-class UpdateAttemptView(APIView):
-    def post(self, request, pk):
-        try:
-            attempt = ExamAttempt.objects.get(id=pk)
-        except ExamAttempt.DoesNotExist:
-            return Response({"error": "Attempt not found"}, status=404)
-        attempt.score = request.data.get("score", attempt.score)
-        attempt.save()
-        return Response({
-            "message": "Exam attempt updated",
-            "score": attempt.score
-        }, status=status.HTTP_200_OK)

@@ -1,11 +1,13 @@
-from django.urls import path, include
+from django.urls import path,include
 from myapp.views import *
+
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 
 # Job APIs
 router.register(r'jobs', JobViewSet)
+
 
 # Applied Job APIs
 router.register(r'applied-jobs', AppliedJobViewSet)
@@ -15,16 +17,18 @@ urlpatterns = [
     # Login
     path('login/', login_view, name='login'),
 
-    # Profile
-    path("profile/", Profile_view, name='profile'),
-    path("profile/update/", update_profile, name='update_profile'),
-    path("upload-resume/", upload_resume, name='resume'),
 
-    # Exams
-    path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
-    path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
+    # Profile
+    # path("profile/", Profile_view, name='profile'),
+    # path("profile/update/", update_profile, name='update_profile'),
+    # path("upload-resume/", upload_resume, name='resume'),
+
+    # # Exams
+    # path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
+    # path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
 
     # Leave Requests
+
     path('leave-requests/', get_leave_requests, name='get_leave_requests'),
     path('leave-requests/create/', create_leave_request, name='create_leave_request'),
     path('leave-requests/<int:request_id>/update/', update_leave_request, name='update_leave_request'),
