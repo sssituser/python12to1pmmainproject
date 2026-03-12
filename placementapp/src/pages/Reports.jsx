@@ -377,7 +377,108 @@ Status: ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
           {allExamResults.map((result, index) => {
             const percentage = result.totalQuestions > 0 ? (result.correctAnswers / result.totalQuestions) * 100 : 0;
             const passed = percentage >= 60;
+            <h2 className={`text-2xl font-bold mb-2 ${
+              examResult.status === 'fail' ? 'text-red-700' :
+              passed ? 'text-green-700' : 'text-yellow-700'
+            }`}>
+              {examResult.status === 'fail' ? 'Exam Failed' :
+              passed ? 'Exam Passed' : 'Exam Completed'}
+            </h2>
             
+            {examResult.reason && (
+              <p className="text-red-600 mb-4">{examResult.reason}</p>
+            )}
+            
+            <div className={`text-4xl font-bold mb-2 ${
+              examResult.status === 'fail' ? 'text-red-600' :
+              passed ? 'text-green-600' : 'text-yellow-600'
+            }`}>
+              {examResult.correctAnswers}/{examResult.totalQuestions}
+            </div>
+            
+            <div className={`text-lg font-semibold ${
+              examResult.status === 'fail' ? 'text-red-500' :
+              passed ? 'text-green-500' : 'text-yellow-500'
+            }`}>
+              {percentage.toFixed(1)}%
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Correct Answers</p>
+                <p className="text-2xl font-bold text-green-600">{examResult.correctAnswers}</p>
+              </div>
+              <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 text-2xl" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Incorrect Answers</p>
+                <p className="text-2xl font-bold text-red-600">{examResult.incorrectAnswers || (examResult.totalQuestions - examResult.correctAnswers)}</p>
+              </div>
+              <FontAwesomeIcon icon={faTimesCircle} className="text-red-500 text-2xl" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Time Taken</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {Math.floor(examResult.timeTaken / 60)}:{(examResult.timeTaken % 60).toString().padStart(2, '0')}
+                </p>
+              </div>
+              <FontAwesomeIcon icon={faClock} className="text-blue-500 text-2xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Results */}
+        {examResult.answers && examResult.questions && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <FontAwesomeIcon icon={faChartBar} />
+              Detailed Results
+            </h3>
+            
+            <div className="space-y-4">
+              {examResult.questions.map((question, index) => {
+                const userAnswer = examResult.answers[index];
+                const isCorrect = userAnswer === question.correct;
+                const notAttempted = userAnswer === null;
+
+                return (
+                  <div key={index} className={`border rounded-lg p-4 ${
+                    notAttempted ? 'border-gray-200 bg-gray-50' :
+                    isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                  }`}>
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-800">
+                        Q{index + 1}. {question.question}
+                      </h4>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        notAttempted ? 'bg-gray-200 text-gray-700' :
+                        isCorrect ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
+                      }`}>
+                        {notAttempted ? 'Not Attempted' : isCorrect ? 'Correct' : 'Incorrect'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-1 text-sm">
+                      <div className="text-gray-600">
+                        <span className="font-medium">Your Answer:</span> {notAttempted ? 'Not Attempted' : question.options[userAnswer]}
+                      </div>
+                      {!notAttempted && !isCorrect && (
+                        <div className="text-green-600">
+                          <span className="font-medium">Correct Answer:</span> {question.options[question.correct]}
+                        </div>
             return (
               <div key={`${result.examDate}-${index}`} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className={`p-6 border-t-4 ${
