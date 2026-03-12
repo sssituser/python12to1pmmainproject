@@ -144,8 +144,8 @@ Status: ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
               examResult.status === 'fail' ? 'text-red-700' :
               passed ? 'text-green-700' : 'text-yellow-700'
             }`}>
-              {examResult.status === 'fail' ? 'Exam Failed' : 
-               passed ? 'Exam Passed' : 'Exam Completed'}
+              {examResult.status === 'fail' ? 'Exam Failed' :
+              passed ? 'Exam Passed' : 'Exam Completed'}
             </h2>
             
             {examResult.reason && (

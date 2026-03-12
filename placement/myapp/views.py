@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import ExamAttempt
+from django.views.decorators.csrf import csrf_exempt
 
 @api_view(['GET'])
 def home(request):
@@ -81,6 +82,8 @@ def serve_react_app(request):
     return render(request, 'index.html')
 
 
+
+@csrf_exempt
 @api_view(['POST'])
 def login_view(request):
     username = request.data.get('username')
@@ -95,19 +98,15 @@ def login_view(request):
                 "email": user.email
             }
         })
-
     return Response({"error": "Invalid username or password"}, status=400)
-
-
 
 @api_view(['GET'])
 def Profile_view(request):
-
     if not request.user.is_authenticated:
         return Response({"error": "User not authenticated"}, status=401)
     profile, created = StudentProfile.objects.get_or_create(user=request.user)
     serializer = StudentProfileSerializer(profile)
-    return Response(serializer.data)
+    return Response(serializer.data, status=200)
 
 
 @api_view(['PUT'])
@@ -136,13 +135,14 @@ def update_profile(request):
 
 @api_view(['POST'])
 def upload_resume(request):
-    profile = StudentProfile.objects.get(user=request.user)
+    if not request.user.is_authenticated:
+        return Response({"error": "User not authenticated"}, status=401)
+    profile, created = StudentProfile.objects.get_or_create(user=request.user)
     resume = request.FILES.get('resume')
     profile.resume = resume
     profile.save()
     return Response({"message": "Resume uploaded"})
-        #else:
-        #return Response({"error": "Invalid username or password"}, status=400)
+
 @api_view(['GET'])
 def get_leave_requests(request):
     try:
