@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession
+from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession, ExamAttempt, User
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from datetime import datetime
@@ -12,7 +12,6 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import ExamAttempt
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -917,7 +916,221 @@ def playground_rest_framework(request):
     return render(request, 'playground_drf.html')
 
 
+# ========== EXAM REPORTS API ENDPOINTS ==========
+
+@api_view(['GET'])
+def get_exam_reports(request):
+    """
+    Get all exam reports for the authenticated user
+    """
+    try:
+        # Get all exam attempts ordered by most recent first
+        attempts = ExamAttempt.objects.all().order_by('-exam_date')
+        
+        reports_data = []
+        for attempt in attempts:
+            # Calculate pass/fail status (need 18 marks out of 40)
+            passed = attempt.marks_obtained >= 18
+            status = 'PASS' if passed else 'FAIL'
+            
+            reports_data.append({
+                'id': attempt.id,
+                's_no': len(reports_data) + 1,  # Serial number
+                'user': {
+                    'username': attempt.user.username,
+                    'random_id': attempt.random_id or 'N/A'
+                },
+                'exam_title': attempt.exam_title,
+                'score': attempt.score,
+                'total_questions': attempt.total_questions,
+                'correct_answers': attempt.correct_answers,
+                'incorrect_answers': attempt.incorrect_answers,
+                'marks_obtained': attempt.marks_obtained,
+                'total_marks': attempt.total_marks,
+                'time_taken': attempt.time_taken,
+                'start_time': attempt.start_time.strftime('%I:%M %p') if attempt.start_time else 'N/A',
+                'exam_date': attempt.exam_date.strftime('%Y-%m-%d') if attempt.exam_date else 'N/A',
+                'status': status,
+                'status_raw': 'completed' if passed else 'fail',
+                'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
+                'questions': json.loads(attempt.questions_json) if attempt.questions_json else []
+            })
+        
+        return Response({
+            'success': True,
+            'data': reports_data,
+            'total': len(reports_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def save_exam_report(request):
+    """
+    Save exam report from frontend
+    """
+    try:
+        data = request.data
+        
+        # Get or create user
+        username = data.get('user', {}).get('username')
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': f'{username}@example.com'}
+        )
+        
+        # Generate random ID if not provided
+        random_id = data.get('user', {}).get('randomId')
+        if not random_id:
+            import random
+            random_id = str(random.randint(1000, 9999))
+        
+        # Create exam attempt
+        attempt = ExamAttempt.objects.create(
+            user=user,
+            exam_title=data.get('examTitle', 'Python Programming Assessment'),
+            score=data.get('correctAnswers', 0),
+            total_questions=data.get('totalQuestions', 20),
+            correct_answers=data.get('correctAnswers', 0),
+            incorrect_answers=data.get('incorrectAnswers', 0),
+            marks_obtained=data.get('correctAnswers', 0) * 2,  # 2 marks per question
+            total_marks=40,  # 20 questions * 2 marks each
+            time_taken=data.get('timeTaken', 0),
+            start_time=timezone.now(),
+            status='completed' if data.get('status') == 'completed' else 'failed',
+            random_id=random_id,
+            answers_json=json.dumps(data.get('answers', [])),
+            questions_json=json.dumps(data.get('questions', []))
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Exam report saved successfully',
+            'data': {
+                'id': attempt.id,
+                'random_id': random_id,
+                'marks_obtained': attempt.marks_obtained,
+                'total_marks': attempt.total_marks
+            }
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+def delete_exam_report(request, report_id):
+    """
+    Delete exam report
+    """
+    try:
+        attempt = ExamAttempt.objects.get(id=report_id)
+        attempt.delete()
+        
+        return Response({
+            'success': True,
+            'message': 'Exam report deleted successfully'
+        }, status=status.HTTP_200_OK)
+        
+    except ExamAttempt.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Exam report not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_exam_report_detail(request, report_id):
+    """
+    Get detailed exam report by ID
+    """
+    try:
+        attempt = ExamAttempt.objects.get(id=report_id)
+        
+        # Calculate pass/fail status
+        passed = attempt.marks_obtained >= 18
+        status = 'PASS' if passed else 'FAIL'
+        
+        detail_data = {
+            'id': attempt.id,
+            'user': {
+                'username': attempt.user.username,
+                'random_id': attempt.random_id or 'N/A'
+            },
+            'exam_title': attempt.exam_title,
+            'score': attempt.score,
+            'total_questions': attempt.total_questions,
+            'correct_answers': attempt.correct_answers,
+            'incorrect_answers': attempt.incorrect_answers,
+            'marks_obtained': attempt.marks_obtained,
+            'total_marks': attempt.total_marks,
+            'time_taken': attempt.time_taken,
+            'start_time': attempt.start_time.strftime('%I:%M %p') if attempt.start_time else 'N/A',
+            'exam_date': attempt.exam_date.strftime('%Y-%m-%d') if attempt.exam_date else 'N/A',
+            'status': status,
+            'status_raw': attempt.status,
+            'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
+            'questions': json.loads(attempt.questions_json) if attempt.questions_json else [],
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 2) if attempt.total_marks > 0 else 0
+        }
+        
+        return Response({
+            'success': True,
+            'data': detail_data
+        }, status=status.HTTP_200_OK)
+        
+    except ExamAttempt.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Exam report not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['GET'])
 def serve_react_app(request):
     """Serve the React app"""
     return render(request, 'index.html')
+
+
+@api_view(['GET'])
+def api_documentation(request):
+    """Serve API documentation template"""
+    return render(request, 'api_documentation.html')
+
+
+@api_view(['GET'])
+def leave_request_drf(request):
+    """Serve Leave Request Django REST Framework template"""
+    return render(request, 'leave_request_drf.html')
+
+
+@api_view(['GET'])
+def playground_drf_new(request):
+    """Serve Playground Django REST Framework template"""
+    return render(request, 'playground_drf_new.html')
+
+
+@api_view(['GET'])
+def reports_drf(request):
+    """Serve Reports Django REST Framework template"""
+    return render(request, 'reports_drf.html')

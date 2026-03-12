@@ -142,3 +142,32 @@ class ExecutionSession(models.Model):
     def __str__(self):
         return f"Session {self.session_id} - {self.status}"
 
+
+class ExamAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exam_attempts')
+    exam_title = models.CharField(max_length=200)
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=20)
+    correct_answers = models.IntegerField(default=0)
+    incorrect_answers = models.IntegerField(default=0)
+    marks_obtained = models.IntegerField(default=0)  # Total marks (correct_answers * 2)
+    total_marks = models.IntegerField(default=40)  # Total possible marks (20 * 2)
+    time_taken = models.IntegerField(help_text="Time taken in seconds")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('terminated', 'Terminated')
+    ], default='completed')
+    random_id = models.CharField(max_length=4, blank=True, null=True)  # 4-digit random ID
+    exam_date = models.DateTimeField(auto_now_add=True)
+    answers_json = models.TextField(null=True, blank=True)  # Store answers as JSON
+    questions_json = models.TextField(null=True, blank=True)  # Store questions as JSON
+
+    def __str__(self):
+        return f"{self.user.username} - {self.exam_title} - {self.score}/{self.total_marks}"
+
+    class Meta:
+        ordering = ['-exam_date']  # Most recent first
+
