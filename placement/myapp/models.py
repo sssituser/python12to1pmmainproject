@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class User(models.Model):
 
@@ -24,9 +25,46 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        return f"{self.exam.title} - {self.status}"
+
+from django.db import models
+
+class Job(models.Model):
+
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.job_title
+from django.db import models
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey("Job", on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    applied_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.student_name
+
+
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+    def __str__(self):
+
         return f"{self.name} - {self.start_date} to {self.end_date}"
-
-
+        return f"Application for {self.job} by user {self.user_id}"
 class PythonQuestion(models.Model):
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=[
@@ -186,3 +224,14 @@ class Job(models.Model):
 
     def __str__(self):
         return self.title
+    
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user = models.CharField(max_length=200)

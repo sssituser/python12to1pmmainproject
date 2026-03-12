@@ -7,7 +7,7 @@ import ExamLeaderboard from "./pages/ExamLeaderboard";
 import ExamReports from "./pages/ExamReports";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
-import Jobs from "./pages/Jobs";
+
 import Logout from "./pages/Logout";
 import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import PythonExam from "./pages/PythonExam";
 import Reports from "./pages/Reports";
 
+import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
@@ -41,9 +42,15 @@ function App() {
           <Route path="/dashboard/profile" element={<Profile />} />
 
           <Route path="/dashboard/jobs" element={<Jobs />} />
+
+          <Route path="alljobs" element={<AllJobs />} />
+          <Route path="appliedjobs" element={<AppliedJobs />} />
+          <Route path="jobs/:id" element={<JobDetails />} />
+
           <Route path="/dashboard/alljobs" element={<AllJobs />} />
           <Route path="/dashboard/appliedjobs" element={<AppliedJobs />} />
           <Route path="/dashboard/jobdetails" element={<JobDetails />} />
+
 
           <Route path="/dashboard/course" element={<Course />} />
 

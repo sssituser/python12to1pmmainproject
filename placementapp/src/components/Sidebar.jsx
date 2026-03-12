@@ -1,6 +1,8 @@
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
 function Sidebar({ sidebarOpen }) {
+  const [openJobs,setOpenJobs] = useState(false);
   return (
     <div className={`sidebar ${!sidebarOpen ? "collapsed" : ""}`}>
       <div className="sidebar-menu">
@@ -10,11 +12,29 @@ function Sidebar({ sidebarOpen }) {
           <span>Profile</span>
         </NavLink>
 
-        <NavLink to="jobs" className="sidebar-link">
-          <i className="bi bi-briefcase"></i>
-          <span>Jobs</span>
-        </NavLink>
+        {/* Jobs Dropdown */}
 
+<div className="sidebar-link" onClick={()=>setOpenJobs(!openJobs)}>
+  <i className="bi bi-briefcase"></i>
+  <span>Jobs</span>
+  <i className={`bi ${openJobs ? "bi-chevron-up" : "bi-chevron-down"} ms-auto`}></i>
+</div>
+
+{openJobs && (
+
+<div className="submenu">
+
+  <NavLink to="/dashboard/alljobs" className="sidebar-sublink">
+    All Jobs
+  </NavLink>
+
+  <NavLink to="/dashboard/appliedjobs" className="sidebar-sublink">
+    Applied Jobs
+  </NavLink>
+
+</div>
+
+)}
         <NavLink to="course" className="sidebar-link">
           <i className="bi bi-book"></i>
           <span>Course</span>
