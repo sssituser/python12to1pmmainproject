@@ -1,40 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
+
 class User(models.Model):
+
     username = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
 
     def __str__(self):
         return self.username
-class StudentProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # personal information
-    student_id = models.IntegerField()
-    age = models.IntegerField()
-    state = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    # academic details
-    college = models.CharField(max_length=200)
-    year = models.CharField(max_length=50)
-    cgpa = models.FloatField()
-    tenth_percentage = models.FloatField()
-    twelfth_percentage = models.FloatField()
-    # resume upload (for your Resume button)
-    resume = models.FileField(upload_to="resumes/", blank=True, null=True)
-    def __str__(self):
-        return self.user.username
-class Skill(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    def __str__(self):
-        return self.name
-class Project(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    def __str__(self):
-        return self.title
 
 
 class LeaveRequest(models.Model):
@@ -65,6 +39,11 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9
         return f"{self.exam.title} - {self.status}"
 
 from django.db import models
@@ -82,6 +61,17 @@ class Job(models.Model):
 
     def __str__(self):
         return self.job_title
+from django.db import models
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey("Job", on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    applied_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.student_name
 
 
 class JobApplication(models.Model):
@@ -91,7 +81,12 @@ class JobApplication(models.Model):
     applied_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50)
     def __str__(self):
+<<<<<<< HEAD
         return f"{self.name} - {self.start_date} to {self.end_date}"
+=======
+        return f"Application for {self.job} by user {self.user_id}"
+
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9
 
 
 class PythonQuestion(models.Model):
