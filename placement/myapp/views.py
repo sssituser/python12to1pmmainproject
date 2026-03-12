@@ -2,11 +2,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
+<<<<<<< HEAD
 from django.contrib.auth.models import User
 from .models import StudentProfile, Skill, Project
 from .serializers import StudentProfileSerializer
 from django.contrib.auth import login
 
+=======
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9
 from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -14,6 +17,42 @@ from datetime import datetime
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import ExamAttempt
+from django.views.decorators.csrf import csrf_exempt
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+# from .models import ExamAttempt
+from .models import AppliedJob
+from .serializers import AppliedJobSerializer
+@api_view(["POST"])
+def apply_job(request):
+
+    serializer = AppliedJobSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message":"Job Applied Successfully"})
+
+    return Response(serializer.errors)
+from rest_framework import viewsets
+from .models import Job,AppliedJob
+from .serializers import JobSerializer,AppliedJobSerializer
+
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
+    
+class AppliedJobViewSet(viewsets.ModelViewSet):
+    queryset = AppliedJob.objects.all()
+    serializer_class = AppliedJobSerializer
+
 
 @api_view(['GET'])
 def home(request):
@@ -77,13 +116,13 @@ def serve_react_app(request):
     """
     return render(request, 'index.html')
 
+@csrf_exempt
 @api_view(['POST'])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user is not None:
-        login(request, user)
         return Response({
             "message": "Login successful",
             "user": {
@@ -93,16 +132,13 @@ def login_view(request):
         })
     return Response({"error": "Invalid username or password"}, status=400)
 
-
-
 @api_view(['GET'])
 def Profile_view(request):
-
     if not request.user.is_authenticated:
         return Response({"error": "User not authenticated"}, status=401)
     profile, created = StudentProfile.objects.get_or_create(user=request.user)
     serializer = StudentProfileSerializer(profile)
-    return Response(serializer.data)
+    return Response(serializer.data, status=200)
 
 
 @api_view(['PUT'])
@@ -131,13 +167,18 @@ def update_profile(request):
 
 @api_view(['POST'])
 def upload_resume(request):
-    profile = StudentProfile.objects.get(user=request.user)
+    if not request.user.is_authenticated:
+        return Response({"error": "User not authenticated"}, status=401)
+    profile, created = StudentProfile.objects.get_or_create(user=request.user)
     resume = request.FILES.get('resume')
     profile.resume = resume
     profile.save()
     return Response({"message": "Resume uploaded"})
+<<<<<<< HEAD
     # else:
     #     return Response({"error": "Invalid username or password"}, status=400)
+=======
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9
 
 
 @api_view(['GET'])
@@ -209,6 +250,7 @@ def update_leave_request(request, request_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+<<<<<<< HEAD
         return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
 
 from .models import Job
@@ -220,6 +262,8 @@ from rest_framework import viewsets
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
+=======
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9
 
 @api_view(['DELETE'])
 def delete_leave_request(request, request_id):
@@ -932,4 +976,8 @@ def playground_rest_framework(request):
 @api_view(['GET'])
 def serve_react_app(request):
     """Serve the React app"""
+<<<<<<< HEAD
     return render(request, 'index.html')
+=======
+    return render(request, 'index.html')
+>>>>>>> f12bddb0c11812d87e22432dd3c149608efefcc9

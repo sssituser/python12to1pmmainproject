@@ -14,7 +14,7 @@ const PythonExam = () => {
   const [answers, setAnswers] = useState(new Array(20).fill(null));
   const [markedForReview, setMarkedForReview] = useState(new Array(20).fill(false));
   const [visitedQuestions, setVisitedQuestions] = useState(new Array(20).fill(false));
-  const [timeLeft, setTimeLeft] = useState(90); // 1:30 in seconds
+  const [timeLeft, setTimeLeft] = useState(2700); // 45:00 in seconds
   const [examStarted, setExamStarted] = useState(false);
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [webcamActive, setWebcamActive] = useState(false);
@@ -314,18 +314,46 @@ const PythonExam = () => {
     stopWebcam();
     
     // Store failed result
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userWithId = JSON.parse(localStorage.getItem(`user_${user.username}`) || '{}');
+    const randomId = userWithId.randomId || Math.floor(1000 + Math.random() * 9000).toString();
+    
     const result = {
       status: 'fail',
       reason: 'Multiple faces detected',
       score: 0,
       totalQuestions: 20,
       correctAnswers: 0,
-      timeTaken: 90 - timeLeft
+      timeTaken: 90 - timeLeft,
+      user: {
+        username: user.username || 'Unknown',
+        email: user.email || '',
+        firstName: user.firstName || user.first_name || user.username || '',
+        lastName: user.lastName || user.last_name || '',
+        randomId: randomId
+      },
+      examDate: new Date().toISOString(),
+      examTitle: 'Python Programming Assessment'
     };
+    // Get all existing exam results from localStorage
+    const existingResults = JSON.parse(localStorage.getItem('allExamResults') || '[]');
+    
+    // Add this failed result to the beginning of the array
+    existingResults.unshift(result);
+    
+    // Keep only the last 10 results to prevent storage overflow
+    if (existingResults.length > 10) {
+      existingResults.pop();
+    }
+    
+    // Save all results back to localStorage
+    localStorage.setItem('allExamResults', JSON.stringify(existingResults));
+    
+    // Also save the current result for immediate display
     localStorage.setItem('examResult', JSON.stringify(result));
     
     setTimeout(() => {
-      navigate('/dashboard/reports');
+      navigate('/dashboard/exam-reports');
     }, 2000);
   };
 
@@ -397,6 +425,11 @@ const PythonExam = () => {
     setExamSubmitted(true);
     stopWebcam();
     
+    // Get user information from localStorage with random ID
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userWithId = JSON.parse(localStorage.getItem(`user_${user.username}`) || '{}');
+    const randomId = userWithId.randomId || Math.floor(1000 + Math.random() * 9000).toString();
+    
     // Calculate results
     let correctCount = 0;
     answers.forEach((answer, index) => {
@@ -413,11 +446,39 @@ const PythonExam = () => {
       incorrectAnswers: 20 - correctCount,
       timeTaken: 90 - timeLeft,
       answers: answers,
-      questions: questions
+      questions: questions,
+      user: {
+        username: user.username || 'Unknown',
+        email: user.email || '',
+        firstName: user.firstName || user.first_name || user.username || '',
+        lastName: user.lastName || user.last_name || '',
+        randomId: randomId
+      },
+      examDate: new Date().toISOString(),
+      examTitle: 'Python Programming Assessment'
     };
     
+    // Get all existing exam results from localStorage
+    const existingResults = JSON.parse(localStorage.getItem('allExamResults') || '[]');
+    
+    // Add this new result to the beginning of the array
+    existingResults.unshift(result);
+    
+    // Keep only the last 10 results to prevent storage overflow
+    if (existingResults.length > 10) {
+      existingResults.pop();
+    }
+    
+    // Save all results back to localStorage
+    localStorage.setItem('allExamResults', JSON.stringify(existingResults));
+    
+    // Also save the current result for immediate display
     localStorage.setItem('examResult', JSON.stringify(result));
-    navigate('/dashboard/reports');
+    
+    // Navigate directly to ExamReports page instead of intermediate Reports page
+    console.log('Navigating to exam-reports...');
+    navigate('/dashboard/exam-reports');
+    console.log('Navigation completed');
   };
 
   // Get question status color
@@ -455,7 +516,7 @@ const PythonExam = () => {
           <div className="text-center mb-6">
             <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4" />
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Python Programming Exam</h2>
-            <p className="text-gray-600">20 Questions • 1:30 Minutes</p>
+            <p className="text-gray-600">20 Questions • 45:00 Minutes</p>
           </div>
           
           <div className="space-y-4 mb-6">
