@@ -40,7 +40,7 @@ function App() {
           <Route path="/dashboard/jobs" element={<Jobs />} />
           <Route path="alljobs" element={<AllJobs />} />
           <Route path="appliedjobs" element={<AppliedJobs />} />
-          <Route path="jobdetails/:id" element={<JobDetails />} />
+          <Route path="jobs/:id" element={<JobDetails />} />
           <Route path="/dashboard/course" element={<Course />} />
           <Route path="/dashboard/exams" element={<Exams />} />
           <Route path="/dashboard/exams" element={<ExamsList />} />

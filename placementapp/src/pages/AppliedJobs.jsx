@@ -1,7 +1,16 @@
-
-import React from "react";
+import React, {useEffect, useState} from "react"
 
 function AppliedJobs(){
+
+const [jobs,setJobs] = useState([])
+
+useEffect(()=>{
+
+fetch("http://127.0.0.1:8000/api/applied-jobs/")
+.then(res=>res.json())
+.then(data=>setJobs(data))
+
+},[])
 
 return(
 
@@ -9,11 +18,29 @@ return(
 
 <h4>Applied Jobs</h4>
 
-<div className="alert alert-info mt-3">
+<table className="table table-bordered mt-3">
 
-You have not applied to any jobs yet.
+<thead>
+<tr>
+<th>Company</th>
+<th>Job</th>
+<th>Applied Date</th>
+</tr>
+</thead>
 
-</div>
+<tbody>
+
+{jobs.map(j=>(
+<tr key={j.id}>
+<td>{j.job}</td>
+<td>{j.student_name}</td>
+<td>{j.applied_date}</td>
+</tr>
+))}
+
+</tbody>
+
+</table>
 
 </div>
 
@@ -21,5 +48,4 @@ You have not applied to any jobs yet.
 
 }
 
-export default AppliedJobs;
-
+export default AppliedJobs
