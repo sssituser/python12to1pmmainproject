@@ -17,13 +17,13 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
-from myapp.views import serve_react_app, playground_rest_framework
+#from myapp.views import serve_react_app, playground_rest_framework
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('myapp.urls')),
     # Direct playground REST framework URL
-    path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
+    #path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
     # Serve React app for all other routes
-    path('', serve_react_app, name='serve-react'),
+    #path('', serve_react_app, name='serve-react'),
 ]
