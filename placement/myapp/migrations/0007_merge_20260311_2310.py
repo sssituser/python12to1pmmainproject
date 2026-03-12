@@ -6,9 +6,10 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('myapp', '0003_alter_studentprofile_student_id'),
-        ('myapp', '0004_job_jobapplication'),
-        ('myapp', '0005_exam_exam_type'),
+        ('myapp', '0002_alter_user_id'),
+        ('myapp', '0003_leaverequest'),
+        ('myapp', '0004_choice_examsession_pythonquestion_examanswer_and_more'),
+        ('myapp', '0005_codesnippet_codetemplate_executionsession'),
         ('myapp', '0006_merge_20260311_1031'),
     ]
 
