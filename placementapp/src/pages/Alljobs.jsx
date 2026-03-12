@@ -4,6 +4,32 @@ import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 function AllJobs() {
 
+function applyJob(jobId){
+
+fetch("http://127.0.0.1:8000/api/applied-jobs/",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+job:jobId,
+student_name:"Akhila",
+email:"akhila@gmail.com"
+
+})
+
+})
+.then(res=>res.json())
+.then(data=>{
+alert("Job Applied Successfully")
+})
+.catch(err=>console.log(err))
+
+}
   const navigate = useNavigate();
 
   const [jobsData, setJobsData] = useState([]);
@@ -97,23 +123,29 @@ function AllJobs() {
 
                   <td>
                     {job.status === "Applied" ? (
-                      <span className="badge bg-success">Applied</span>
-                    ) : job.status === "Timed Out" ? (
-                      <span className="badge bg-danger">Timed Out</span>
-                    ) : (
-                      <span className="badge bg-warning text-dark">Open</span>
-                    )}
+  <span className="badge bg-success">Applied</span>
+
+) : job.status === "TimedOut" ? (
+  <span className="badge bg-danger">TimedOut</span>
+
+) : job.status === "Closed" ? (
+  <span className="badge bg-secondary">Closed</span>
+
+) : (
+  <span className="badge bg-green-400 text-dark ">Open</span>
+)}
                   </td>
 
                   <td>
                     <div className="d-flex gap-2">
-
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
-                      >
-                        <FaEye className="me-1" /> View
-                      </button>
+                    <button
+  className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+  onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
+>
+  <FaEye />
+  <span>View</span>
+</button>
+                     
 
                       <button
                         className="btn btn-success btn-sm"

@@ -29,6 +29,16 @@ def apply_job(request):
         return Response({"message":"Job Applied Successfully"})
 
     return Response(serializer.errors)
+from rest_framework import viewsets
+from .models import Job,AppliedJob
+from .serializers import JobSerializer,AppliedJobSerializer
+
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
+class AppliedJobViewSet(viewsets.ModelViewSet):
+    queryset = AppliedJob.objects.all()
+    serializer_class = AppliedJobSerializer
 
 @api_view(['GET'])
 def home(request):
