@@ -69,6 +69,17 @@ class Job(models.Model):
 
     def __str__(self):
         return self.job_title
+from django.db import models
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey("Job", on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    applied_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.student_name
 
 
 class JobApplication(models.Model):
