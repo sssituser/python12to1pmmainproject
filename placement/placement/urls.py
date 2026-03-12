@@ -17,37 +17,39 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse   # add this
 
-#from myapp.views import serve_react_app, playground_rest_framework
-
-
-#from myapp.views import serve_react_app, playground_rest_framework
-
+def home(request):
+    return HttpResponse("Placement Backend Running")
 
 urlpatterns = [
+
+    path('', home),  # <-- add this
 
     # Django Admin
     path('admin/', admin.site.urls),
 
     # All API routes from myapp
     path('api/', include('myapp.urls')),
-
-    # Direct playground REST framework URL
-    #path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
-    # Serve React app for all other routes
-    #path('', serve_react_app, name='serve-react'),
-
-
-    # REST Playground page
-    #path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
-
-    # React Frontend
-    #path('', serve_react_app, name='serve-react'),
-
 ]
 
-# Media files
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+#     # Direct playground REST framework URL
+#     #path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
+#     # Serve React app for all other routes
+#     #path('', serve_react_app, name='serve-react'),
+
+
+#     # REST Playground page
+#     #path('playground-rest/', playground_rest_framework, name='playground_rest_framework'),
+
+#     # React Frontend
+#     #path('', serve_react_app, name='serve-react'),
+
+# ]
+
+# # Media files
+# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 
