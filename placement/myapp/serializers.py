@@ -24,16 +24,20 @@ class ProjectSerializer(serializers.ModelSerializer):
             'attempt', 'created_at'
         ]
 # ============jobserializer=====================
-from .models import Job
+from .models import Job,AppliedJob
 
 class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
         fields = "__all__"
+class AppliedJobSerializer(serializers.ModelSerializer):
 
-        model = Project
-        fields = '__all__'
+    class Meta:
+        model = AppliedJob
+        fields = "__all__"
+
+        
 class StudentProfileSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(source="user.username")

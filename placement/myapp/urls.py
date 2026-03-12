@@ -58,4 +58,5 @@ urlpatterns = [
     
     # Home
     path('', home, name='home'),
+    #
 ]

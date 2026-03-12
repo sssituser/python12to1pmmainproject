@@ -1,162 +1,216 @@
-import React,{useState} from "react";
-import {useNavigate} from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-function AllJobs(){
+function AllJobs() {
+
+  const navigate = useNavigate();
 
-const navigate = useNavigate();
+  const [jobsData, setJobsData] = useState([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [search, setSearch] = useState("");
 
-const jobs = [
+  // Fetch jobs from Django backend
+  useEffect(() => {
+
+    fetch("http://127.0.0.1:8000/api/jobs/")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Jobs:", data);
+        setJobsData(data);
+      })
+      .catch((err) => console.log(err));
+
+  }, []);
+
+  // Search Filter
+  const filteredJobs = jobsData.filter((job) =>
+    job.company?.toLowerCase().includes(search.toLowerCase()) ||
+    job.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    job.primary_skills?.toLowerCase().includes(search.toLowerCase())
+  );
 
-{ id:1, company:"Postman", role:"Software Engineer", skills:"MySQL", location:"Hyderabad" },
-{ id:2, company:"Wipro", role:"Python Developer", skills:"Python", location:"Bangalore" },
-{ id:3, company:"Infosys", role:"Full Stack Developer", skills:"React", location:"Hyderabad" },
-{ id:4, company:"TCS", role:"Java Developer", skills:"Java", location:"Chennai" },
-{ id:5, company:"Amazon", role:"Backend Engineer", skills:"NodeJS", location:"Hyderabad" },
-{ id:6, company:"Google", role:"ML Engineer", skills:"Python", location:"Bangalore" }
+  // Pagination
+  const totalPages = Math.ceil(filteredJobs.length / perPage);
 
-]
+  const lastIndex = page * perPage;
+  const firstIndex = lastIndex - perPage;
 
-const [page,setPage] = useState(1)
-const [loading,setLoading] = useState(false)
+  const records = filteredJobs.slice(firstIndex, lastIndex);
 
-const perPage = 3
+  return (
+    <div className="container mt-4">
 
-const lastIndex = page * perPage
-const firstIndex = lastIndex - perPage
+      <h4 className="mb-3 text-black">All Job Openings</h4>
 
-const records = jobs.slice(firstIndex,lastIndex)
+      {/* Search */}
+      <input
+        className="form-control mb-3"
+        placeholder="Search by role, skill, company"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
+      />
 
-const pages = Math.ceil(jobs.length/perPage)
+      <div className="table-responsive">
 
-function changePage(n){
+        <table className="table table-bordered align-middle shadow table-striped">
 
-setLoading(true)
+          <thead className="table-primary">
+            <tr>
+              <th>Company</th>
+              <th>Job Title</th>
+              <th>Primary Skills</th>
+              <th>Deadline</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-setTimeout(()=>{
+          <tbody>
 
-setPage(n)
-setLoading(false)
+            {records.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center">
+                  No Jobs Found
+                </td>
+              </tr>
+            ) : (
 
-},1000)
+              records.map((job) => (
 
-}
+                <tr key={job.id}>
 
-return (
-<div className="container mt-4">
+                  <td>{job.company}</td>
 
-<h4 className="mb-3">All Job Openings</h4>
+                  <td>{job.job_title}</td>
 
-<input
-className="form-control mb-3"
-placeholder="Search by role, skill, company"
-/>
+                  <td>{job.primary_skills}</td>
 
-<div className="table-responsive" style={{maxHeight:"400px"}}>
+                  <td>{job.deadline || "N/A"}</td>
 
-<table className="table table-bordered align-middle">
+                  <td>{job.location}</td>
 
-<thead className="table-primary">
+                  <td>
+                    {job.status === "Applied" ? (
+                      <span className="badge bg-success">Applied</span>
+                    ) : job.status === "Timed Out" ? (
+                      <span className="badge bg-danger">Timed Out</span>
+                    ) : (
+                      <span className="badge bg-warning text-dark">Open</span>
+                    )}
+                  </td>
+
+                  <td>
+                    <div className="d-flex gap-2">
 
-<tr>
+                      <button
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
+                      >
+                        <FaEye className="me-1" /> View
+                      </button>
 
-<th>Company</th>
-<th>Job Title</th>
-<th>Skills</th>
-<th>Location</th>
-<th>Action</th>
+                      <button
+                        className="btn btn-success btn-sm"
+                        disabled={job.status === "Timed Out" || job.status === "Applied"}
+                      >
+                        Apply
+                      </button>
 
-</tr>
+                    </div>
+                  </td>
 
-</thead>
+                </tr>
 
-<tbody>
+              ))
 
-{loading ? (
+            )}
 
-<tr>
+          </tbody>
 
-<td colSpan="5" className="text-center">
+          {/* Pagination Footer */}
 
-<div className="spinner-border text-primary"></div>
+          <tfoot>
+            <tr>
+              <td colSpan="7">
 
-</td>
+                <div className="d-flex justify-content-between align-items-center">
 
-</tr>
+                  {/* Prev Button */}
 
-) : (
+                  <div className="d-flex align-items-center gap-3">
 
-records.map(job=>(
+                    <button
+                      className="btn btn-light btn-sm"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      <FaArrowLeft /> Prev
+                    </button>
 
-<tr key={job.id}>
+                    <span className="fw-bold">
+                      Page {page} of {totalPages || 1}
+                    </span>
 
-<td>{job.company}</td>
+                  </div>
 
-<td>{job.role}</td>
+                  {/* Page Numbers */}
 
-<td>{job.skills}</td>
+                  <div className="d-flex align-items-center gap-2">
 
-<td>{job.location}</td>
+                    <select
+                      className="form-select form-select-sm"
+                      style={{ width: "130px" }}
+                      value={perPage}
+                      onChange={(e) => {
+                        setPerPage(Number(e.target.value));
+                        setPage(1);
+                      }}
+                    >
+                      <option value={3}>3 / page</option>
+                      <option value={10}>10 / page</option>
+                      <option value={20}>20 / page</option>
+                    </select>
 
-<td>
+                    {[...Array(totalPages)].map((_, i) => (
 
-<button
-className="btn btn-sm btn-primary"
-onClick={()=>navigate("/jobs/" + job.id)}
->
+                      <button
+                        key={i}
+                        className={`btn btn-sm ${page === i + 1 ? "btn-primary" : "btn-light"}`}
+                        onClick={() => setPage(i + 1)}
+                      >
+                        {i + 1}
+                      </button>
 
-View
+                    ))}
 
-</button>
+                    <button
+                      className="btn btn-light btn-sm"
+                      disabled={page === totalPages || totalPages === 0}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next <FaArrowRight />
+                    </button>
 
-</td>
+                  </div>
 
-</tr>
+                </div>
 
-))
+              </td>
+            </tr>
+          </tfoot>
 
-)}
+        </table>
 
-</tbody>
+      </div>
 
-</table>
-
-</div>
-
-{/* Pagination */}
-
-<nav>
-
-<ul className="pagination mt-3">
-
-{Array.from({length: pages}, (_,i) => (
-
-<li
-key={i}
-className={"page-item " + (page===i+1?"active":"")}
->
-
-<button
-className="page-link"
-onClick={()=>changePage(i+1)}
->
-
-{i+1}
-
-</button>
-
-</li>
-
-))}
-
-</ul>
-
-</nav>
-
-</div>
-
-)
-
+    </div>
+  );
 }
 
 export default AllJobs;
-
