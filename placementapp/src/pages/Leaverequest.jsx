@@ -1,324 +1,174 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClipboardList,
-  faCalendarDays,
-  faFaceSadTear,
-  faPlus,
-  faCheck,
-  faTimes,
-  faUserShield
-} from "@fortawesome/free-solid-svg-icons";
-import { leaveRequestAPI } from "../services/api";
+import { faPlus, faCheck, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 function LeaveRequest() {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
-  const [leaveRequests, setLeaveRequests] = useState([]);
-  const [view, setView] = useState("form"); // "form" | "list"
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState("Student"); 
+  const [role, setRole] = useState("Student");
 
   useEffect(() => {
-    fetchLeaveRequests();
+    const data = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
+    setRequests(data);
   }, []);
 
-  const fetchLeaveRequests = async () => {
-    try {
-      setLoading(true);
-      const data = await leaveRequestAPI.getAll();
-      setLeaveRequests(data);
-    } catch (error) {
-      console.error('Error fetching leave requests:', error);
-      alert('Failed to load leave requests. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name.trim() || !startDate || !endDate || !reason.trim()) {
-      alert("Please fill in all fields.");
-      return;
-    }
-    if (new Date(endDate) < new Date(startDate)) {
-      alert("End date must be on or after start date.");
+    if (!name || !startDate || !endDate || !reason) {
+      alert("Fill all fields");
       return;
     }
 
-    try {
-      setLoading(true);
-      const leaveData = {
-        name: name.trim(),
-        startDate,
-        endDate,
-        reason: reason.trim()
-      };
+    const newRequest = {
+      id: Date.now(),
+      name,
+      startDate,
+      endDate,
+      description: reason,
+      status: "Pending",
+      approvedBy: null
+    };
 
-      const response = await leaveRequestAPI.create(leaveData);
-      
-      // Add new request to the list
-      const newRequest = {
-        id: response.id,
-        name: name.trim(),
-        startDate,
-        endDate,
-        description: reason.trim(),
-        status: "Pending",
-        approvedBy: null,
-      };
-      
-      setLeaveRequests([newRequest, ...leaveRequests]);
-      setName("");
-      setStartDate("");
-      setEndDate("");
-      setReason("");
-      setView("list");
-      
-      alert("Leave request submitted successfully!");
-    } catch (error) {
-      console.error('Error submitting leave request:', error);
-      alert('Failed to submit leave request. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApproveReject = async (id, newStatus) => {
-    const authorizedRoles = ["Faculty"];
+    const updated = [newRequest, ...requests];
+    setRequests(updated);
+    localStorage.setItem('leaveRequests', JSON.stringify(updated));
     
-    if (!authorizedRoles.includes(currentUserRole)) {
-      alert("You do not have permission to approve or reject leaves.");
+    setName("");
+    setStartDate("");
+    setEndDate("");
+    setReason("");
+    alert("Request submitted!");
+  };
+
+  const handleApproveReject = (id, status) => {
+    if (role !== "Faculty") {
+      alert("Only faculty can approve/reject");
       return;
     }
 
-    try {
-      const updateData = {
-        status: newStatus,
-        approved_by: newStatus === "Pending" ? null : currentUserRole
-      };
-
-      await leaveRequestAPI.update(id, updateData);
-      
-      // Update local state
-      setLeaveRequests(prev => 
-        prev.map(req => 
-          req.id === id 
-            ? { ...req, status: newStatus, approvedBy: updateData.approved_by }
-            : req
-        )
-      );
-    } catch (error) {
-      console.error('Error updating leave request:', error);
-      alert('Failed to update leave request. Please try again.');
-    }
+    const updated = requests.map(req => 
+      req.id === id ? { ...req, status, approvedBy: role } : req
+    );
+    setRequests(updated);
+    localStorage.setItem('leaveRequests', JSON.stringify(updated));
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this leave request?")) {
-      return;
-    }
-
-    try {
-      await leaveRequestAPI.delete(id);
-      setLeaveRequests(prev => prev.filter(req => req.id !== id));
-      alert("Leave request deleted successfully!");
-    } catch (error) {
-      console.error('Error deleting leave request:', error);
-      alert('Failed to delete leave request. Please try again.');
-    }
-  };
-
-  const handleClearAll = () => {
-    if (window.confirm("Remove all leave requests and start fresh?")) {
-      setLeaveRequests([]);
+  const handleDelete = (id) => {
+    if (confirm("Delete this request?")) {
+      const updated = requests.filter(req => req.id !== id);
+      setRequests(updated);
+      localStorage.setItem('leaveRequests', JSON.stringify(updated));
     }
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(dateStr).toLocaleDateString("en-IN");
   };
 
   return (
     <div className="max-w-5xl mx-auto p-4">
-    
-      <div className="mb-6 p-3 bg-gray-100 rounded-xl flex items-center gap-4 border border-gray-200">
-        <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
-          <FontAwesomeIcon icon={faUserShield} /> Logged in as:
-        </span>
-        <select
-          value={currentUserRole}
-          onChange={(e) => setCurrentUserRole(e.target.value)}
-          className="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="Student">Student (Apply Only)</option>
-          <option value="Faculty">Faculty</option>
-        </select>
-        {loading && (
-          <div className="ml-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Leave Requests</h1>
+        <div className="flex gap-2">
+          <select value={role} onChange={(e) => setRole(e.target.value)} className="border rounded px-3 py-1">
+            <option value="Student">Student</option>
+            <option value="Faculty">Faculty</option>
+          </select>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-xl font-semibold mb-4">New Request</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name"
+            className="border rounded px-3 py-2"
+            required
+          />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border rounded px-3 py-2"
+            required
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border rounded px-3 py-2"
+            required
+          />
+        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason for leave"
+          className="w-full border rounded px-3 py-2 mb-4"
+          rows={2}
+          required
+        />
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <FontAwesomeIcon icon={faPlus} className="mr-2" /> Submit
+        </button>
+      </form>
+
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-semibold">All Requests</h2>
+        </div>
+        
+        {requests.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No requests found
+          </div>
+        ) : (
+          <div className="divide-y">
+            {requests.map((req) => (
+              <div key={req.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                <div className="flex-1">
+                  <div className="font-semibold">{req.name}</div>
+                  <div className="text-sm text-gray-600">
+                    {formatDate(req.startDate)} - {formatDate(req.endDate)}
+                  </div>
+                  <div className="text-sm text-gray-600 italic">{req.description}</div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    req.status === "Approved" ? "bg-green-100 text-green-700" :
+                    req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                  }`}>
+                    {req.status}
+                  </span>
+                  
+                  {req.status === "Pending" && role === "Faculty" && (
+                    <div className="flex gap-1">
+                      <button onClick={() => handleApproveReject(req.id, "Approved")} className="bg-green-500 text-white p-1 rounded hover:bg-green-600">
+                        <FontAwesomeIcon icon={faCheck} size="xs" />
+                      </button>
+                      <button onClick={() => handleApproveReject(req.id, "Rejected")} className="bg-red-500 text-white p-1 rounded hover:bg-red-600">
+                        <FontAwesomeIcon icon={faTimes} size="xs" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  <button onClick={() => handleDelete(req.id)} className="bg-gray-500 text-white p-1 rounded hover:bg-gray-600">
+                    <FontAwesomeIcon icon={faTrash} size="xs" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
-
-      {view === "form" ? (
-        <>
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#1004ef] to-[#6131b5] text-white px-6 py-3 rounded-xl font-semibold text-lg mb-6 shadow-lg">
-            <FontAwesomeIcon icon={faClipboardList} />
-            <span>Leave Request Form</span>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex flex-wrap gap-6 items-end">
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 focus:border-indigo-500 outline-none transition"
-                  required
-                />
-              </div>
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Start Date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition"
-                  required
-                />
-              </div>
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="block font-medium text-gray-700 text-sm">Reason for Leave</label>
-              <textarea
-                placeholder="Briefly describe why you are taking leave..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-                className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition resize-none"
-                required 
-              />
-              <button
-                type="submit"
-                className="mt-2 w-fit bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-              >
-                Submit Request
-              </button>
-            </div>
-          </form>
-
-          {leaveRequests.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className="mt-6 text-indigo-600 hover:underline font-bold flex items-center gap-2"
-            >
-              <FontAwesomeIcon icon={faClipboardList} />
-              View Leave History
-            </button>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-            <h2 className="text-2xl font-black text-gray-800 tracking-tight">Applied Leave Requests</h2>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleClearAll}
-                className="text-red-500 text-sm font-semibold hover:bg-red-50 px-3 py-2 rounded-lg transition"
-              >
-                Clear All
-              </button>
-              <button
-                onClick={() => setView("form")}
-                className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition shadow-sm"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                New Request
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xl">
-          
-            <div className="grid grid-cols-[1.5fr_1fr_1fr_2.5fr_1fr_1fr] gap-4 bg-[#1004ef] text-white px-6 py-4 font-bold text-xs uppercase tracking-wider">
-              <div>Name</div>
-              <div>Start Date</div>
-              <div>End Date</div>
-              <div>Description</div>
-              <div>Status</div>
-              <div>Approved By</div>
-            </div>
-
-            
-            {leaveRequests.length === 0 ? (
-              <div className="flex flex-col items-center py-20 opacity-40">
-                <FontAwesomeIcon icon={faFaceSadTear} size="3x" />
-                <p className="mt-4 font-bold">No requests found</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {leaveRequests.map((req) => (
-                  <div key={req.id} className="grid grid-cols-[1.5fr_1fr_1fr_2.5fr_1fr_1fr] gap-4 px-6 py-5 text-sm items-center hover:bg-gray-50 transition">
-                    <div className="font-bold text-gray-900">{req.name}</div>
-                    <div className="text-gray-600">{formatDate(req.startDate)}</div>
-                    <div className="text-gray-600">{formatDate(req.endDate)}</div>
-                    <div className="text-gray-600 italic">"{req.description}"</div>
-                    
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase ${
-                        req.status === "Approved" ? "bg-green-100 text-green-700" :
-                        req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {req.status}
-                      </span>
-                      
-                      
-                      {req.status === "Pending" && ["Faculty"].includes(currentUserRole) && (
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => handleApproveReject(req.id, "Approved")} className="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition shadow-sm">
-                            <FontAwesomeIcon icon={faCheck} size="xs" />
-                          </button>
-                          <button onClick={() => handleApproveReject(req.id, "Rejected")} className="bg-red-500 text-white p-1 rounded hover:bg-red-600 transition shadow-sm">
-                            <FontAwesomeIcon icon={faTimes} size="xs" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-xs font-semibold text-gray-400">
-                      {req.approvedBy || "—"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <p className="mt-4 text-xs text-gray-400">
-            Note: Only Faculty can approve these requests.
-          </p>
-        </>
-      )}
     </div>
   );
 }
