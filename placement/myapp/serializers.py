@@ -1,10 +1,7 @@
 from rest_framework import serializers
-<<<<<<< HEAD
-from .models import User, Exam, ExamAttempt   # add Exam, ExamAttempt here
-=======
+from .models import User   # add Exam, ExamAttempt here
 from .models import User
 from .models import StudentProfile, Skill, Project
->>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,8 +13,8 @@ class SkillSerializer(serializers.ModelSerializer):
         fields = '__all__'
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
-<<<<<<< HEAD
-        model = Exam
+
+        model = Project
         fields = [
             'id', 'title', 'start_date', 'start_time',
             'end_time', 'duration_minutes', 'is_finished',
@@ -31,9 +28,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = "__all__"
-=======
-        model = Project
-        fields = '__all__'
+        
 class StudentProfileSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(source="user.username")
@@ -43,4 +38,3 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentProfile
         fields = '__all__'
->>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c

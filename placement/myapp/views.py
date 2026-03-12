@@ -2,13 +2,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
-<<<<<<< HEAD
 from django.contrib.auth.models import User
 from .models import StudentProfile, Skill, Project
 from .serializers import StudentProfileSerializer
 from django.contrib.auth import login
 
-=======
 from .models import LeaveRequest, PythonQuestion, Choice, ExamSession, ExamAnswer, WebcamSnapshot, CodeSnippet, CodeTemplate, ExecutionSession
 from django.core.serializers.json import DjangoJSONEncoder
 import json
@@ -78,7 +76,6 @@ def serve_react_app(request):
     that aren't handled by Django API endpoints.
     """
     return render(request, 'index.html')
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
 
 @api_view(['POST'])
 def login_view(request):
@@ -94,7 +91,6 @@ def login_view(request):
                 "email": user.email
             }
         })
-<<<<<<< HEAD
     return Response({"error": "Invalid username or password"}, status=400)
 
 
@@ -140,12 +136,8 @@ def upload_resume(request):
     profile.resume = resume
     profile.save()
     return Response({"message": "Resume uploaded"})
-
-
-
-=======
-    else:
-        return Response({"error": "Invalid username or password"}, status=400)
+    # else:
+    #     return Response({"error": "Invalid username or password"}, status=400)
 
 
 @api_view(['GET'])
@@ -217,7 +209,6 @@ def update_leave_request(request, request_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-<<<<<<< HEAD
         return Response(ExamSerializer(exam).data, status=status.HTTP_200_OK)
 
 from .models import Job
@@ -229,7 +220,6 @@ from rest_framework import viewsets
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
-=======
 
 @api_view(['DELETE'])
 def delete_leave_request(request, request_id):
@@ -943,5 +933,3 @@ def playground_rest_framework(request):
 def serve_react_app(request):
     """Serve the React app"""
     return render(request, 'index.html')
->>>>>>> f9fc65aad724d3be3efac54f6fcc3b0c8a7f577d
->>>>>>> 638aaa22f8a4c16ef650808525171aab4350e77c
