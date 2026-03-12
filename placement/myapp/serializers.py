@@ -1,63 +1,21 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from .models import StudentProfile, Skill, Project, Job
-from .models import User   # add Exam, ExamAttempt here
+
+
+
 from .models import User
 from .models import StudentProfile, Skill, Project
-from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name"]
-
-
-class SkillSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Skill
-        fields = ["id", "name"]
-
-
-class ProjectSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Project
-        fields = ["id", "title", "description"]
-
-
-class StudentProfileSerializer(serializers.ModelSerializer):
-
-    user = UserSerializer(read_only=True)
-    skills = SkillSerializer(many=True, source="skill_set", read_only=True)
-    projects = ProjectSerializer(many=True, source="project_set", read_only=True)
-
-    class Meta:
-        model = StudentProfile
-        fields = [
-            "id",
-            "user",
-            "age",
-            "phone",
-            "state",
-            "resume",
-            "skills",
-            "projects",
-        ]
-
-class JobSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Job
-        fields = "__all__"
+        fields = '__all__'
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = '__all__'
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
-
         model = Project
         fields = [
             'id', 'title', 'start_date', 'start_time',
@@ -65,20 +23,23 @@ class ProjectSerializer(serializers.ModelSerializer):
             'attempt', 'created_at'
         ]
 # ============jobserializer=====================
-from .models import Job,AppliedJob
+from .models import Job
 
 class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
         fields = "__all__"
-        
+
+        model = Project
+        fields = '__all__'
 class StudentProfileSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField(source="user.username")
+    email = serializers.CharField(source="user.email")
+    skills = SkillSerializer(source="skill_set", many=True)
+    projects = ProjectSerializer(source="project_set", many=True)
     class Meta:
         model = StudentProfile
         fields = '__all__'
-class AppliedJobSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AppliedJob
-        fields = "__all__"
 
