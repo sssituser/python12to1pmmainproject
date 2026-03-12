@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import StudentProfile, Skill, Project, Job
+from .models import User   # add Exam, ExamAttempt here
+from .models import User
+from .models import StudentProfile, Skill, Project
+from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,3 +51,34 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = "__all__"
+class SkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = '__all__'
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+
+        model = Project
+        fields = [
+            'id', 'title', 'start_date', 'start_time',
+            'end_time', 'duration_minutes', 'is_finished',
+            'attempt', 'created_at'
+        ]
+# ============jobserializer=====================
+from .models import Job,AppliedJob
+
+class JobSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Job
+        fields = "__all__"
+        
+class StudentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentProfile
+        fields = '__all__'
+class AppliedJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppliedJob
+        fields = "__all__"
+

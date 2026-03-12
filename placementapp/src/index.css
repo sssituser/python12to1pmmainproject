@@ -198,4 +198,19 @@ color:white;
 .glow{
   filter: blur(140px);
 }
+.submenu{
+display:flex;
+flex-direction:column;
+margin-left:35px;
+}
 
+.sidebar-sublink{
+padding:6px 0;
+text-decoration:none;
+color:#b0c4ff;
+font-size:14px;
+}
+
+.sidebar-sublink:hover{
+color:white;
+}

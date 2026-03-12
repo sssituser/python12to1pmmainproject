@@ -20,7 +20,10 @@ const handleLogin = async () => {
     return;
   }
 
+  if (loading) return;
+
   setLoading(true);
+  setError("");
 
   try {
 
@@ -34,26 +37,43 @@ const handleLogin = async () => {
         password: password
       })
     });
-    const data = await response.json();
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
     if (response.ok) {
-      // Save tokens
+
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
-      // Create a simple user object
+
       const randomId = Math.floor(1000 + Math.random() * 9000);
+
       const user = {
         username: username,
         id: randomId
       };
+
       localStorage.setItem("user", JSON.stringify(user));
+
       toast.success(`Welcome ${username}`);
       navigate("/dashboard");
+
     } else {
-      toast.error("Invalid username or password");
+
+      toast.error(data.detail || "Invalid username or password");
+
     }
+
   } catch (error) {
+
     toast.error("Server error. Please try again.");
+
   }
+
   setLoading(false);
 };
   return (
