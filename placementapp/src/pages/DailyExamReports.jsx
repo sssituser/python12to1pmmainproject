@@ -30,29 +30,29 @@ return (
             <h6>Daily-Exam-{exam.id}</h6>
 
             <div style={{ width: "120px", margin: "auto" }}>
-              <CircularProgressbar
+                <CircularProgressbar
                 value={percentage}
                 text={`${percentage.toFixed(1)}%`}
-              />
+                />
             </div>
 
             <p className="mt-2">
-              Score {exam.score}/{exam.total}
+                Score {exam.score}/{exam.total}
             </p>
 
             <button className="btn btn-primary">
-              View Detailed Report
+                View Detailed Report
             </button>
-
-          </div>
 
         </div>
 
-      );
+        </div>
+
+        );
 
     })}
 
-  </div>
+</div>
 
 </div>
 
