@@ -15,6 +15,8 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+TEMPLATES_DIR = BASE_DIR / 'templates'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'myapp',
     'corsheaders',
+    
 ]
 
 MIDDLEWARE = [
@@ -63,7 +66,7 @@ ROOT_URLCONF = 'placement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [TEMPLATES_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,7 +89,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'placement_db',
         'USER': 'root',
+
         'PASSWORD': 'Vikas@123',
+
+        'PASSWORD': '2003',
+
         'HOST': 'localhost',
         'PORT': '3306',
     }

@@ -76,7 +76,7 @@ function Playground() {
               </p>
 
               <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-                20 MCQs • 1:30 min
+                20 MCQs • 45 min
               </span>
             </div>
 
