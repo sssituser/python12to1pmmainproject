@@ -5,6 +5,7 @@ import Dashboard from "./Layout/Dashboard";
 import Course from "./pages/Course";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import ExamReports from "./pages/ExamReports";
+import DailyExamReports from "./pages/DailyExamReports";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
 
@@ -23,55 +24,51 @@ import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
 
 function App() {
-  return (
-    <>
-      <ToastContainer position="top-right" autoClose={2000} />
+return (
+<>
+<ToastContainer position="top-right" autoClose={2000} />
 
-      <Routes>
+  <Routes>
 
-        {/* Login Page */}
-        <Route path="/" element={<Login />} />
+    <Route path="/" element={<Login />} />
 
-        {/* Standalone Exam Page (No Dashboard Layout) */}
-        <Route path="/exam" element={<Exams />} />
+    <Route path="/exam" element={<Exams />} />
 
-        {/* Dashboard Layout Routes */}
-        <Route path="/dashboard" element={<Dashboard />}>
+    <Route path="/dashboard" element={<Dashboard />}>
 
-          <Route index element={<Profile />} />
-          <Route path="/dashboard/profile" element={<Profile />} />
+      <Route index element={<Profile />} />
 
-          <Route path="/dashboard/jobs" element={<Jobs />} />
+      <Route path="profile" element={<Profile />} />
 
-          <Route path="alljobs" element={<AllJobs />} />
-          <Route path="appliedjobs" element={<AppliedJobs />} />
-          <Route path="jobs/:id" element={<JobDetails />} />
+      <Route path="jobs" element={<Jobs />} />
+      <Route path="alljobs" element={<AllJobs />} />
+      <Route path="appliedjobs" element={<AppliedJobs />} />
+      <Route path="jobs/:id" element={<JobDetails />} />
 
-          <Route path="/dashboard/alljobs" element={<AllJobs />} />
-          <Route path="/dashboard/appliedjobs" element={<AppliedJobs />} />
-          <Route path="/dashboard/jobdetails" element={<JobDetails />} />
+      <Route path="course" element={<Course />} />
 
+      <Route path="exams" element={<ExamsList />} />
 
-          <Route path="/dashboard/course" element={<Course />} />
+      <Route path="exam-reports" element={<ExamReports />} />
+      <Route path="daily-exams" element={<DailyExamReports />} />
+      <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
+      <Route path="playground" element={<Playground />} />
+      <Route path="playground/:language" element={<PlaygroundDetail />} />
 
-          <Route path="/dashboard/exams" element={<ExamsList />} />
-          <Route path="/dashboard/exam-reports" element={<ExamReports />} />
-          <Route path="/dashboard/exam-leaderboard" element={<ExamLeaderboard />} />
+      <Route path="python-exam" element={<PythonExam />} />
 
-          <Route path="/dashboard/playground" element={<Playground />} />
-          <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
-          <Route path="/dashboard/python-exam" element={<PythonExam />} />
-          <Route path="/dashboard/reports" element={<Reports />} />
+      <Route path="reports" element={<Reports />} />
 
-          <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
+      <Route path="leave-request" element={<LeaveRequest />} />
 
-          <Route path="/dashboard/logout" element={<Logout />} />
+      <Route path="logout" element={<Logout />} />
 
-        </Route>
+    </Route>
 
-      </Routes>
-    </>
-  );
+  </Routes>
+</>
+
+);
 }
 
 export default App;
