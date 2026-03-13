@@ -1,5 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
+
+
+# ── Custom User ──
 class User(models.Model):
     username = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
@@ -7,36 +9,65 @@ class User(models.Model):
 
     def __str__(self):
         return self.username
+
+
+# ── Student Profile ──
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # personal information
-    student_id = models.IntegerField()
-    age = models.IntegerField()
-    state = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
-    # academic details
-    college = models.CharField(max_length=200)
-    year = models.CharField(max_length=50)
-    cgpa = models.FloatField()
-    tenth_percentage = models.FloatField()
-    twelfth_percentage = models.FloatField()
-    # resume upload (for your Resume button)
+    student_id = models.IntegerField(null=True, blank=True)
+    age = models.IntegerField(null=True, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=15, blank=True)
+    college = models.CharField(max_length=200, blank=True)
+    year = models.CharField(max_length=50, blank=True)
+    cgpa = models.FloatField(null=True, blank=True)
+    tenth_percentage = models.FloatField(null=True, blank=True)
+    twelfth_percentage = models.FloatField(null=True, blank=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
+
     def __str__(self):
         return self.user.username
+
+
 class Skill(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+
     def __str__(self):
         return self.name
+
+
 class Project(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
+
     def __str__(self):
         return self.title
 
 
+# ── Jobs ──
+class Job(models.Model):
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.job_title
+
+
+class JobApplication(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+
+
+# ── Leave Request ──
 class LeaveRequest(models.Model):
     name = models.CharField(max_length=100)
     start_date = models.DateField()
@@ -51,35 +82,10 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-
-        return f"{self.exam.title} - {self.status}"
-
-from django.db import models
-
-class Job(models.Model):
-
-    company = models.CharField(max_length=200)
-    job_title = models.CharField(max_length=200)
-    primary_skills = models.TextField()
-    deadline = models.DateField()
-    location = models.CharField(max_length=200)
-    status = models.CharField(max_length=50)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.job_title
+        return f"{self.name} - {self.status}"
 
 
-class JobApplication(models.Model):
-
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    user_id = models.IntegerField()
-    applied_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50)
-
-
-
+# ── Playground ──
 class PythonQuestion(models.Model):
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=[
@@ -88,9 +94,7 @@ class PythonQuestion(models.Model):
         ('short_answer', 'Short Answer')
     ])
     difficulty = models.CharField(max_length=10, choices=[
-        ('easy', 'Easy'),
-        ('medium', 'Medium'),
-        ('hard', 'Hard')
+        ('easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')
     ])
     marks = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -114,10 +118,8 @@ class ExamSession(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
-        ('started', 'Started'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('terminated', 'Terminated')
+        ('started', 'Started'), ('in_progress', 'In Progress'),
+        ('completed', 'Completed'), ('terminated', 'Terminated')
     ], default='started')
     score = models.IntegerField(null=True, blank=True)
     total_marks = models.IntegerField(null=True, blank=True)
@@ -136,9 +138,6 @@ class ExamAnswer(models.Model):
     time_taken = models.IntegerField(help_text="Time taken in seconds")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Answer by {self.session.student_name} for Q{self.question.id}"
-
 
 class WebcamSnapshot(models.Model):
     session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='snapshots')
@@ -146,9 +145,6 @@ class WebcamSnapshot(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_suspicious = models.BooleanField(default=False)
     reason = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return f"Snapshot for {self.session.student_name} at {self.timestamp}"
 
 
 class CodeSnippet(models.Model):
@@ -158,9 +154,6 @@ class CodeSnippet(models.Model):
     language = models.CharField(max_length=50, default='python')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.language}"
 
 
 class CodeTemplate(models.Model):
@@ -172,9 +165,6 @@ class CodeTemplate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.name} - {self.category}"
-
 
 class ExecutionSession(models.Model):
     session_id = models.CharField(max_length=100, unique=True)
@@ -184,15 +174,114 @@ class ExecutionSession(models.Model):
     error = models.TextField(null=True, blank=True)
     execution_time = models.FloatField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('running', 'Running'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed')
+        ('pending', 'Pending'), ('running', 'Running'),
+        ('completed', 'Completed'), ('failed', 'Failed')
     ], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+
+# ══════════════════════════════════════════
+# ── EXAM MODELS (Daily Exams Feature) ──
+# ══════════════════════════════════════════
+
+class Exam(models.Model):
+    EXAM_TYPE_CHOICES = [
+        ('mcq', 'MCQ'),
+        ('coding', 'Coding'),
+        ('both', 'MCQ + Coding'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exams')
+    title = models.CharField(max_length=200)
+    start_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    duration_minutes = models.PositiveIntegerField()
+    is_finished = models.BooleanField(default=False)
+    score = models.PositiveIntegerField(null=True, blank=True)
+    total_marks = models.PositiveIntegerField(default=100)
+    exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='mcq')
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"Session {self.session_id} - {self.status}"
+        return self.title
 
 
+class ExamAttempt(models.Model):
+    class AttemptStatus(models.TextChoices):
+        ATTEMPTED = 'attempted', 'Attempted'
+        UNATTEMPTED = 'unattempted', 'Unattempted'
+
+    exam = models.OneToOneField(Exam, on_delete=models.CASCADE, related_name='attempt')
+    status = models.CharField(max_length=20, choices=AttemptStatus.choices, default=AttemptStatus.UNATTEMPTED)
+    attempted_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.status}"
+
+
+class MCQQuestion(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='mcq_questions')
+    question_text = models.TextField()
+    option_a = models.CharField(max_length=300)
+    option_b = models.CharField(max_length=300)
+    option_c = models.CharField(max_length=300)
+    option_d = models.CharField(max_length=300)
+    correct_option = models.CharField(max_length=1, choices=[('A','A'),('B','B'),('C','C'),('D','D')])
+    marks = models.PositiveIntegerField(default=1)
+    time_limit_seconds = models.PositiveIntegerField(default=60)
+
+    def __str__(self):
+        return f"{self.exam.title} - Q{self.id}"
+
+
+class CodingQuestion(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='coding_questions')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    input_format = models.TextField(blank=True)
+    output_format = models.TextField(blank=True)
+    constraints = models.TextField(blank=True)
+    marks = models.PositiveIntegerField(default=10)
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.title}"
+
+
+class TestCase(models.Model):
+    question = models.ForeignKey(CodingQuestion, on_delete=models.CASCADE, related_name='test_cases')
+    input_data = models.TextField()
+    expected_output = models.TextField()
+    is_sample = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"TestCase for {self.question.title}"
+
+
+class MCQAnswer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(MCQQuestion, on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=1)
+    is_correct = models.BooleanField(default=False)
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'question')
+
+
+class CodeSubmission(models.Model):
+    LANGUAGE_CHOICES = [
+        ('python', 'Python'), ('java', 'Java'), ('cpp', 'C++'),
+    ]
+    STATUS_CHOICES = [
+        ('accepted', 'Accepted'), ('wrong', 'Wrong Answer'),
+        ('error', 'Runtime Error'), ('pending', 'Pending'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(CodingQuestion, on_delete=models.CASCADE)
+    language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES)
+    code = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    passed_cases = models.PositiveIntegerField(default=0)
+    total_cases = models.PositiveIntegerField(default=0)
+    submitted_at = models.DateTimeField(auto_now_add=True)
