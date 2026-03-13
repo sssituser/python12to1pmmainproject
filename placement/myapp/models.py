@@ -1,14 +1,21 @@
 from django.db import models
 
 
+
 # ── Custom User ──
+
+from django.contrib.auth.models import User
+
+
 class User(models.Model):
+
     username = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
 
     def __str__(self):
         return self.username
+
 
 
 # ── Student Profile ──
@@ -44,6 +51,7 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
 
 
 # ── Jobs ──
@@ -82,10 +90,53 @@ class LeaveRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+
         return f"{self.name} - {self.status}"
 
 
 # ── Playground ──
+
+        return f"{self.exam.title} - {self.status}"
+
+from django.db import models
+
+class Job(models.Model):
+
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.job_title
+from django.db import models
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey("Job", on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    applied_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.student_name
+
+
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+    def __str__(self):
+
+        return f"{self.name} - {self.start_date} to {self.end_date}"
+        return f"Application for {self.job} by user {self.user_id}"
+
 class PythonQuestion(models.Model):
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=[
@@ -206,6 +257,9 @@ class Exam(models.Model):
     def __str__(self):
         return self.title
 
+from django.db import models
+from django.contrib.auth.models import User
+
 
 class ExamAttempt(models.Model):
     class AttemptStatus(models.TextChoices):
@@ -285,3 +339,57 @@ class CodeSubmission(models.Model):
     passed_cases = models.PositiveIntegerField(default=0)
     total_cases = models.PositiveIntegerField(default=0)
     submitted_at = models.DateTimeField(auto_now_add=True)
+
+
+class StudentProfile(models.Model):
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    age = models.IntegerField(null=True, blank=True)
+    phone = models.CharField(max_length=15, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+
+class Skill(models.Model):
+
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
+class Project(models.Model):
+
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title
+    
+class Job(models.Model):
+
+    title = models.CharField(max_length=200)
+    company = models.CharField(max_length=200)
+    description = models.TextField()
+    location = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+    
+class JobApplication(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+
+class AppliedJob(models.Model):
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user = models.CharField(max_length=200)
+

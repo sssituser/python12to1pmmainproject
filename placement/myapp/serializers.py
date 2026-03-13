@@ -1,10 +1,18 @@
 from rest_framework import serializers
+
 from .models import (
     User, Exam, ExamAttempt,
     MCQQuestion, CodingQuestion, TestCase,
     MCQAnswer, CodeSubmission,
     StudentProfile, Skill, Project, Job
 )
+
+
+
+
+from .models import User
+from .models import StudentProfile, Skill, Project
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,6 +29,23 @@ class SkillSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
+
+        model = Project
+        fields = [
+            'id', 'title', 'start_date', 'start_time',
+            'end_time', 'duration_minutes', 'is_finished',
+            'attempt', 'created_at'
+        ]
+# ============jobserializer=====================
+from .models import Job
+
+class JobSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Job
+        fields = "__all__"
+
+
         model = Project
         fields = '__all__'
 

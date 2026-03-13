@@ -7,6 +7,7 @@ from .models import (
 )
 
 
+
 class MCQQuestionInline(admin.TabularInline):
     model = MCQQuestion
     extra = 3
@@ -93,3 +94,9 @@ admin.site.register(Project)
 admin.site.register(JobApplication)
 admin.site.register(MCQAnswer)
 admin.site.register(CodeSubmission)
+
+# Register your models here.
+from django.contrib import admin
+from .models import Job
+admin.site.register(Job)
+
