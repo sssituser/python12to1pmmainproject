@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from myapp.views.auth_views import *
 from myapp.views.profile_views import *
-#from myapp.views.leave_views import *
+from myapp.views.leave_views import *
 from myapp.views.exam_views import *
 from myapp.views.playground_views import *
 
