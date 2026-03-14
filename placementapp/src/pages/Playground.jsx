@@ -32,7 +32,7 @@ function Playground() {
       <main className="max-w-6xl mx-auto px-6 py-10">
 
         {/* Greeting */}
-        <div className="mb-10">
+        <div className="mb-4">
           <p className="text-sm text-gray-500">
             Hi {username ? username : "User"},
           </p>
@@ -41,18 +41,11 @@ function Playground() {
             Welcome Back 👋
           </h2>
 
-          <p className="text-gray-600 mt-2 max-w-2xl">
-            Continue your coding journey with structured modules.
-            Practice problems, complete sessions, and track your progress.
-          </p>
         </div>
 
-
-        {/* Section Title */}
-        <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           📚 Available Coding Sessions
         </h3>
-
 
         {/* Cards */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -108,7 +101,7 @@ function Playground() {
               </p>
 
               <span className="inline-block bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">
-                20 MCQs • 1:30 min
+                20 MCQs • 45 min
               </span>
             </div>
 

@@ -13,9 +13,21 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
+
+  if (!username || !password) {
+    toast.error("Please enter username and password");
+    return;
+  }
+
+  if (loading) return;
+
+  setLoading(true);
+  setError("");
+
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/login/", {
+
+    const response = await fetch("http://127.0.0.1:8000/api/login/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -25,32 +37,44 @@ function Login() {
         password: password
       })
     });
-    const data = await res.json();
-    if(res.ok){
-      // Generate a random 4-digit ID for the user if they don't already have one
-      const existingUser = JSON.parse(localStorage.getItem(`user_${data.user.username}`) || '{}');
-      if (!existingUser.randomId) {
-        const randomId = Math.floor(1000 + Math.random() * 9000).toString();
-        data.user.randomId = randomId;
-        // Store the user with their random ID
-        localStorage.setItem(`user_${data.user.username}`, JSON.stringify(data.user));
-      } else {
-        data.user.randomId = existingUser.randomId;
-      }
-      
-      localStorage.setItem("user", JSON.stringify(data.user));
-      toast.success(`Welcome ${data.user.username} (ID: ${data.user.randomId})`);
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
     }
-    else {
-      toast.error("Invalid username or password");
+
+    if (response.ok) {
+
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
+
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+
+      const user = {
+        username: username,
+        id: randomId
+      };
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      toast.success(`Welcome ${username}`);
+      navigate("/dashboard");
+
+    } else {
+
+      toast.error(data.detail || "Invalid username or password");
+
     }
+
+  } catch (error) {
+
+    toast.error("Server error. Please try again.");
+
   }
-  catch(err){
-    toast.error("Server error. Try again.");
-  }
+
+  setLoading(false);
 };
   return (
     <div className="flex h-screen w-full overflow-hidden">
