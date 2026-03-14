@@ -2,20 +2,23 @@ import { NavLink } from "react-router-dom";
 import { useState } from "react";
 
 function Sidebar({ sidebarOpen }) {
-  const [openJobs, setOpenJobs] = useState(false);
+
+  const [openJobs, setOpenJobs] = useState(true);
+  const [openPlayground, setOpenPlayground] = useState(false);
 
   return (
+
     <div
       className={`bg-blue-950 text-white h-screen transition-all duration-300 ${
         sidebarOpen ? "w-64" : "w-20"
       } flex flex-col`}
     >
-      {/* Dashboard Title */}
+
+      {/* Title */}
       <div className="p-4 text-lg font-semibold border-b border-blue-800">
         {sidebarOpen ? "Student Dashboard" : "SD"}
       </div>
 
-      {/* Sidebar Menu */}
       <div className="flex flex-col p-2 space-y-1">
 
         {/* Profile */}
@@ -31,6 +34,7 @@ function Sidebar({ sidebarOpen }) {
           {sidebarOpen && <span>Profile</span>}
         </NavLink>
 
+
         {/* Jobs Dropdown */}
         <div
           onClick={() => setOpenJobs(!openJobs)}
@@ -38,6 +42,7 @@ function Sidebar({ sidebarOpen }) {
         >
           <i className="bi bi-briefcase text-lg"></i>
           {sidebarOpen && <span>Jobs</span>}
+
           {sidebarOpen && (
             <i
               className={`bi ms-auto ${
@@ -47,8 +52,9 @@ function Sidebar({ sidebarOpen }) {
           )}
         </div>
 
-        {/* Jobs Submenu */}
+        {/* Jobs submenu */}
         {openJobs && sidebarOpen && (
+
           <div className="ml-8 flex flex-col">
 
             <NavLink
@@ -76,11 +82,13 @@ function Sidebar({ sidebarOpen }) {
             </NavLink>
 
           </div>
+
         )}
+
 
         {/* Course */}
         <NavLink
-          to="course"
+          to="/dashboard/course"
           className={({ isActive }) =>
             `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
               isActive ? "bg-blue-700" : ""
@@ -91,9 +99,10 @@ function Sidebar({ sidebarOpen }) {
           {sidebarOpen && <span>Course</span>}
         </NavLink>
 
+
         {/* Exams */}
         <NavLink
-          to="exams"
+          to="/dashboard/exams"
           className={({ isActive }) =>
             `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
               isActive ? "bg-blue-700" : ""
@@ -104,9 +113,10 @@ function Sidebar({ sidebarOpen }) {
           {sidebarOpen && <span>Exams</span>}
         </NavLink>
 
+
         {/* Reports */}
         <NavLink
-          to="exam-reports"
+          to="/dashboard/exam-reports"
           className={({ isActive }) =>
             `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
               isActive ? "bg-blue-700" : ""
@@ -117,9 +127,10 @@ function Sidebar({ sidebarOpen }) {
           {sidebarOpen && <span>Reports</span>}
         </NavLink>
 
+
         {/* Leaderboard */}
         <NavLink
-          to="exam-leaderboard"
+          to="/dashboard/exam-leaderboard"
           className={({ isActive }) =>
             `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
               isActive ? "bg-blue-700" : ""
@@ -130,22 +141,62 @@ function Sidebar({ sidebarOpen }) {
           {sidebarOpen && <span>Leaderboard</span>}
         </NavLink>
 
-        {/* Playground */}
-        <NavLink
-          to="playground"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
+
+        {/* Playground Dropdown */}
+        <div
+          onClick={() => setOpenPlayground(!openPlayground)}
+          className="flex items-center gap-3 p-3 rounded hover:bg-blue-700 cursor-pointer"
         >
           <i className="bi bi-code-slash text-lg"></i>
+
           {sidebarOpen && <span>Playground</span>}
-        </NavLink>
+
+          {sidebarOpen && (
+            <i
+              className={`bi ms-auto ${
+                openPlayground ? "bi-chevron-up" : "bi-chevron-down"
+              }`}
+            ></i>
+          )}
+        </div>
+
+        {/* Playground submenu */}
+        {openPlayground && sidebarOpen && (
+
+          <div className="ml-8 flex flex-col">
+
+            <NavLink
+              to="/dashboard/playground"
+              className={({ isActive }) =>
+                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
+                  isActive ? "text-blue-300" : ""
+                }`
+              }
+            >
+              <i className="bi bi-terminal"></i>
+              <span>Tech Lab</span>
+            </NavLink>
+
+            <NavLink
+              to="/dashboard/playground-results"
+              className={({ isActive }) =>
+                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
+                  isActive ? "text-blue-300" : ""
+                }`
+              }
+            >
+              <i className="bi bi-clipboard-data"></i>
+              <span>Results</span>
+            </NavLink>
+
+          </div>
+
+        )}
+
 
         {/* Leave Request */}
         <NavLink
-          to="leave-request"
+          to="/dashboard/leave-request"
           className={({ isActive }) =>
             `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
               isActive ? "bg-blue-700" : ""
@@ -155,6 +206,7 @@ function Sidebar({ sidebarOpen }) {
           <i className="bi bi-calendar-check text-lg"></i>
           {sidebarOpen && <span>Leave Request</span>}
         </NavLink>
+
 
         {/* Logout */}
         <NavLink
@@ -166,9 +218,10 @@ function Sidebar({ sidebarOpen }) {
         </NavLink>
 
       </div>
+
     </div>
+
   );
 }
 
 export default Sidebar;
-
