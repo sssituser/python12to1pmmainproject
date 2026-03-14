@@ -1,324 +1,500 @@
+// src/components/Leave.jsx
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClipboardList,
-  faCalendarDays,
-  faFaceSadTear,
-  faPlus,
-  faCheck,
-  faTimes,
-  faUserShield
-} from "@fortawesome/free-solid-svg-icons";
-import { leaveRequestAPI } from "../services/api";
+import { faPlus, faCheck, faTimes, faTrash, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faEnvelope, faPhone, faIdCard, faDatabase, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 function LeaveRequest() {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
-  const [leaveRequests, setLeaveRequests] = useState([]);
-  const [view, setView] = useState("form"); // "form" | "list"
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState("Student"); 
-
-  useEffect(() => {
-    fetchLeaveRequests();
-  }, []);
-
-  const fetchLeaveRequests = async () => {
-    try {
-      setLoading(true);
-      const data = await leaveRequestAPI.getAll();
-      setLeaveRequests(data);
-    } catch (error) {
-      console.error('Error fetching leave requests:', error);
-      alert('Failed to load leave requests. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [role, setRole] = useState("Student");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [leaveType, setLeaveType] = useState("Medical");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !startDate || !endDate || !reason.trim()) {
-      alert("Please fill in all fields.");
+    console.log("=== Form Submit Started ===");
+    
+    if (!name || !startDate || !endDate || !reason) {
+      console.log("Validation failed - missing fields");
+      alert("Fill all required fields");
       return;
     }
-    if (new Date(endDate) < new Date(startDate)) {
-      alert("End date must be on or after start date.");
+
+    // First test if server is working
+    console.log("Testing server connection...");
+    try {
+      const testResponse = await fetch("http://127.0.0.1:8000/api/test/");
+      const testData = await testResponse.json();
+      console.log("Server test result:", testData);
+      
+      if (!testResponse.ok) {
+        console.error("Server test failed");
+        alert("Server is not responding correctly. Check Django server.");
+        return;
+      }
+    } catch (error) {
+      console.error("Cannot connect to server:", error);
+      alert("Cannot connect to Django server. Make sure it's running on http://127.0.0.1:8000");
       return;
     }
+
+    const newRequest = {
+      name,
+      email,
+      phone,
+      student_id: studentId,
+      start_date: startDate,
+      end_date: endDate,
+      reason,
+      leave_type: leaveType,
+      status: "Pending",
+      approved_by: null,
+      appliedDate: new Date().toISOString()
+    };
+
+    console.log("Submitting request:", newRequest);
 
     try {
-      setLoading(true);
-      const leaveData = {
-        name: name.trim(),
-        startDate,
-        endDate,
-        reason: reason.trim()
-      };
+      console.log("Sending POST request to /api/leave-requests/create/");
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newRequest)
+      });
 
-      const response = await leaveRequestAPI.create(leaveData);
+      console.log("Response received:");
+      console.log("- Status:", response.status);
+      console.log("- Status Text:", response.statusText);
+      console.log("- OK:", response.ok);
       
-      // Add new request to the list
-      const newRequest = {
-        id: response.id,
-        name: name.trim(),
-        startDate,
-        endDate,
-        description: reason.trim(),
-        status: "Pending",
-        approvedBy: null,
-      };
+      // Get response text first to see what we received
+      const responseText = await response.text();
+      console.log("- Raw Response:", responseText);
       
-      setLeaveRequests([newRequest, ...leaveRequests]);
-      setName("");
-      setStartDate("");
-      setEndDate("");
-      setReason("");
-      setView("list");
-      
-      alert("Leave request submitted successfully!");
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log("- Parsed Response:", result);
+      } catch (parseError) {
+        console.error("Failed to parse JSON:", parseError);
+        console.log("- Response was not valid JSON:", responseText);
+        alert("Server returned invalid response. Check Django console for errors.");
+        return;
+      }
+
+      if (response.ok) {
+        console.log("Request successful!");
+        alert("Request submitted successfully!");
+        
+        // Reset form
+        setReason("");
+        setLeaveType("Medical");
+        
+        // Reload requests from backend
+        console.log("Reloading requests...");
+        loadRequests();
+      } else {
+        console.error("Request failed with status:", response.status);
+        console.error("Backend response:", result);
+        
+        let errorMessage = "Failed to submit request";
+        if (result.errors) {
+          errorMessage += ": " + JSON.stringify(result.errors);
+        } else if (result.error) {
+          errorMessage += ": " + result.error;
+        } else if (result.message) {
+          errorMessage += ": " + result.message;
+        }
+        
+        alert(errorMessage);
+      }
     } catch (error) {
-      console.error('Error submitting leave request:', error);
-      alert('Failed to submit leave request. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error("Network error occurred:");
+      console.error("- Error:", error);
+      console.error("- Error message:", error.message);
+      console.error("- Error stack:", error.stack);
+      alert("Network error: " + error.message);
+    }
+    
+    console.log("=== Form Submit Ended ===");
+  };
+
+  const loadRequests = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/");
+      const data = await response.json();
+      console.log("Backend response:", data);
+      setRequests(data.data || data);
+    } catch (error) {
+      console.error("Error loading requests:", error);
     }
   };
 
-  const handleApproveReject = async (id, newStatus) => {
-    const authorizedRoles = ["Faculty"];
+  // Load requests on component mount
+  useEffect(() => {
+    loadRequests();
     
-    if (!authorizedRoles.includes(currentUserRole)) {
-      alert("You do not have permission to approve or reject leaves.");
-      return;
-    }
+    // Auto-fill user data from localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setName(user.username || user.firstName || '');
+    setEmail(user.email || '');
+    setStudentId(user.randomId || '');
+  }, []);
 
+  const handleApproveReject = async (id, status) => {
+    const endpoint = status.toLowerCase() === 'approved' ? 'approve' : 'reject';
+    
     try {
-      const updateData = {
-        status: newStatus,
-        approved_by: newStatus === "Pending" ? null : currentUserRole
-      };
+      const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/${endpoint}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ approved_by: role })
+      });
 
-      await leaveRequestAPI.update(id, updateData);
-      
-      // Update local state
-      setLeaveRequests(prev => 
-        prev.map(req => 
-          req.id === id 
-            ? { ...req, status: newStatus, approvedBy: updateData.approved_by }
-            : req
-        )
-      );
+      if (response.ok) {
+        alert(`Request ${status} successfully!`);
+        loadRequests();
+      } else {
+        alert(`Failed to ${status.toLowerCase()} request`);
+      }
     } catch (error) {
-      console.error('Error updating leave request:', error);
-      alert('Failed to update leave request. Please try again.');
+      console.error("Error:", error);
+      alert("Server error. Please try again.");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this leave request?")) {
-      return;
-    }
+    const requestToDelete = requests.find(req => req.id === id);
+    if (confirm(`Are you sure you want to permanently delete this leave request from ${requestToDelete?.name || 'Unknown'}? This action cannot be undone.`)) {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/delete/`, {
+          method: "DELETE"
+        });
 
-    try {
-      await leaveRequestAPI.delete(id);
-      setLeaveRequests(prev => prev.filter(req => req.id !== id));
-      alert("Leave request deleted successfully!");
-    } catch (error) {
-      console.error('Error deleting leave request:', error);
-      alert('Failed to delete leave request. Please try again.');
+        if (response.ok) {
+          alert(`Leave request from ${requestToDelete?.name || 'Unknown'} has been permanently deleted.`);
+          loadRequests();
+        } else {
+          alert("Failed to delete request");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Server error. Please try again.");
+      }
     }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("Remove all leave requests and start fresh?")) {
-      setLeaveRequests([]);
-    }
+  const handleExportData = () => {
+    const dataStr = JSON.stringify(requests, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leave-requests-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('Leave requests data exported successfully!');
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getLeaveTypeColor = (type) => {
+    const colors = {
+      'Medical': 'bg-red-100 text-red-700 border-red-200',
+      'Personal': 'bg-blue-100 text-blue-700 border-blue-200',
+      'Academic': 'bg-purple-100 text-purple-700 border-purple-200',
+      'Family': 'bg-green-100 text-green-700 border-green-200',
+      'Other': 'bg-gray-100 text-gray-700 border-gray-200'
+    };
+    return colors[type] || colors['Other'];
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4">
-    
-      <div className="mb-6 p-3 bg-gray-100 rounded-xl flex items-center gap-4 border border-gray-200">
-        <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
-          <FontAwesomeIcon icon={faUserShield} /> Logged in as:
-        </span>
-        <select
-          value={currentUserRole}
-          onChange={(e) => setCurrentUserRole(e.target.value)}
-          className="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="Student">Student (Apply Only)</option>
-          <option value="Faculty">Faculty</option>
-        </select>
-        {loading && (
-          <div className="ml-4">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600 text-xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Leave Request Portal</h1>
+              </div>
+            </div>
+            <div className="relative">
+              <select 
+                value={role} 
+                onChange={(e) => setRole(e.target.value)} 
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+              >
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <FontAwesomeIcon icon={faUser} className="text-gray-400 text-sm" />
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {view === "form" ? (
-        <>
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#1004ef] to-[#6131b5] text-white px-6 py-3 rounded-xl font-semibold text-lg mb-6 shadow-lg">
-            <FontAwesomeIcon icon={faClipboardList} />
-            <span>Leave Request Form</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Leave Request Form - Horizontal Layout */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <FontAwesomeIcon icon={faPlus} />
+              New Leave Request
+            </h2>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex flex-wrap gap-6 items-end">
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Full Name</label>
+          
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {/* Personal Information Fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 focus:border-indigo-500 outline-none transition"
+                  placeholder="Enter full name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />
               </div>
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">Start Date</label>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 9876543210"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="Student ID"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              {/* Leave Details Fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />
               </div>
-              <div className="flex-1 min-w-[180px]">
-                <label className="block font-medium text-gray-700 mb-1 text-sm">End Date</label>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="block font-medium text-gray-700 text-sm">Reason for Leave</label>
-              <textarea
-                placeholder="Briefly describe why you are taking leave..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-                className="w-full rounded-xl border-2 border-gray-200 py-2.5 px-4 outline-none transition resize-none"
-                required 
-              />
-              <button
-                type="submit"
-                className="mt-2 w-fit bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-              >
-                Submit Request
-              </button>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                <select 
+                  value={leaveType} 
+                  onChange={(e) => setLeaveType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                >
+                  <option value="Medical">Medical</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Academic">Academic</option>
+                  <option value="Family">Family</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              
+              {/* Reason Field - Spans multiple columns */}
+              <div className="lg:col-span-2 xl:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Leave *</label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Please provide a detailed reason for your leave request..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                  rows={2}
+                  required
+                />
+              </div>
+              
+              {/* Submit Button */}
+              <div className="flex items-end">
+                <button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition duration-200 flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  Submit
+                </button>
+              </div>
             </div>
           </form>
+        </div>
 
-          {leaveRequests.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className="mt-6 text-indigo-600 hover:underline font-bold flex items-center gap-2"
-            >
-              <FontAwesomeIcon icon={faClipboardList} />
-              View Leave History
-            </button>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-            <h2 className="text-2xl font-black text-gray-800 tracking-tight">Applied Leave Requests</h2>
-            <div className="flex items-center gap-3">
+        {/* All Leave Requests */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <FontAwesomeIcon icon={faBell} />
+                All Leave Requests
+              </h2>
               <button
-                onClick={handleClearAll}
-                className="text-red-500 text-sm font-semibold hover:bg-red-50 px-3 py-2 rounded-lg transition"
+                onClick={handleExportData}
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                title="Download all leave requests"
               >
-                Clear All
-              </button>
-              <button
-                onClick={() => setView("form")}
-                className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition shadow-sm"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                New Request
+                <FontAwesomeIcon icon={faDownload} />
+                Download
               </button>
             </div>
           </div>
-
-          <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xl">
           
-            <div className="grid grid-cols-[1.5fr_1fr_1fr_2.5fr_1fr_1fr] gap-4 bg-[#1004ef] text-white px-6 py-4 font-bold text-xs uppercase tracking-wider">
-              <div>Name</div>
-              <div>Start Date</div>
-              <div>End Date</div>
-              <div>Description</div>
-              <div>Status</div>
-              <div>Approved By</div>
-            </div>
-
-            
-            {leaveRequests.length === 0 ? (
-              <div className="flex flex-col items-center py-20 opacity-40">
-                <FontAwesomeIcon icon={faFaceSadTear} size="3x" />
-                <p className="mt-4 font-bold">No requests found</p>
+          <div className="p-6">
+            {requests.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Leave Requests</h3>
+                <p className="text-gray-600">Submit your first leave request to get started</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
-                {leaveRequests.map((req) => (
-                  <div key={req.id} className="grid grid-cols-[1.5fr_1fr_1fr_2.5fr_1fr_1fr] gap-4 px-6 py-5 text-sm items-center hover:bg-gray-50 transition">
-                    <div className="font-bold text-gray-900">{req.name}</div>
-                    <div className="text-gray-600">{formatDate(req.startDate)}</div>
-                    <div className="text-gray-600">{formatDate(req.endDate)}</div>
-                    <div className="text-gray-600 italic">"{req.description}"</div>
+              <div className="space-y-4">
+                {requests.map((req) => (
+                  <div key={req.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <FontAwesomeIcon icon={faUser} className="text-blue-600 text-sm" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{req.name}</h3>
+                            <p className="text-sm text-gray-600">{req.email}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400" />
+                            <span>{formatDate(req.start_date)} - {formatDate(req.end_date)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FontAwesomeIcon icon={faClock} className="text-gray-400" />
+                            <span>Applied: {formatDate(req.appliedDate || req.created_at)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLeaveTypeColor(req.leave_type)}`}>
+                            {req.leave_type}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            req.status === "Approved" ? "bg-green-100 text-green-700" :
+                            req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-700">
+                            <FontAwesomeIcon icon={faFileAlt} className="text-gray-400 mr-2" />
+                            {req.reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                     
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase ${
-                        req.status === "Approved" ? "bg-green-100 text-green-700" :
-                        req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {req.status}
-                      </span>
-                      
-                      
-                      {req.status === "Pending" && ["Faculty"].includes(currentUserRole) && (
-                        <div className="flex gap-2 mt-2">
-                          <button onClick={() => handleApproveReject(req.id, "Approved")} className="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition shadow-sm">
-                            <FontAwesomeIcon icon={faCheck} size="xs" />
+                    <div className="flex justify-end items-center gap-2 pt-4 border-t border-gray-100">
+                      {req.status === "Pending" && role === "Faculty" && (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleApproveReject(req.id, "Approved")} 
+                            className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                            title="Approve this leave request"
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                            Approve
                           </button>
-                          <button onClick={() => handleApproveReject(req.id, "Rejected")} className="bg-red-500 text-white p-1 rounded hover:bg-red-600 transition shadow-sm">
-                            <FontAwesomeIcon icon={faTimes} size="xs" />
+                          <button 
+                            onClick={() => handleApproveReject(req.id, "Rejected")} 
+                            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                            title="Reject this leave request"
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                            Reject
                           </button>
                         </div>
                       )}
-                    </div>
-
-                    <div className="text-xs font-semibold text-gray-400">
-                      {req.approvedBy || "—"}
+                      
+                      <button 
+                        onClick={() => handleDelete(req.id)} 
+                        className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                        title="Delete this request"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-          <p className="mt-4 text-xs text-gray-400">
-            Note: Only Faculty can approve these requests.
-          </p>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
