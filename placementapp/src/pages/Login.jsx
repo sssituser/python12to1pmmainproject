@@ -169,9 +169,7 @@ const handleLogin = async () => {
           >
             {loading ? "Logging in..." : "Log In"}
           </button>
-
           <div className="flex justify-between text-sm mb-6">
-
             <label className="flex items-center gap-2">
               <input type="checkbox" />
               Remember me
