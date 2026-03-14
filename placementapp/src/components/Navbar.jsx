@@ -1,24 +1,36 @@
-function Navbar({ toggleSidebar }) {
-  return (
-    <div className="navbar">
+function Navbar({toggleSidebar}){
 
-      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-        <button onClick={toggleSidebar} style={{fontSize:"22px"}}>
-          <i className="bi bi-list"></i>
-        </button>
-        <h2>Student Dashboard</h2>
-      </div>
+return(
 
-      <div style={{display:"flex",alignItems:"center",gap:"20px"}}>
-        <i className="bi bi-bell"></i>
-        <img
-          src="https://i.pravatar.cc/40"
-          style={{width:"35px",borderRadius:"50%"}}
-        />
-      </div>
+<div className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow">
 
-    </div>
-  );
+<div className="flex items-center gap-4">
+
+<button onClick={toggleSidebar}>
+<i className="bi bi-list text-2xl"></i>
+</button>
+
+<h1 className="font-semibold text-lg">
+Student Dashboard
+</h1>
+
+</div>
+
+<div className="flex items-center gap-4">
+
+<i className="bi bi-bell text-xl"></i>
+
+<img
+src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+className="w-8 h-8 rounded-full"
+/>
+
+</div>
+
+</div>
+
+)
+
 }
 
-export default Navbar;
+export default Navbar
