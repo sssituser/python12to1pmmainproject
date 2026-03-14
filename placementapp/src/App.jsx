@@ -10,6 +10,7 @@ import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
 
 import ExamReports from "./pages/ExamReports";
+import DailyExamReports from "./pages/DailyExamReports";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
 
@@ -33,13 +34,13 @@ function App() {
 
       <Routes>
 
-        {/* Login Page */}
+        {/* Login */}
         <Route path="/" element={<Login />} />
 
         {/* Standalone Exam */}
         <Route path="/exam" element={<Exams />} />
 
-        {/* ✅ Detailed Results WITHOUT sidebar */}
+        {/* Detailed Results without sidebar */}
         <Route
           path="/detailed-results/:index"
           element={<DetailedResults />}
@@ -66,6 +67,7 @@ function App() {
           {/* Exams */}
           <Route path="exams" element={<ExamsList />} />
           <Route path="exam-reports" element={<ExamReports />} />
+          <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
 
           {/* Playground */}
@@ -74,7 +76,10 @@ function App() {
 
           {/* Playground Results */}
           <Route path="playground-results" element={<PlaygroundResults />} />
-          <Route path="playground/detailed-results/:index" element={<DetailedResults />} />
+          <Route
+            path="playground/detailed-results/:index"
+            element={<DetailedResults />}
+          />
 
           {/* Python Exam */}
           <Route path="python-exam" element={<PythonExam />} />
