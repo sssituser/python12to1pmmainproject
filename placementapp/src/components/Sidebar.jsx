@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
 function Sidebar({ sidebarOpen }) {
+  const [openJobs, setOpenJobs] = useState(true);
+  const [openPlayground, setOpenPlayground] = useState(false);
+
   return (
     <div className={`sidebar ${!sidebarOpen ? "collapsed" : ""}`}>
       <div className="sidebar-menu">
@@ -10,10 +14,30 @@ function Sidebar({ sidebarOpen }) {
           <span>Profile</span>
         </NavLink>
 
-        <NavLink to="jobs" className="sidebar-link">
+        {/* Jobs Dropdown */}
+        <div
+          className="sidebar-link"
+          onClick={() => setOpenJobs(!openJobs)}
+          style={{
+            cursor: "pointer",
+            background: openJobs ? "#1e293b" : "transparent",
+          }}
+        >
           <i className="bi bi-briefcase"></i>
           <span>Jobs</span>
-        </NavLink>
+          <i className={`bi ${openJobs ? "bi-chevron-up" : "bi-chevron-down"} ms-auto`}></i>
+        </div>
+
+        {openJobs && (
+          <div className="submenu">
+            <NavLink to="/dashboard/alljobs" className="sidebar-sublink">
+              All Jobs
+            </NavLink>
+            <NavLink to="/dashboard/appliedjobs" className="sidebar-sublink">
+              Applied Jobs
+            </NavLink>
+          </div>
+        )}
 
         <NavLink to="course" className="sidebar-link">
           <i className="bi bi-book"></i>
@@ -35,14 +59,36 @@ function Sidebar({ sidebarOpen }) {
           <span>Leaderboard</span>
         </NavLink>
 
-        <NavLink to="playground" className="sidebar-link">
+        {/* Playground Dropdown */}
+        <div
+          className="sidebar-link"
+          onClick={() => setOpenPlayground(!openPlayground)}
+          style={{
+            cursor: "pointer",
+            background: openPlayground ? "#1e293b" : "transparent",
+          }}
+        >
           <i className="bi bi-code-slash"></i>
           <span>Playground</span>
-        </NavLink>
+          <i className={`bi ${openPlayground ? "bi-chevron-up" : "bi-chevron-down"} ms-auto`}></i>
+        </div>
+
+        {openPlayground && (
+          <div className="submenu">
+            <NavLink to="/dashboard/playground" className="sidebar-sublink">
+            Tech lab
+              
+            </NavLink>
+
+            <NavLink to="/dashboard/playground-results" className="sidebar-sublink">
+              Results
+            </NavLink>
+          </div>
+        )}
 
         <NavLink to="leave-request" className="sidebar-link">
-        <i className="bi bi-calendar-check"></i>
-        <span>Leave Request</span>
+          <i className="bi bi-calendar-check"></i>
+          <span>Leave Request</span>
         </NavLink>
 
         <NavLink to="logout" className="sidebar-link">

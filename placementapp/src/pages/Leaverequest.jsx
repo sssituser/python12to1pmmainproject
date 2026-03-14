@@ -1,6 +1,7 @@
+// src/components/Leave.jsx
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faCheck, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faCheck, faTimes, faTrash, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faEnvelope, faPhone, faIdCard, faDatabase, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 function LeaveRequest() {
   const [name, setName] = useState("");
@@ -10,164 +11,489 @@ function LeaveRequest() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("Student");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [leaveType, setLeaveType] = useState("Medical");
 
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('leaveRequests') || '[]');
-    setRequests(data);
-  }, []);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("=== Form Submit Started ===");
+    
     if (!name || !startDate || !endDate || !reason) {
-      alert("Fill all fields");
+      console.log("Validation failed - missing fields");
+      alert("Fill all required fields");
+      return;
+    }
+
+    // First test if server is working
+    console.log("Testing server connection...");
+    try {
+      const testResponse = await fetch("http://127.0.0.1:8000/api/test/");
+      const testData = await testResponse.json();
+      console.log("Server test result:", testData);
+      
+      if (!testResponse.ok) {
+        console.error("Server test failed");
+        alert("Server is not responding correctly. Check Django server.");
+        return;
+      }
+    } catch (error) {
+      console.error("Cannot connect to server:", error);
+      alert("Cannot connect to Django server. Make sure it's running on http://127.0.0.1:8000");
       return;
     }
 
     const newRequest = {
-      id: Date.now(),
       name,
-      startDate,
-      endDate,
-      description: reason,
+      email,
+      phone,
+      student_id: studentId,
+      start_date: startDate,
+      end_date: endDate,
+      reason,
+      leave_type: leaveType,
       status: "Pending",
-      approvedBy: null
+      approved_by: null,
+      appliedDate: new Date().toISOString()
     };
 
-    const updated = [newRequest, ...requests];
-    setRequests(updated);
-    localStorage.setItem('leaveRequests', JSON.stringify(updated));
+    console.log("Submitting request:", newRequest);
+
+    try {
+      console.log("Sending POST request to /api/leave-requests/create/");
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newRequest)
+      });
+
+      console.log("Response received:");
+      console.log("- Status:", response.status);
+      console.log("- Status Text:", response.statusText);
+      console.log("- OK:", response.ok);
+      
+      // Get response text first to see what we received
+      const responseText = await response.text();
+      console.log("- Raw Response:", responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log("- Parsed Response:", result);
+      } catch (parseError) {
+        console.error("Failed to parse JSON:", parseError);
+        console.log("- Response was not valid JSON:", responseText);
+        alert("Server returned invalid response. Check Django console for errors.");
+        return;
+      }
+
+      if (response.ok) {
+        console.log("Request successful!");
+        alert("Request submitted successfully!");
+        
+        // Reset form
+        setReason("");
+        setLeaveType("Medical");
+        
+        // Reload requests from backend
+        console.log("Reloading requests...");
+        loadRequests();
+      } else {
+        console.error("Request failed with status:", response.status);
+        console.error("Backend response:", result);
+        
+        let errorMessage = "Failed to submit request";
+        if (result.errors) {
+          errorMessage += ": " + JSON.stringify(result.errors);
+        } else if (result.error) {
+          errorMessage += ": " + result.error;
+        } else if (result.message) {
+          errorMessage += ": " + result.message;
+        }
+        
+        alert(errorMessage);
+      }
+    } catch (error) {
+      console.error("Network error occurred:");
+      console.error("- Error:", error);
+      console.error("- Error message:", error.message);
+      console.error("- Error stack:", error.stack);
+      alert("Network error: " + error.message);
+    }
     
-    setName("");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
-    alert("Request submitted!");
+    console.log("=== Form Submit Ended ===");
   };
 
-  const handleApproveReject = (id, status) => {
-    if (role !== "Faculty") {
-      alert("Only faculty can approve/reject");
-      return;
+  const loadRequests = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/");
+      const data = await response.json();
+      console.log("Backend response:", data);
+      setRequests(data.data || data);
+    } catch (error) {
+      console.error("Error loading requests:", error);
     }
-
-    const updated = requests.map(req => 
-      req.id === id ? { ...req, status, approvedBy: role } : req
-    );
-    setRequests(updated);
-    localStorage.setItem('leaveRequests', JSON.stringify(updated));
   };
 
-  const handleDelete = (id) => {
-    if (confirm("Delete this request?")) {
-      const updated = requests.filter(req => req.id !== id);
-      setRequests(updated);
-      localStorage.setItem('leaveRequests', JSON.stringify(updated));
+  // Load requests on component mount
+  useEffect(() => {
+    loadRequests();
+    
+    // Auto-fill user data from localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setName(user.username || user.firstName || '');
+    setEmail(user.email || '');
+    setStudentId(user.randomId || '');
+  }, []);
+
+  const handleApproveReject = async (id, status) => {
+    const endpoint = status.toLowerCase() === 'approved' ? 'approve' : 'reject';
+    
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/${endpoint}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ approved_by: role })
+      });
+
+      if (response.ok) {
+        alert(`Request ${status} successfully!`);
+        loadRequests();
+      } else {
+        alert(`Failed to ${status.toLowerCase()} request`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server error. Please try again.");
     }
+  };
+
+  const handleDelete = async (id) => {
+    const requestToDelete = requests.find(req => req.id === id);
+    if (confirm(`Are you sure you want to permanently delete this leave request from ${requestToDelete?.name || 'Unknown'}? This action cannot be undone.`)) {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/delete/`, {
+          method: "DELETE"
+        });
+
+        if (response.ok) {
+          alert(`Leave request from ${requestToDelete?.name || 'Unknown'} has been permanently deleted.`);
+          loadRequests();
+        } else {
+          alert("Failed to delete request");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Server error. Please try again.");
+      }
+    }
+  };
+
+  const handleExportData = () => {
+    const dataStr = JSON.stringify(requests, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leave-requests-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('Leave requests data exported successfully!');
   };
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("en-IN");
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getLeaveTypeColor = (type) => {
+    const colors = {
+      'Medical': 'bg-red-100 text-red-700 border-red-200',
+      'Personal': 'bg-blue-100 text-blue-700 border-blue-200',
+      'Academic': 'bg-purple-100 text-purple-700 border-purple-200',
+      'Family': 'bg-green-100 text-green-700 border-green-200',
+      'Other': 'bg-gray-100 text-gray-700 border-gray-200'
+    };
+    return colors[type] || colors['Other'];
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Leave Requests</h1>
-        <div className="flex gap-2">
-          <select value={role} onChange={(e) => setRole(e.target.value)} className="border rounded px-3 py-1">
-            <option value="Student">Student</option>
-            <option value="Faculty">Faculty</option>
-          </select>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600 text-xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Leave Request Portal</h1>
+              </div>
+            </div>
+            <div className="relative">
+              <select 
+                value={role} 
+                onChange={(e) => setRole(e.target.value)} 
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+              >
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <FontAwesomeIcon icon={faUser} className="text-gray-400 text-sm" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">New Request</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
-            className="border rounded px-3 py-2"
-            required
-          />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-3 py-2"
-            required
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-3 py-2"
-            required
-          />
-        </div>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Reason for leave"
-          className="w-full border rounded px-3 py-2 mb-4"
-          rows={2}
-          required
-        />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          <FontAwesomeIcon icon={faPlus} className="mr-2" /> Submit
-        </button>
-      </form>
-
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold">All Requests</h2>
-        </div>
-        
-        {requests.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No requests found
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Leave Request Form - Horizontal Layout */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <FontAwesomeIcon icon={faPlus} />
+              New Leave Request
+            </h2>
           </div>
-        ) : (
-          <div className="divide-y">
-            {requests.map((req) => (
-              <div key={req.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
-                <div className="flex-1">
-                  <div className="font-semibold">{req.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {formatDate(req.startDate)} - {formatDate(req.endDate)}
-                  </div>
-                  <div className="text-sm text-gray-600 italic">{req.description}</div>
+          
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {/* Personal Information Fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter full name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 9876543210"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="Student ID"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              
+              {/* Leave Details Fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                <select 
+                  value={leaveType} 
+                  onChange={(e) => setLeaveType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                >
+                  <option value="Medical">Medical</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Academic">Academic</option>
+                  <option value="Family">Family</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              
+              {/* Reason Field - Spans multiple columns */}
+              <div className="lg:col-span-2 xl:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Leave *</label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Please provide a detailed reason for your leave request..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                  rows={2}
+                  required
+                />
+              </div>
+              
+              {/* Submit Button */}
+              <div className="flex items-end">
+                <button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition duration-200 flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  Submit
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        {/* All Leave Requests */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <FontAwesomeIcon icon={faBell} />
+                All Leave Requests
+              </h2>
+              <button
+                onClick={handleExportData}
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                title="Download all leave requests"
+              >
+                <FontAwesomeIcon icon={faDownload} />
+                Download
+              </button>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            {requests.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                    req.status === "Approved" ? "bg-green-100 text-green-700" :
-                    req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
-                  }`}>
-                    {req.status}
-                  </span>
-                  
-                  {req.status === "Pending" && role === "Faculty" && (
-                    <div className="flex gap-1">
-                      <button onClick={() => handleApproveReject(req.id, "Approved")} className="bg-green-500 text-white p-1 rounded hover:bg-green-600">
-                        <FontAwesomeIcon icon={faCheck} size="xs" />
-                      </button>
-                      <button onClick={() => handleApproveReject(req.id, "Rejected")} className="bg-red-500 text-white p-1 rounded hover:bg-red-600">
-                        <FontAwesomeIcon icon={faTimes} size="xs" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Leave Requests</h3>
+                <p className="text-gray-600">Submit your first leave request to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {requests.map((req) => (
+                  <div key={req.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <FontAwesomeIcon icon={faUser} className="text-blue-600 text-sm" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{req.name}</h3>
+                            <p className="text-sm text-gray-600">{req.email}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400" />
+                            <span>{formatDate(req.start_date)} - {formatDate(req.end_date)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FontAwesomeIcon icon={faClock} className="text-gray-400" />
+                            <span>Applied: {formatDate(req.appliedDate || req.created_at)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLeaveTypeColor(req.leave_type)}`}>
+                            {req.leave_type}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            req.status === "Approved" ? "bg-green-100 text-green-700" :
+                            req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                          }`}>
+                            {req.status}
+                          </span>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-700">
+                            <FontAwesomeIcon icon={faFileAlt} className="text-gray-400 mr-2" />
+                            {req.reason}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end items-center gap-2 pt-4 border-t border-gray-100">
+                      {req.status === "Pending" && role === "Faculty" && (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleApproveReject(req.id, "Approved")} 
+                            className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                            title="Approve this leave request"
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                            Approve
+                          </button>
+                          <button 
+                            onClick={() => handleApproveReject(req.id, "Rejected")} 
+                            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                            title="Reject this leave request"
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                      
+                      <button 
+                        onClick={() => handleDelete(req.id)} 
+                        className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-1 text-sm"
+                        title="Delete this request"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                        Delete
                       </button>
                     </div>
-                  )}
-                  
-                  <button onClick={() => handleDelete(req.id)} className="bg-gray-500 text-white p-1 rounded hover:bg-gray-600">
-                    <FontAwesomeIcon icon={faTrash} size="xs" />
-                  </button>
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,22 @@
 from django.db import models
+from django.contrib.auth.models import User
 
+
+class Playground(models.Model):
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    code = models.TextField()
+
+    language = models.CharField(max_length=50)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+# Custom User Model
 class User(models.Model):
-
     username = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=100)
@@ -9,24 +24,73 @@ class User(models.Model):
     def __str__(self):
         return self.username
 
+# Leave Request Model
+
+
+# myapp/models.py
+from django.db import models
+from django.contrib.auth.models import User
 
 class LeaveRequest(models.Model):
     name = models.CharField(max_length=100)
+    email = models.EmailField(blank=True, null=True)
+    student_id = models.CharField(max_length=50)
+    phone = models.CharField(max_length=15, blank=True, null=True)
+
     start_date = models.DateField()
     end_date = models.DateField()
     reason = models.TextField()
-    status = models.CharField(max_length=20, choices=[
-        ('Pending', 'Pending'),
-        ('Approved', 'Approved'),
-        ('Rejected', 'Rejected')
-    ], default='Pending')
-    approved_by = models.CharField(max_length=100, null=True, blank=True)
+
+    leave_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('Medical', 'Medical'),
+            ('Personal', 'Personal'),
+            ('Academic', 'Academic'),
+            ('Family', 'Family'),
+            ('Other', 'Other')
+        ],
+        default='Medical'
+    )
+
+    status = models.CharField(max_length=20, default="Pending")
+    approved_by = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} - {self.start_date} to {self.end_date}"
+        return f"{self.name} - {self.status}"
+# Job Models
+class Job(models.Model):
+    company = models.CharField(max_length=200)
+    job_title = models.CharField(max_length=200)
+    primary_skills = models.TextField()
+    deadline = models.DateField()
+    location = models.CharField(max_length=200)
+    status = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.job_title
 
+class AppliedJob(models.Model):
+    job = models.ForeignKey("Job", on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=200)
+    email = models.EmailField()
+    applied_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.student_name
+
+class JobApplication(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return f"Application for {self.job} by user {self.user_id}"
+
+# Exam Models
 class PythonQuestion(models.Model):
     question_text = models.TextField()
     question_type = models.CharField(max_length=20, choices=[
@@ -45,7 +109,6 @@ class PythonQuestion(models.Model):
     def __str__(self):
         return f"Question {self.id} - {self.question_type}"
 
-
 class Choice(models.Model):
     question = models.ForeignKey(PythonQuestion, on_delete=models.CASCADE, related_name='choices')
     choice_text = models.CharField(max_length=200)
@@ -53,7 +116,6 @@ class Choice(models.Model):
 
     def __str__(self):
         return f"Choice for {self.question.id}"
-
 
 class ExamSession(models.Model):
     student_name = models.CharField(max_length=100)
@@ -74,7 +136,6 @@ class ExamSession(models.Model):
     def __str__(self):
         return f"Exam Session - {self.student_name}"
 
-
 class ExamAnswer(models.Model):
     session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='answers')
     question = models.ForeignKey(PythonQuestion, on_delete=models.CASCADE)
@@ -86,7 +147,6 @@ class ExamAnswer(models.Model):
     def __str__(self):
         return f"Answer by {self.session.student_name} for Q{self.question.id}"
 
-
 class WebcamSnapshot(models.Model):
     session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='snapshots')
     image_path = models.CharField(max_length=500)
@@ -97,52 +157,7 @@ class WebcamSnapshot(models.Model):
     def __str__(self):
         return f"Snapshot for {self.session.student_name} at {self.timestamp}"
 
-
-class CodeSnippet(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField(null=True, blank=True)
-    code = models.TextField()
-    language = models.CharField(max_length=50, default='python')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.language}"
-
-
-class CodeTemplate(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField()
-    template_code = models.TextField()
-    language = models.CharField(max_length=50, default='python')
-    category = models.CharField(max_length=100, default='general')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.category}"
-
-
-class ExecutionSession(models.Model):
-    session_id = models.CharField(max_length=100, unique=True)
-    code = models.TextField()
-    language = models.CharField(max_length=50, default='python')
-    output = models.TextField(null=True, blank=True)
-    error = models.TextField(null=True, blank=True)
-    execution_time = models.FloatField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('running', 'Running'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed')
-    ], default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f"Session {self.session_id} - {self.status}"
-
-
+# Exam Attempt Model (Missing - Added Now)
 class ExamAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exam_attempts')
     exam_title = models.CharField(max_length=200)
@@ -171,3 +186,70 @@ class ExamAttempt(models.Model):
     class Meta:
         ordering = ['-exam_date']  # Most recent first
 
+# Playground Models
+class CodeSnippet(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+    code = models.TextField()
+    language = models.CharField(max_length=50, default='python')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.language}"
+
+class CodeTemplate(models.Model):
+    title = models.CharField(max_length=200)
+    language = models.CharField(max_length=50, default='python')
+    code = models.TextField()
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.language}"
+
+class ExecutionSession(models.Model):
+    session_id = models.CharField(max_length=100, unique=True)
+    code = models.TextField()
+    language = models.CharField(max_length=50, default='python')
+    output = models.TextField(null=True, blank=True)
+    error = models.TextField(null=True, blank=True)
+    execution_time = models.FloatField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
+    ], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Session {self.session_id} - {self.status}"
+
+# Profile Models
+class StudentProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    age = models.IntegerField(null=True, blank=True)
+    phone = models.CharField(max_length=15, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+class Skill(models.Model):
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class Project(models.Model):
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title

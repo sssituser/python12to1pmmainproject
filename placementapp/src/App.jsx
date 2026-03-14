@@ -4,22 +4,27 @@ import { ToastContainer } from "react-toastify";
 import Dashboard from "./Layout/Dashboard";
 import Course from "./pages/Course";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
+import Jobs from "./pages/Jobs";
+import AllJobs from "./pages/Alljobs";
+import JobDetails from "./pages/jobDetails";
+import AppliedJobs from "./pages/AppliedJobs";
+
 import ExamReports from "./pages/ExamReports";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
-import Jobs from "./pages/Jobs";
+
 import Logout from "./pages/Logout";
-import Playground from "./pages/Playground";
-import PlaygroundDetail from "./pages/PlaygroundDetail";
-import LeaveRequest from "./pages/Leaverequest";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import PythonExam from "./pages/PythonExam";
 import Reports from "./pages/Reports";
 
-import AllJobs from "./pages/Alljobs";
-import JobDetails from "./pages/jobDetails";
-import AppliedJobs from "./pages/AppliedJobs";
+import Playground from "./pages/Playground";
+import PlaygroundDetail from "./pages/PlaygroundDetail";
+import PlaygroundResults from "./pages/PlaygroundResults";
+import DetailedResults from "./pages/DetailedResults";
+
+import LeaveRequest from "./pages/Leaverequest";
 
 function App() {
   return (
@@ -31,34 +36,57 @@ function App() {
         {/* Login Page */}
         <Route path="/" element={<Login />} />
 
-        {/* Standalone Exam Page (No Dashboard Layout) */}
+        {/* Standalone Exam */}
         <Route path="/exam" element={<Exams />} />
 
-        {/* Dashboard Layout Routes */}
+        {/* ✅ Detailed Results WITHOUT sidebar */}
+        <Route
+          path="/detailed-results/:index"
+          element={<DetailedResults />}
+        />
+
+        {/* Dashboard Layout */}
         <Route path="/dashboard" element={<Dashboard />}>
 
+          {/* Default */}
           <Route index element={<Profile />} />
-          <Route path="/dashboard/profile" element={<Profile />} />
 
-          <Route path="/dashboard/jobs" element={<Jobs />} />
-          <Route path="/dashboard/alljobs" element={<AllJobs />} />
-          <Route path="/dashboard/appliedjobs" element={<AppliedJobs />} />
-          <Route path="/dashboard/jobdetails" element={<JobDetails />} />
+          {/* Profile */}
+          <Route path="profile" element={<Profile />} />
 
-          <Route path="/dashboard/course" element={<Course />} />
+          {/* Jobs */}
+          <Route path="jobs" element={<Jobs />} />
+          <Route path="alljobs" element={<AllJobs />} />
+          <Route path="appliedjobs" element={<AppliedJobs />} />
+          <Route path="jobs/:id" element={<JobDetails />} />
 
-          <Route path="/dashboard/exams" element={<ExamsList />} />
-          <Route path="/dashboard/exam-reports" element={<ExamReports />} />
-          <Route path="/dashboard/exam-leaderboard" element={<ExamLeaderboard />} />
+          {/* Course */}
+          <Route path="course" element={<Course />} />
 
-          <Route path="/dashboard/playground" element={<Playground />} />
-          <Route path="/dashboard/playground/:language" element={<PlaygroundDetail />} />
-          <Route path="/dashboard/python-exam" element={<PythonExam />} />
-          <Route path="/dashboard/reports" element={<Reports />} />
+          {/* Exams */}
+          <Route path="exams" element={<ExamsList />} />
+          <Route path="exam-reports" element={<ExamReports />} />
+          <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
 
-          <Route path="/dashboard/leave-request" element={<LeaveRequest />} />
+          {/* Playground */}
+          <Route path="playground" element={<Playground />} />
+          <Route path="playground/:language" element={<PlaygroundDetail />} />
 
-          <Route path="/dashboard/logout" element={<Logout />} />
+          {/* Playground Results */}
+          <Route path="playground-results" element={<PlaygroundResults />} />
+          <Route path="playground/detailed-results/:index" element={<DetailedResults />} />
+
+          {/* Python Exam */}
+          <Route path="python-exam" element={<PythonExam />} />
+
+          {/* Reports */}
+          <Route path="reports" element={<Reports />} />
+
+          {/* Leave */}
+          <Route path="leave-request" element={<LeaveRequest />} />
+
+          {/* Logout */}
+          <Route path="logout" element={<Logout />} />
 
         </Route>
 
