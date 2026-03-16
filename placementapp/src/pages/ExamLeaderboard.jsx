@@ -46,18 +46,18 @@ function ExamLeaderboard() {
             <div className="text-sm text-gray-700 space-y-3">
 
               <p><b>1. Primary Rank</b></p>
-              <p>Higher score = higher rank</p>
+              <p>Higher score = Higher rank</p>
 
               <p><b>2. Tiebreakers</b></p>
               <ul className="list-disc ml-5">
-                <li>Execution time (lower is better)</li>
-                <li>Time spent (faster is better)</li>
-                <li>Memory usage (lower is better)</li>
-                <li>Questions solved (more is better)</li>
+                <li>Execution time</li>
+                <li>Time spent</li>
+                <li>Memory usage</li>
+                <li>Questions solved</li>
               </ul>
 
-              <p><b>3. Difficulty Score</b></p>
-              <p>Topper = 1 | Medium = 2 | Hard = 3</p>
+              <p><b>3. Rank Score</b></p>
+              <p>Top Rank = 1 | Mid Rank = 2 | Low Rank = 3</p>
 
             </div>
 
