@@ -100,9 +100,9 @@ function ExamLeaderboard() {
             className="w-full border rounded-lg px-3 py-2 mt-1"
           >
             <option value="">All Batches</option>
-            <option value="1">Batch 1</option>
+            {/* <option value="1">Batch 1</option>
             <option value="2">Batch 2</option>
-            <option value="3">Batch 3</option>
+            <option value="3">Batch 3</option> */}
           </select>
         </div>
 
