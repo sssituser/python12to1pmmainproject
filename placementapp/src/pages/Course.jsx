@@ -1,39 +1,105 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-export default function CourseTopics() {
+export default function Course() {
 
-  const { courseId } = useParams();
   const navigate = useNavigate();
+  const { courseId } = useParams();
 
-  const topics = {
-    1: ["1.  Introduction to Java","2.  java operators" ,"3.  Boot basics", "4.  Data Types","5.  Conditional Statements","6.  Control Statements","7. Logical coding","8. Inheritance","9.   Polymorphism","10.  Constructors"],
-    2: ["1. Python Basics","2. Introduction to variables,data types,operators","3. Loops","4. Advanced Java"],
-    3: ["1. JS Basics", "2. ES6", "3. React JS"],
-    4: ["1. Introduction to .Net","2.Data types","3.Operators"],
-    5: ["1. Html Heading Tags","2. Inline elements","3. Block level Elements","4.Anchor Tags"],
-    6: ["1.Mongodb basics","2.basic commands","3.sorting,filter","4.Nodejs introduction"],
-    7: ["1.Introduction to Data science","2.python basics","3.Looping statements"]
+  const courses = {
+    1: {
+      title: "Java",
+      topics: [
+        "Introduction to Java",
+        "Java Operators",
+        "Data Types",
+        "Conditional Statements",
+        "Control Statements"
+      ]
+    },
+    2: {
+      title: "Python",
+      topics: [
+        "Python Basics",
+        "Variables and Data Types",
+        "Loops",
+        "Functions"
+      ]
+    },
+    3: {
+      title: "JavaScript",
+      topics: [
+        "JS Basics",
+        "ES6",
+        "DOM Manipulation",
+        "React Basics"
+      ]
+    }
   };
 
-  return (
-    <div className="container mt-4">
+  // 👉 If courseId is not present → show course list
+  if (!courseId) {
 
-      <h3>Course Topics</h3>
+    return (
 
-      {topics[courseId]?.map((topic, index) => (
-        <div key={index} className="mb-2">
+      <div className="p-6">
 
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate(`/course/video/${index}`)}
-          >
-            {topic}
-          </button>
+        <h2 className="text-2xl font-bold mb-6">Courses</h2>
+
+        <div className="grid grid-cols-3 gap-4">
+
+          {Object.entries(courses).map(([id, course]) => (
+
+            <div
+              key={id}
+              onClick={() => navigate(`/dashboard/course/${id}`)}
+              className="bg-blue-600 text-white p-5 rounded cursor-pointer hover:bg-blue-700"
+            >
+
+              <h3 className="text-xl">{course.title}</h3>
+
+            </div>
+
+          ))}
 
         </div>
+
+      </div>
+
+    );
+
+  }
+
+  const course = courses[courseId];
+
+  if (!course) {
+    return <h3 className="p-6">Course not found</h3>;
+  }
+
+  return (
+
+    <div className="p-6">
+
+      <h2 className="text-2xl font-bold mb-4">{course.title} Topics</h2>
+
+      {course.topics.map((topic, index) => (
+
+        <button
+          key={index}
+          onClick={() =>
+            navigate(`/dashboard/course/video/${courseId}/${index}`)
+          }
+          className="block w-full text-left bg-gray-200 p-3 mb-2 rounded hover:bg-gray-300"
+        >
+
+          {index + 1}. {topic}
+
+        </button>
+
       ))}
 
     </div>
+
   );
+
 }
