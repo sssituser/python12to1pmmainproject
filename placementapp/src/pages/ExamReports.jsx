@@ -27,8 +27,11 @@ function ExamReports() {
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Weekly Exam</h5>
-            <button className="btn btn-secondary">
-              COMING SOON
+            <button
+              className="btn btn-success"
+              onClick={() => navigate("/dashboard/daily-exams")}
+            >
+              VIEW
             </button>
           </div>
         </div>
@@ -36,8 +39,11 @@ function ExamReports() {
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Monthly Exam</h5>
-            <button className="btn btn-secondary">
-              COMING SOON
+            <button
+              className="btn btn-success"
+              onClick={() => navigate("/dashboard/daily-exams")}
+            >
+              VIEW
             </button>
           </div>
         </div>
