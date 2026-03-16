@@ -1,65 +1,106 @@
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { useState, useEffect } from "react";
 
 const exams = [
-{ id: 1, score: 0, total: 30 },
-{ id: 2, score: 15, total: 20 },
-{ id: 3, score: 26, total: 30 },
-{ id: 4, score: 28, total: 30 },
-{ id: 5, score: 26, total: 30 },
+{ id: 1, score: 15, total: 30 },
+{ id: 2, score: 20, total: 30 },
+{ id: 3, score: 15, total: 30 },
+{ id: 4, score: 10, total: 30 },
+{ id: 5, score: 25, total: 30 },
 ];
 
 function DailyExamReports() {
 
+const [progress, setProgress] = useState({});
+
+useEffect(() => {
+
+exams.forEach((exam) => {
+
+ const percentage = (exam.score / exam.total) * 100;
+
+if (percentage === 0) {
+  setProgress(prev => ({
+    ...prev,
+    [exam.id]: 0
+  }));
+  return;
+}
+
+let value = 0;
+
+const interval = setInterval(() => {
+
+  value += 2;
+
+  if (value >= percentage) {
+    value = percentage;
+    clearInterval(interval);
+  }
+
+  setProgress(prev => ({
+    ...prev,
+    [exam.id]: value
+  }));
+
+}, 20);
+
+});
+
+}, []);
+
 const getColor = (percentage) => {
-if (percentage >= 80) return "#16a34a";
-if (percentage >= 60) return "#eab308";
-return "#ef4444";
+if (percentage >= 80) return "#198754";
+if (percentage >= 60) return "#ffc107";
+return "#dc3545";
 };
 
 return (
 
-<div className="p-6">
+<div className="container mt-4">
 
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+  <div className="row">
 
     {exams.map((exam) => {
 
       const percentage = (exam.score / exam.total) * 100;
+      const value = progress[exam.id] || 0;
       const color = getColor(percentage);
 
       return (
 
-        <div
-          key={exam.id}
-          className="bg-white rounded-xl shadow-md p-5 text-center hover:shadow-lg transition"
-        >
+        <div className="col-md-3 mb-4" key={exam.id}>
 
-          <h2 className="text-base font-semibold mb-3">
-            Daily-Exam-{exam.id}
-          </h2>
+          <div className="card text-center shadow-sm p-3">
 
-          <div className="w-20 mx-auto">
+            <h6 className="mb-3">
+              Daily-Exam-{exam.id}
+            </h6>
 
-            <CircularProgressbar
-              value={percentage}
-              text={`${percentage.toFixed(1)}%`}
-              styles={buildStyles({
-                pathColor: color,
-                textColor: color,
-                trailColor: "#e5e7eb"
-              })}
-            />
+            <div style={{ width: "90px", margin: "auto" }}>
+
+              <CircularProgressbar
+                value={value}
+                text={`${value.toFixed(1)}%`}
+                styles={buildStyles({
+                  pathColor: color,
+                  textColor: color,
+                  trailColor: "#e5e7eb"
+                })}
+              />
+
+            </div>
+
+            <p className="mt-3 text-muted">
+              Score {exam.score}/{exam.total}
+            </p>
+
+            <button className="btn btn-primary btn-sm mt-2">
+              VIEW REPORT
+            </button>
 
           </div>
-
-          <p className="mt-3 text-sm text-gray-600">
-            Score {exam.score}/{exam.total}
-          </p>
-
-          <button className="mt-3 bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 transition">
-            View Report
-          </button>
 
         </div>
 
