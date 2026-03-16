@@ -88,7 +88,7 @@ WSGI_APPLICATION = 'placement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'placement_db',
+        'NAME': 'placementdb',
         'USER': 'root',
         'PASSWORD': '2004',
         'HOST': 'localhost',
