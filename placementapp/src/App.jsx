@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 
 import Dashboard from "./Layout/Dashboard";
-import Course from "./pages/Course";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
@@ -26,6 +25,8 @@ import PlaygroundResults from "./pages/PlaygroundResults";
 import DetailedResults from "./pages/DetailedResults";
 
 import LeaveRequest from "./pages/Leaverequest";
+import Course from "./pages/Course";
+import TopicVideo from "./pages/TopicVideo";
 
 function App() {
   return (
@@ -49,6 +50,10 @@ function App() {
           {/* Default */}
           <Route index element={<Profile />} />
 
+          {/* Course */}
+          <Route path="/dashboard/course/:courseId" element={<Course />} />
+          <Route path="/dashboard/course/video/:courseId/:topicId" element={<TopicVideo />} />
+
           {/* Profile */}
           <Route path="profile" element={<Profile />} />
 
@@ -59,10 +64,10 @@ function App() {
           <Route path="jobs/:id" element={<JobDetails />} />
 
           {/* Course */}
-          <Route path="course" element={<Course />} />
+          <Route path="/dashboard/course" element={<Course />} />
 
           {/* Exams */}
-          <Route path="exams" element={<ExamsList />} />
+          <Route path="exams" element={<Exams />} />
           <Route path="exam-reports" element={<ExamReports />} />
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
