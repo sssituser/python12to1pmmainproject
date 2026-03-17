@@ -1,190 +1,92 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDownload, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { View } from "@react-three/drei";
+import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 
-const masterQuestions = [
-  {
-    id: 1,
-    question: "What is the output of print(2 ** 3)?",
-    options: ["6", "8", "9", "12"],
-    correct: 1,
-  },
-  {
-    id: 2,
-    question: "Which keyword is used to define a function in Python?",
-    options: ["func", "def", "function", "define"],
-    correct: 1,
-  },
-  {
-    id: 3,
-    question: "What is the correct file extension for Python files?",
-    options: [".py", ".python", ".pt", ".pyth"],
-    correct: 0,
-  },
-  {
-    id: 4,
-    question: "Which of the following is a mutable data type in Python?",
-    options: ["Tuple", "String", "List", "Integer"],
-    correct: 2,
-  },
-];
+function ViewReports() {
 
-const ViewReports = () => {
+ const navigate = useNavigate();
+ const { id } = useParams();
 
-  const navigate = useNavigate();
-  const [reports, setReports] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(false);
+ const [reports, setReports] = useState([]);
+ const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-    setReports(data);
-    setLoading(false);
-  }, []);
+ // Fetch all reports
+ useEffect(() => {
+  axios.get("http://127.0.0.1:8000/api/exam-reports/")
+   .then(res => setReports(res.data))
+   .catch(err => console.error(err));
+ }, []);
 
-  const handleBack = () => {
-    setSelected(null);
-  };
+ // Fetch single report
+ useEffect(() => {
+  if (id) {
+   axios.get(`http://127.0.0.1:8000/api/report/${id}/`)
+    .then(res => setSelected(res.data))
+    .catch(err => console.error(err));
+  }
+ }, [id]);
 
-  const handleView = (report) => {
-    setSelected(report);
-  };
+ const handleBack = () => {
+  navigate("/dashboard/daily-exams");
+ };
 
-  const handleDelete = (examDate) => {
-    const updated = reports.filter((r) => r.examDate !== examDate);
-    setReports(updated);
-    localStorage.setItem("allExamResults", JSON.stringify(updated));
-  };
-
-  const handleDownload = (result) => {
-
-    const content = `
-Student: ${result.user?.firstName}
-Score: ${result.correctAnswers * 2}/40
-Date: ${new Date(result.examDate).toLocaleString()}
-`;
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "exam-result.txt";
-
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-  };
-
-  if (loading) {
-    return <div className="p-10 text-center">Loading...</div>;
-  }
-
-  if (selected) {
-
-    const passed = (selected.correctAnswers * 2) >= 20;
-
-    return (
-      <div className="p-6">
-
-        <button
-          onClick={handleBack}
-          className="mb-6 text-blue-600"
-        >
-          ← Back
-        </button>
-
-        <h2 className="text-2xl font-bold mb-6">
-          Question Analysis
-        </h2>
-
-        {(selected.questions || masterQuestions).map((q, i) => {
-
-          const userAnswer = selected.answers?.[i];
-
-          return (
-            <div key={i} className="border p-4 mb-4 rounded">
-
-              <h3 className="font-semibold">
-                Q{i + 1}: {q.question}
-              </h3>
-
-              {q.options.map((opt, idx) => {
-
-                const correct = idx === q.correct;
-                const selectedAns = idx === userAnswer;
-
-                return (
-                  <div
-                    key={idx}
-                    className={`p-2 mt-2 rounded ${
-                      correct
-                        ? "bg-green-100"
-                        : selectedAns
-                        ? "bg-red-100"
-                        : "bg-gray-50"
-                    }`}
-                  >
-                    {String.fromCharCode(65 + idx)}. {opt}
-                    {correct && " ✓ Correct"}
-                    {selectedAns && !correct && " ✗ Your Answer"}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6">
-
-      <h2 className="text-2xl font-bold mb-6">
-        Exam Reports
-      </h2>
-
-      {reports.length === 0 && (
-        <p>No reports available.</p>
-      )}
-
-      {reports.map((r, i) => (
-
-        <div
-          key={i}
-          className="border p-4 mb-3 flex justify-between items-center"
-        >
-
-          <div>
-            {r.user?.firstName} - {r.correctAnswers * 2}/40
-          </div>
-
-          <div className="flex gap-3">
-
-            <button onClick={() => handleView(r)}>
-              View
-            </button>
-
-            <button onClick={() => handleDownload(r)}>
-              <FontAwesomeIcon icon={faDownload} />
-            </button>
-
-            <button onClick={() => handleDelete(r.examDate)}>
-              <FontAwesomeIcon icon={faTrash} />
-            </button>
-
-          </div>
-
-        </div>
-
-      ))}
-
-    </div>
-  );
+ const handleView = (report) => {
+  navigate(`/dashboard/playground/detailed-results/${report.id}`);
 };
+
+ const handleDownload = (r) => {
+  const content = `Student: ${r.name} Score: ${r.score}/30 Date: ${r.date}`;
+
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "exam-result.txt";
+  a.click();
+ };
+
+ // Detail View
+ if (selected) {
+  return (
+   <div className="p-6">
+
+    <button onClick={handleBack}>← Back</button>
+
+    <h2>Report Detail</h2>
+
+    <p>Name: {selected.name}</p>
+    <p>Score: {selected.score}/{selected.total}</p>
+    <p>Exam: {selected.exam}</p>
+    <p>Date: {selected.date}</p>
+
+   </div>
+  );
+ }
+
+ // List View
+ return (
+  <div className="p-6">
+
+   <h2>Exam Reports</h2>
+
+   {reports.length === 0 ? (
+    <p>No reports available</p>
+   ) : (
+    reports.map((r) => (
+     <div key={r.id}>
+
+      <span>{r.exam} - {r.score}/30</span>
+
+      <button onClick={() => handleView(r)}>View</button>
+      <button onClick={() => handleDownload(r)}>Download</button>
+
+     </div>
+    ))
+   )}
+
+  </div>
+ );
+}
 
 export default ViewReports;
