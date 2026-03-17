@@ -55,35 +55,21 @@ export default function Course() {
               onClick={() => navigate(`/dashboard/course/${id}`)}
               className="bg-blue-600 text-white p-5 rounded cursor-pointer hover:bg-blue-700"
             >
-
               <h3 className="text-xl">{course.title}</h3>
-
             </div>
-
           ))}
-
         </div>
-
       </div>
-
     );
-
   }
-
   const course = courses[courseId];
-
   if (!course) {
     return <h3 className="p-6">Course not found</h3>;
   }
-
   return (
-
     <div className="p-6">
-
       <h2 className="text-2xl font-bold mb-4">{course.title} Topics</h2>
-
       {course.topics.map((topic, index) => (
-
         <button
           key={index}
           onClick={() =>
@@ -91,15 +77,10 @@ export default function Course() {
           }
           className="block w-full text-left bg-gray-200 p-3 mb-2 rounded hover:bg-gray-300"
         >
-
           {index + 1}. {topic}
-
         </button>
-
       ))}
-
     </div>
-
   );
 
 }
