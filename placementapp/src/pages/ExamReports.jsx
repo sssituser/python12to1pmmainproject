@@ -29,7 +29,7 @@ function ExamReports() {
             <h5>Weekly Exam</h5>
             <button
               className="btn btn-success"
-              onClick={() => navigate("/dashboard/daily-exams")}
+              onClick={() => navigate("/dashboard/weekly-exams")}
             >
               VIEW
             </button>
@@ -41,7 +41,7 @@ function ExamReports() {
             <h5>Monthly Exam</h5>
             <button
               className="btn btn-success"
-              onClick={() => navigate("/dashboard/daily-exams")}
+              onClick={() => navigate("/dashboard/monthly-exams")}
             >
               VIEW
             </button>
