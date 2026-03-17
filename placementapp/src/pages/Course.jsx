@@ -5,12 +5,12 @@ export default function Course() {
   const navigate = useNavigate();
   const { courseId } = useParams();
 
-  // ✅ State (dynamic data)
+  // ✅ Dynamic state
   const [courses, setCourses] = useState({
     1: {
       title: "Java",
       color: "from-orange-500 to-red-500",
-      icon: "",
+      icon: "☕",
       progress: 60,
       topics: [
         "Introduction to Java",
@@ -21,10 +21,11 @@ export default function Course() {
     2: {
       title: "Python",
       color: "from-green-500 to-emerald-600",
-      icon: "",
+      icon: "🐍",
       progress: 40,
       topics: [
         "Python Basics",
+        "Variables and Data Types",
         "Loops",
         "Functions"
       ]
@@ -32,22 +33,20 @@ export default function Course() {
     3: {
       title: "JavaScript",
       color: "from-yellow-400 to-yellow-600",
-      icon: "",
+      icon: "🟨",
       progress: 75,
       topics: [
         "JS Basics",
         "ES6",
-        "DOM"
+        "DOM Manipulation",
+        "React Basics"
       ]
     }
   });
 
-  // ✅ Input state
   const [newTopic, setNewTopic] = useState("");
 
-  // =========================
-  // 👉 ADD TOPIC FUNCTION
-  // =========================
+  // ✅ Add Topic
   const addTopic = () => {
     if (!newTopic.trim()) return;
 
@@ -59,11 +58,11 @@ export default function Course() {
       }
     }));
 
-    setNewTopic(""); // clear input
+    setNewTopic("");
   };
 
   // =========================
-  // 👉 COURSE LIST VIEW
+  // 👉 COURSE LIST
   // =========================
   if (!courseId) {
     return (
@@ -106,7 +105,7 @@ export default function Course() {
   }
 
   // =========================
-  // 👉 SINGLE COURSE VIEW
+  // 👉 SINGLE COURSE
   // =========================
   const course = courses[courseId];
 
@@ -130,7 +129,7 @@ export default function Course() {
         </button>
       </div>
 
-      {/* ✅ Add Topic Input */}
+      {/* Add Topic */}
       <div className="flex gap-3 mb-6">
         <input
           type="text"
@@ -156,10 +155,10 @@ export default function Course() {
             onClick={() =>
               navigate(`/dashboard/course/video/${courseId}/${index}`)
             }
-            className="flex justify-between items-center
-                      bg-white p-4 rounded-xl shadow
-                      hover:shadow-md hover:bg-gray-50
-                      cursor-pointer transition"
+            className="flex justify-between items-center 
+                       bg-white p-4 rounded-xl shadow 
+                       hover:shadow-md hover:bg-gray-50 
+                       cursor-pointer transition"
           >
             <span>{index + 1}. {topic}</span>
 
