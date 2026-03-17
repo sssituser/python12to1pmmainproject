@@ -1,9 +1,6 @@
 import { useNavigate } from "react-router-dom";
-
 function ExamReports() {
-
   const navigate = useNavigate();
-
   return (
 
     <div className="container mt-5">
