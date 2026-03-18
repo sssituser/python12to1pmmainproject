@@ -48,7 +48,7 @@ function ExamReports() {
 
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
-            <h5>Grand Text</h5>
+            <h5>Grand Test</h5>
             <button className="btn btn-secondary">
               COMING SOON
             </button>
