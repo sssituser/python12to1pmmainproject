@@ -155,10 +155,10 @@ export default function Course() {
             onClick={() =>
               navigate(`/dashboard/course/video/${courseId}/${index}`)
             }
-            className="flex justify-between items-center 
-                       bg-white p-4 rounded-xl shadow 
-                       hover:shadow-md hover:bg-gray-50 
-                       cursor-pointer transition"
+            className="flex justify-between items-center
+                      bg-white p-4 rounded-xl shadow
+                      hover:shadow-md hover:bg-gray-50
+                      cursor-pointer transition"
           >
             <span>{index + 1}. {topic}</span>
 
