@@ -236,7 +236,7 @@ const PythonExam = () => {
 
     const payload = {
       username: user.username || "Unknown",
-      exam_title: "Daily Exam",
+      exam_title: "Python Programming Assessment",
       score: correctCount * 2,
       total_questions: 20,
       correct_answers: correctCount,

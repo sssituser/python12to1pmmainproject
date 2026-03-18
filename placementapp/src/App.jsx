@@ -10,6 +10,7 @@ import AppliedJobs from "./pages/AppliedJobs";
 
 import ExamReports from "./pages/ExamReports";
 import DailyExamReports from "./pages/DailyExamReports";
+import ExamReportDetail from "./pages/ExamReportDetail";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
 
@@ -71,6 +72,7 @@ function App() {
           <Route path="exam-reports" element={<ExamReports />} />
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
+          <Route path="exam-report-detail/:id" element={<ExamReportDetail />} />
 
           {/* Playground */}
           <Route path="playground" element={<Playground />} />
