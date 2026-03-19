@@ -19,17 +19,15 @@ function ExamLeaderboard() {
     try {
       setLoading(true);
 
-      const query = new URLSearchParams({
-        date,
-        batch,
-        examType,
-      });
-
-      const res = await fetch(`/api/exam-leaderboard/?${query}`);
+      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/`);
       const data = await res.json();
 
-      setLeaderboard(data);
-      toast.success("Leaderboard updated");
+      if (data.success) {
+        setLeaderboard(data.data || []);
+        toast.success("Leaderboard updated");
+      } else {
+        toast.error("Failed to load leaderboard");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to load leaderboard");

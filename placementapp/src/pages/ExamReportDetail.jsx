@@ -14,7 +14,15 @@ function ExamReportDetail() {
       try {
         const res = await axios.get(`http://127.0.0.1:8000/api/exam-report-detail/${id}/`);
         if (res.data && res.data.success) {
-          setReport(res.data.data);
+          const d = res.data.data;
+          // Flatten: merge attempt fields with questions/answers/percentage/passed
+          setReport({
+            ...d.attempt,
+            questions: d.questions || [],
+            answers: d.answers || [],
+            percentage: d.percentage || 0,
+            passed: d.passed || false,
+          });
         } else {
           setError("Report not found.");
         }
@@ -60,15 +68,15 @@ function ExamReportDetail() {
         <div className="card-body">
           <div className="row text-center">
             <div className="col-md-3 col-6 mb-2">
-              <h4 className="text-primary fw-bold mb-0">{report.marks_obtained}/{report.total_marks}</h4>
+              <h4 className="text-primary fw-bold mb-0">{report.marks_obtained ?? "—"}/{report.total_marks ?? "—"}</h4>
               <small className="text-muted">Score</small>
             </div>
             <div className="col-md-3 col-6 mb-2">
-              <h4 className="text-success fw-bold mb-0">{report.correct_answers}</h4>
+              <h4 className="text-success fw-bold mb-0">{report.correct_answers ?? "—"}</h4>
               <small className="text-muted">Correct</small>
             </div>
             <div className="col-md-3 col-6 mb-2">
-              <h4 className="text-danger fw-bold mb-0">{report.incorrect_answers}</h4>
+              <h4 className="text-danger fw-bold mb-0">{report.incorrect_answers ?? "—"}</h4>
               <small className="text-muted">Wrong</small>
             </div>
             <div className="col-md-3 col-6 mb-2">
@@ -84,9 +92,10 @@ function ExamReportDetail() {
             />
           </div>
 
-          <div className="d-flex justify-content-between mt-2">
-            <small className="text-muted">Student: <strong>{report.user?.username || "Unknown"}</strong></small>
-            <small className="text-muted">Date: <strong>{report.exam_date ? new Date(report.exam_date).toLocaleDateString() : "N/A"}</strong></small>
+          <div className="d-flex justify-content-between mt-2 flex-wrap gap-1">
+            <small className="text-muted">Student: <strong>{report.user?.username || report.user?.first_name || "Unknown"}</strong></small>
+            <small className="text-muted">ID: <strong>{report.random_id || report.id || "N/A"}</strong></small>
+            <small className="text-muted">Date: <strong>{report.exam_date ? new Date(report.exam_date).toLocaleDateString("en-GB") : "N/A"}</strong></small>
           </div>
         </div>
       </div>
