@@ -238,3 +238,32 @@ color:white;
   color:white;
   background: #4f46e5;
 }
+
+.exam-card {
+  transition: all 0.3s ease;
+}
+
+.exam-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+a {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-in-out;
+}

@@ -1,226 +1,243 @@
-import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  User,
+  Briefcase,
+  Book,
+  FileText,
+  BarChart,
+  Trophy,
+  Code,
+  LogOut,
+  ChevronDown,
+  Folder,
+  CheckCircle,
+} from "lucide-react";
 
-function Sidebar({ sidebarOpen }) {
+function Sidebar() {
+  const [open, setOpen] = useState(false);
+  const [jobsOpen, setJobsOpen] = useState(false);
+  const [playOpen, setPlayOpen] = useState(false);
 
-  const [openJobs, setOpenJobs] = useState(true);
-  const [openPlayground, setOpenPlayground] = useState(false);
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+
+  const linkClass =
+    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium no-underline transition";
 
   return (
-
     <div
-      className={`bg-blue-950 text-white min-h-screen transition-all duration-300 ${
-        sidebarOpen ? "w-64" : "w-20"
-      } flex flex-col`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => {
+        setOpen(false);
+        setJobsOpen(false);
+        setPlayOpen(false);
+      }}
+      className={`bg-slate-900 text-gray-300 min-h-screen flex flex-col justify-between
+      transition-all duration-300 ${open ? "w-64" : "w-20"}`}
     >
 
-      {/* Title */}
-      <div className="p-4 text-lg font-semibold border-b border-blue-800">
-        {sidebarOpen ? "Student Dashboard" : "SD"}
-      </div>
-
-      <div className="flex flex-col p-2 space-y-1">
-
-        {/* Profile */}
-        <NavLink
-          to="/dashboard/profile"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-person text-lg"></i>
-          {sidebarOpen && <span>Profile</span>}
-        </NavLink>
-
-
-        {/* Jobs Dropdown */}
-        <div
-          onClick={() => setOpenJobs(!openJobs)}
-          className="flex items-center gap-3 p-3 rounded hover:bg-blue-700 cursor-pointer"
-        >
-          <i className="bi bi-briefcase text-lg"></i>
-          {sidebarOpen && <span>Jobs</span>}
-
-          {sidebarOpen && (
-            <i
-              className={`bi ms-auto ${
-                openJobs ? "bi-chevron-up" : "bi-chevron-down"
-              }`}
-            ></i>
-          )}
+      {/* HEADER */}
+      <div>
+        <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700">
+          {open ? "Student Dashboard" : "SD"}
         </div>
 
-        {/* Jobs submenu */}
-        {openJobs && sidebarOpen && (
+        {/* MENU */}
+        <div className="p-2 space-y-2">
 
-          <div className="ml-8 flex flex-col">
+          {/* PROFILE */}
+          <NavLink
+            to="/dashboard/profile"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <User size={18} />
+            {open && "Profile"}
+          </NavLink>
 
-            <NavLink
-              to="/dashboard/alljobs"
-              className={({ isActive }) =>
-                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
-                  isActive ? "text-blue-300" : ""
-                }`
-              }
+          {/* JOBS */}
+          <div>
+            <button
+              onClick={() => setJobsOpen(!jobsOpen)}
+              className={`${linkClass} w-full justify-between hover:bg-slate-800`}
             >
-              <i className="bi bi-briefcase-fill"></i>
-              <span>All Jobs</span>
-            </NavLink>
+              <span className="flex items-center gap-3">
+                <Briefcase size={18} />
+                {open && "Jobs"}
+              </span>
 
-            <NavLink
-              to="/dashboard/appliedjobs"
-              className={({ isActive }) =>
-                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
-                  isActive ? "text-blue-300" : ""
-                }`
-              }
-            >
-              <i className="bi bi-check-circle-fill"></i>
-              <span>Applied Jobs</span>
-            </NavLink>
+              {open && (
+                <ChevronDown
+                  size={16}
+                  className={`transition ${jobsOpen && "rotate-180"}`}
+                />
+              )}
+            </button>
 
+            {jobsOpen && open && (
+              <div className="ml-6 mt-2 space-y-1 text-sm">
+
+                <NavLink
+                  to="/dashboard/jobs"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                >
+                  <Folder size={14} />
+                  All Jobs
+                </NavLink>
+
+                <NavLink
+                  to="/dashboard/applied"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                >
+                  <CheckCircle size={14} />
+                  Applied Jobs
+                </NavLink>
+
+              </div>
+            )}
           </div>
 
-        )}
+          {/* COURSE */}
+          <NavLink
+            to="/dashboard/course"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <Book size={18} />
+            {open && "Course"}
+          </NavLink>
 
+          {/* EXAMS */}
+          <NavLink
+            to="/dashboard/exams"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <FileText size={18} />
+            {open && "Exams"}
+          </NavLink>
 
-        {/* Course */}
-        <NavLink
-          to="/dashboard/course"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-book text-lg"></i>
-          {sidebarOpen && <span>Course</span>}
-        </NavLink>
+          {/* REPORTS */}
+          <NavLink
+            to="/dashboard/reports"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <BarChart size={18} />
+            {open && "Reports"}
+          </NavLink>
 
+          {/* LEADERBOARD */}
+          <NavLink
+            to="/dashboard/leaderboard"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <Trophy size={18} />
+            {open && "Leaderboard"}
+          </NavLink>
 
-        {/* Exams */}
-        <NavLink
-          to="/dashboard/exams"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-pencil-square text-lg"></i>
-          {sidebarOpen && <span>Exams</span>}
-        </NavLink>
+          {/* PLAYGROUND */}
+          <div>
+            <button
+              onClick={() => setPlayOpen(!playOpen)}
+              className={`${linkClass} w-full justify-between hover:bg-slate-800`}
+            >
+              <span className="flex items-center gap-3">
+                <Code size={18} />
+                {open && "Playground"}
+              </span>
 
+              {open && (
+                <ChevronDown
+                  size={16}
+                  className={`transition ${playOpen && "rotate-180"}`}
+                />
+              )}
+            </button>
 
-        {/* Reports */}
-        <NavLink
-          to="/dashboard/exam-reports"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-bar-chart text-lg"></i>
-          {sidebarOpen && <span>Reports</span>}
-        </NavLink>
+            {playOpen && open && (
+              <div className="ml-6 mt-2 space-y-1 text-sm">
 
+                <NavLink
+                  to="/dashboard/techlab"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                >
+                  <Code size={14} />
+                  TechLab
+                </NavLink>
 
-        {/* Leaderboard */}
-        <NavLink
-          to="/dashboard/exam-leaderboard"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-trophy text-lg"></i>
-          {sidebarOpen && <span>Leaderboard</span>}
-        </NavLink>
+                <NavLink
+                  to="/dashboard/results"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                >
+                  <CheckCircle size={14} />
+                  Results
+                </NavLink>
 
+              </div>
+            )}
+          </div>
 
-        {/* Playground Dropdown */}
-        <div
-          onClick={() => setOpenPlayground(!openPlayground)}
-          className="flex items-center gap-3 p-3 rounded hover:bg-blue-700 cursor-pointer"
-        >
-          <i className="bi bi-code-slash text-lg"></i>
+          {/* LEAVE */}
+          <NavLink
+            to="/dashboard/leave"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <FileText size={18} />
+            {open && "Leave Request"}
+          </NavLink>
 
-          {sidebarOpen && <span>Playground</span>}
-
-          {sidebarOpen && (
-            <i
-              className={`bi ms-auto ${
-                openPlayground ? "bi-chevron-up" : "bi-chevron-down"
-              }`}
-            ></i>
-          )}
         </div>
-
-        {/* Playground submenu */}
-        {openPlayground && sidebarOpen && (
-
-          <div className="ml-8 flex flex-col">
-
-            <NavLink
-              to="/dashboard/playground"
-              className={({ isActive }) =>
-                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
-                  isActive ? "text-blue-300" : ""
-                }`
-              }
-            >
-              <i className="bi bi-terminal"></i>
-              <span>Tech Lab</span>
-            </NavLink>
-
-            <NavLink
-              to="/dashboard/playground-results"
-              className={({ isActive }) =>
-                `flex items-center gap-2 p-2 text-sm hover:text-blue-300 ${
-                  isActive ? "text-blue-300" : ""
-                }`
-              }
-            >
-              <i className="bi bi-clipboard-data"></i>
-              <span>Results</span>
-            </NavLink>
-
-          </div>
-
-        )}
-
-
-        {/* Leave Request */}
-        <NavLink
-          to="/dashboard/leave-request"
-          className={({ isActive }) =>
-            `flex items-center gap-3 p-3 rounded hover:bg-blue-700 ${
-              isActive ? "bg-blue-700" : ""
-            }`
-          }
-        >
-          <i className="bi bi-calendar-check text-lg"></i>
-          {sidebarOpen && <span>Leave Request</span>}
-        </NavLink>
-
-
-        {/* Logout */}
-        <NavLink
-          to="/logout"
-          className="flex items-center gap-3 p-3 rounded hover:bg-red-600 mt-auto"
-        >
-          <i className="bi bi-box-arrow-right text-lg"></i>
-          {sidebarOpen && <span>Logout</span>}
-        </NavLink>
-
       </div>
 
+      {/* LOGOUT */}
+      <div className="p-3 border-t border-slate-700">
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-red-600 hover:text-white transition"
+        >
+          <LogOut size={18} />
+          {open && "Logout"}
+        </button>
+      </div>
     </div>
-
   );
 }
 
