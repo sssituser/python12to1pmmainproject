@@ -17,6 +17,8 @@ class StudentProfile(models.Model):
     cgpa = models.FloatField(null=True, blank=True)
     tenth_percentage = models.FloatField(null=True, blank=True)
     twelfth_percentage = models.FloatField(null=True, blank=True)
+    github = models.URLField(blank=True)
+    linkedin = models.URLField(blank=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
 
     def __str__(self):
@@ -24,8 +26,9 @@ class StudentProfile(models.Model):
 
 
 class Skill(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="skills")
     name = models.CharField(max_length=100)
+    level = models.IntegerField(default=50)
 
     def __str__(self):
         return self.name

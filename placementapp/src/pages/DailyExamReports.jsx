@@ -1,118 +1,172 @@
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
-
-const exams = [
-{ id: 1, score: 15, total: 30 },
-{ id: 2, score: 20, total: 30 },
-{ id: 3, score: 15, total: 30 },
-{ id: 4, score: 10, total: 30 },
-{ id: 5, score: 25, total: 30 },
-];
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function DailyExamReports() {
 
-const [progress, setProgress] = useState({});
+  const [exams, setExams] = useState([]);
+  const [progress, setProgress] = useState({});
+  const navigate = useNavigate();
 
-useEffect(() => {
+  // ✅ FETCH DATA FROM BACKEND
+  const fetchReports = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/all-exam-results/");
+      
+      let examList = [];
+      if (res.data && Array.isArray(res.data.data)) {
+        examList = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        examList = res.data;
+      }
 
-exams.forEach((exam) => {
+      // Filter by logged-in user
+      let currentUsername = null;
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr && userStr !== "undefined") {
+          const parsedUser = JSON.parse(userStr);
+          currentUsername = parsedUser?.username || null;
+        }
+      } catch (e) {
+        console.error("User parse error:", e);
+      }
 
- const percentage = (exam.score / exam.total) * 100;
+      if (currentUsername) {
+        const filtered = examList.filter(
+          (e) => e.user?.username?.toLowerCase() === currentUsername.toLowerCase()
+        );
+        examList = filtered; // Show only this user's exams, empty if none
+      }
 
-if (percentage === 0) {
-  setProgress(prev => ({
-    ...prev,
-    [exam.id]: 0
-  }));
-  return;
-}
+      setExams(examList);
 
-let value = 0;
+    } catch (err) {
+      console.error("Failed to fetch exam reports:", err);
+      setExams([]);
+    }
+  };
 
-const interval = setInterval(() => {
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
-  value += 2;
+  // ✅ ANIMATION AFTER DATA LOAD
+  useEffect(() => {
+    if (!Array.isArray(exams) || exams.length === 0) return;
 
-  if (value >= percentage) {
-    value = percentage;
-    clearInterval(interval);
-  }
+    exams.forEach((exam) => {
+      const total = exam.totalMarks || 40;
+      const percentage = total > 0 ? (exam.score / total) * 100 : 0;
 
-  setProgress(prev => ({
-    ...prev,
-    [exam.id]: value
-  }));
+      let value = 0;
+      const interval = setInterval(() => {
+        value += 2;
+        if (value >= percentage) {
+          value = percentage;
+          clearInterval(interval);
+        }
+        setProgress((prev) => ({
+          ...prev,
+          [exam.id]: value,
+        }));
+      }, 20);
+    });
 
-}, 20);
+  }, [exams]);
 
-});
+  // ✅ COLOR LOGIC
+  const getColor = (percentage) => {
+    if (percentage >= 80) return "#198754";
+    if (percentage >= 60) return "#ffc107";
+    return "#dc3545";
+  };
 
-}, []);
+  return (
+    <div className="container mt-4">
 
-const getColor = (percentage) => {
-if (percentage >= 80) return "#198754";
-if (percentage >= 60) return "#ffc107";
-return "#dc3545";
-};
+      {/* BACK BUTTON */}
+      <button
+        onClick={() => navigate("/dashboard/exam-reports")}
+        className="text-sm text-gray-600 hover:text-blue-600"
+      >
+        ← Back
+      </button>
 
-return (
+      <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <h3 className="mb-0 text-dark font-weight-bold">Daily Exam Reports</h3>
+        <span className="badge bg-primary fs-6 py-2 px-3 shadow-sm rounded-pill text-white">
+          Total Exams Written: {exams.length}
+        </span>
+      </div>
 
-<div className="container mt-4">
+      <div className="row mt-3">
 
-  <div className="row">
+        {exams.length > 0 ? (
+          exams.map((exam) => {
+            const total = exam.totalMarks || 40;
+            const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+            const value = progress[exam.id] || 0;
+            const color = getColor(percentage);
 
-    {exams.map((exam) => {
+            return (
+              <div className="col-md-3 mb-4" key={exam.id}>
+                <div className="card text-center shadow-sm p-3">
 
-      const percentage = (exam.score / exam.total) * 100;
-      const value = progress[exam.id] || 0;
-      const color = getColor(percentage);
+                  <h6 className="mb-1 fw-bold text-truncate">
+                    {exam.examTitle || `Exam-${exam.id}`}
+                  </h6>
 
-      return (
+                  <small className="text-muted mb-2">
+                    {exam.user?.username || "Unknown"}
+                  </small>
 
-        <div className="col-md-3 mb-4" key={exam.id}>
+                  <div style={{ width: "90px", margin: "auto" }}>
+                    <CircularProgressbar
+                      value={value}
+                      text={`${Math.round(value)}%`}
+                      styles={buildStyles({
+                        pathColor: color,
+                        textColor: color,
+                        trailColor: "#e5e7eb",
+                      })}
+                    />
+                  </div>
 
-          <div className="card text-center shadow-sm p-3">
+                  <p className="mt-3 text-muted mb-1">
+                    Score: <strong>{exam.score}/{total}</strong>
+                  </p>
 
-            <h6 className="mb-3">
-              Daily-Exam-{exam.id}
-            </h6>
+                  <small className="text-muted">
+                    {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : ""}
+                  </small>
 
-            <div style={{ width: "90px", margin: "auto" }}>
+                  <button
+                    className="btn btn-primary btn-sm mt-2"
+                    onClick={() =>
+                      navigate(`/dashboard/exam-report-detail/${exam.id}`)
+                    }
+                  >
+                    VIEW REPORT
+                  </button>
 
-              <CircularProgressbar
-                value={value}
-                text={`${value.toFixed(1)}%`}
-                styles={buildStyles({
-                  pathColor: color,
-                  textColor: color,
-                  trailColor: "#e5e7eb"
-                })}
-              />
-
-            </div>
-
-            <p className="mt-3 text-muted">
-              Score {exam.score}/{exam.total}
-            </p>
-
-            <button className="btn btn-primary btn-sm mt-2">
-              VIEW REPORT
-            </button>
-
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center mt-5">
+            <p className="text-muted fs-5">No exam reports found.</p>
+            <p className="text-muted">Take a Daily Exam to see your results here!</p>
           </div>
+        )}
 
-        </div>
+      </div>
 
-      );
-
-    })}
-
-  </div>
-
-</div>
-
-);
+    </div>
+  );
 }
 
 export default DailyExamReports;

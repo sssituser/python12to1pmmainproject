@@ -1,9 +1,6 @@
 import { useNavigate } from "react-router-dom";
-
 function ExamReports() {
-
   const navigate = useNavigate();
-
   return (
 
     <div className="container mt-5">
@@ -24,6 +21,19 @@ function ExamReports() {
           </div>
         </div>
 
+        {/* <div className="col-md-3">
+          <div className="card text-center p-3 shadow">
+            <h5>Weekly Exam</h5>
+            <button
+              className="btn btn-success"
+              onClick={() => navigate("/dashboard/weekly-exams")}
+            >
+              VIEW
+            </button>
+          </div>
+        </div> */}
+
+
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Weekly Exam</h5>
@@ -32,6 +42,18 @@ function ExamReports() {
             </button>
           </div>
         </div>
+
+        {/* <div className="col-md-3">
+          <div className="card text-center p-3 shadow">
+            <h5>Monthly Exam</h5>
+            <button
+              className="btn btn-success"
+              onClick={() => navigate("/dashboard/monthly-exams")}
+            >
+              VIEW
+            </button>
+          </div>
+        </div> */}
 
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
@@ -45,7 +67,7 @@ function ExamReports() {
 
         <div className="col-md-3">
           <div className="card text-center p-3 shadow">
-            <h5>Grand Text</h5>
+            <h5>Grand Exam</h5>
             <button className="btn btn-secondary">
               COMING SOON
             </button>

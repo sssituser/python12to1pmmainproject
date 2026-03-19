@@ -194,11 +194,17 @@ const PythonExam = () => {
   };
 
   // SUBMIT EXAM
-  const handleSubmitExam = () => {
+  const handleSubmitExam = async () => {
     setExamSubmitted(true);
     stopWebcam(); // Stop webcam when submitting
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userStr = localStorage.getItem("user");
+    let user = {};
+    try {
+      user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
+    } catch(e) {
+      console.error(e);
+    }
     const randomId = Math.floor(1000 + Math.random() * 9000);
 
     let correctCount = 0;
@@ -227,6 +233,32 @@ const PythonExam = () => {
       examDate: new Date().toISOString(),
       examTitle: "Python Programming Assessment"
     };
+
+    const payload = {
+      username: user.username || "Unknown",
+      exam_title: "Python Programming Assessment",
+      score: correctCount * 2,
+      total_questions: 20,
+      correct_answers: correctCount,
+      incorrect_answers: 20 - correctCount,
+      marks_obtained: correctCount * 2,
+      total_marks: 40,
+      time_taken: 2700 - timeLeft,
+      status: "completed",
+      random_id: randomId,
+      answers: answers,
+      questions: questions
+    };
+
+    try {
+      await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.error("Failed to sync exam gracefully:", err);
+    }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
 

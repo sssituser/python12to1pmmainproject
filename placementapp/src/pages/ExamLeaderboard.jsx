@@ -4,26 +4,55 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const leaderboard = [
-  { rank: 1, name: "Surya Kumar", score: 98, time: "20s" },
-  { rank: 2, name: "Neha sri", score: 95, time: "22s" },
-  { rank: 3, name: "Durga prasad", score: 92, time: "25s" },
-];
-
 function ExamLeaderboard() {
 
-  const first = leaderboard.find((s) => s.rank === 1);
-  const second = leaderboard.find((s) => s.rank === 2);
-  const third = leaderboard.find((s) => s.rank === 3);
-
+  // 🔥 STATE
+  const [leaderboard, setLeaderboard] = useState([]);
   const [date, setDate] = useState("");
   const [batch, setBatch] = useState("");
   const [examType, setExamType] = useState("");
   const [showRules, setShowRules] = useState(true);
+  const [loading, setLoading] = useState(true);
 
+  // 🔥 FETCH FUNCTION
+  const fetchLeaderboard = async () => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/`);
+      const data = await res.json();
+
+      if (data.success) {
+        setLeaderboard(data.data || []);
+        toast.success("Leaderboard updated");
+      } else {
+        toast.error("Failed to load leaderboard");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load leaderboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔥 AUTO LOAD + AUTO REFRESH
   useEffect(() => {
-    toast.success("Leaderboard loaded successfully");
-  }, []);
+    fetchLeaderboard();
+
+    const interval = setInterval(fetchLeaderboard, 15000); // every 15 sec
+    return () => clearInterval(interval);
+  }, [date, batch, examType]);
+
+  // 🔥 SAFE PODIUM
+  const first = leaderboard.find((s) => s.rank === 1) || {};
+  const second = leaderboard.find((s) => s.rank === 2) || {};
+  const third = leaderboard.find((s) => s.rank === 3) || {};
+
+  // 🔥 LOADING STATE
+  if (loading) {
+    return <p className="text-center mt-10">Loading leaderboard...</p>;
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -46,18 +75,18 @@ function ExamLeaderboard() {
             <div className="text-sm text-gray-700 space-y-3">
 
               <p><b>1. Primary Rank</b></p>
-              <p>Higher score = higher rank</p>
+              <p>Higher score = Higher rank</p>
 
               <p><b>2. Tiebreakers</b></p>
               <ul className="list-disc ml-5">
-                <li>Execution time (lower is better)</li>
-                <li>Time spent (faster is better)</li>
-                <li>Memory usage (lower is better)</li>
-                <li>Questions solved (more is better)</li>
+                <li>Execution time</li>
+                <li>Time spent</li>
+                <li>Memory usage</li>
+                <li>Questions solved</li>
               </ul>
 
-              <p><b>3. Difficulty Score</b></p>
-              <p>Topper = 1 | Medium = 2 | Hard = 3</p>
+              <p><b>3. Rank Score</b></p>
+              <p>Top Rank = 1 | Mid Rank = 2 | Low Rank = 3</p>
 
             </div>
 
@@ -81,10 +110,7 @@ function ExamLeaderboard() {
           <input
             type="date"
             value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              // toast.info("Date filter applied");
-            }}
+            onChange={(e) => setDate(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
           />
         </div>
@@ -93,10 +119,7 @@ function ExamLeaderboard() {
           <label className="text-sm font-medium">Batch</label>
           <select
             value={batch}
-            onChange={(e) => {
-              setBatch(e.target.value);
-              // toast.info("Batch filter applied");
-            }}
+            onChange={(e) => setBatch(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
           >
             <option value="">All Batches</option>
@@ -110,10 +133,7 @@ function ExamLeaderboard() {
           <label className="text-sm font-medium">Exam Type</label>
           <select
             value={examType}
-            onChange={(e) => {
-              setExamType(e.target.value);
-              // toast.info("Exam type selected");
-            }}
+            onChange={(e) => setExamType(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 mt-1"
           >
             <option value="">Select</option>
@@ -137,12 +157,11 @@ function ExamLeaderboard() {
         <motion.div
           initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
           className="flex flex-col items-center"
         >
-          <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex flex-col items-center justify-center shadow-lg">
+          <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">2</span>
-            <p className="text-sm">{second.name}</p>
+            <p>{second.name || "-"}</p>
           </div>
         </motion.div>
 
@@ -150,12 +169,11 @@ function ExamLeaderboard() {
         <motion.div
           initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
           className="flex flex-col items-center"
         >
-          <div className="bg-yellow-400 text-black rounded-xl w-36 h-48 flex flex-col items-center justify-center shadow-xl">
+          <div className="bg-yellow-400 text-black rounded-xl w-36 h-48 flex items-center justify-center flex-col shadow-xl">
             <span className="text-4xl font-bold">1</span>
-            <p className="text-sm font-semibold">{first.name}</p>
+            <p>{first.name || "-"}</p>
           </div>
         </motion.div>
 
@@ -163,18 +181,17 @@ function ExamLeaderboard() {
         <motion.div
           initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.7 }}
           className="flex flex-col items-center"
         >
-          <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex flex-col items-center justify-center shadow-lg">
+          <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">3</span>
-            <p className="text-sm">{third.name}</p>
+            <p>{third.name || "-"}</p>
           </div>
         </motion.div>
 
       </div>
 
-      {/* Leaderboard Table */}
+      {/* Table */}
       <div className="mt-10 max-w-4xl mx-auto overflow-x-auto">
 
         <table className="w-full border rounded-lg shadow-md">
@@ -183,23 +200,28 @@ function ExamLeaderboard() {
             <tr>
               <th className="p-3">Rank</th>
               <th className="p-3">Name</th>
-              <th className="p-3">Time Taken</th>
+              <th className="p-3">Time</th>
               <th className="p-3">Score</th>
             </tr>
           </thead>
 
           <tbody>
-            {leaderboard.map((student) => (
-              <tr
-                key={student.rank}
-                className="text-center border-t hover:bg-gray-100"
-              >
-                <td className="p-3 font-medium">{student.rank}</td>
-                <td className="p-3">{student.name}</td>
-                <td className="p-3">{student.time}</td>
-                <td className="p-3">{student.score}</td>
+            {leaderboard.length > 0 ? (
+              leaderboard.map((student) => (
+                <tr key={student.rank} className="text-center border-t hover:bg-gray-100">
+                  <td>{student.rank}</td>
+                  <td>{student.name}</td>
+                  <td>{student.time}</td>
+                  <td>{student.score}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="p-5 text-center">
+                  No data available
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
 
         </table>

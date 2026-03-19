@@ -16,6 +16,7 @@ function Exams() {
 
   return (
     <div className="container mt-2">
+      
       <h1>Finished Exams</h1>
 
       <div className="row">

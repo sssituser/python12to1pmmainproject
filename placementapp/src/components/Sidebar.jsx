@@ -9,7 +9,7 @@ function Sidebar({ sidebarOpen }) {
   return (
 
     <div
-      className={`bg-blue-950 text-white h-screen transition-all duration-300 ${
+      className={`bg-blue-950 text-white min-h-screen transition-all duration-300 ${
         sidebarOpen ? "w-64" : "w-20"
       } flex flex-col`}
     >

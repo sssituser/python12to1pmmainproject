@@ -38,20 +38,6 @@ urlpatterns = [
     path('profile/update/', update_profile, name='update_profile'),
     path('profile/upload-resume/', upload_resume, name='upload_resume'),
 
-    # ================= LEAVE REQUEST =================
-    #path('leave-requests/', get_leave_requests),
-    #path('leave-requests/create/', create_leave_request),
-    #path('leave-requests/<int:request_id>/update/', update_leave_request),
-    #path('leave-requests/<int:request_id>/delete/', delete_leave_request),
-
-    # ================= EXAMS =================
-    #path('exams/all/', AllExamListView.as_view()),
-    #path('exams/finished/', FinishedExamListView.as_view()),
-    #path('exams/upcoming/', UpcomingExamListView.as_view()),
-    #path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view()),
-    #path('mcq/submit-answer/', submit_mcq_answer),
-    #path('mcq/submit-exam/', submit_mcq_exam),
-    #path('code/run/', run_code),
     # Playground
     path('questions/', get_questions, name='get-questions'),
     path('questions/create/', create_question, name='create-question'),
@@ -61,8 +47,6 @@ urlpatterns = [
     path('exam-sessions/submit-answer/', submit_answer, name='submit-answer'),
     path('exam-sessions/<int:session_id>/end/', end_exam_session, name='end-exam-session'),
     path('exam-sessions/webcam/', save_webcam_snapshot, name='save-webcam-snapshot'),
-    # path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
-    # path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
     path('', include(router.urls)),
 
 
@@ -81,14 +65,6 @@ urlpatterns = [
     path('leave-requests/<int:pk>/reject/', reject_leave_request),
     path('leave-requests/<int:pk>/delete/', delete_leave_request),
     path('leave-requests/my-requests/', my_leave_requests),
-
-    # ---------------- AUTH ----------------
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # ---------------- PROFILE ----------------
-    path("profile/", profile_view),
-    path("profile/update/", update_profile),
-    path("upload-resume/", upload_resume),
 
     # ---------------- EXAM SYSTEM ----------------
     path('exam-questions/', get_questions),
