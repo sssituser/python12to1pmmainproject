@@ -45,7 +45,7 @@ class Project(models.Model):
 # ===============================
 
 class Job(models.Model):
-    title = models.CharField(max_length=200)
+    # title = models.CharField(max_length=200)
     company = models.CharField(max_length=200)
     description = models.TextField()
     location = models.CharField(max_length=200)
