@@ -1,7 +1,9 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 
 import Dashboard from "./Layout/Dashboard";
+import Dashboardsssit from "./pages/Dashboardsssit";   // ✅ ADD THIS
+
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
@@ -14,13 +16,11 @@ import WeeklyExamReports from "./pages/WeeklyExamReports";
 import MonthlyExamReports from "./pages/MonthlyExamReports";
 import ExamReportDetail from "./pages/ExamReportDetail";
 import Exams from "./pages/Exams";
-import ExamsList from "./pages/ExamsList";
 
 import Logout from "./pages/Logout";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import PythonExam from "./pages/PythonExam";
-import Reports from "./pages/Reports";
 
 import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
@@ -32,74 +32,75 @@ import Course from "./pages/Course";
 import TopicVideo from "./pages/TopicVideo";
 
 function App() {
+  const isLoggedIn = localStorage.getItem("access");
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={2000} />
 
       <Routes>
 
-        {/* Login Page */}
+        {/* Login */}
         <Route path="/" element={<Login />} />
 
-        {/* Standalone Exam */}
-        <Route path="/exam" element={<Exams />} />
+        {/* 🔥 SSSIT Landing Dashboard */}
+        <Route path="/dashboardsssit" element={<Dashboardsssit />} />
 
-        {/* Detailed Results (No Sidebar) */}
+        {/* Standalone */}
+        <Route path="/exam" element={<Exams />} />
         <Route path="/detailed-results/:index" element={<DetailedResults />} />
 
-        {/* Dashboard Layout */}
-        <Route path="/dashboard" element={<Dashboard />}>
+        {/* 🔐 Protected Dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            isLoggedIn ? <Dashboard /> : <Navigate to="/" />
+          }
+        >
 
           {/* Default */}
           <Route index element={<Profile />} />
 
-          {/* Course */}
-          <Route path="/dashboard/course/:courseId" element={<Course />} />
-          <Route path="/dashboard/course/video/:courseId/:topicId" element={<TopicVideo />} />
-
           {/* Profile */}
           <Route path="profile" element={<Profile />} />
+
+          {/* Courses */}
+          <Route path="course" element={<Course />} />
+          <Route path="course/:courseId" element={<Course />} />
+          <Route path="course/video/:courseId/:topicId" element={<TopicVideo />} />
 
           {/* Jobs */}
           <Route path="jobs" element={<Jobs />} />
           <Route path="alljobs" element={<AllJobs />} />
           <Route path="appliedjobs" element={<AppliedJobs />} />
-          <Route path="applied" element={<AppliedJobs />} />        {/* sidebar alias */}
+          <Route path="applied" element={<AppliedJobs />} />
           <Route path="jobs/:id" element={<JobDetails />} />
-
-          {/* Course */}
-          <Route path="/dashboard/course" element={<Course />} />
 
           {/* Exams */}
           <Route path="exams" element={<Exams />} />
           <Route path="exam-reports" element={<ExamReports />} />
-          <Route path="reports" element={<ExamReports />} />         {/* sidebar alias */}
+          <Route path="reports" element={<ExamReports />} />
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="weekly-exams" element={<WeeklyExamReports />} />
           <Route path="monthly-exams" element={<MonthlyExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
-          <Route path="leaderboard" element={<ExamLeaderboard />} />   {/* sidebar alias */}
+          <Route path="leaderboard" element={<ExamLeaderboard />} />
           <Route path="exam-report-detail/:id" element={<ExamReportDetail />} />
 
           {/* Playground */}
           <Route path="playground" element={<Playground />} />
-          <Route path="techlab" element={<Playground />} />          {/* sidebar alias */}
+          <Route path="techlab" element={<Playground />} />
           <Route path="playground/:language" element={<PlaygroundDetail />} />
-
-          {/* Playground Results */}
           <Route path="playground-results" element={<PlaygroundResults />} />
-          <Route path="results" element={<PlaygroundResults />} />    {/* sidebar alias */}
-          <Route
-            path="playground/detailed-results/:index"
-            element={<DetailedResults />}
-          />
+          <Route path="results" element={<PlaygroundResults />} />
+          <Route path="playground/detailed-results/:index" element={<DetailedResults />} />
 
           {/* Python Exam */}
           <Route path="python-exam" element={<PythonExam />} />
 
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />
-          <Route path="leave" element={<LeaveRequest />} />           {/* sidebar alias */}
+          <Route path="leave" element={<LeaveRequest />} />
 
           {/* Logout */}
           <Route path="logout" element={<Logout />} />

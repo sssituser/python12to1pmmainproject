@@ -74,10 +74,10 @@ export default function Course() {
             <div
               key={id}
               onClick={() => navigate(`/dashboard/course/${id}`)}
-              className={`bg-gradient-to-r ${course.color} 
-                          text-white p-6 rounded-2xl cursor-pointer 
-                          shadow-lg hover:shadow-2xl 
-                          transform hover:-translate-y-2 hover:scale-105 
+              className={`bg-gradient-to-r ${course.color}
+                          text-white p-6 rounded-2xl cursor-pointer
+                          shadow-lg hover:shadow-2xl
+                          transform hover:-translate-y-2 hover:scale-105
                           transition duration-300`}
             >
               <div className="flex justify-between mb-4">
