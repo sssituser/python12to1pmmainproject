@@ -119,16 +119,35 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.CharField(source="user.email", read_only=True)
-
-    skills = SkillSerializer(source="skill_set", many=True, read_only=True)
-    projects = ProjectSerializer(source="project_set", many=True, read_only=True)
+    skills = SkillSerializer(many=True,read_only=True)
+    projects = ProjectSerializer(many=True,read_only=True)
 
     class Meta:
         model = StudentProfile
         fields = "__all__"
 
+    def update(self, instance, validated_data):
+        skills_data = validated_data.pop('skills', [])
+        projects_data = validated_data.pop('projects', [])
+
+        # update profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # 🔥 CLEAR OLD SKILLS
+        instance.skills.all().delete()
+
+        for skill in skills_data:
+            Skill.objects.create(profile=instance, **skill)
+
+        # 🔥 CLEAR OLD PROJECTS
+        instance.projects.all().delete()
+
+        for project in projects_data:
+            Project.objects.create(profile=instance, **project)
+
+        return instance
 
 # ===============================
 # JOBS
