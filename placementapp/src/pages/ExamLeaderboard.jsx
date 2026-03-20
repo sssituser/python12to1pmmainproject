@@ -12,35 +12,39 @@ function ExamLeaderboard() {
   const [batch, setBatch] = useState("");
   const [examType, setExamType] = useState("");
   const [showRules, setShowRules] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);       // only true on first load
+  const [isRefreshing, setIsRefreshing] = useState(false); // silent background refresh
 
   // 🔥 FETCH FUNCTION
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setIsRefreshing(true);
 
       const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/`);
       const data = await res.json();
 
       if (data.success) {
         setLeaderboard(data.data || []);
-        toast.success("Leaderboard updated");
+        // Only show toast on manual/initial load, not on every 15-sec refresh
+        if (isInitial) toast.success("Leaderboard loaded");
       } else {
-        toast.error("Failed to load leaderboard");
+        if (isInitial) toast.error("Failed to load leaderboard");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load leaderboard");
+      if (isInitial) toast.error("Failed to load leaderboard");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  // 🔥 AUTO LOAD + AUTO REFRESH
+  // 🔥 AUTO LOAD + SILENT AUTO REFRESH every 30 sec
   useEffect(() => {
-    fetchLeaderboard();
+    fetchLeaderboard(true); // initial load — shows spinner + toast
 
-    const interval = setInterval(fetchLeaderboard, 15000); // every 15 sec
+    const interval = setInterval(() => fetchLeaderboard(false), 30000); // silent refresh
     return () => clearInterval(interval);
   }, [date, batch, examType]);
 
@@ -161,7 +165,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">2</span>
-            <p>{second.name || "-"}</p>
+            <p>{second.username || "-"}</p>
           </div>
         </motion.div>
 
@@ -173,7 +177,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-yellow-400 text-black rounded-xl w-36 h-48 flex items-center justify-center flex-col shadow-xl">
             <span className="text-4xl font-bold">1</span>
-            <p>{first.name || "-"}</p>
+            <p>{first.username || "-"}</p>
           </div>
         </motion.div>
 
@@ -185,7 +189,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">3</span>
-            <p>{third.name || "-"}</p>
+            <p>{third.username || "-"}</p>
           </div>
         </motion.div>
 
@@ -210,8 +214,8 @@ function ExamLeaderboard() {
               leaderboard.map((student) => (
                 <tr key={student.rank} className="text-center border-t hover:bg-gray-100">
                   <td>{student.rank}</td>
-                  <td>{student.name}</td>
-                  <td>{student.time}</td>
+                  <td>{student.username}</td>
+                  <td>{student.time_taken}</td>
                   <td>{student.score}</td>
                 </tr>
               ))

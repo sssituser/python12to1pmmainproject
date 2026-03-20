@@ -135,13 +135,13 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
 
-        # 🔥 CLEAR OLD SKILLS
+        #  CLEAR OLD SKILLS
         instance.skills.all().delete()
 
         for skill in skills_data:
             Skill.objects.create(profile=instance, **skill)
 
-        # 🔥 CLEAR OLD PROJECTS
+        #  CLEAR OLD PROJECTS
         instance.projects.all().delete()
 
         for project in projects_data:

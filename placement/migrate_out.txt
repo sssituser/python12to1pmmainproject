@@ -1,0 +1,21 @@
+﻿python : CommandError: 
+Conflicting migrations 
+detected; multiple leaf nodes 
+in the migration graph: 
+(0001_add_job_title_field, 
+0001_initial in myapp).
+At line:1 char:1
++ python manage.py migrate 2>&1 
+| Out-File -FilePath 
+"migrate_out.txt"  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : N 
+   otSpecified: (CommandError:  
+   C...tial in myapp).:String   
+ ) [], RemoteException
+    + FullyQualifiedErrorId : N 
+   ativeCommandError
+ 
+To fix them run 'python 
+manage.py makemigrations 
+--merge'

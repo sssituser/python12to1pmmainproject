@@ -24,7 +24,7 @@ class StudentProfile(models.Model):
 
 
 class Skill(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="skills")
     name = models.CharField(max_length=100)
 
     def __str__(self):

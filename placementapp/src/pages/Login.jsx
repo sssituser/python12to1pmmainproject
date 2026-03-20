@@ -63,7 +63,7 @@ const handleLogin = async () => {
       localStorage.setItem("user", JSON.stringify(user));
 
       toast.success(`Welcome ${username}`);
-      navigate("/dashboard");
+      navigate("/dashboard",{replace:true});
       window.location.reload();
           
 
