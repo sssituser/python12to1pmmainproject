@@ -10,7 +10,7 @@ function DailyExamReports() {
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
-  // ✅ FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
+  //  FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
   const fetchReports = async () => {
     try {
       // Always fetch without auth so expired tokens don't block the page
