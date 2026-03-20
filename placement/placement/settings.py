@@ -90,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'placementdb',
         'USER': 'root',
-        'PASSWORD': '2004',
+        'PASSWORD': '2003',
         'HOST': 'localhost',
         'PORT': '3306',
     }
