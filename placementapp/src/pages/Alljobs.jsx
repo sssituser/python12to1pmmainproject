@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 function AllJobs() {
-
   const navigate = useNavigate();
 
   const [jobsData, setJobsData] = useState([]);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
-  const [applied, setApplied] = useState(false);
 
-  // Apply Job
+  // ==============================
+  // APPLY JOB
+  // ==============================
   function applyJob(jobId) {
     const token = localStorage.getItem("access");
 
@@ -20,86 +20,98 @@ function AllJobs() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ job: jobId })
+      body: JSON.stringify({ job: jobId }),
     })
-    .then(res => res.json().then(data => ({ status: res.status, data })))
-    .then(({ status, data }) => {
-      if (status === 201) {
-        alert("Job Applied Successfully ✅");
-        setJobsData(prev =>
-          prev.map(job => job.id === jobId ? { ...job, status: "Applied" } : job)
-        );
-        setApplied(true);
-      } else {
-        alert("Already applied ⚠️");
-        setApplied(true);
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      alert("Server error ❌");
-    });
+      .then((res) =>
+        res.json().then((data) => ({ status: res.status, data }))
+      )
+      .then(({ status }) => {
+        if (status === 201) {
+          alert("Applied Successfully ✅");
+
+          setJobsData((prev) =>
+            prev.map((job) =>
+              job.id === jobId ? { ...job, status: "Applied" } : job
+            )
+          );
+        } else {
+          alert("Already Applied ⚠️");
+        }
+      })
+      .catch(() => alert("Error ❌"));
   }
 
-  // Fetch Jobs
+  // ==============================
+  // FETCH JOBS + APPLIED STATUS
+  // ==============================
   useEffect(() => {
     const token = localStorage.getItem("access");
 
-    // Get all jobs
-    fetch("http://127.0.0.1:8000/api/jobs/", {
-      headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(async (jobs) => {
-      // Get applied jobs
-      const res2 = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const appliedJobs = await res2.json();
+    async function fetchData() {
+      try {
+        const jobsRes = await fetch(
+          "http://127.0.0.1:8000/api/jobs/",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      // Get applied job IDs
-      const appliedIds = Array.isArray(appliedJobs) ? appliedJobs.map(a => a.job) : [];
+        const jobs = await jobsRes.json();
 
-      // Merge status
-      const updatedJobs = Array.isArray(jobs) ? jobs.map(j => ({
-        ...j,
-        status: appliedIds.includes(j.id) ? "Applied" : j.status
-      })) : [];
+        const appliedRes = await fetch(
+          "http://127.0.0.1:8000/api/applied-jobs/",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      setJobsData(updatedJobs);
-    })
-    .catch(err => console.log(err));
+        const appliedJobs = await appliedRes.json();
+        const appliedIds = appliedJobs.map((a) => a.job);
+
+        const updated = jobs.map((j) => ({
+          ...j,
+          status: appliedIds.includes(j.id) ? "Applied" : j.status,
+        }));
+
+        setJobsData(updated);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    fetchData();
   }, []);
 
-  // Search
-  const filteredJobs = Array.isArray(jobsData)
-    ? jobsData.filter(job => {
-        if (!search) return true;
-        return (
-          job.company?.toLowerCase().includes(search.toLowerCase()) ||
-          job.job_title?.toLowerCase().includes(search.toLowerCase()) ||
-          job.primary_skills?.toLowerCase().includes(search.toLowerCase())
-        );
-      })
-    : [];
+  // ==============================
+  // SEARCH
+  // ==============================
+  const filteredJobs = jobsData.filter((job) =>
+    job.company?.toLowerCase().includes(search.toLowerCase()) ||
+    job.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    job.primary_skills?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  // Pagination
+  // ==============================
+  // PAGINATION
+  // ==============================
   const totalPages = Math.ceil(filteredJobs.length / perPage);
-  const lastIndex = page * perPage;
-  const firstIndex = lastIndex - perPage;
-  const records = filteredJobs.slice(firstIndex, lastIndex);
+  const records = filteredJobs.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
 
+  // ==============================
+  // UI
+  // ==============================
   return (
     <div className="container mt-4">
+      <h4>All Job Openings</h4>
 
-      <h4 className="mb-3 text-black">All Job Openings</h4>
-
-      {/* Search */}
       <input
         className="form-control mb-3"
-        placeholder="Search by role, skill, company"
+        placeholder="Search..."
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
@@ -107,134 +119,94 @@ function AllJobs() {
         }}
       />
 
-      <div className="table-responsive">
-        <table className="table table-bordered align-middle shadow table-striped">
-          <thead className="table-primary">
+      <table className="table table-bordered">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Job Title</th>
+            <th>Skills</th>
+            <th>Deadline</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {records.length === 0 ? (
             <tr>
-              <th>Company</th>
-              <th>Job Title</th>
-              <th>Primary Skills</th>
-              <th>Deadline</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {records.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="text-center">No Jobs Found</td>
-              </tr>
-            ) : (
-              records.map(job => (
-                <tr key={job.id}>
-                  <td>{job.company}</td>
-                  <td>{job.job_title}</td>
-                  <td>{job.primary_skills}</td>
-                  <td>{job.deadline || "N/A"}</td>
-                  <td>{job.location}</td>
-                  <td>
-                    {job.status === "Applied" ? (
-                      <span className="badge bg-success">Applied</span>
-                    ) : job.status === "TimedOut" ? (
-                      <span className="badge bg-danger">TimedOut</span>
-                    ) : job.status === "Closed" ? (
-                      <span className="badge bg-secondary">Closed</span>
-                    ) : (
-                      <span className="badge bg-success">Open</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="d-flex gap-2">
-                      <button
-                        className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
-                      >
-                        <FaEye />
-                        <span>View</span>
-                      </button>
-
-                      {job.status === "Applied" ? (
-                        <button className="btn btn-secondary btn-sm" disabled>
-                          Applied ✅
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-success btn-sm"
-                          disabled={job.status === "Closed" || job.status === "TimedOut"}
-                          onClick={() => applyJob(job.id)}
-                        >
-                          Apply
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-
-          {/* Pagination */}
-          <tfoot>
-            <tr>
-              <td colSpan="7">
-                <div className="d-flex justify-content-between align-items-center">
-
-                  <div className="d-flex align-items-center gap-3">
-                    <button
-                      className="btn btn-light btn-sm"
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      <FaArrowLeft /> Prev
-                    </button>
-
-                    <span className="fw-bold">Page {page} of {totalPages || 1}</span>
-
-                    <button
-                      className="btn btn-light btn-sm"
-                      disabled={page === totalPages || totalPages === 0}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next <FaArrowRight />
-                    </button>
-                  </div>
-
-                  <div className="d-flex align-items-center gap-2">
-                    <select
-                      className="form-select form-select-sm"
-                      style={{ width: "130px" }}
-                      value={perPage}
-                      onChange={(e) => {
-                        setPerPage(Number(e.target.value));
-                        setPage(1);
-                      }}
-                    >
-                      <option value={3}>3 / page</option>
-                      <option value={10}>10 / page</option>
-                      <option value={20}>20 / page</option>
-                    </select>
-
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        className={`btn btn-sm ${page === i + 1 ? "btn-primary" : "btn-light"}`}
-                        onClick={() => setPage(i + 1)}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                  </div>
-
-                </div>
+              <td colSpan="7" className="text-center">
+                No Jobs
               </td>
             </tr>
-          </tfoot>
+          ) : (
+            records.map((job) => (
+              <tr key={job.id}>
+                <td>{job.company}</td>
+                <td>{job.job_title}</td>
+                <td>{job.primary_skills}</td>
+                <td>{job.deadline}</td>
+                <td>{job.location}</td>
 
-        </table>
+                <td>
+                  {job.status === "Applied" ? (
+                    <span className="badge bg-success">Applied</span>
+                  ) : job.status === "Closed" ? (
+                    <span className="badge bg-secondary">Closed</span>
+                  ) : (
+                    <span className="badge bg-primary">Open</span>
+                  )}
+                </td>
+
+                <td>
+                  <button
+                    className="btn btn-sm btn-primary me-2"
+                    onClick={() =>
+                      navigate(`/dashboard/jobs/${job.id}`)
+                    }
+                  >
+                    <FaEye />
+                  </button>
+
+                  {job.status === "Applied" ? (
+                    <button className="btn btn-secondary btn-sm" disabled>
+                      Applied
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => applyJob(job.id)}
+                    >
+                      Apply
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      {/* Pagination */}
+      <div className="d-flex justify-content-between">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          <FaArrowLeft />
+        </button>
+
+        <span>
+          Page {page} / {totalPages || 1}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          <FaArrowRight />
+        </button>
       </div>
-
     </div>
   );
 }
