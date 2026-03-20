@@ -65,8 +65,8 @@ const PythonExam = () => {
   // WEBCAM FUNCTIONS
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 320 },
           height: { ideal: 240 }
         } 
@@ -267,7 +267,7 @@ const PythonExam = () => {
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
-    navigate("/dashboard/playground-results");
+    navigate("/dashboard/playground-results",{replace:true});
   };
 
   const formatTime = (seconds) => {
