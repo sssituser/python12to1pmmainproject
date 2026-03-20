@@ -171,6 +171,7 @@ class WebcamSnapshot(models.Model):
 class ExamAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     exam_title = models.CharField(max_length=200)
+    exam_type = models.CharField(max_length=50, default='daily')
 
     score = models.IntegerField(default=0)
     total_questions = models.IntegerField(default=20)
