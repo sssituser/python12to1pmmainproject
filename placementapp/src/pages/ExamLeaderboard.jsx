@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 function ExamLeaderboard() {
 
-  // 🔥 STATE
+  //  STATE
   const [leaderboard, setLeaderboard] = useState([]);
   const [date, setDate] = useState("");
   const [batch, setBatch] = useState("");
@@ -15,32 +14,37 @@ function ExamLeaderboard() {
   const [loading, setLoading] = useState(true);       // only true on first load
   const [isRefreshing, setIsRefreshing] = useState(false); // silent background refresh
 
-  // 🔥 FETCH FUNCTION
+  //  FETCH FUNCTION
   const fetchLeaderboard = async (isInitial = false) => {
     try {
       if (isInitial) setLoading(true);
       else setIsRefreshing(true);
 
-      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/`);
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (batch) params.append('batch', batch);
+      if (examType) params.append('exam_type', examType);
+
+      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
         setLeaderboard(data.data || []);
         // Only show toast on manual/initial load, not on every 15-sec refresh
-        if (isInitial) toast.success("Leaderboard loaded");
+        if (isInitial) toast.success("Leaderboard loaded", { toastId: "leaderboardToast" });
       } else {
-        if (isInitial) toast.error("Failed to load leaderboard");
+        if (isInitial) toast.error("Failed to load leaderboard", { toastId: "leaderboardToast" });
       }
     } catch (error) {
       console.error(error);
-      if (isInitial) toast.error("Failed to load leaderboard");
+      if (isInitial) toast.error("Failed to load leaderboard", { toastId: "leaderboardToast" });
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  // 🔥 AUTO LOAD + SILENT AUTO REFRESH every 30 sec
+  //  AUTO LOAD + SILENT AUTO REFRESH every 30 sec
   useEffect(() => {
     fetchLeaderboard(true); // initial load — shows spinner + toast
 
@@ -48,20 +52,18 @@ function ExamLeaderboard() {
     return () => clearInterval(interval);
   }, [date, batch, examType]);
 
-  // 🔥 SAFE PODIUM
+  //  SAFE PODIUM
   const first = leaderboard.find((s) => s.rank === 1) || {};
   const second = leaderboard.find((s) => s.rank === 2) || {};
   const third = leaderboard.find((s) => s.rank === 3) || {};
 
-  // 🔥 LOADING STATE
+  // LOADING STATE
   if (loading) {
     return <p className="text-center mt-10">Loading leaderboard...</p>;
   }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-
-      <ToastContainer position="top-right" autoClose={3000} />
 
       {/* Rules Popup */}
       {showRules && (
@@ -121,16 +123,9 @@ function ExamLeaderboard() {
 
         <div>
           <label className="text-sm font-medium">Batch</label>
-          <select
-            value={batch}
-            onChange={(e) => setBatch(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          >
-            <option value="">All Batches</option>
-            <option value="1">Batch 1</option>
-            <option value="2">Batch 2</option>
-            <option value="3">Batch 3</option>
-          </select>
+          <div className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100 text-gray-500 cursor-not-allowed">
+            All Batches
+          </div>
         </div>
 
         <div>
