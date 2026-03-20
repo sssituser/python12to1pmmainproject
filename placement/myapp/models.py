@@ -17,8 +17,6 @@ class StudentProfile(models.Model):
     cgpa = models.FloatField(null=True, blank=True)
     tenth_percentage = models.FloatField(null=True, blank=True)
     twelfth_percentage = models.FloatField(null=True, blank=True)
-    github = models.URLField(blank=True)
-    linkedin = models.URLField(blank=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
 
     def __str__(self):
@@ -26,9 +24,8 @@ class StudentProfile(models.Model):
 
 
 class Skill(models.Model):
-    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="skills")
+    student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    level = models.IntegerField(default=50)
 
     def __str__(self):
         return self.name
@@ -47,7 +44,10 @@ class Project(models.Model):
 # Jobs
 # ===============================
 
+from django.db import models
+
 class Job(models.Model):
+
     company = models.CharField(max_length=200)
     job_title = models.CharField(max_length=200)
     primary_skills = models.TextField()
@@ -58,27 +58,26 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.title
-
+        return self.job_title
 
 class AppliedJob(models.Model):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    student_name = models.CharField(max_length=200)
-    email = models.EmailField()
-    applied_date = models.DateField(auto_now_add=True)
+
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    job = models.ForeignKey(Job,on_delete=models.CASCADE)
+    applied_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.student_name
+        return self.user.username
 
 
 class JobApplication(models.Model):
+
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
     applied_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50)
-
     def __str__(self):
-        return f"{self.user.username} applied for {self.job.title}"
+        return f"Application for {self.job} by user {self.user_id}"
 
 
 # ===============================

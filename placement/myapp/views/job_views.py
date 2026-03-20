@@ -1,8 +1,9 @@
 from rest_framework import viewsets
-from ..models import Job
-from ..serializers import JobSerializer
-from ..models import AppliedJob
-from ..serializers import AppliedJobSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+
+from ..models import Job, AppliedJob
+from ..serializers import JobSerializer, AppliedJobSerializer
 
 
 class JobViewSet(viewsets.ModelViewSet):
@@ -10,7 +11,8 @@ class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all().order_by("-created_at")
     serializer_class = JobSerializer
 
-from rest_framework.permissions import IsAuthenticated
+    def get_serializer_context(self):
+        return {"request": self.request}
 
 class AppliedJobViewSet(viewsets.ModelViewSet):
     queryset = AppliedJob.objects.all()
@@ -21,4 +23,14 @@ class AppliedJobViewSet(viewsets.ModelViewSet):
         return AppliedJob.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        job = serializer.validated_data.get('job')
+
+        if not job:
+            raise ValidationError({"job": "Job is required"})
+
+        # Prevent duplicate apply
+        if AppliedJob.objects.filter(user=user, job=job).exists():
+            raise ValidationError("Already applied")
+
+        serializer.save(user=user)
