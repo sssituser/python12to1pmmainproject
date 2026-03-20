@@ -58,10 +58,7 @@ class Job(models.Model):
 
     def __str__(self):
         return self.job_title
-<<<<<<< HEAD
 
-=======
->>>>>>> c605b67da035745f7c8eeb80774be373f82a7f61
 
 class AppliedJob(models.Model):
 

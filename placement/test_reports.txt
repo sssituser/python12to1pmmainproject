@@ -1,0 +1,1 @@
+{"success":true,"data":[{"id":5,"user":{"username":"testUser","randomId":"1234"},"examTitle":"Daily Exam","score":10,"totalMarks":40,"correctAnswers":5,"totalQuestions":20,"status":"completed","examDate":"2026-03-18T12:18:18.828184+00:00","timeTaken":300,"percentage":25.0}]}
