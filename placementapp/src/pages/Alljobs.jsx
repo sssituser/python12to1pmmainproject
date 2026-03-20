@@ -4,32 +4,6 @@ import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 function AllJobs() {
 
-function applyJob(jobId){
-
-fetch("http://127.0.0.1:8000/api/applied-jobs/",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-job:jobId,
-student_name:"Akhila",
-email:"akhila@gmail.com"
-
-})
-
-})
-.then(res=>res.json())
-.then(data=>{
-alert("Job Applied Successfully")
-})
-.catch(err=>console.log(err))
-
-}
   const navigate = useNavigate();
 
   const [jobsData, setJobsData] = useState([]);
@@ -37,27 +11,79 @@ alert("Job Applied Successfully")
   const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState("");
 
-  // Fetch jobs from Django backend
+  // ==============================
+  // APPLY JOB FUNCTION
+  // ==============================
+  function applyJob(jobId) {
+
+    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        job: jobId,
+        student_name: "Akhila",
+        email: "akhila@gmail.com"
+      })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to apply");
+        return res.json();
+      })
+      .then(() => {
+
+        alert("Job Applied Successfully ✅");
+
+        // Update UI instantly
+        setJobsData(prev =>
+          prev.map(job =>
+            job.id === jobId ? { ...job, status: "Applied" } : job
+          )
+        );
+
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Application failed ❌");
+      });
+  }
+
+  // ==============================
+  // FETCH JOBS
+  // ==============================
   useEffect(() => {
 
     fetch("http://127.0.0.1:8000/api/jobs/")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Jobs:", data);
-        setJobsData(data);
+      .then(async (res) => {
+
+        const text = await res.text();
+
+        try {
+          const data = JSON.parse(text);
+          console.log("Jobs:", data);
+          setJobsData(data);
+        } catch (err) {
+          console.error("Invalid JSON response:", text);
+        }
+
       })
       .catch((err) => console.log(err));
 
   }, []);
 
-  // Search Filter
+  // ==============================
+  // SEARCH FILTER
+  // ==============================
   const filteredJobs = jobsData.filter((job) =>
     job.company?.toLowerCase().includes(search.toLowerCase()) ||
     job.job_title?.toLowerCase().includes(search.toLowerCase()) ||
     job.primary_skills?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Pagination
+  // ==============================
+  // PAGINATION
+  // ==============================
   const totalPages = Math.ceil(filteredJobs.length / perPage);
 
   const lastIndex = page * perPage;
@@ -65,12 +91,15 @@ alert("Job Applied Successfully")
 
   const records = filteredJobs.slice(firstIndex, lastIndex);
 
+  // ==============================
+  // UI
+  // ==============================
   return (
     <div className="container mt-4">
 
       <h4 className="mb-3 text-black">All Job Openings</h4>
 
-      {/* Search */}
+      {/* SEARCH */}
       <input
         className="form-control mb-3"
         placeholder="Search by role, skill, company"
@@ -123,33 +152,38 @@ alert("Job Applied Successfully")
 
                   <td>
                     {job.status === "Applied" ? (
-  <span className="badge bg-success">Applied</span>
+                      <span className="badge bg-success">Applied</span>
 
-) : job.status === "TimedOut" ? (
-  <span className="badge bg-danger">TimedOut</span>
+                    ) : job.status === "TimedOut" ? (
+                      <span className="badge bg-danger">Timed Out</span>
 
-) : job.status === "Closed" ? (
-  <span className="badge bg-secondary">Closed</span>
+                    ) : job.status === "Closed" ? (
+                      <span className="badge bg-secondary">Closed</span>
 
-) : (
-  <span className="badge bg-green-400 text-dark ">Open</span>
-)}
+                    ) : (
+                      <span className="badge bg-primary">Open</span>
+                    )}
                   </td>
 
                   <td>
                     <div className="d-flex gap-2">
-                    <button
-  className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-  onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
->
-  <FaEye />
-  <span>View</span>
-</button>
-                     
+
+                      <button
+                        className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
+                      >
+                        <FaEye />
+                        <span>View</span>
+                      </button>
 
                       <button
                         className="btn btn-success btn-sm"
-                        disabled={job.status === "Timed Out" || job.status === "Applied"}
+                        disabled={
+                          job.status === "TimedOut" ||
+                          job.status === "Applied" ||
+                          job.status === "Closed"
+                        }
+                        onClick={() => applyJob(job.id)}
                       >
                         Apply
                       </button>
@@ -165,16 +199,14 @@ alert("Job Applied Successfully")
 
           </tbody>
 
-          {/* Pagination Footer */}
-
+          {/* PAGINATION */}
           <tfoot>
             <tr>
               <td colSpan="7">
 
                 <div className="d-flex justify-content-between align-items-center">
 
-                  {/* Prev Button */}
-
+                  {/* PREV */}
                   <div className="d-flex align-items-center gap-3">
 
                     <button
@@ -191,8 +223,7 @@ alert("Job Applied Successfully")
 
                   </div>
 
-                  {/* Page Numbers */}
-
+                  {/* PAGE NUMBERS */}
                   <div className="d-flex align-items-center gap-2">
 
                     <select
