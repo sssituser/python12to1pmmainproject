@@ -10,6 +10,8 @@ import AppliedJobs from "./pages/AppliedJobs";
 
 import ExamReports from "./pages/ExamReports";
 import DailyExamReports from "./pages/DailyExamReports";
+import WeeklyExamReports from "./pages/WeeklyExamReports";
+import MonthlyExamReports from "./pages/MonthlyExamReports";
 import ExamReportDetail from "./pages/ExamReportDetail";
 import Exams from "./pages/Exams";
 import ExamsList from "./pages/ExamsList";
@@ -62,6 +64,7 @@ function App() {
           <Route path="jobs" element={<Jobs />} />
           <Route path="alljobs" element={<AllJobs />} />
           <Route path="appliedjobs" element={<AppliedJobs />} />
+          <Route path="applied" element={<AppliedJobs />} />        {/* sidebar alias */}
           <Route path="jobs/:id" element={<JobDetails />} />
 
           {/* Course */}
@@ -70,16 +73,22 @@ function App() {
           {/* Exams */}
           <Route path="exams" element={<Exams />} />
           <Route path="exam-reports" element={<ExamReports />} />
+          <Route path="reports" element={<ExamReports />} />         {/* sidebar alias */}
           <Route path="daily-exams" element={<DailyExamReports />} />
+          <Route path="weekly-exams" element={<WeeklyExamReports />} />
+          <Route path="monthly-exams" element={<MonthlyExamReports />} />
           <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
+          <Route path="leaderboard" element={<ExamLeaderboard />} />   {/* sidebar alias */}
           <Route path="exam-report-detail/:id" element={<ExamReportDetail />} />
 
           {/* Playground */}
           <Route path="playground" element={<Playground />} />
+          <Route path="techlab" element={<Playground />} />          {/* sidebar alias */}
           <Route path="playground/:language" element={<PlaygroundDetail />} />
 
           {/* Playground Results */}
           <Route path="playground-results" element={<PlaygroundResults />} />
+          <Route path="results" element={<PlaygroundResults />} />    {/* sidebar alias */}
           <Route
             path="playground/detailed-results/:index"
             element={<DetailedResults />}
@@ -88,11 +97,9 @@ function App() {
           {/* Python Exam */}
           <Route path="python-exam" element={<PythonExam />} />
 
-          {/* Reports */}
-          <Route path="reports" element={<Reports />} />
-
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />
+          <Route path="leave" element={<LeaveRequest />} />           {/* sidebar alias */}
 
           {/* Logout */}
           <Route path="logout" element={<Logout />} />

@@ -234,6 +234,7 @@ const PythonExam = () => {
       examTitle: "Python Programming Assessment"
     };
 
+    const now = new Date().toISOString();
     const payload = {
       username: user.username || "Unknown",
       exam_title: "Python Programming Assessment",
@@ -244,20 +245,31 @@ const PythonExam = () => {
       marks_obtained: correctCount * 2,
       total_marks: 40,
       time_taken: 2700 - timeLeft,
+      start_time: now,
+      end_time: now,
       status: "completed",
-      random_id: randomId,
+      random_id: String(randomId),
       answers: answers,
       questions: questions
     };
 
     try {
-      await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+      // No auth header — token expires during a 45-min exam.
+      // Backend uses 'username' field in the payload to identify the user.
+      const res = await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error("Save exam report failed:", res.status, errData);
+      } else {
+        const saved = await res.json().catch(() => ({}));
+        console.log("✅ Exam saved for user:", saved.saved_username);
+      }
     } catch (err) {
-      console.error("Failed to sync exam gracefully:", err);
+      console.error("Failed to sync exam to backend:", err);
     }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
