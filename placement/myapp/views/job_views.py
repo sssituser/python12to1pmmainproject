@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.exceptions import ValidationError
 
 from ..models import Job, AppliedJob
@@ -10,6 +10,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
     queryset = Job.objects.all().order_by("-created_at")
     serializer_class = JobSerializer
+    permission_classes = [AllowAny]
 
     def get_serializer_context(self):
         return {"request": self.request}
