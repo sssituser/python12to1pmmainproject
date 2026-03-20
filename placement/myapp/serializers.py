@@ -152,17 +152,46 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 # ===============================
 # JOBS
 # ===============================
+from datetime import date
 
 class JobSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = Job
         fields = "__all__"
 
+    def get_status(self, obj):
+        request = self.context.get('request')
+
+        # ❌ if no user → just return Open/Closed
+        if not request or not request.user.is_authenticated:
+            return "Open"
+
+        user = request.user
+
+        # ✅ Check already applied
+        if AppliedJob.objects.filter(user=user, job=obj).exists():
+            return "Applied"
+
+        # ✅ Check deadline
+        if obj.deadline and obj.deadline < date.today():
+            return "Closed"
+
+        return "Open"
+from .models import AppliedJob
 
 class AppliedJobSerializer(serializers.ModelSerializer):
+
+    job_details = JobSerializer(source='job', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+
     class Meta:
         model = AppliedJob
-        fields = "__all__"
+        fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
 
 # ===============================
