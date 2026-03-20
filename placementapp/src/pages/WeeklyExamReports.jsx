@@ -4,17 +4,20 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function DailyExamReports() {
+function WeeklyExamReports() {
 
   const [exams, setExams] = useState([]);
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
-  // ✅ FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
+  // FETCH DATA FROM BACKEND - Weekly exams only (this week)
   const fetchReports = async () => {
     try {
-      // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("http://127.0.0.1:8000/api/all-exam-results/");
+      const token = localStorage.getItem("access");
+
+      const res = await axios.get("http://127.0.0.1:8000/api/weekly-exam-results/", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {
@@ -23,30 +26,27 @@ function DailyExamReports() {
         examList = res.data;
       }
 
-      // Filter by logged-in username from localStorage (case-insensitive)
-      let currentUsername = null;
+      // Filter by logged-in user (case-insensitive)
       try {
         const userStr = localStorage.getItem("user");
         if (userStr && userStr !== "undefined") {
           const parsedUser = JSON.parse(userStr);
-          currentUsername = parsedUser?.username?.toLowerCase() || null;
+          const currentUsername = parsedUser?.username?.toLowerCase();
+          if (currentUsername) {
+            examList = examList.filter(
+              (e) => e.user?.username?.toLowerCase() === currentUsername
+            );
+          }
         }
       } catch (e) {
         console.error("User parse error:", e);
       }
 
-      if (currentUsername) {
-        const filtered = examList.filter(
-          (e) => e.user?.username?.toLowerCase() === currentUsername
-        );
-        // If filtered has results use them, otherwise show all (username mismatch guard)
-        examList = filtered.length > 0 ? filtered : examList;
-      }
-
+      // No fallback — weekly page only shows weekly data
       setExams(examList);
 
     } catch (err) {
-      console.error("Failed to fetch exam reports:", err);
+      console.error("Failed to fetch weekly exam reports:", err);
       setExams([]);
     }
   };
@@ -55,7 +55,7 @@ function DailyExamReports() {
     fetchReports();
   }, []);
 
-  // ✅ ANIMATION AFTER DATA LOAD
+  // ANIMATION AFTER DATA LOAD
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
@@ -79,7 +79,7 @@ function DailyExamReports() {
 
   }, [exams]);
 
-  // ✅ COLOR LOGIC
+  //  COLOR LOGIC
   const getColor = (percentage) => {
     if (percentage >= 80) return "#198754";
     if (percentage >= 60) return "#ffc107";
@@ -98,7 +98,7 @@ function DailyExamReports() {
       </button>
 
       <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-        <h3 className="mb-0 text-dark font-weight-bold">Daily Exam Reports</h3>
+        <h3 className="mb-0 text-dark font-weight-bold">Weekly Exam Reports</h3>
         <span className="badge bg-primary fs-6 py-2 px-3 shadow-sm rounded-pill text-white">
           Total Exams Written: {exams.length}
         </span>
@@ -160,8 +160,8 @@ function DailyExamReports() {
           })
         ) : (
           <div className="text-center mt-5">
-            <p className="text-muted fs-5">No exam reports found.</p>
-            <p className="text-muted">Take a Daily Exam to see your results here!</p>
+            <p className="text-muted fs-5">No weekly exam reports found.</p>
+            <p className="text-muted">Complete a Weekly Exam to see your results here!</p>
           </div>
         )}
 
@@ -171,4 +171,4 @@ function DailyExamReports() {
   );
 }
 
-export default DailyExamReports;
+export default WeeklyExamReports;
