@@ -165,7 +165,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">2</span>
-            <p>{second.username || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(second.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -177,7 +177,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-yellow-400 text-black rounded-xl w-36 h-48 flex items-center justify-center flex-col shadow-xl">
             <span className="text-4xl font-bold">1</span>
-            <p>{first.username || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(first.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -189,7 +189,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">3</span>
-            <p>{third.username || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(third.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -198,30 +198,30 @@ function ExamLeaderboard() {
       {/* Table */}
       <div className="mt-10 max-w-4xl mx-auto overflow-x-auto">
 
-        <table className="w-full border rounded-lg shadow-md">
+        <table className="w-full border-collapse rounded-lg shadow-md text-sm">
 
           <thead className="bg-gray-800 text-white">
             <tr>
-              <th className="p-3">Rank</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Time</th>
-              <th className="p-3">Score</th>
+              <th className="py-3 px-4 text-center">Rank</th>
+              <th className="py-3 px-4 text-center">Name</th>
+              <th className="py-3 px-4 text-center">Time</th>
+              <th className="py-3 px-4 text-center">Score</th>
             </tr>
           </thead>
 
           <tbody>
             {leaderboard.length > 0 ? (
               leaderboard.map((student) => (
-                <tr key={student.rank} className="text-center border-t hover:bg-gray-100">
-                  <td>{student.rank}</td>
-                  <td>{student.username}</td>
-                  <td>{student.time_taken}</td>
-                  <td>{student.score}</td>
+                <tr key={student.rank} className="border-t hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-center font-semibold text-gray-700">{student.rank}</td>
+                  <td className="py-3 px-4 text-center font-medium uppercase tracking-wide">{student.username}</td>
+                  <td className="py-3 px-4 text-center text-gray-600">{student.time_taken}</td>
+                  <td className="py-3 px-4 text-center font-bold text-indigo-700">{student.score}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="p-5 text-center">
+                <td colSpan="4" className="py-6 text-center text-gray-500">
                   No data available
                 </td>
               </tr>
