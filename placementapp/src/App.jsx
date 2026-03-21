@@ -30,6 +30,7 @@ import DetailedResults from "./pages/DetailedResults";
 import LeaveRequest from "./pages/Leaverequest";
 import Course from "./pages/Course";
 import TopicVideo from "./pages/TopicVideo";
+import VideoPlayer from "./pages/VideoPlayer";
 
 function App() {
   return (
@@ -43,6 +44,9 @@ function App() {
 
         {/* Standalone Exam */}
         <Route path="/exam" element={<Exams />} />
+
+        {/* Video Player (Standalone) */}
+        <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
 
         {/* Detailed Results (No Sidebar) */}
         <Route path="/detailed-results/:index" element={<DetailedResults />} />
