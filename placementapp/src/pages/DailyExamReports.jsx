@@ -36,11 +36,9 @@ function DailyExamReports() {
       }
 
       if (currentUsername) {
-        const filtered = examList.filter(
+        examList = examList.filter(
           (e) => e.user?.username?.toLowerCase() === currentUsername
         );
-        // If filtered has results use them, otherwise show all (username mismatch guard)
-        examList = filtered.length > 0 ? filtered : examList;
       }
 
       setExams(examList);
