@@ -238,7 +238,7 @@ function LeaveRequest() {
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600 text-xl" />
               </div>
               <div>
-                <h4 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>Leave Request Portal</h4>
+                <h4 className="text-lg font-black text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
               </div>
             </div>
             <div className="relative">
@@ -261,8 +261,8 @@ function LeaveRequest() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gray-400 px-6 py-4">
-            <h6 className="text-xl font-semibold text-white flex items-center gap-2">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2">
+            <h6 className="text-xl font-black text-white flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
               <FontAwesomeIcon icon={faPlus} />
               New Leave Request
             </h6>
@@ -371,7 +371,7 @@ function LeaveRequest() {
               <div className="flex items-end">
                 <button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-gray-500 hover:to-gray-600 transition duration-200 flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg"
                 >
                   <FontAwesomeIcon icon={faPlus} />
                   Submit
@@ -383,9 +383,9 @@ function LeaveRequest() {
 
         {/* All Leave Requests */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gray-400 px-6 py-4">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-2">
             <div className="flex justify-between items-center">
-              <h5 className="text-xl font-semibold text-white flex items-center gap-2">
+              <h5 className="text-xl font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
                 <FontAwesomeIcon icon={faBell} />
                 All Leave Requests
               </h5>

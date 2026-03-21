@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from myapp.views import *
 from myapp.views.job_views import JobViewSet
 
+
 # IMPORT VIEWS
 from myapp.views.auth_views import *
 from myapp.views.profile_views import *
@@ -46,7 +47,8 @@ urlpatterns = [
     path('leave-requests/create/', create_leave_request),
     # path('leave-requests/<int:request_id>/update/', update_leave_request),
     path('leave-requests/<int:request_id>/delete/', delete_leave_request),
-
+    
+    
     # ================= EXAMS =================
     # path('exams/all/', AllExamListView.as_view()),
     # path('exams/finished/', FinishedExamListView.as_view()),

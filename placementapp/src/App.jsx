@@ -31,6 +31,7 @@ import DetailedResults from "./pages/DetailedResults";
 import LeaveRequest from "./pages/Leaverequest";
 import Course from "./pages/Course";
 import TopicVideo from "./pages/TopicVideo";
+import VideoPlayer from "./pages/VideoPlayer";
 
 function App() {
   const isLoggedIn = localStorage.getItem("access");
@@ -47,8 +48,15 @@ function App() {
         {/* 🔥 SSSIT Landing Dashboard */}
         <Route path="/dashboardsssit" element={<Dashboardsssit />} />
 
+
+        {/* Video Player (Standalone) */}
+        <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
+
+        {/* Detailed Results (No Sidebar) */}
+
         {/* Standalone */}
         <Route path="/exam" element={<Exams />} />
+
         <Route path="/detailed-results/:index" element={<DetailedResults />} />
 
         {/* 🔐 Protected Dashboard */}
