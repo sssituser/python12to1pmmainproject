@@ -55,7 +55,7 @@ function DailyExamReports() {
     fetchReports();
   }, []);
 
-  // ✅ ANIMATION AFTER DATA LOAD
+  // ANIMATION AFTER DATA LOAD
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
@@ -79,7 +79,7 @@ function DailyExamReports() {
 
   }, [exams]);
 
-  // ✅ COLOR LOGIC
+  // COLOR LOGIC
   const getColor = (percentage) => {
     if (percentage >= 80) return "#198754";
     if (percentage >= 60) return "#ffc107";

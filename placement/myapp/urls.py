@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from myapp.views import *
 from myapp.views.job_views import JobViewSet
 
+
 # IMPORT VIEWS
 from myapp.views.auth_views import *
 from myapp.views.profile_views import *
@@ -15,6 +16,7 @@ from myapp.views.exam_views import *
 from myapp.views import login_view
 from myapp.views.job_views import JobViewSet
 from .views import JobViewSet, AppliedJobViewSet
+from myapp import api_views  # exam reports, leaderboard, weekly, monthly APIs
 
 
 # ROUTER
@@ -45,7 +47,8 @@ urlpatterns = [
     path('leave-requests/create/', create_leave_request),
     # path('leave-requests/<int:request_id>/update/', update_leave_request),
     path('leave-requests/<int:request_id>/delete/', delete_leave_request),
-
+    
+    
     # ================= EXAMS =================
     # path('exams/all/', AllExamListView.as_view()),
     # path('exams/finished/', FinishedExamListView.as_view()),
@@ -138,4 +141,14 @@ urlpatterns = [
 
     # ---------------- JOB API ----------------
     path('', include(router.urls)),
+
+    # ================= EXAM REPORTS & LEADERBOARD =================
+    # NOTE: placement/urls.py includes myapp.urls under 'api/' prefix already.
+    # So 'all-exam-results/' here becomes 'api/all-exam-results/' — correct!
+    path('all-exam-results/',            api_views.exam_reports_api,          name='all-exam-results'),
+    path('save-exam-report/',            api_views.save_exam_report_api,      name='save-exam-report'),
+    path('exam-report-detail/<int:pk>/', api_views.exam_report_detail_api,    name='exam-report-detail'),
+    path('leaderboard/',                 api_views.leaderboard_api,           name='leaderboard'),
+    path('weekly-exam-results/',         api_views.weekly_exam_reports_api,   name='weekly-exam-results'),
+    path('monthly-exam-results/',        api_views.monthly_exam_reports_api,  name='monthly-exam-results'),
 ]

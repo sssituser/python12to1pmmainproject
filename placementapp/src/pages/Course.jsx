@@ -432,28 +432,21 @@ function CoursesPage() {
             onClick={addTopic}
             className="bg-blue-600 text-white px-5 rounded-lg hover:bg-blue-700"
           >
-            Add
+            Add Topic
           </button>
         </div>
 
         {/* Topics */}
         <div className="space-y-4">
           {selectedCourse.topics.map((topic, index) => (
-            <div
-              key={index}
-              className="flex justify-between items-center
-                        bg-white p-4 rounded-xl shadow border border-gray-200
-                        hover:shadow-md hover:bg-gray-50
-                        cursor-pointer transition"
-            >
-              <span className="text-gray-900">{index + 1}. {topic}</span>
-
-              <span 
+            <div key={index} className="flex justify-between items-center">
+              <p className="text-lg font-medium">{topic}</p>
+              <button
                 onClick={() => handleWatchClick(selectedCourse.title, topic)}
-                className="text-blue-500 text-sm hover:text-blue-700 cursor-pointer"
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
               >
-                Watch →
-              </span>
+                Watch
+              </button>
             </div>
           ))}
         </div>
@@ -462,7 +455,7 @@ function CoursesPage() {
   }
 
   // =========================
-  // 👉 COURSE LIST VIEW
+  // COURSE LIST VIEW
   // =========================
   return (
     <div className="min-h-screen bg-white p-6">
