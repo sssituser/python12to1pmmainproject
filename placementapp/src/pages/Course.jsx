@@ -141,7 +141,7 @@ function CoursesPage() {
       progress: 30,
       locked: false,
       topics: [
-        "React Basics",
+        "React Intro",
         "Components",
         "State Management",
         "Hooks",
@@ -286,7 +286,7 @@ function CoursesPage() {
     
     if (lowerName.includes('react')) {
       return [
-        "React Basics",
+        "React Intro",
         "Components",
         "State Management",
         "Hooks",

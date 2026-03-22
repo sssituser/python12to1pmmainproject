@@ -34,29 +34,84 @@ const MonthlyExam = () => {
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
 
-  // MONTHLY EXAM QUESTIONS - Different from Daily and Weekly Exams
-  const questions = [
-    { id:1, question:"What is the difference between list and tuple in Python?", options:["List is mutable, tuple is immutable","Tuple is mutable, list is immutable","Both are mutable","Both are immutable"], correct:0 },
-    { id:2, question:"Which of the following is a built-in Python function?", options:["print()","printf()","cout()","System.out.println()"], correct:0 },
-    { id:3, question:"What is the output of print([1,2,3] + [4,5,6])?", options:["[1, 2, 3, 4, 5, 6]","[1, 2, 3, [4, 5, 6]]","Error","[1, 2, 3] + [4, 5, 6]"], correct:0 },
-    { id:4, question:"Which method is used to copy a list in Python?", options:["copy()","clone()","duplicate()","replicate()"], correct:0 },
-    { id:5, question:"What is the output of print(dict(zip(['a','b'],[1,2])))?", options:["{'a': 1, 'b': 2}","{'a': 1, 'b': 2, }","Error","{'a': 1, 'b': 2}"], correct:0 },
-    { id:6, question:"Which of the following is a valid Python variable name?", options:["my_var","2var","var-name","class"], correct:0 },
-    { id:7, question:"What is the output of print(set([1,2,2,3,3]))?", options:["{1, 2, 3}","{1, 2, 2, 3, 3}","[1, 2, 3]","Error"], correct:0 },
-    { id:8, question:"Which method is used to add elements to a set?", options:["add()","append()","insert()","push()"], correct:0 },
-    { id:9, question:"What is the output of print('Python'[2:5])?", options:["tho","th","hon","hon"], correct:0 },
-    { id:10, question:"Which keyword is used to define a generator function?", options:["yield","return","generate","gen"], correct:0 },
-    { id:11, question:"What is the output of print(0.1 + 0.2 == 0.3)?", options:["False","True","Error","None"], correct:0 },
-    { id:12, question:"Which function is used to read a file in Python?", options:["read()","open()","load()","get()"], correct:1 },
-    { id:13, question:"What is the output of print(list(range(3)))?", options:["[0, 1, 2]","[1, 2, 3]","[0, 1, 2, 3]","Error"], correct:0 },
-    { id:14, question:"Which method is used to reverse a list in Python?", options:["reverse()","reversed()","invert()","flip()"], correct:0 },
-    { id:15, question:"What is the output of print('2' + '2')?", options:["22","4","Error","None"], correct:0 },
-    { id:16, question:"Which operator is used for membership testing in Python?", options:["in","has","contains","exists"], correct:0 },
-    { id:17, question:"What is the output of print([x for x in range(3)])?", options:["[0, 1, 2]","[0, 1, 2, 3]","Error","None"], correct:0 },
-    { id:18, question:"Which method is used to count elements in a list?", options:["count()","len()","size()","length()"], correct:0 },
-    { id:19, question:"What is the output of print(type(lambda x: x))?", options:["<class 'function'>","<class 'lambda'>","<class 'type'>","Error"], correct:0 },
-    { id:20, question:"Which function is used to get the maximum value from a list?", options:["max()","maximum()","largest()","biggest()"], correct:0 },
-  ];
+  const [questions, setQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Fetch 20 randomized questions from the backend pool
+  useEffect(() => {
+    const fetchQuestionsFromBackend = async () => {
+      const savedStateStr = sessionStorage.getItem('monthlyExamState');
+      if (savedStateStr) {
+        try {
+          const savedState = JSON.parse(savedStateStr);
+          if (savedState.questions && savedState.questions.length > 0 && savedState.examStarted && !savedState.examSubmitted) {
+            setQuestions(savedState.questions);
+            setIsLoadingQuestions(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      try {
+        setIsLoadingQuestions(true);
+        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.length > 0) {
+          const mappedQuestions = json.data.map((q, idx) => ({ ...q, id: idx + 1 }));
+          setQuestions(mappedQuestions);
+        }
+      } catch (err) {
+        console.error("Failed to fetch questions from backend:", err);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+    
+    fetchQuestionsFromBackend();
+  }, []);
+
+  // Load state from sessionStorage if it exists
+  useEffect(() => {
+    const savedStateStr = sessionStorage.getItem('monthlyExamState');
+    if (savedStateStr) {
+      try {
+        const savedState = JSON.parse(savedStateStr);
+        if (savedState.examStarted && !savedState.examSubmitted) {
+          setAnswers(savedState.answers);
+          setMarkedForReview(savedState.markedForReview);
+          setVisitedQuestions(savedState.visitedQuestions);
+          setTimeLeft(savedState.timeLeft);
+          setCurrentQuestion(savedState.currentQuestion);
+          setExamStarted(true);
+          examSubmittedRef.current = false;
+          // Resume webcam if not already active
+          setTimeout(() => {
+            if (videoRef.current && !webcamActive) {
+              startWebcam();
+            }
+          }, 500);
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  // Sync state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (examStarted && !examSubmitted && questions.length > 0) {
+      const stateToSave = {
+        questions,
+        answers,
+        markedForReview,
+        visitedQuestions,
+        timeLeft,
+        currentQuestion,
+        examStarted,
+        examSubmitted
+      };
+      sessionStorage.setItem('monthlyExamState', JSON.stringify(stateToSave));
+    }
+  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted, questions]);
 
   // TIMER
   useEffect(() => {
@@ -352,6 +407,8 @@ const MonthlyExam = () => {
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
+    sessionStorage.removeItem('monthlyExamState');
+
     navigate("/dashboard/playground-results",{replace:true});
   };
 
@@ -374,9 +431,12 @@ const MonthlyExam = () => {
           </p>
           <button
             onClick={startExam}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            disabled={isLoadingQuestions}
+            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
+              isLoadingQuestions ? 'bg-gray-400 cursor-not-allowed animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+            }`}
           >
-            Start Exam
+            {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
           </button>
         </div>
       </div>

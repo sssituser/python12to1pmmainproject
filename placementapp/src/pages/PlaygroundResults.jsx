@@ -123,34 +123,6 @@ function PlaygroundResults() {
     doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
   };
 
-  // DELETE RESULT
-  const handleDelete = (examDate) => {
-
-    const confirmDelete = window.confirm(
-      "Delete this exam result?"
-    );
-
-    if (!confirmDelete) return;
-
-    const updatedResults = allResults.filter(
-      (result) => result.examDate !== examDate
-    );
-
-    setAllResults(updatedResults);
-
-    localStorage.setItem(
-      "allExamResults",
-      JSON.stringify(updatedResults)
-    );
-
-    if (currentResult?.examDate === examDate) {
-      setCurrentResult(null);
-      localStorage.removeItem("examResult");
-    }
-
-    alert("Result deleted successfully");
-  };
-
   const hasResults = allResults.length > 0;
 
   if (!hasResults) {
@@ -300,14 +272,6 @@ function PlaygroundResults() {
                       }
                     >
                       📥
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        handleDelete(result.examDate)
-                      }
-                    >
-                      🗑️
                     </button>
 
                   </td>

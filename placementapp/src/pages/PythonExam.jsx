@@ -9,6 +9,7 @@ import {
   faArrowRight,
   faCamera,
 } from "@fortawesome/free-solid-svg-icons";
+import * as faceapi from "@vladmandic/face-api";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -35,102 +36,117 @@ const PythonExam = () => {
   const [webcamActive, setWebcamActive] = useState(false);
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(true);
+  const isUnloadingRef = useRef(false);
+
+  // Vladmandic FaceAPI AI
+  const faceApiReadyRef = useRef(false);
+
+  useEffect(() => {
+    const loadAI = async () => {
+      try {
+        setIsAILoading(true);
+        // Load modernized models with perfect CORS & MIME types hosted on Github Pages
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://vladmandic.github.io/face-api/model/');
+        faceApiReadyRef.current = true;
+        setIsAILoading(false);
+        console.log("Modern FaceAPI AI Armed!");
+      } catch (err) {
+        console.error("Failed to arm FaceAPI AI:", err);
+        setIsAILoading(false); // Fallback to let them test anyway
+      }
+    };
+    loadAI();
+  }, []);
 
   // Enhanced security states
   const [fingerDetectionTimer, setFingerDetectionTimer] = useState(null);
   const [noFaceTimer, setNoFaceTimer] = useState(null);
-  const [showRefreshWarning, setShowRefreshWarning] = useState(false);
-  const [refreshWarningShown, setRefreshWarningShown] = useState(false); // Prevent multiple triggers
-  const [isPageBlocked, setIsPageBlocked] = useState(false); // Block page completely
 
-  // Check for reload using URL parameter (most reliable method)
-  const urlParams = new URLSearchParams(window.location.search);
-  const isReloaded = urlParams.get('reloaded') === 'true';
+  // Control global browser back button for pre-exam screen
+  useEffect(() => {
+    if (!examStarted && !examSubmitted) {
+      window.allowBrowserBack = true;
+
+      const handleBrowserBack = (e) => {
+        // Explicitly intercept the back action and aggressively route to techlab
+        navigate('/dashboard/techlab');
+
+        // Safety fallback in case React Router's internal state is corrupted
+        setTimeout(() => {
+          if (!window.location.pathname.includes('techlab')) {
+            window.location.href = '/dashboard/techlab';
+          }
+        }, 50);
+      };
+
+      window.addEventListener('popstate', handleBrowserBack);
+
+      return () => {
+        window.allowBrowserBack = false;
+        window.removeEventListener('popstate', handleBrowserBack);
+      };
+    } else {
+      window.allowBrowserBack = false;
+    }
+
+    return () => {
+      window.allowBrowserBack = false;
+    };
+  }, [examStarted, examSubmitted, navigate]);
 
   // Get exam type from URL or localStorage (default to daily)
   const getExamType = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlExamType = urlParams.get('type');
     if (urlExamType) return urlExamType;
-    
+
     const storedExamType = localStorage.getItem('currentExamType');
     return storedExamType || 'daily';
   };
-  
+
   const examType = getExamType();
 
-  // MULTIPLE QUESTION PAPERS (Hidden feature - doesn't disturb existing code)
-  const questionPapers = {
-    daily: [
-      { id:1, question:"What is the output of print(2 ** 3)?", options:["6","8","9","12"], correct:1 },
-      { id:2, question:"Which keyword is used to define a function in Python?", options:["func","def","function","define"], correct:1 },
-      { id:3, question:"What is the correct file extension for Python files?", options:[".py",".python",".pt",".pyth"], correct:0 },
-      { id:4, question:"Which of the following is a mutable data type in Python?", options:["Tuple","String","List","Integer"], correct:2 },
-      { id:5, question:"What does len() function do in Python?", options:["Returns the length of an object","Deletes an object","Creates an object","Copies an object"], correct:0 },
-      { id:6, question:"Which operator is used for exponentiation in Python?", options:["^","**","*","^^"], correct:1 },
-      { id:7, question:"What is the output of print(type('Hello'))?", options:["<class 'int'>","<class 'str'>","<class 'string'>","<class 'char'>"], correct:1 },
-      { id:8, question:"Which method is used to add an element to the end of a list?", options:["add()","append()","insert()","extend()"], correct:1 },
-      { id:9, question:"What is the correct way to create a dictionary in Python?", options:["{}","[]","()","||"], correct:0 },
-      { id:10, question:"Which statement is used to exit a loop in Python?", options:["exit","break","continue","return"], correct:1 },
-      { id:11, question:"What is the output of print(10 // 3)?", options:["3.33","3","4","Error"], correct:1 },
-      { id:12, question:"Which function is used to get input from user in Python 3?", options:["input()","raw_input()","scanf()","cin()"], correct:0 },
-      { id:13, question:"What is the default value of a parameter if not specified?", options:["0","None","null","undefined"], correct:1 },
-      { id:14, question:"Which module is used for mathematical operations in Python?", options:["math","cmath","maths","calc"], correct:0 },
-      { id:15, question:"What is the output of print(bool(0))?", options:["True","False","0","Error"], correct:1 },
-      { id:16, question:"Which method removes whitespace from both ends of a string?", options:["trim()","strip()","remove()","clean()"], correct:1 },
-      { id:17, question:"What is the output of print(range(5))?", options:["[0,1,2,3,4]","range(0,5)","0,1,2,3,4","Error"], correct:1 },
-      { id:18, question:"Which keyword is used to handle exceptions in Python?", options:["try","except","catch","handle"], correct:1 },
-      { id:19, question:"What is the output of print('Hello' * 3)?", options:["HelloHelloHello","Hello 3","Hello3","Error"], correct:0 },
-      { id:20, question:"Which function is used to open a file in Python?", options:["open()","file()","read()","load()"], correct:0 },
-    ],
-    weekly: [
-      { id:1, question:"What is the purpose of the __init__ method in Python?", options:["Constructor","Destructor","Iterator","Generator"], correct:0 },
-      { id:2, question:"Which of the following is not a valid Python data type?", options:["int","float","char","str"], correct:2 },
-      { id:3, question:"What does the 'self' parameter represent in Python methods?", options:["Current instance","Class name","Method name","Parent class"], correct:0 },
-      { id:4, question:"Which method is used to find the index of an element in a list?", options:["index()","find()","search()","locate()"], correct:0 },
-      { id:5, question:"What is the output of print(2 + 3 * 2)?", options:["10","12","8","7"], correct:0 },
-      { id:6, question:"Which keyword is used to define a class in Python?", options:["class","Class","def","define"], correct:0 },
-      { id:7, question:"What is the output of print(len('Python'))?", options:["5","6","7","Error"], correct:1 },
-      { id:8, question:"Which method is used to sort a list in Python?", options:["sort()","sorted()","order()","arrange()"], correct:0 },
-      { id:9, question:"What is the output of print(3 ** 2 ** 1)?", options:["9","27","81","3"], correct:0 },
-      { id:10, question:"Which function is used to convert a string to uppercase?", options:["upper()","uppercase()","toUpper()","toUpperCase()"], correct:0 },
-      { id:11, question:"What is the output of print(bool([]))?", options:["True","False","[]","Error"], correct:1 },
-      { id:12, question:"Which operator is used for floor division in Python?", options:["//","/","%","%%"], correct:0 },
-      { id:13, question:"What is the output of print(type(5))?", options:["<class 'int'>","<class 'float'>","<class 'number'>","<class 'digit'>"], correct:0 },
-      { id:14, question:"Which method is used to remove the last element from a list?", options:["pop()","remove()","delete()","del()"], correct:0 },
-      { id:15, question:"What is the output of print('Hello'[-1])?", options:["o","H","Error","Hello"], correct:0 },
-      { id:16, question:"Which keyword is used to import modules in Python?", options:["import","include","require","using"], correct:0 },
-      { id:17, question:"What is the output of print(list((1,2,3)))?", options:["[1, 2, 3]","(1, 2, 3)","Error","[1, 2, 3, ]"], correct:0 },
-      { id:18, question:"Which method is used to join strings in a list?", options:["join()","concat()","merge()","combine()"], correct:0 },
-      { id:19, question:"What is the output of print(10 % 3)?", options:["1","3","0","10"], correct:0 },
-      { id:20, question:"Which function is used to get the type of a variable in Python?", options:["type()","typeof()","gettype()","vartype()"], correct:0 },
-    ],
-    monthly: [
-      { id:1, question:"What is the difference between list and tuple in Python?", options:["List is mutable, tuple is immutable","Tuple is mutable, list is immutable","Both are mutable","Both are immutable"], correct:0 },
-      { id:2, question:"Which of the following is a built-in Python function?", options:["print()","printf()","cout()","System.out.println()"], correct:0 },
-      { id:3, question:"What is the output of print([1,2,3] + [4,5,6])?", options:["[1, 2, 3, 4, 5, 6]","[1, 2, 3, [4, 5, 6]]","Error","[1, 2, 3] + [4, 5, 6]"], correct:0 },
-      { id:4, question:"Which method is used to copy a list in Python?", options:["copy()","clone()","duplicate()","replicate()"], correct:0 },
-      { id:5, question:"What is the output of print(dict(zip(['a','b'],[1,2])))?", options:["{'a': 1, 'b': 2}","{'a': 1, 'b': 2, }","Error","{'a': 1, 'b': 2}"], correct:0 },
-      { id:6, question:"Which of the following is a valid Python variable name?", options:["my_var","2var","var-name","class"], correct:0 },
-      { id:7, question:"What is the output of print(set([1,2,2,3,3]))?", options:["{1, 2, 3}","{1, 2, 2, 3, 3}","[1, 2, 3]","Error"], correct:0 },
-      { id:8, question:"Which method is used to add elements to a set?", options:["add()","append()","insert()","push()"], correct:0 },
-      { id:9, question:"What is the output of print('Python'[2:5])?", options:["tho","th","hon","hon"], correct:0 },
-      { id:10, question:"Which keyword is used to define a generator function?", options:["yield","return","generate","gen"], correct:0 },
-      { id:11, question:"What is the output of print(0.1 + 0.2 == 0.3)?", options:["False","True","Error","None"], correct:0 },
-      { id:12, question:"Which function is used to read a file in Python?", options:["read()","open()","load()","get()"], correct:1 },
-      { id:13, question:"What is the output of print(list(range(3)))?", options:["[0, 1, 2]","[1, 2, 3]","[0, 1, 2, 3]","Error"], correct:0 },
-      { id:14, question:"Which method is used to reverse a list in Python?", options:["reverse()","reversed()","invert()","flip()"], correct:0 },
-      { id:15, question:"What is the output of print('2' + '2')?", options:["22","4","Error","None"], correct:0 },
-      { id:16, question:"Which operator is used for membership testing in Python?", options:["in","has","contains","exists"], correct:0 },
-      { id:17, question:"What is the output of print([x for x in range(3)])?", options:["[0, 1, 2]","[0, 1, 2, 3]","Error","None"], correct:0 },
-      { id:18, question:"Which method is used to count elements in a list?", options:["count()","len()","size()","length()"], correct:0 },
-      { id:19, question:"What is the output of print(type(lambda x: x))?", options:["<class 'function'>","<class 'lambda'>","<class 'type'>","Error"], correct:0 },
-      { id:20, question:"Which function is used to get the maximum value from a list?", options:["max()","maximum()","largest()","biggest()"], correct:0 },
-    ]
-  };
+  // CONNECTED TO DJANGO PLAYGROUND API
+  const [questions, setQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
-  // SMART QUESTION SELECTION (Uses existing 'questions' variable to maintain code compatibility)
-  const questions = questionPapers[examType] || questionPapers.daily;
+  // Fetch 20 randomized questions from the 50 static backend pool
+  useEffect(() => {
+    const fetchQuestionsFromBackend = async () => {
+      // Very Important: Check session cache FIRST! If user hits 'refresh', we MUST keep their existing shuffled 20 questions!
+      const savedStateStr = sessionStorage.getItem('pythonExamState');
+      if (savedStateStr) {
+        try {
+          const savedState = JSON.parse(savedStateStr);
+          // ONLY restore if the exam is active and hasn't been submitted!
+          if (savedState.questions && savedState.questions.length > 0 && savedState.examStarted && !savedState.examSubmitted) {
+            setQuestions(savedState.questions);
+            setIsLoadingQuestions(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      try {
+        setIsLoadingQuestions(true);
+        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.length > 0) {
+          // Re-map internal ID just in case existing logic relies on sequential 1-20 IDs
+          const mappedQuestions = json.data.map((q, idx) => ({ ...q, id: idx + 1 }));
+          setQuestions(mappedQuestions);
+        }
+      } catch (err) {
+        console.error("Failed to fetch 50 static questions from backend:", err);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+    
+    fetchQuestionsFromBackend();
+  }, [examType]);
 
   // Load state from sessionStorage if it exists
   useEffect(() => {
@@ -162,8 +178,9 @@ const PythonExam = () => {
 
   // Sync state to sessionStorage whenever it changes
   useEffect(() => {
-    if (examStarted && !examSubmitted) {
+    if (examStarted && !examSubmitted && questions.length > 0) {
       const stateToSave = {
+        questions,
         answers,
         markedForReview,
         visitedQuestions,
@@ -174,7 +191,7 @@ const PythonExam = () => {
       };
       sessionStorage.setItem('pythonExamState', JSON.stringify(stateToSave));
     }
-  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted]);
+  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted, questions]);
 
   // TIMER
   useEffect(() => {
@@ -192,31 +209,15 @@ const PythonExam = () => {
     };
   }, []);
 
-  // Custom refresh protection with permanent dialog
+  // Security locks: backspace, context menu, mouse back buttons
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Detect F5, Ctrl+R, Ctrl+F5 refresh combinations
-      if (e.key === 'F5' || 
-          (e.ctrlKey && e.key === 'r') || 
-          (e.ctrlKey && e.key === 'R') ||
-          (e.ctrlKey && e.key === 'f5') ||
-          (e.ctrlKey && e.key === 'F5')) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        // Show custom dialog
-        setRefreshWarningShown(true);
-        setShowRefreshWarning(true);
-        setIsPageBlocked(true);
-        return false;
-      }
-      
       // Block ALL back button combinations - MORE AGGRESSIVE
-      if (e.key === 'Backspace' || 
-          e.key === 'browserBack' ||
-          (e.altKey && e.key === 'ArrowLeft') ||
-          (e.altKey && e.keyCode === 37) ||
-          e.keyCode === 8) { // Backspace key code
+      if (e.key === 'Backspace' ||
+        e.key === 'browserBack' ||
+        (e.altKey && e.key === 'ArrowLeft') ||
+        (e.altKey && e.keyCode === 37) ||
+        (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.keyCode === 8)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -229,24 +230,10 @@ const PythonExam = () => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      
+
       // Push state again to block the navigation without reloading the page
       window.history.pushState(null, null, window.location.href);
       return false;
-    };
-
-    // Handle beforeunload - set flag and show dialog
-    const handleBeforeUnload = (e) => {
-      if (examStarted && !examSubmitted && !refreshWarningShown) {
-        // Set flag to show dialog after page reload
-        sessionStorage.setItem('showRefreshDialog', 'true');
-        
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        e.returnValue = 'exam will be submitted automatically';
-        return 'exam will be submitted automatically';
-      }
     };
 
     // Block mouse back button
@@ -267,81 +254,72 @@ const PythonExam = () => {
       return false;
     };
 
-    // Check for dialog flag on component mount
-    const shouldShowDialog = sessionStorage.getItem('showRefreshDialog') === 'true';
-    if (shouldShowDialog && !refreshWarningShown && examStarted) {
-      setRefreshWarningShown(true);
-      setShowRefreshWarning(true);
-      setIsPageBlocked(true);
-      sessionStorage.removeItem('showRefreshDialog');
-    }
-
     // Only add event listeners if exam has started
     if (examStarted && !examSubmitted) {
       window.addEventListener('keydown', handleKeyDown, true);
-      window.addEventListener('beforeunload', handleBeforeUnload, true);
       window.addEventListener('contextmenu', handleContextMenu, true);
       window.addEventListener('popstate', handlePopState, true);
       window.addEventListener('mouseup', handleMouseUp, true);
-      
+
       // Push multiple states to completely block back navigation
       window.history.pushState({ examActive: true, timestamp: Date.now() }, '', window.location.href);
       window.history.pushState({ examActive: true, timestamp: Date.now() + 1 }, '', window.location.href);
-      window.history.pushState({ examActive: true, timestamp: Date.now() + 2 }, '', window.location.href);
-      window.history.pushState({ examActive: true, timestamp: Date.now() + 3 }, '', window.location.href);
-      window.history.pushState({ examActive: true, timestamp: Date.now() + 4 }, '', window.location.href);
-      
+
       // Override history methods - MORE AGGRESSIVE
       const originalBack = window.history.back;
       const originalGo = window.history.go;
       const originalForward = window.history.forward;
-      
+
       window.history.back = () => {
-        console.log(' Back button blocked during exam');
         window.history.pushState(null, null, window.location.href);
         return false;
       };
-      
+
       window.history.go = (delta) => {
         if (delta < 0) {
-          console.log(' Back navigation blocked during exam');
           window.history.pushState(null, null, window.location.href);
           return false;
         }
         return originalGo.call(window.history, delta);
       };
-      
+
       window.history.forward = () => {
-        console.log(' Forward navigation blocked during exam');
         return false;
       };
-      
+
       return () => {
         window.removeEventListener('keydown', handleKeyDown, true);
-        window.removeEventListener('beforeunload', handleBeforeUnload, true);
         window.removeEventListener('contextmenu', handleContextMenu, true);
         window.removeEventListener('popstate', handlePopState, true);
         window.removeEventListener('mouseup', handleMouseUp, true);
-        
+
         // Restore original methods
         window.history.back = originalBack;
         window.history.go = originalGo;
         window.history.forward = originalForward;
       };
     }
-  }, [examStarted, examSubmitted, refreshWarningShown]);
+  }, [examStarted, examSubmitted]);
 
-  // Handle refresh warning response
-  const handleRefreshResponse = (submit) => {
-    if (submit) {
-      handleSubmitExam("Page refresh detected");
-    } else {
-      setShowRefreshWarning(false);
-      setRefreshWarningShown(false); // Reset the flag
-      setIsPageBlocked(false); // Unblock the page
-      // User chose to continue - don't submit the exam
-    }
-  };
+  // Block Tab Switching, but NOT when the user is genuinely refreshing the page!
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      isUnloadingRef.current = true;
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    const handleVisibilityChange = () => {
+      if (!isUnloadingRef.current && document.hidden && document.visibilityState === 'hidden' && examStarted && !examSubmitted) {
+        handleSubmitExam("Tab switched or window minimized");
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [examStarted, examSubmitted]);
 
   // WEBCAM FUNCTIONS
   const startWebcam = async () => {
@@ -350,7 +328,7 @@ const PythonExam = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -359,10 +337,10 @@ const PythonExam = () => {
         },
         audio: false // No audio capture
       });
-      
+
       // Inject directly into global cleanup trap
       globalStreamsToClean.push(stream);
-      
+
       // Stop stream immediately if the exam was already submitted or window unmounted
       if (examSubmittedRef.current || !videoRef.current) {
         stopWebcam(); // Fire the global nuke
@@ -373,7 +351,7 @@ const PythonExam = () => {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         setWebcamActive(true);
-        
+
         // Start enhanced face detection
         startFaceDetection();
       }
@@ -388,30 +366,30 @@ const PythonExam = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    
+
     // Nuke all trapped background streams
     globalStreamsToClean.forEach(s => {
       s.getTracks().forEach(track => track.stop());
     });
     globalStreamsToClean = []; // reset
-    
+
     setWebcamActive(false);
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     if (faceDetectionIntervalRef.current) {
       clearInterval(faceDetectionIntervalRef.current);
       faceDetectionIntervalRef.current = null;
     }
-    
+
     if (cleanTimeoutRef.current) {
       clearTimeout(cleanTimeoutRef.current);
       cleanTimeoutRef.current = null;
     }
     violationStartTimeRef.current = null;
-    
+
     if (fingerDetectionTimer) {
       clearTimeout(fingerDetectionTimer);
       setFingerDetectionTimer(null);
@@ -436,33 +414,33 @@ const PythonExam = () => {
       let maxAdjacentDiff = 0;
 
       for (let i = 0; i < data.length - 4; i += 4) {
-        const r = data[i], g = data[i+1], b = data[i+2];
+        const r = data[i], g = data[i + 1], b = data[i + 2];
         rTotal += r; gTotal += g; bTotal += b;
 
         // Prevent false edge-jumps by skipping the right-most pixel wrapping around to the left
         if (((i / 4) + 1) % canvas.width === 0) continue;
 
         // Calculate absolute contrast jump between this pixel and the immediate next pixel
-        const diff = Math.abs(r - data[i+4]) + Math.abs(g - data[i+5]) + Math.abs(b - data[i+6]);
+        const diff = Math.abs(r - data[i + 4]) + Math.abs(g - data[i + 5]) + Math.abs(b - data[i + 6]);
         if (diff > maxAdjacentDiff) {
-            maxAdjacentDiff = diff;
+          maxAdjacentDiff = diff;
         }
       }
-      
+
       const pixelCount = canvas.width * canvas.height;
-      const avgBrightness = (0.299 * (rTotal/pixelCount) + 0.587 * (gTotal/pixelCount) + 0.114 * (bTotal/pixelCount));
+      const avgBrightness = (0.299 * (rTotal / pixelCount) + 0.587 * (gTotal / pixelCount) + 0.114 * (bTotal / pixelCount));
 
       const isDark = avgBrightness < 40;
       const isRedDominant = (rTotal > gTotal * 2) && (rTotal > bTotal * 2);
-      
+
       // If the absolutely sharpest edge in the entire video feed is extremely weak (< 85 combined RGB difference),
       // the video is definitively blurred out by Software (e.g., OBS Gaussian Blur) or physically blocked by an object at 0mm focal depth.
       // Normal human features (like eyes, hair, teeth) create native pixel jumps well over 150+.
       const isBlurred = maxAdjacentDiff < 85;
 
-      const checkViolations = (faces) => {
+      const checkViolations = (detectedCount) => {
         const isCameraCovered = isDark || isBlurred || isRedDominant;
-        const isMultipleFaces = faces && faces.length > 1;
+        const isMultipleFaces = detectedCount > 1;
 
         if (isCameraCovered || isMultipleFaces) {
           if (cleanTimeoutRef.current) {
@@ -486,23 +464,58 @@ const PythonExam = () => {
         }
       };
 
-      // Face Detection using native Shape Detection API if available
-      if (window.FaceDetector) {
-        const faceDetector = new window.FaceDetector({ maxDetectedFaces: 5 });
-        faceDetector.detect(canvas)
-          .then(faces => {
-            setFaceCount(faces.length);
-            checkViolations(faces);
-          })
-          .catch(err => {
-            console.error(err);
-            checkViolations(null);
+      // Deep-Learning Face Detection built for slanted/tilted faces
+      if (faceApiReadyRef.current && videoRef.current) {
+        const video = videoRef.current;
+        // The DOM must be fully buffered before AI can scan it
+        if (video.readyState < 2 || video.videoWidth === 0) {
+          return;
+        }
+
+        try {
+          // Highly tuned detector specific for tricky angles: High Input Size, low threshold
+          // 🔥 MORE ACCURATE DETECTOR SETTINGS
+          const options = new faceapi.TinyFaceDetectorOptions({
+            inputSize: 512,
+            scoreThreshold: 0.05
           });
+
+          faceapi.detectAllFaces(video, options).then(predictions => {
+            const totalFacesDetected = predictions.length || 0;
+
+            // ✅ DEBUG (VERY IMPORTANT)
+            console.log("Faces detected:", totalFacesDetected);
+
+            setFaceCount(totalFacesDetected);
+
+            // 🔥 FORCE MULTIPLE FACE CHECK
+            if (totalFacesDetected >= 2) {
+              console.log("🚨 MULTIPLE FACES DETECTED");
+
+              if (!violationStartTimeRef.current) {
+                violationStartTimeRef.current = Date.now();
+              } else if (Date.now() - violationStartTimeRef.current >= 2000) {
+                handleSubmitExam("Multiple faces detected");
+              }
+            } else {
+              // Reset timer if normal
+              violationStartTimeRef.current = null;
+            }
+
+            // ✅ Keep existing checks also
+            checkViolations(totalFacesDetected);
+
+          }).catch(e => {
+            console.error("Face scan error", e);
+            checkViolations(1);
+          });
+        } catch (err) {
+          checkViolations(1);
+        }
       } else {
-        setFaceCount(1);
-        checkViolations(null);
+        checkViolations(1);
       }
-    }, 500); // Check frame more frequently for accurate 2s timing
+    }, 100); // 5 frames per second for ultra-accurate mapping
   };
 
   const playAlarmSound = () => {
@@ -510,13 +523,13 @@ const PythonExam = () => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.frequency.value = 800; // 800Hz beep sound
     oscillator.type = 'sine';
-    
+
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
     oscillator.start(audioContext.currentTime);
@@ -528,7 +541,13 @@ const PythonExam = () => {
     stopWebcam();
     playAlarmSound();
     sessionStorage.removeItem('pythonExamState');
-    
+
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    } catch (err) { }
+
     // Store failure reason
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const failureResult = {
@@ -544,12 +563,19 @@ const PythonExam = () => {
       examDate: new Date().toISOString(),
       examTitle: "Python Programming Assessment"
     };
-    
+
     localStorage.setItem("examFailure", JSON.stringify(failureResult));
     navigate("/dashboard/exam-failed");
   };
 
-  const startExam = () => {
+  const startExam = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Error enabling fullscreen", err);
+    }
     setExamStarted(true);
     startWebcam(); // Start webcam when exam begins
   };
@@ -587,99 +613,77 @@ const PythonExam = () => {
 
   // SUBMIT EXAM
   const handleSubmitExam = async (reason = "Manual submission") => {
-    if (!examSubmittedRef.current) {
-      setExamSubmitted(true);
-      examSubmittedRef.current = true;
-      stopWebcam(); // Stop webcam when submitting
-      sessionStorage.removeItem('pythonExamState');
+    if (examSubmittedRef.current) return;
 
-      const userStr = localStorage.getItem("user");
-      let user = {};
-      try {
-        user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
-      } catch(e) {
-        console.error(e);
+    examSubmittedRef.current = true;
+    setExamSubmitted(true);
+
+    stopWebcam();
+    sessionStorage.removeItem('pythonExamState');
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
       }
-      const randomId = Math.floor(1000 + Math.random() * 9000);
+    } catch (err) { }
 
-      let correctCount = 0;
+    const userStr = localStorage.getItem("user");
+    let user = {};
 
-      answers.forEach((ans, index) => {
-        if (ans === questions[index].correct) correctCount++;
-      });
+    try {
+      user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
+    } catch (e) { }
 
-      const result = {
-        status: "completed",
-        correctAnswers: correctCount,
-        incorrectAnswers: 20 - correctCount,
-        totalQuestions: 20,
-        score: correctCount * 2, // Each question carries 2 marks (total 40)
-        marks: correctCount * 2, // Total marks obtained
-        totalMarks: 40, // Total possible marks
-        answers: answers,
-        questions: questions,
-        timeTaken: 2700 - timeLeft,
-        user: {
-          username: user.username || "Unknown",
-          email: user.email || "",
-          firstName: user.firstName || user.username,
-          randomId: randomId
-        },
-        examDate: new Date().toISOString(),
-        examTitle: `${examType.charAt(0).toUpperCase() + examType.slice(1)} Python Programming Assessment`,
-        examType: examType,
-        submissionReason: reason
-      };
+    const randomId = Math.floor(1000 + Math.random() * 9000);
 
-      const now = new Date().toISOString();
-      const payload = {
+    let correctCount = 0;
+
+    answers.forEach((ans, index) => {
+      if (ans === questions[index].correct) correctCount++;
+    });
+
+    const result = {
+      status: "completed",
+      correctAnswers: correctCount,
+      incorrectAnswers: 20 - correctCount,
+      totalQuestions: 20,
+      score: correctCount * 2,
+      marks: correctCount * 2,
+      totalMarks: 40,
+      answers,
+      questions,
+      timeTaken: 2700 - timeLeft,
+      user: {
         username: user.username || "Unknown",
-        exam_title: `${examType.charAt(0).toUpperCase() + examType.slice(1)} Python Programming Assessment`,
-        exam_type: examType,
-        score: correctCount * 2,
-        total_questions: 20,
-        correct_answers: correctCount,
-        incorrect_answers: 20 - correctCount,
-        marks_obtained: correctCount * 2,
-        total_marks: 40,
-        time_taken: 2700 - timeLeft,
-        start_time: now,
-        end_time: now,
-        status: "completed",
-        random_id: String(randomId),
-        answers: answers,
-        questions: questions,
-        submission_reason: reason
-      };
+        email: user.email || "",
+        firstName: user.firstName || user.username,
+        randomId
+      },
+      examDate: new Date().toISOString(),
+      examTitle: "Python Programming Assessment",
+      submissionReason: reason
+    };
 
-      try {
-        // No auth header — token expires during a 45-min exam.
-        // Backend uses 'username' field in the payload to identify the user.
-        const res = await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          console.error("Save exam report failed:", res.status, errData);
-        } else {
-          const saved = await res.json().catch(() => ({}));
-          console.log("✅ Exam saved for user:", saved.saved_username);
-        }
-      } catch (err) {
-        console.error("Failed to sync exam to backend:", err);
-      }
-
-      const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-
-      allResults.unshift(result);
-
-      localStorage.setItem("allExamResults", JSON.stringify(allResults));
-      localStorage.setItem("examResult", JSON.stringify(result));
-
-      navigate("/dashboard/playground-results",{replace:true});
+    try {
+      await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result)
+      });
+    } catch (err) {
+      console.error("Backend error:", err);
     }
+
+    const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    allResults.unshift(result);
+
+    localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    localStorage.setItem("examResult", JSON.stringify(result));
+
+    // Clear session storage so a new start will shuffle fresh questions
+    sessionStorage.removeItem('pythonExamState');
+
+    navigate("/dashboard/playground-results", { replace: true });
   };
 
   const formatTime = (seconds) => {
@@ -694,7 +698,7 @@ const PythonExam = () => {
 
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
 
-          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4"/>
+          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4" />
 
           <h2 className="text-2xl font-bold mb-2">
             {examType === 'daily' ? 'Python Programming Assessment' : `${examType.charAt(0).toUpperCase() + examType.slice(1)} Python Programming Assessment`}
@@ -706,11 +710,16 @@ const PythonExam = () => {
 
           <button
             onClick={startExam}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            disabled={isAILoading || isLoadingQuestions}
+            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${(isAILoading || isLoadingQuestions)
+              ? 'bg-gray-400 cursor-not-allowed animate-pulse'
+              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+              }`}
           >
-            Start Exam
+            {isLoadingQuestions ? 'Fetching Paper...' 
+            : isAILoading ? 'Loading Security AI...' 
+            : 'Start Exam'}
           </button>
-
         </div>
 
       </div>
@@ -720,8 +729,8 @@ const PythonExam = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
 
-      {/* Webcam at Top Left */}
-      <div className="fixed top-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
+      {/* Webcam overlay (moved to bottom right so it doesn't obscure questions) */}
+      <div className="fixed bottom-8 right-8 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
           <video
             ref={videoRef}
@@ -750,7 +759,7 @@ const PythonExam = () => {
         <div className="bg-white p-4 rounded shadow flex justify-between mb-4">
 
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faClock}/>
+            <FontAwesomeIcon icon={faClock} />
             {formatTime(timeLeft)}
           </div>
 
@@ -759,38 +768,6 @@ const PythonExam = () => {
           </div>
 
         </div>
-
-        {/* Refresh Warning with Page Blocking */}
-        {showRefreshWarning && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div className="relative bg-white p-6 rounded-lg shadow-xl max-w-md text-center z-20">
-              <FontAwesomeIcon icon={faClock} className="text-4xl text-orange-500 mb-4"/>
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                Exam Refresh Detected
-              </h2>
-              <p className="text-gray-600 mb-6 font-semibold">
-                exam will be submitted automatically
-              </p>
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={() => handleRefreshResponse(true)}
-                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 font-semibold"
-                >
-                  OK
-                </button>
-                <button
-                  onClick={() => handleRefreshResponse(false)}
-                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-              <p className="text-sm text-gray-500 mt-4">
-                This dialog will wait for your response permanently
-              </p>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-4 gap-4">
 
@@ -837,19 +814,19 @@ const PythonExam = () => {
                   </button>
                 )}
 
-                {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                  >
-                    Submit Exam
-                  </button>
-                ) : (
+                {currentQuestion < questions.length - 1 ? (
                   <button
                     onClick={nextQuestion}
                     className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
                   >
                     Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSubmitExam("Manual submission")}
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                  >
+                    Submit Exam
                   </button>
                 )}
               </div>
@@ -869,7 +846,7 @@ const PythonExam = () => {
               {questions.map((_, index) => {
                 // Determine button color based on state
                 let buttonClass = "p-2 rounded text-sm font-semibold ";
-                
+
                 if (markedForReview[index]) {
                   buttonClass += "bg-violet-500 text-white hover:bg-violet-600";
                 } else if (answers[index] !== null) {

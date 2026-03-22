@@ -108,6 +108,7 @@ urlpatterns = [
     path('exam/sessions/', get_exam_sessions),
 
     # ================= PLAYGROUND =================
+    path('playground-questions/', api_views.playground_questions_api, name='playground-questions'),
     # path('playground/', playground_backend),
     # path('playground/rest/', playground_rest_framework),
     # path('playground/questions/', get_playground_questions),

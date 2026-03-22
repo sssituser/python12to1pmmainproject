@@ -34,29 +34,84 @@ const WeeklyExam = () => {
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
 
-  // WEEKLY EXAM QUESTIONS - Different from Daily Exam
-  const questions = [
-    { id:1, question:"What is the purpose of the __init__ method in Python?", options:["Constructor","Destructor","Iterator","Generator"], correct:0 },
-    { id:2, question:"Which of the following is not a valid Python data type?", options:["int","float","char","str"], correct:2 },
-    { id:3, question:"What does the 'self' parameter represent in Python methods?", options:["Current instance","Class name","Method name","Parent class"], correct:0 },
-    { id:4, question:"Which method is used to find the index of an element in a list?", options:["index()","find()","search()","locate()"], correct:0 },
-    { id:5, question:"What is the output of print(2 + 3 * 2)?", options:["10","12","8","7"], correct:0 },
-    { id:6, question:"Which keyword is used to define a class in Python?", options:["class","Class","def","define"], correct:0 },
-    { id:7, question:"What is the output of print(len('Python'))?", options:["5","6","7","Error"], correct:1 },
-    { id:8, question:"Which method is used to sort a list in Python?", options:["sort()","sorted()","order()","arrange()"], correct:0 },
-    { id:9, question:"What is the output of print(3 ** 2 ** 1)?", options:["9","27","81","3"], correct:0 },
-    { id:10, question:"Which function is used to convert a string to uppercase?", options:["upper()","uppercase()","toUpper()","toUpperCase()"], correct:0 },
-    { id:11, question:"What is the output of print(bool([]))?", options:["True","False","[]","Error"], correct:1 },
-    { id:12, question:"Which operator is used for floor division in Python?", options:["//","/","%","%%"], correct:0 },
-    { id:13, question:"What is the output of print(type(5))?", options:["<class 'int'>","<class 'float'>","<class 'number'>","<class 'digit'>"], correct:0 },
-    { id:14, question:"Which method is used to remove the last element from a list?", options:["pop()","remove()","delete()","del()"], correct:0 },
-    { id:15, question:"What is the output of print('Hello'[-1])?", options:["o","H","Error","Hello"], correct:0 },
-    { id:16, question:"Which keyword is used to import modules in Python?", options:["import","include","require","using"], correct:0 },
-    { id:17, question:"What is the output of print(list((1,2,3)))?", options:["[1, 2, 3]","(1, 2, 3)","Error","[1, 2, 3, ]"], correct:0 },
-    { id:18, question:"Which method is used to join strings in a list?", options:["join()","concat()","merge()","combine()"], correct:0 },
-    { id:19, question:"What is the output of print(10 % 3)?", options:["1","3","0","10"], correct:0 },
-    { id:20, question:"Which function is used to get the type of a variable in Python?", options:["type()","typeof()","gettype()","vartype()"], correct:0 },
-  ];
+  const [questions, setQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Fetch 20 randomized questions from the backend pool
+  useEffect(() => {
+    const fetchQuestionsFromBackend = async () => {
+      const savedStateStr = sessionStorage.getItem('weeklyExamState');
+      if (savedStateStr) {
+        try {
+          const savedState = JSON.parse(savedStateStr);
+          if (savedState.questions && savedState.questions.length > 0 && savedState.examStarted && !savedState.examSubmitted) {
+            setQuestions(savedState.questions);
+            setIsLoadingQuestions(false);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      try {
+        setIsLoadingQuestions(true);
+        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.length > 0) {
+          const mappedQuestions = json.data.map((q, idx) => ({ ...q, id: idx + 1 }));
+          setQuestions(mappedQuestions);
+        }
+      } catch (err) {
+        console.error("Failed to fetch questions from backend:", err);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+    
+    fetchQuestionsFromBackend();
+  }, []);
+
+  // Load state from sessionStorage if it exists
+  useEffect(() => {
+    const savedStateStr = sessionStorage.getItem('weeklyExamState');
+    if (savedStateStr) {
+      try {
+        const savedState = JSON.parse(savedStateStr);
+        if (savedState.examStarted && !savedState.examSubmitted) {
+          setAnswers(savedState.answers);
+          setMarkedForReview(savedState.markedForReview);
+          setVisitedQuestions(savedState.visitedQuestions);
+          setTimeLeft(savedState.timeLeft);
+          setCurrentQuestion(savedState.currentQuestion);
+          setExamStarted(true);
+          examSubmittedRef.current = false;
+          // Resume webcam if not already active
+          setTimeout(() => {
+            if (videoRef.current && !webcamActive) {
+              startWebcam();
+            }
+          }, 500);
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  // Sync state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (examStarted && !examSubmitted && questions.length > 0) {
+      const stateToSave = {
+        questions,
+        answers,
+        markedForReview,
+        visitedQuestions,
+        timeLeft,
+        currentQuestion,
+        examStarted,
+        examSubmitted
+      };
+      sessionStorage.setItem('weeklyExamState', JSON.stringify(stateToSave));
+    }
+  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted, questions]);
 
   // TIMER
   useEffect(() => {
@@ -353,6 +408,8 @@ const WeeklyExam = () => {
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
+    sessionStorage.removeItem('weeklyExamState');
+
     navigate("/dashboard/playground-results",{replace:true});
   };
 
@@ -375,9 +432,12 @@ const WeeklyExam = () => {
           </p>
           <button
             onClick={startExam}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            disabled={isLoadingQuestions}
+            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
+              isLoadingQuestions ? 'bg-gray-400 cursor-not-allowed animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+            }`}
           >
-            Start Exam
+            {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
           </button>
         </div>
       </div>

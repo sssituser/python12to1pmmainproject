@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -35,6 +36,29 @@ import VideoPlayer from "./pages/VideoPlayer";
 
 function App() {
   const isLoggedIn = localStorage.getItem("access");
+  const location = useLocation();
+
+  // Disable browser back button globally
+  useEffect(() => {
+    if (window.allowBrowserBack) {
+      return;
+    }
+
+    window.history.pushState(null, null, window.location.pathname + window.location.search);
+
+    const handlePopState = (event) => {
+      if (window.allowBrowserBack) {
+        return;
+      }
+      window.history.pushState(null, null, window.location.pathname + window.location.search);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [location]);
 
   return (
     <>
@@ -58,6 +82,9 @@ function App() {
         <Route path="/exam" element={<Exams />} />
 
         <Route path="/detailed-results/:index" element={<DetailedResults />} />
+
+        {/* Exams (Fullscreen, No Sidebar/Navbar) */}
+        <Route path="/dashboard/python-exam" element={<PythonExam />} />
 
         {/* 🔐 Protected Dashboard */}
         <Route
@@ -103,9 +130,6 @@ function App() {
           <Route path="playground-results" element={<PlaygroundResults />} />
           <Route path="results" element={<PlaygroundResults />} />
           <Route path="playground/detailed-results/:index" element={<DetailedResults />} />
-
-          {/* Python Exam */}
-          <Route path="python-exam" element={<PythonExam />} />
 
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />
