@@ -1,51 +1,77 @@
-import React, {useEffect, useState} from "react"
+import React, { useEffect, useState } from "react";
 
-function AppliedJobs(){
+function AppliedJobs() {
 
-const [jobs,setJobs] = useState([])
+  const [jobs, setJobs] = useState([]);
+  const getStatus = (date) => {
+  const days = (new Date() - new Date(date)) / (1000 * 60 * 60 * 24);
 
-useEffect(()=>{
+  if (days < 2) return "Applied";
+  if (days < 5) return "Under Review";
+  return "Shortlisted";
+};
+const [appliedIds, setAppliedIds] = useState([]);
 
-fetch("http://127.0.0.1:8000/api/applied-jobs/")
-.then(res=>res.json())
-.then(data=>setJobs(data))
+useEffect(() => {
+  fetch("http://127.0.0.1:8000/api/applied-jobs/")
+    .then(res => res.json())
+    .then(data => {
+      setAppliedIds(data.map(j => j.job.id));
+    });
+}, []);
 
-},[])
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/applied-jobs/")
+      .then(res => res.json())
+      .then(data => setJobs(data))
+      .catch(err => console.log(err));
+  }, []);
 
-return(
+  return (
+    <div className="container mt-4">
 
-<div className="container mt-4">
+      <h4 className="mb-3">Applied Jobs</h4>
 
-<h4>Applied Jobs</h4>
+      {jobs.length === 0 ? (
+        <p>No jobs applied yet</p>
+      ) : (
 
-<table className="table table-bordered mt-3">
+        <div className="row">
 
-<thead>
-<tr>
-<th>Company</th>
-<th>Job</th>
-<th>Applied Date</th>
-</tr>
-</thead>
+          {jobs.map((j) => (
 
-<tbody>
+            <div key={j.id} className="col-md-6 mb-3">
 
-{jobs.map(j=>(
-<tr key={j.id}>
-<td>{j.job}</td>
-<td>{j.student_name}</td>
-<td>{j.applied_date}</td>
-</tr>
-))}
+              <div className="card shadow-sm p-3">
 
-</tbody>
+                <h5>{j.job.company}</h5>
 
-</table>
+                <p className="mb-1"><b>Role:</b> {j.job.job_title}</p>
 
-</div>
+                <p className="mb-1"><b>Skills:</b> {j.job.primary_skills}</p>
 
-)
+                <p className="mb-1"><b>Location:</b> {j.job.location}</p>
 
+                <p className="mb-1">
+                  <b>Applied On:</b>{" "}
+                  {new Date(j.applied_date).toLocaleDateString()}
+                </p>
+
+                <span className="badge bg-warning mt-2">
+                  Applied
+                </span>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </div>
+      )}
+
+    </div>
+  );
 }
 
-export default AppliedJobs
+export default AppliedJobs;

@@ -238,3 +238,23 @@ color:white;
   color:white;
   background: #4f46e5;
 }
+
+
+.apply-btn.closed-job {
+  position: relative;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Center badge */
+.apply-btn.closed-job:hover::after {
+  content: "Closed";
+  position: absolute;
+  top: -25px;
+  right: 0;
+  background-color: red;
+  color: white;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 20px;
+}

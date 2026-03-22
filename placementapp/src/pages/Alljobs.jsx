@@ -1,35 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import toast from "react-hot-toast"
 
 function AllJobs() {
-
-function applyJob(jobId){
-
-fetch("http://127.0.0.1:8000/api/applied-jobs/",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-job:jobId,
-student_name:"Akhila",
-email:"akhila@gmail.com"
-
-})
-
-})
-.then(res=>res.json())
-.then(data=>{
-alert("Job Applied Successfully")
-})
-.catch(err=>console.log(err))
-
+function applyJob(jobId) {
+  fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      job: jobId,
+      student_name: "Akhila",
+      email: "akhila@gmail.com"
+    })
+  })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Failed to apply");
+      }
+      return res.json();
+    })
+    .then(data => {
+      toast.success("Job Applied Successfully");
+     
+    })
+    .catch(err => {
+      console.log(err);
+      toast.error("Something went wrong!");
+    });
 }
+
   const navigate = useNavigate();
 
   const [jobsData, setJobsData] = useState([]);
@@ -129,7 +131,7 @@ alert("Job Applied Successfully")
   <span className="badge bg-danger">TimedOut</span>
 
 ) : job.status === "Closed" ? (
-  <span className="badge bg-secondary">Closed</span>
+  <span className="badge bg-danger">Closed</span>
 
 ) : (
   <span className="badge bg-green-400 text-dark ">Open</span>
@@ -139,7 +141,7 @@ alert("Job Applied Successfully")
                   <td>
                     <div className="d-flex gap-2">
                     <button
-  className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+  className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 bg-blue-100"
   onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
 >
   <FaEye />
@@ -147,13 +149,27 @@ alert("Job Applied Successfully")
 </button>
                      
 
-                      <button
-                        className="btn btn-success btn-sm"
-                        disabled={job.status === "Timed Out" || job.status === "Applied"}
-                      >
-                        Apply
-                      </button>
+                   
+<button
+  className={`btn btn-success btn-sm apply-btn ${
+    job.status === "Closed" ? "closed-job" : ""
+  }`}
+  onClick={() => {
+    if (job.status === "Applied") {
+      toast.success("Already applied!");
+      return;
+    }
 
+    if (job.status === "Closed") {
+      toast.error("Applications are closed!");
+      return;
+    }
+
+    applyJob(job.id);
+  }}
+>
+  Apply
+</button>
                     </div>
                   </td>
 

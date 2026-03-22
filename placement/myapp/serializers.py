@@ -141,6 +141,8 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class AppliedJobSerializer(serializers.ModelSerializer):
+    job = JobSerializer()   
+
     class Meta:
         model = AppliedJob
         fields = "__all__"
