@@ -5,7 +5,6 @@ import "react-toastify/dist/ReactToastify.css";
 import Dashboard from "./Layout/Dashboard";
 import Dashboardsssit from "./pages/Dashboardsssit";   // ✅ ADD THIS
 
-import ExamLeaderboard from "./pages/ExamLeaderboard";
 import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
@@ -16,6 +15,7 @@ import DailyExamReports from "./pages/DailyExamReports";
 import WeeklyExamReports from "./pages/WeeklyExamReports";
 import MonthlyExamReports from "./pages/MonthlyExamReports";
 import ExamReportDetail from "./pages/ExamReportDetail";
+import ExamLeaderboard from "./pages/ExamLeaderboard";
 import Exams from "./pages/Exams";
 
 import Logout from "./pages/Logout";
