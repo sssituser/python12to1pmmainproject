@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import jsPDF from 'jspdf';
 
 function PlaygroundResults() {
 
@@ -53,62 +54,73 @@ function PlaygroundResults() {
 
     const passed = (result.correctAnswers * 2) >= 20;
     const examDate = new Date(result.examDate).toLocaleString();
+    const studentName = result.user?.firstName || result.user?.username || "Unknown";
 
-    const studentName =
-      result.user?.firstName ||
-      result.user?.username ||
-      "Unknown";
-
-    const content = `
-Student: ${studentName}
-Email: ${result.user?.email || "N/A"}
-ID: ${result.user?.randomId || "N/A"}
-
-Exam: ${result.examTitle || "Python Programming Assessment"}
-Date: ${examDate}
-
-Score: ${result.correctAnswers * 2}/40
-Status: ${passed ? "Pass" : "Fail"}
-
-${result.questions
-        ? result.questions
-          .map(
-            (q, i) => `
-Question ${i + 1}: ${q.question}
-
-Your Answer:
-${result.answers[i] !== null
-                ? String.fromCharCode(65 + result.answers[i]) +
-                ". " +
-                q.options[result.answers[i]]
-                : "Not Attempted"}
-
-Correct Answer:
-${String.fromCharCode(65 + q.correct)}. ${q.options[q.correct]}
-
-${result.answers[i] === q.correct ? "✓ CORRECT" : "✗ INCORRECT"}
-
-`
-          )
-          .join("\n")
-        : "Answer details not available"}
-`;
-
-    const blob = new Blob([content], {
-      type: "text/plain;charset=utf-8",
-    });
-
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `exam-result-${studentName}.txt`;
-
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    // Create new PDF document
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Exam Results Report', 105, 20, { align: 'center' });
+    
+    // Add student information
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Information:', 20, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Name: ${studentName}`, 20, 50);
+    doc.text(`Email: ${result.user?.email || 'N/A'}`, 20, 60);
+    doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
+    
+    // Add exam information
+    doc.setFont('helvetica', 'bold');
+    doc.text('Exam Information:', 20, 90);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exam: ${result.examTitle || 'Python Programming Assessment'}`, 20, 100);
+    doc.text(`Date: ${examDate}`, 20, 110);
+    doc.text(`Score: ${result.correctAnswers * 2}/40`, 20, 120);
+    doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
+    
+    // Add performance summary
+    doc.setFont('helvetica', 'bold');
+    doc.text('Performance Summary:', 20, 150);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Correct Answers: ${result.correctAnswers}/20`, 20, 160);
+    doc.text(`Incorrect Answers: ${result.incorrectAnswers || (20 - result.correctAnswers)}/20`, 20, 170);
+    doc.text(`Percentage: ${((result.correctAnswers / 20) * 100).toFixed(1)}%`, 20, 180);
+    
+    // Add question analysis (first 10 questions to fit on one page)
+    if (result.questions && Array.isArray(result.questions)) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Question Analysis (First 10):', 20, 200);
+      doc.setFont('helvetica', 'normal');
+      
+      let yPos = 210;
+      const questionsToShow = Math.min(10, result.questions.length);
+      
+      for (let i = 0; i < questionsToShow; i++) {
+        const q = result.questions[i];
+        const userAnswer = result.answers[i];
+        const isCorrect = userAnswer === q.correct;
+        
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(10);
+        doc.text(`Q${i + 1}: ${isCorrect ? '✓' : '✗'} ${userAnswer !== null ? String.fromCharCode(65 + userAnswer) : 'Not Attempted'}`, 20, yPos);
+        yPos += 7;
+      }
+    }
+    
+    // Add generation date
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 280, { align: 'center' });
+    
+    // Save the PDF
+    doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
   };
 
   // DELETE RESULT

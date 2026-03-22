@@ -1,7 +1,9 @@
 // src/components/Leave.jsx
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faCheck, faTimes, faTrash, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faEnvelope, faPhone, faIdCard, faDatabase, faDownload } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrash, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faDownload } from "@fortawesome/free-solid-svg-icons";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function LeaveRequest() {
   const [name, setName] = useState("");
@@ -10,7 +12,6 @@ function LeaveRequest() {
   const [reason, setReason] = useState("");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("Student");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -149,30 +150,6 @@ function LeaveRequest() {
     setStudentId(user.randomId || '');
   }, []);
 
-  const handleApproveReject = async (id, status) => {
-    const endpoint = status.toLowerCase() === 'approved' ? 'approve' : 'reject';
-    
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/${endpoint}/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ approved_by: role })
-      });
-
-      if (response.ok) {
-        alert(`Request ${status} successfully!`);
-        loadRequests();
-      } else {
-        alert(`Failed to ${status.toLowerCase()} request`);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Server error. Please try again.");
-    }
-  };
-
   const handleDelete = async (id) => {
     const requestToDelete = requests.find(req => req.id === id);
     if (confirm(`Are you sure you want to permanently delete this leave request from ${requestToDelete?.name || 'Unknown'}? This action cannot be undone.`)) {
@@ -195,17 +172,89 @@ function LeaveRequest() {
   };
 
   const handleExportData = () => {
-    const dataStr = JSON.stringify(requests, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `leave-requests-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    alert('Leave requests data exported successfully!');
+    // Create new PDF document
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Leave Requests Report', 105, 20, { align: 'center' });
+    
+    // Add generation date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+    
+    // Prepare table data
+    const tableData = requests.map((req, index) => [
+      index + 1,
+      req.name || 'N/A',
+      req.email || 'N/A',
+      req.student_id || 'N/A',
+      req.phone || 'N/A',
+      formatDate(req.start_date),
+      formatDate(req.end_date),
+      req.leave_type || 'N/A',
+      req.status || 'N/A',
+      req.reason || 'N/A'
+    ]);
+    
+    // Add table to PDF
+    doc.autoTable({
+      head: [
+        ['S.No', 'Name', 'Email', 'Student ID', 'Phone', 'Start Date', 'End Date', 'Leave Type', 'Status', 'Reason']
+      ],
+      body: tableData,
+      startY: 40,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [59, 130, 246], // Blue color
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245], // Light gray for alternate rows
+      },
+      columnStyles: {
+        0: { cellWidth: 15 }, // S.No
+        1: { cellWidth: 25 }, // Name
+        2: { cellWidth: 30 }, // Email
+        3: { cellWidth: 20 }, // Student ID
+        4: { cellWidth: 25 }, // Phone
+        5: { cellWidth: 25 }, // Start Date
+        6: { cellWidth: 25 }, // End Date
+        7: { cellWidth: 20 }, // Leave Type
+        8: { cellWidth: 20 }, // Status
+        9: { cellWidth: 'auto' }, // Reason (auto width)
+      },
+      margin: { left: 10, right: 10 },
+      didDrawPage: (data) => {
+        // Add footer with page number
+        doc.setFontSize(8);
+        doc.text(`Page ${doc.internal.getNumberOfPages()}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+      }
+    });
+    
+    // Add summary at the bottom
+    const finalY = doc.lastAutoTable.finalY || 40;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total Requests: ${requests.length}`, 10, finalY + 10);
+    
+    // Status summary
+    const approvedCount = requests.filter(req => req.status === 'Approved').length;
+    const rejectedCount = requests.filter(req => req.status === 'Rejected').length;
+    const pendingCount = requests.filter(req => req.status === 'Pending').length;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Approved: ${approvedCount} | Rejected: ${rejectedCount} | Pending: ${pendingCount}`, 10, finalY + 15);
+    
+    // Save the PDF
+    doc.save(`leave-requests-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    alert('Leave requests report downloaded successfully as PDF!');
   };
 
   const formatDate = (dateStr) => {
@@ -241,18 +290,9 @@ function LeaveRequest() {
                 <h4 className="text-lg font-black text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
               </div>
             </div>
-            <div className="relative">
-              <select 
-                value={role} 
-                onChange={(e) => setRole(e.target.value)} 
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-              >
-                <option value="Student">Student</option>
-                <option value="Faculty">Faculty</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                <FontAwesomeIcon icon={faUser} className="text-gray-400 text-sm" />
-              </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+              <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
+              <span className="text-gray-700 font-medium">Student</span>
             </div>
           </div>
         </div>
@@ -458,27 +498,6 @@ function LeaveRequest() {
                     </div>
                     
                     <div className="flex justify-end items-center gap-2 pt-4 border-t border-gray-100">
-                      {req.status === "Pending" && role === "Faculty" && (
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => handleApproveReject(req.id, "Approved")} 
-                            className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center gap-1 text-sm"
-                            title="Approve this leave request"
-                          >
-                            <FontAwesomeIcon icon={faCheck} />
-                            Approve
-                          </button>
-                          <button 
-                            onClick={() => handleApproveReject(req.id, "Rejected")} 
-                            className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center gap-1 text-sm"
-                            title="Reject this leave request"
-                          >
-                            <FontAwesomeIcon icon={faTimes} />
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                      
                       <button 
                         onClick={() => handleDelete(req.id)} 
                         className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-1 text-sm"

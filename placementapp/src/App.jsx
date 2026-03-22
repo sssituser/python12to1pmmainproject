@@ -35,7 +35,6 @@ import Applications from "./faculty/Application";
 import Leaves from "./faculty/LeaveRequest";
 import ExamManager from "./faculty/ExamManager";
 
-
 /* 🔹 AUTH */
 import Login from "./pages/Login";
 
@@ -112,10 +111,10 @@ function App() {
             token && isFaculty ? <FacultyLayout /> : <Navigate to="/" />
           }
         >
-          {/* Routes */}
+          <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
           <Route path="students" element={<Students />} />
-          <Route path="Jobs" element={<Jobs />} />
+          <Route path="jobs" element={<Jobs />} />
           <Route path="exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
           <Route path="leaves" element={<Leaves />} />
