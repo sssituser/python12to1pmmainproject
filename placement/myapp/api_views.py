@@ -275,7 +275,7 @@ def exam_report_detail_api(request, pk):
                 'questions': questions_data,
                 'answers': answers_data,
                 'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
-                'passed': attempt.marks_obtained >= (attempt.total_marks * 0.5)  # 50% pass criteria
+                'passed': attempt.status == 'Pass'
             }
         })
         
@@ -329,6 +329,15 @@ def save_exam_report_api(request):
         if not random_id_val and isinstance(data.get('user'), dict):
             random_id_val = data['user'].get('randomId') or data['user'].get('random_id') or ''
 
+        # Determine pass/fail status from frontend calculation
+        passed_input = data.get('passed')
+        if passed_input is True:
+            final_status = 'Pass'
+        elif passed_input is False:
+            final_status = 'Fail'
+        else:
+            final_status = data.get('status', 'completed')
+
         attempt = ExamAttempt.objects.create(
             user              = user,
             exam_title        = data.get('exam_title') or data.get('examTitle', 'Python Exam'),
@@ -342,7 +351,7 @@ def save_exam_report_api(request):
             time_taken        = data.get('time_taken') or data.get('timeTaken', 0),
             start_time        = start_time,
             end_time          = end_time,
-            status            = data.get('status', 'completed'),
+            status            = final_status,
             random_id         = str(random_id_val),
             answers_json      = json.dumps(data.get('answers', [])),
             questions_json    = json.dumps(data.get('questions', []))
@@ -748,13 +757,25 @@ def exam_settings_api(request):
         category = request.data.get('category', 'Weekly')
         new_questions = request.data.get('questions', None)
         new_max = request.data.get('maxQuestions', None)
+        new_rule = request.data.get('passingRule', None)
+        new_val = request.data.get('passingValue', None)
+        new_duration = request.data.get('duration', None)
 
         # Get existing category data to merge into
-        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': []})
+        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
 
-        # Only overwrite maxQuestions if explicitly sent
+        # Only overwrite fields if explicitly sent
         if new_max is not None:
             existing_category['maxQuestions'] = int(new_max)
+        
+        if new_rule is not None:
+            existing_category['passingRule'] = str(new_rule)
+            
+        if new_val is not None:
+            existing_category['passingValue'] = int(new_val)
+            
+        if new_duration is not None:
+            existing_category['duration'] = int(new_duration)
 
         # Only overwrite questions if a non-None list was sent
         if new_questions is not None:
