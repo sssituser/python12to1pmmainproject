@@ -34,6 +34,7 @@ import Logout from "./pages/Logout";
 /* 🔹 FACULTY */
 import FacultyLayout from "./faculty/FacultyLayout";
 import FacultyDashboard from "./faculty/Dashboard";
+import FacultyCourse from "./faculty/Course";
 import Stats from "./faculty/Stats";
 import Applications from "./faculty/Application";
 import Leaves from "./faculty/LeaveRequest";
@@ -47,18 +48,19 @@ function App() {
   const isLoggedIn = localStorage.getItem("access");
   const location = useLocation();
 
-  // Disable browser back button only on exam pages
+  // Disable browser back button only on exam pages and faculty course pages
   useEffect(() => {
     if (window.allowBrowserBack) {
       return;
     }
 
-    // Only block back button if on exam pages
+    // Block back button if on exam pages or faculty course pages
     const isExamPage = location.pathname.includes('/python-exam') || 
                       location.pathname.includes('/weekly-exam') || 
                       location.pathname.includes('/monthly-exam');
+    const isFacultyCoursePage = location.pathname.includes('/faculty/Course');
     
-    if (isExamPage) {
+    if (isExamPage || isFacultyCoursePage) {
       window.history.pushState(null, null, window.location.pathname + window.location.search);
 
       const handlePopState = (event) => {
@@ -161,6 +163,8 @@ function App() {
           <Route path="exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
           <Route path="leaves" element={<Leaves />} />
+          <Route path="Course" element={<FacultyCourse />} />
+          <Route path="Course/:courseId" element={<FacultyCourse />} />
         </Route>
 
       </Routes>
