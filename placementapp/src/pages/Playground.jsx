@@ -7,8 +7,12 @@ function Playground() {
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
 
+  const [dailyQuestions, setDailyQuestions] = useState(20);
+  const [dailyTime, setDailyTime] = useState(45);
   const [weeklyQuestions, setWeeklyQuestions] = useState(50);
+  const [weeklyTime, setWeeklyTime] = useState(45);
   const [monthlyQuestions, setMonthlyQuestions] = useState(50);
+  const [monthlyTime, setMonthlyTime] = useState(45);
 
   useEffect(() => {
     // Fetch limits safely so UI is dynamic based on Faculty settings
@@ -16,8 +20,18 @@ function Playground() {
       try {
         const res = await axios.get("http://127.0.0.1:8000/api/admin/exam-settings/");
         if (res.data && res.data.success && res.data.data) {
-          if (res.data.data.Weekly) setWeeklyQuestions(res.data.data.Weekly.maxQuestions || 50);
-          if (res.data.data.Monthly) setMonthlyQuestions(res.data.data.Monthly.maxQuestions || 50);
+          if (res.data.data.Daily) {
+            setDailyQuestions(res.data.data.Daily.maxQuestions || 20);
+            setDailyTime(res.data.data.Daily.duration || 45);
+          }
+          if (res.data.data.Weekly) {
+            setWeeklyQuestions(res.data.data.Weekly.maxQuestions || 50);
+            setWeeklyTime(res.data.data.Weekly.duration || 45);
+          }
+          if (res.data.data.Monthly) {
+            setMonthlyQuestions(res.data.data.Monthly.maxQuestions || 50);
+            setMonthlyTime(res.data.data.Monthly.duration || 45);
+          }
         }
       } catch (err) {
         console.error("Could not fetch dynamic exact sizes", err);
@@ -67,10 +81,10 @@ function Playground() {
           📚 Available Coding Sessions
         </h3>
 
-        {/* Three Exam Cards */}
+        {/* Three Exam Cards (Daily is static, Weekly/Monthly are dynamic) */}
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
 
-          {/* Daily Exam Card */}
+          {/* Daily Exam Card (Restored to its original static version) */}
           <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between">
 
             <div>
@@ -116,12 +130,12 @@ function Playground() {
 
               </div>
 
-              <p className="text-sm text-gray-600 mb-4">
-                Comprehensive weekly exam to test your Python programming knowledge. Cover all topics with multiple choice questions for thorough assessment.
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                Comprehensive weekly exam to test your knowledge. Cover all topics with multiple choice questions for thorough assessment.
               </p>
 
-              <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-                {weeklyQuestions} MCQs • 75 min
+              <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+                {weeklyQuestions} MCQs • {weeklyTime} min
               </span>
             </div>
 
@@ -135,7 +149,7 @@ function Playground() {
           </div>
 
           {/* Monthly Exam Card */}
-          <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between">
+          <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between border-purple-50">
 
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -148,11 +162,11 @@ function Playground() {
 
               </div>
 
-              <p className="text-sm text-gray-600 mb-4">
-                Extensive monthly exam for complete Python programming evaluation. Test advanced concepts with multiple choice questions for comprehensive assessment.
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                Extensive monthly exam for complete evaluation. Test advanced concepts with multiple choice questions for comprehensive assessment.
               </p>
-              <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
-                {monthlyQuestions} MCQs • 75 min
+              <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-semibold">
+                {monthlyQuestions} MCQs • {monthlyTime} min
               </span>
             </div>
 

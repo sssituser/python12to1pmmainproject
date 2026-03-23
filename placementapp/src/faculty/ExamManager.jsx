@@ -4,12 +4,16 @@ import axios from "axios";
 function ExamManager() {
   const [questions, setQuestions] = useState([]);
   const [maxQuestions, setMaxQuestions] = useState(50);
+  const [duration, setDuration] = useState(45); // duration in minutes
+  const [passingRule, setPassingRule] = useState("percentage"); // "percentage" or "correct_answers"
+  const [passingValue, setPassingValue] = useState(50); // 50% or 15 correct
   const [category, setCategory] = useState("Weekly");
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [form, setForm] = useState({
     question: "",
     options: ["", "", "", ""],
     answer: "",
+    marks: 2, // default marks
   });
 
   // Fetch existing settings when category changes
@@ -18,9 +22,12 @@ function ExamManager() {
       try {
         const res = await axios.get(`http://127.0.0.1:8000/api/admin/exam-settings/?category=${category}`);
         if (res.data && res.data.success && res.data.data) {
-          const { maxQuestions: savedMax, questions: savedQuestions } = res.data.data;
+          const { maxQuestions: savedMax, questions: savedQuestions, passingRule: rule, passingValue: val, duration: savedDuration } = res.data.data;
           setMaxQuestions(savedMax || 50);
           setQuestions(savedQuestions || []);
+          setPassingRule(rule || "percentage");
+          setPassingValue(val !== undefined ? val : 50);
+          setDuration(savedDuration || 45);
         }
       } catch (err) {
         console.error("Failed to fetch settings:", err);
@@ -52,7 +59,9 @@ function ExamManager() {
       const payload = {
         category,
         maxQuestions: parseInt(maxQuestions, 10) || 1,
-        // DO NOT send questions here — we don't want to overwrite them
+        duration: parseInt(duration, 10) || 1,
+        passingRule,
+        passingValue: parseInt(passingValue, 10) || 0,
       };
       
       const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
@@ -66,21 +75,19 @@ function ExamManager() {
     }
   };
 
-  // Save questions list to backend (category + questions, no maxQuestions override)
+  // Save questions list to backend
   const saveQuestionsToBackend = async (questionsToSave, categoryToSave) => {
     try {
       const payload = {
         category: categoryToSave,
         questions: questionsToSave
       };
-      console.log("Saving questions to backend:", payload);
       const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
       if (res.data && res.data.success) {
-        console.log("✅ Questions saved:", res.data.message);
+        console.log("✅ Questions saved");
       }
     } catch (err) {
       console.error("Failed to save questions:", err);
-      alert("Backend error saving questions - check console!");
     }
   };
 
@@ -93,8 +100,6 @@ function ExamManager() {
 
     const newQuestionArray = [...questions, { ...form, id: Date.now() }];
     setQuestions(newQuestionArray);
-    
-    // Pass category explicitly to avoid stale closure
     saveQuestionsToBackend(newQuestionArray, category);
 
     // reset form
@@ -102,6 +107,7 @@ function ExamManager() {
       question: "",
       options: ["", "", "", ""],
       answer: "",
+      marks: 2,
     });
   };
 
@@ -109,24 +115,21 @@ function ExamManager() {
   const deleteQuestion = (id) => {
     const updatedQuestions = questions.filter((q) => q.id !== id);
     setQuestions(updatedQuestions);
-    
-    // Pass category explicitly to avoid stale closure
     saveQuestionsToBackend(updatedQuestions, category);
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto pb-20">
 
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Exam Manager (Faculty)</h1>
 
       {/* EXAM SETTINGS */}
       <div className="bg-white p-5 shadow rounded-lg mb-6 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">Exam Settings</h2>
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">Exam Settings & Passing Rules</h2>
         
-        <div className="bg-blue-50 p-4 rounded border border-blue-100 flex flex-col md:flex-row gap-6 mb-4">
+        <div className="bg-blue-50 p-4 rounded border border-blue-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
           
-          {/* CATEGORY DROPDOWN */}
-          <div className="flex-1">
+          <div>
             <label className="block text-sm font-semibold text-blue-800 mb-2">
               Select Exam Category:
             </label>
@@ -137,11 +140,11 @@ function ExamManager() {
             >
               <option value="Weekly">Weekly Exam</option>
               <option value="Monthly">Monthly Exam</option>
+              <option value="Daily">Daily Exam (Practice)</option>
             </select>
           </div>
 
-          {/* MAX QUESTIONS LIMIT */}
-          <div className="flex-1">
+          <div>
             <label className="block text-sm font-semibold text-blue-800 mb-2">
               Max Questions to Display:
             </label>
@@ -152,14 +155,58 @@ function ExamManager() {
               onChange={(e) => setMaxQuestions(e.target.value)}
               className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
             />
-            <p className="text-xs text-blue-600 mt-2">
-              Prevents crashing by enforcing an upper limit.
-            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
+               Exam Duration (Minutes):
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
+              Passing Rule Type:
+            </label>
+            <select
+              value={passingRule}
+              onChange={(e) => setPassingRule(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+            >
+              <option value="percentage">Percentage (%)</option>
+              <option value="correct_answers">Minimum Correct Answers</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
+              Required Value to Pass:
+            </label>
+            <input
+              type="number"
+              value={passingValue}
+              onChange={(e) => setPassingValue(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              placeholder={passingRule === "percentage" ? "e.g. 50" : "e.g. 15"}
+            />
           </div>
 
         </div>
 
-        {/* CONFIRM SETTINGS BUTTON */}
+        <div className="mb-4">
+            <p className="text-sm font-medium text-blue-700 bg-blue-100 p-2 rounded inline-block">
+              {passingRule === "percentage" 
+                ? "Requirement: Student must score " + passingValue + "% marks within " + duration + " minutes." 
+                : "Requirement: Student must get at least " + passingValue + " correct answers within " + duration + " minutes."}
+            </p>
+        </div>
+
         <button
           onClick={() => handleConfirmSettings()}
           className={`px-5 py-2 rounded-lg font-medium transition ${
@@ -177,13 +224,24 @@ function ExamManager() {
       <div className="bg-white p-6 shadow rounded-lg mb-6 border border-gray-100">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">Add New Question</h2>
         
-        <input
-          type="text"
-          placeholder="Enter question text..."
-          value={form.question}
-          onChange={handleChange}
-          className="w-full mb-4 p-3 border rounded focus:outline-none focus:border-blue-500"
-        />
+        <div className="flex gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Enter question text..."
+            value={form.question}
+            onChange={handleChange}
+            className="flex-1 p-3 border rounded focus:outline-none focus:border-blue-500"
+          />
+          <div style={{ width: "100px" }}>
+             <label className="text-xs font-bold text-gray-500 uppercase">Marks</label>
+             <input
+               type="number"
+               value={form.marks}
+               onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
+               className="w-full p-2 border rounded"
+             />
+          </div>
+        </div>
 
         {form.options.map((opt, i) => (
           <input
@@ -231,7 +289,10 @@ function ExamManager() {
         {questions.map((q, index) => (
           <div key={q.id} className="bg-white p-4 shadow rounded">
             <h3 className="font-semibold">
-              {index + 1}. {q.question}
+              {index + 1}. {q.question} 
+              <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
+                {q.marks || 0} Marks
+              </span>
             </h3>
 
             <ul className="ml-4 mt-2">

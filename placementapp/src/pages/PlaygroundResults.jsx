@@ -234,7 +234,6 @@ function PlaygroundResults() {
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Exam Name</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Date</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Score</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Actions</th>
             </tr>
           </thead>
@@ -283,17 +282,6 @@ function PlaygroundResults() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
                     {result.score || (result.correctAnswers || 0) * 2}/{result.totalMarks || (result.correctAnswers || 0) * 2}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
-                    <span
-                      className={`px-2 py-1 text-xs rounded 
-                      ${passed
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                      {passed ? "Pass" : "Fail"}
-                    </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                     <div className="flex gap-2">

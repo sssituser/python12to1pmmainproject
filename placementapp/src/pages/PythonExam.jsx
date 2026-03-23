@@ -19,16 +19,20 @@ const PythonExam = () => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [isAILoading, setIsAILoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  // Custom Passing Rules from Faculty
+  const [passingRule, setPassingRule] = useState("percentage"); 
+  const [passingValue, setPassingValue] = useState(50); // Default 50% for daily
   const [answers, setAnswers] = useState([]);
   const [markedForReview, setMarkedForReview] = useState([]);
   const [visitedQuestions, setVisitedQuestions] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(2700);
+  const [timeLeft, setTimeLeft] = useState(2700); // placeholder
+  const [examDuration, setExamDuration] = useState(45); // default 45 min
   const [webcamActive, setWebcamActive] = useState(false);
   const [faceCount, setFaceCount] = useState(1);
   const [examFailed, setExamFailed] = useState(false);
@@ -76,31 +80,39 @@ const PythonExam = () => {
 
   // Fetch questions from backend
   useEffect(() => {
-    const fetchQuestionsFromBackend = async () => {
-      // Always start fresh - don't restore previous exam state
-      try {
-        sessionStorage.removeItem('pythonExamState');
-      } catch (e) {}
+    // Always start fresh - don't restore previous exam state
+    try {
+      sessionStorage.removeItem('pythonExamState');
+    } catch (e) {
+      console.error("Failed to clear session storage:", e);
+    }
 
+    const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
         const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
         const json = await res.json();
-        
-        if (json.success && json.data && json.data.length > 0) {
-          // For daily exam, use all returned questions (typically 20)
-          const dailyQuestions = json.data.slice(0, 20);
-          const mappedQuestions = dailyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+        const data = json.data || json;
+
+        if (data && data.length > 0) {
+          const mappedQuestions = data.map((q, idx) => ({
+            ...q,
+            id: idx + 1,
+            marks: 2,
+          }));
           setQuestions(mappedQuestions);
+          setExamDuration(45);
+          setTimeLeft(45 * 60);
+          setPassingRule("percentage");
+          setPassingValue(50);
         }
       } catch (err) {
-        console.error("Failed to fetch questions from backend:", err);
+        console.error("Failed to fetch practice questions:", err);
       } finally {
         setIsLoadingQuestions(false);
       }
     };
-    
-    fetchQuestionsFromBackend();
+    fetchQuestions();
   }, []);
 
   // Prevent browser refresh and back button during exam
@@ -375,7 +387,7 @@ useEffect(() => {
     setMarkedForReview(new Array(qLen).fill(false));
     setVisitedQuestions(new Array(qLen).fill(false));
     setCurrentQuestion(0);
-    setTimeLeft(2700);
+    // TimeLeft is already set by fetchQuestionsFromBackend based on examDuration
     setExamSubmitted(false);
     examSubmittedRef.current = false;
     
@@ -451,26 +463,51 @@ useEffect(() => {
     } catch (e) { }
 
     const randomId = Math.floor(1000 + Math.random() * 9000);
+    const now = new Date().toISOString();
 
     let correctCount = 0;
+    let earnedMarks = 0;
+    let maxPossibleMarks = 0;
 
     answers.forEach((ans, index) => {
-      if (questions[index] && ans === questions[index].correct) correctCount++;
+      const q = questions[index];
+      if (!q) return;
+
+      const qMarks = parseInt(q.marks) || 2;
+      maxPossibleMarks += qMarks;
+
+      if (ans === q.correct) {
+        correctCount++;
+        earnedMarks += qMarks;
+      }
     });
 
-    const totalQ = questions.length || 20;
+    const totalQ = questions.length;
+    const finalScore = earnedMarks;
+
+    // Calculate passing status
+    let passed = false;
+    if (passingRule === "percentage") {
+       const percent = maxPossibleMarks > 0 ? (earnedMarks / maxPossibleMarks) * 100 : 0;
+       passed = percent >= passingValue;
+    } else {
+       passed = correctCount >= passingValue;
+    }
 
     const result = {
       status: "completed",
       correctAnswers: correctCount,
       incorrectAnswers: totalQ - correctCount,
       totalQuestions: totalQ,
-      score: correctCount * 2,
-      marks: correctCount * 2,
-      totalMarks: totalQ * 2,
+      score: finalScore,
+      marks: finalScore,
+      total_marks: maxPossibleMarks,
+      passed: passed,
+      time_taken: (examDuration * 60) - timeLeft,
+      start_time: now,
       answers,
       questions,
-      timeTaken: 2700 - timeLeft,
+      timeTaken: (examDuration * 60) - timeLeft,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",

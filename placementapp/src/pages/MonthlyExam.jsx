@@ -26,7 +26,8 @@ const MonthlyExam = () => {
   const [markedForReview, setMarkedForReview] = useState([]);
   const [visitedQuestions, setVisitedQuestions] = useState([]);
 
-  const [timeLeft, setTimeLeft] = useState(4500); // 75 minutes for monthly exam
+  const [timeLeft, setTimeLeft] = useState(2700); // placeholder, will be set from settings
+  const [examDuration, setExamDuration] = useState(45); // default 45 min
   const [examStarted, setExamStarted] = useState(false);
   const [examSubmitted, setExamSubmitted] = useState(false);
   const examSubmittedRef = useRef(false);
@@ -36,6 +37,10 @@ const MonthlyExam = () => {
 
   const [questions, setQuestions] = useState([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Custom Passing Rules from Faculty
+  const [passingRule, setPassingRule] = useState("percentage"); 
+  const [passingValue, setPassingValue] = useState(35); // Default 35% for Monthly
 
   // Fetch 50 randomized questions from backend pool
   useEffect(() => {
@@ -59,9 +64,17 @@ const MonthlyExam = () => {
           const displayLimit = Math.min(customJson.data.questions.length, maxQ);
           const monthlyQuestions = customJson.data.questions.slice(0, displayLimit);
           
+          const dur = customJson.data.duration || 45;
+          setExamDuration(dur);
+          setTimeLeft(dur * 60);
+
+          setPassingRule(customJson.data.passingRule || "percentage");
+          setPassingValue(customJson.data.passingValue !== undefined ? customJson.data.passingValue : 35);
+
           const mappedQuestions = monthlyQuestions.map((q, idx) => ({
              ...q, 
              id: idx + 1,
+             marks: parseInt(q.marks) || 2, // Use custom marks if set, else fallback 2
              question: q.question,
              options: q.options,
              correct: q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0
@@ -386,7 +399,7 @@ const MonthlyExam = () => {
     setMarkedForReview(new Array(qLen).fill(false));
     setVisitedQuestions(new Array(qLen).fill(false));
     setCurrentQuestion(0);
-    setTimeLeft(4500);
+    setTimeLeft(examDuration * 60);
     setExamSubmitted(false);
     examSubmittedRef.current = false;
     
@@ -456,24 +469,47 @@ const MonthlyExam = () => {
     const randomId = Math.floor(1000 + Math.random() * 9000);
 
     let correctCount = 0;
+    let earnedMarks = 0;
+    let maxPossibleMarks = 0;
 
     answers.forEach((ans, index) => {
-      if (questions[index] && ans === questions[index].correct) correctCount++;
+      const q = questions[index];
+      if (!q) return;
+      
+      const qMarks = parseInt(q.marks) || 2;
+      maxPossibleMarks += qMarks;
+
+      if (ans === q.correct) {
+        correctCount++;
+        earnedMarks += qMarks;
+      }
     });
 
-    const totalQ = questions.length || 50;
+    const totalQ = questions.length;
+    const finalScore = earnedMarks;
+
+    // Calculate passing status based on faculty rules
+    let passed = false;
+    if (passingRule === "percentage") {
+       const percent = maxPossibleMarks > 0 ? (earnedMarks / maxPossibleMarks) * 100 : 0;
+       passed = percent >= passingValue;
+    } else {
+       // rule is "correct_answers"
+       passed = correctCount >= passingValue;
+    }
 
     const result = {
       status: "completed",
       correctAnswers: correctCount,
       incorrectAnswers: totalQ - correctCount,
       totalQuestions: totalQ,
-      score: correctCount * 2,
-      marks: correctCount * 2,
-      totalMarks: totalQ * 2,
+      score: finalScore,
+      marks: finalScore,
+      totalMarks: maxPossibleMarks,
+      passed: passed,
       answers,
       questions,
-      timeTaken: 4500 - timeLeft,
+      timeTaken: (examDuration * 60) - timeLeft,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
@@ -490,13 +526,14 @@ const MonthlyExam = () => {
       username: user.username || "Unknown",
       exam_title: "Monthly Python Programming Assessment",
       exam_type: "monthly",
-      score: correctCount * 2,
+      score: finalScore,
       total_questions: totalQ,
       correct_answers: correctCount,
       incorrect_answers: totalQ - correctCount,
-      marks_obtained: correctCount * 2,
-      total_marks: totalQ * 2,
-      time_taken: 4500 - timeLeft,
+      marks_obtained: finalScore,
+      total_marks: maxPossibleMarks,
+      passed: passed,
+      time_taken: (examDuration * 60) - timeLeft,
       start_time: now,
       end_time: now,
       status: "completed",
@@ -549,7 +586,7 @@ const MonthlyExam = () => {
           <p className="text-gray-600 mb-6">
             {!isLoadingQuestions && questions.length === 0 
               ? <span className="text-red-600 font-semibold">No questions uploaded yet.</span>
-              : `${questions.length || 100} Questions • 120 Minutes`}
+              : `${questions.length || 0} Questions • ${examDuration} Minutes`}
           </p>
           <button
             onClick={startExam}

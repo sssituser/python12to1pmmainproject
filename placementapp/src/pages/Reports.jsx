@@ -93,7 +93,6 @@ const Reports = () => {
               <th className="p-2">Student</th>
               <th>Email</th>
               <th>Score</th>
-              <th>Status</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -108,7 +107,6 @@ const Reports = () => {
                 <td className="p-2">{r.student_name}</td>
                 <td>{r.student_email}</td>
                 <td>{r.score}/{r.total_marks}</td>
-                <td>{r.status}</td>
                 <td>{r.created_at}</td>
 
                 <td className="space-x-2">
