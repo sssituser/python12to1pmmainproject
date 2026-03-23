@@ -18,115 +18,69 @@ const PythonExam = () => {
 
   const navigate = useNavigate();
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const faceDetectionIntervalRef = useRef(null);
-  const fingerDetectionTimerRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [examStarted, setExamStarted] = useState(false);
+  const [examSubmitted, setExamSubmitted] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [markedForReview, setMarkedForReview] = useState([]);
+  const [visitedQuestions, setVisitedQuestions] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(2700);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [faceCount, setFaceCount] = useState(1);
+  const [examFailed, setExamFailed] = useState(false);
+
+  const examSubmittedRef = useRef(false);
   const violationStartTimeRef = useRef(null);
   const cleanTimeoutRef = useRef(null);
 
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState(new Array(20).fill(null));
-  const [markedForReview, setMarkedForReview] = useState(new Array(20).fill(false));
-  const [visitedQuestions, setVisitedQuestions] = useState(new Array(20).fill(false));
-
-  const [timeLeft, setTimeLeft] = useState(2700);
-  const [examStarted, setExamStarted] = useState(false);
-  const [examSubmitted, setExamSubmitted] = useState(false);
-  const examSubmittedRef = useRef(false);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [faceCount, setFaceCount] = useState(0);
-  const [examFailed, setExamFailed] = useState(false);
-  const [isAILoading, setIsAILoading] = useState(true);
-  const isUnloadingRef = useRef(false);
-
-  // Vladmandic FaceAPI AI
-  const faceApiReadyRef = useRef(false);
-
-  useEffect(() => {
-    const loadAI = async () => {
-      try {
-        setIsAILoading(true);
-        // Load modernized models with perfect CORS & MIME types hosted on Github Pages
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://vladmandic.github.io/face-api/model/');
-        faceApiReadyRef.current = true;
-        setIsAILoading(false);
-        console.log("Modern FaceAPI AI Armed!");
-      } catch (err) {
-        console.error("Failed to arm FaceAPI AI:", err);
-        setIsAILoading(false); // Fallback to let them test anyway
+  // Webcam functions - moved outside security monitoring scope
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        },
+        audio: false // Disable audio capture permanently
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setWebcamActive(true);
       }
-    };
-    loadAI();
-  }, []);
 
-  // Enhanced security states
-  const [fingerDetectionTimer, setFingerDetectionTimer] = useState(null);
-  const [noFaceTimer, setNoFaceTimer] = useState(null);
-
-  // Control global browser back button for pre-exam screen
-  useEffect(() => {
-    if (!examStarted && !examSubmitted) {
-      window.allowBrowserBack = true;
-
-      const handleBrowserBack = (e) => {
-        // Explicitly intercept the back action and aggressively route to techlab
-        navigate('/dashboard/techlab');
-
-        // Safety fallback in case React Router's internal state is corrupted
-        setTimeout(() => {
-          if (!window.location.pathname.includes('techlab')) {
-            window.location.href = '/dashboard/techlab';
-          }
-        }, 50);
-      };
-
-      window.addEventListener('popstate', handleBrowserBack);
-
-      return () => {
-        window.allowBrowserBack = false;
-        window.removeEventListener('popstate', handleBrowserBack);
-      };
-    } else {
-      window.allowBrowserBack = false;
+      globalStreamsToClean.push(stream);
+    } catch (err) {
+      console.error("Webcam access denied:", err);
+      setWebcamActive(false);
     }
-
-    return () => {
-      window.allowBrowserBack = false;
-    };
-  }, [examStarted, examSubmitted, navigate]);
-
-  // Get exam type from URL or localStorage (default to daily)
-  const getExamType = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlExamType = urlParams.get('type');
-    if (urlExamType) return urlExamType;
-
-    const storedExamType = localStorage.getItem('currentExamType');
-    return storedExamType || 'daily';
   };
 
-  const examType = getExamType();
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setWebcamActive(false);
+    }
+    globalStreamsToClean.forEach(stream => {
+      stream.getTracks().forEach(track => track.stop());
+    });
+    globalStreamsToClean = [];
+  };
 
-  // CONNECTED TO DJANGO PLAYGROUND API
-  const [questions, setQuestions] = useState([]);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-
-  // Fetch 20 randomized questions from the 50 static backend pool
+  // Fetch questions from backend
   useEffect(() => {
     const fetchQuestionsFromBackend = async () => {
-      // Very Important: Check session cache FIRST! If user hits 'refresh', we MUST keep their existing shuffled 20 questions!
-      const savedStateStr = sessionStorage.getItem('pythonExamState');
-      if (savedStateStr) {
-        try {
-          const savedState = JSON.parse(savedStateStr);
-          // ONLY restore if the exam is active and hasn't been submitted!
-          if (savedState.questions && savedState.questions.length > 0 && savedState.examStarted && !savedState.examSubmitted) {
-            setQuestions(savedState.questions);
-            setIsLoadingQuestions(false);
-            return;
-          }
-        } catch (e) {}
-      }
+      // Always start fresh - don't restore previous exam state
+      try {
+        sessionStorage.removeItem('pythonExamState');
+      } catch (e) {}
 
       try {
         setIsLoadingQuestions(true);
@@ -134,389 +88,148 @@ const PythonExam = () => {
         const json = await res.json();
         
         if (json.success && json.data && json.data.length > 0) {
-          // Re-map internal ID just in case existing logic relies on sequential 1-20 IDs
-          const mappedQuestions = json.data.map((q, idx) => ({ ...q, id: idx + 1 }));
+          // For daily exam, use all returned questions (typically 20)
+          const dailyQuestions = json.data.slice(0, 20);
+          const mappedQuestions = dailyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
           setQuestions(mappedQuestions);
         }
       } catch (err) {
-        console.error("Failed to fetch 50 static questions from backend:", err);
+        console.error("Failed to fetch questions from backend:", err);
       } finally {
         setIsLoadingQuestions(false);
       }
     };
     
     fetchQuestionsFromBackend();
-  }, [examType]);
-
-  // Load state from sessionStorage if it exists
-  useEffect(() => {
-    const savedStateStr = sessionStorage.getItem('pythonExamState');
-    if (savedStateStr) {
-      try {
-        const savedState = JSON.parse(savedStateStr);
-        if (savedState.examStarted && !savedState.examSubmitted) {
-          setAnswers(savedState.answers);
-          setMarkedForReview(savedState.markedForReview);
-          setVisitedQuestions(savedState.visitedQuestions);
-          setTimeLeft(savedState.timeLeft);
-          setCurrentQuestion(savedState.currentQuestion);
-          setExamStarted(true);
-          examSubmittedRef.current = false;
-          // Resume webcam if not already active
-          setTimeout(() => {
-            if (videoRef.current && !webcamActive) {
-              startWebcam();
-            }
-          }, 500);
-        }
-      } catch (e) {
-        console.error("Failed to restore exam state", e);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync state to sessionStorage whenever it changes
+  // Control global browser back button for pre-exam screen
   useEffect(() => {
-    if (examStarted && !examSubmitted && questions.length > 0) {
-      const stateToSave = {
-        questions,
-        answers,
-        markedForReview,
-        visitedQuestions,
-        timeLeft,
-        currentQuestion,
-        examStarted,
-        examSubmitted
-      };
-      sessionStorage.setItem('pythonExamState', JSON.stringify(stateToSave));
-    }
-  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted, questions]);
+    if (!examStarted && !examSubmitted) {
+      window.allowBrowserBack = true;
 
-  // TIMER
-  useEffect(() => {
-    if (examStarted && !examSubmitted && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    if (timeLeft === 0 && !examSubmitted) handleSubmitExam();
-  }, [timeLeft, examStarted, examSubmitted]);
-
-  // Turn off webcam when component unmounts (page closed)
-  useEffect(() => {
-    return () => {
-      stopWebcam();
-    };
-  }, []);
-
-  // Security locks: backspace, context menu, mouse back buttons
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Block ALL back button combinations - MORE AGGRESSIVE
-      if (e.key === 'Backspace' ||
-        e.key === 'browserBack' ||
-        (e.altKey && e.key === 'ArrowLeft') ||
-        (e.altKey && e.keyCode === 37) ||
-        (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.keyCode === 8)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-      }
-    };
-
-    // Handle browser back/forward buttons
-    const handlePopState = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      // Push state again to block the navigation without reloading the page
-      window.history.pushState(null, null, window.location.href);
-      return false;
-    };
-
-    // Block mouse back button
-    const handleMouseUp = (e) => {
-      if (e.button === 3 || e.button === 4) { // Mouse back/forward buttons
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-      }
-    };
-
-    // Block right-click context menu
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      return false;
-    };
-
-    // Only add event listeners if exam has started
-    if (examStarted && !examSubmitted) {
-      window.addEventListener('keydown', handleKeyDown, true);
-      window.addEventListener('contextmenu', handleContextMenu, true);
-      window.addEventListener('popstate', handlePopState, true);
-      window.addEventListener('mouseup', handleMouseUp, true);
-
-      // Push multiple states to completely block back navigation
-      window.history.pushState({ examActive: true, timestamp: Date.now() }, '', window.location.href);
-      window.history.pushState({ examActive: true, timestamp: Date.now() + 1 }, '', window.location.href);
-
-      // Override history methods - MORE AGGRESSIVE
-      const originalBack = window.history.back;
-      const originalGo = window.history.go;
-      const originalForward = window.history.forward;
-
-      window.history.back = () => {
-        window.history.pushState(null, null, window.location.href);
-        return false;
+      const handleBrowserBack = (e) => {
+        // Allow normal browser back navigation to playground
+        navigate('/dashboard/playground');
       };
 
-      window.history.go = (delta) => {
-        if (delta < 0) {
-          window.history.pushState(null, null, window.location.href);
-          return false;
-        }
-        return originalGo.call(window.history, delta);
-      };
-
-      window.history.forward = () => {
-        return false;
-      };
+      window.addEventListener('popstate', handleBrowserBack);
 
       return () => {
-        window.removeEventListener('keydown', handleKeyDown, true);
-        window.removeEventListener('contextmenu', handleContextMenu, true);
-        window.removeEventListener('popstate', handlePopState, true);
-        window.removeEventListener('mouseup', handleMouseUp, true);
-
-        // Restore original methods
-        window.history.back = originalBack;
-        window.history.go = originalGo;
-        window.history.forward = originalForward;
+        window.removeEventListener('popstate', handleBrowserBack);
+        window.allowBrowserBack = false;
       };
     }
-  }, [examStarted, examSubmitted]);
+  }, [examStarted, examSubmitted, navigate]);
 
-  // Block Tab Switching, but NOT when the user is genuinely refreshing the page!
+  // AI-powered security monitoring
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      isUnloadingRef.current = true;
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    if (!examStarted || examSubmitted) return;
 
-    const handleVisibilityChange = () => {
-      if (!isUnloadingRef.current && document.hidden && document.visibilityState === 'hidden' && examStarted && !examSubmitted) {
-        handleSubmitExam("Tab switched or window minimized");
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [examStarted, examSubmitted]);
+    let cleanup = () => {};
 
-  // WEBCAM FUNCTIONS
-  const startWebcam = async () => {
-    // Attempt proactive cleanup of any existing local resources
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
+    const startSecurityMonitoring = () => {
+      if (!videoRef.current || !canvasRef.current) return;
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 320 },
-          height: { ideal: 240 }
-        },
-        audio: false // No audio capture
-      });
-
-      // Inject directly into global cleanup trap
-      globalStreamsToClean.push(stream);
-
-      // Stop stream immediately if the exam was already submitted or window unmounted
-      if (examSubmittedRef.current || !videoRef.current) {
-        stopWebcam(); // Fire the global nuke
-        return;
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setWebcamActive(true);
-
-        // Start enhanced face detection
-        startFaceDetection();
-      }
-    } catch (err) {
-      console.error("Error accessing webcam:", err);
-      alert("Unable to access webcam. Please ensure camera permissions are granted.");
-    }
-  };
-
-  const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
-    // Nuke all trapped background streams
-    globalStreamsToClean.forEach(s => {
-      s.getTracks().forEach(track => track.stop());
-    });
-    globalStreamsToClean = []; // reset
-
-    setWebcamActive(false);
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    if (faceDetectionIntervalRef.current) {
-      clearInterval(faceDetectionIntervalRef.current);
-      faceDetectionIntervalRef.current = null;
-    }
-
-    if (cleanTimeoutRef.current) {
-      clearTimeout(cleanTimeoutRef.current);
-      cleanTimeoutRef.current = null;
-    }
-    violationStartTimeRef.current = null;
-
-    if (fingerDetectionTimer) {
-      clearTimeout(fingerDetectionTimer);
-      setFingerDetectionTimer(null);
-    }
-  };
-
-  const startFaceDetection = () => {
-    faceDetectionIntervalRef.current = setInterval(() => {
-      if (!videoRef.current || !examStarted || examSubmitted) return;
       const video = videoRef.current;
-      if (video.videoWidth === 0 || video.videoHeight === 0) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
 
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const detectFaces = async () => {
+        if (!video.videoWidth || !video.videoHeight) return;
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      let rTotal = 0, gTotal = 0, bTotal = 0;
-      let maxAdjacentDiff = 0;
+        const tData = ctx.getImageData(0, 0, 16, 16).data;
+        let rMax = 0, rMin = 255, gMax = 0, gMin = 255, bMax = 0, bMin = 255;
+        let rTotal = 0, gTotal = 0, bTotal = 0;
 
-      for (let i = 0; i < data.length - 4; i += 4) {
-        const r = data[i], g = data[i + 1], b = data[i + 2];
-        rTotal += r; gTotal += g; bTotal += b;
+        for (let i = 0; i < tData.length; i += 4) {
+          const r = tData[i], g = tData[i+1], b = tData[i+2];
+          rTotal += r; gTotal += g; bTotal += b;
 
-        // Prevent false edge-jumps by skipping the right-most pixel wrapping around to the left
-        if (((i / 4) + 1) % canvas.width === 0) continue;
-
-        // Calculate absolute contrast jump between this pixel and the immediate next pixel
-        const diff = Math.abs(r - data[i + 4]) + Math.abs(g - data[i + 5]) + Math.abs(b - data[i + 6]);
-        if (diff > maxAdjacentDiff) {
-          maxAdjacentDiff = diff;
+          if (r > rMax) rMax = r;
+          if (r < rMin) rMin = r;
+          if (g > gMax) gMax = g;
+          if (g < gMin) gMin = g;
+          if (b > bMax) bMax = b;
+          if (b < bMin) bMin = b;
         }
-      }
+        
+        const pixelCount = 256; // 16x16
+        const avgBrightness = (0.299 * (rTotal/pixelCount) + 0.587 * (gTotal/pixelCount) + 0.114 * (bTotal/pixelCount));
 
-      const pixelCount = canvas.width * canvas.height;
-      const avgBrightness = (0.299 * (rTotal / pixelCount) + 0.587 * (gTotal / pixelCount) + 0.114 * (bTotal / pixelCount));
+        // Neutralized Heuristics
+        const isDark = avgBrightness < 45;
+        const isRedDominant = (rTotal > gTotal * 1.5) && (rTotal > bTotal * 1.5);
+        
+        // If maximum difference of colors across the ENTIRE VIDEO is extremely narrow (< 40),
+        // it means the camera is physically covered, staring at a blank blur, or completely blocked by an object.
+        const isTotallyFlat = (rMax - rMin < 45) && (gMax - gMin < 45) && (bMax - bMin < 45);
 
-      const isDark = avgBrightness < 40;
-      const isRedDominant = (rTotal > gTotal * 2) && (rTotal > bTotal * 2);
+        const checkViolations = (faces) => {
+          const isCameraCovered = isDark || isTotallyFlat || isRedDominant;
+          const isMultipleFaces = faces && faces.length > 1;
 
-      // If the absolutely sharpest edge in the entire video feed is extremely weak (< 85 combined RGB difference),
-      // the video is definitively blurred out by Software (e.g., OBS Gaussian Blur) or physically blocked by an object at 0mm focal depth.
-      // Normal human features (like eyes, hair, teeth) create native pixel jumps well over 150+.
-      const isBlurred = maxAdjacentDiff < 85;
-
-      const checkViolations = (detectedCount) => {
-        const isCameraCovered = isDark || isBlurred || isRedDominant;
-        const isMultipleFaces = detectedCount > 1;
-
-        if (isCameraCovered || isMultipleFaces) {
-          if (cleanTimeoutRef.current) {
-            clearTimeout(cleanTimeoutRef.current);
-            cleanTimeoutRef.current = null;
-          }
-          if (!violationStartTimeRef.current) {
-            console.log("🚨 SECURITY VIOLATION WARNING: Condition active, waiting 2 seconds...");
-            violationStartTimeRef.current = Date.now();
-          } else if (Date.now() - violationStartTimeRef.current >= 2000) {
-            handleSubmitExam(isCameraCovered ? "Camera covered or blocked" : "Multiple faces detected on webcam");
-          }
-        } else {
-          if (violationStartTimeRef.current && !cleanTimeoutRef.current) {
-            cleanTimeoutRef.current = setTimeout(() => {
-              violationStartTimeRef.current = null;
+          if (isCameraCovered || isMultipleFaces) {
+            if (cleanTimeoutRef.current) {
+              clearTimeout(cleanTimeoutRef.current);
               cleanTimeoutRef.current = null;
-              console.log("✅ Security violation condition cleared.");
-            }, 1000); // Require 1 full second of clean image to reset the penalty
+            }
+            if (!violationStartTimeRef.current) {
+              console.log("🚨 SECURITY VIOLATION WARNING: Condition active, waiting 2 seconds...");
+              violationStartTimeRef.current = Date.now();
+            } else if (Date.now() - violationStartTimeRef.current >= 2000) {
+              handleSubmitExam(isCameraCovered ? "Camera covered or blocked" : "Multiple faces detected on webcam");
+            }
+          } else {
+            if (violationStartTimeRef.current && !cleanTimeoutRef.current) {
+              cleanTimeoutRef.current = setTimeout(() => {
+                violationStartTimeRef.current = null;
+                cleanTimeoutRef.current = null;
+              }, 1000); // Require clean picture for 1s to forgive
+            }
           }
+        };
+
+        // Face Detection using native Shape Detection API if available
+        if (window.FaceDetector) {
+          const faceDetector = new window.FaceDetector({ maxDetectedFaces: 5 });
+          faceDetector.detect(canvas)
+            .then(faces => {
+              setFaceCount(faces.length);
+              checkViolations(faces);
+            })
+            .catch(err => {
+              console.error(err);
+              checkViolations(null);
+            });
+        } else {
+          setFaceCount(1);
+          checkViolations(null);
         }
       };
 
-      // Deep-Learning Face Detection built for slanted/tilted faces
-      if (faceApiReadyRef.current && videoRef.current) {
-        const video = videoRef.current;
-        // The DOM must be fully buffered before AI can scan it
-        if (video.readyState < 2 || video.videoWidth === 0) {
-          return;
-        }
+      const interval = setInterval(detectFaces, 500);
+      cleanup = () => clearInterval(interval);
 
-        try {
-          // Highly tuned detector specific for tricky angles: High Input Size, low threshold
-          // 🔥 MORE ACCURATE DETECTOR SETTINGS
-          const options = new faceapi.TinyFaceDetectorOptions({
-            inputSize: 512,
-            scoreThreshold: 0.05
-          });
+      startSecurityMonitoring();
+    };
 
-          faceapi.detectAllFaces(video, options).then(predictions => {
-            const totalFacesDetected = predictions.length || 0;
+    if (examStarted && !examSubmitted) {
+      startSecurityMonitoring();
+    }
 
-            // ✅ DEBUG (VERY IMPORTANT)
-            console.log("Faces detected:", totalFacesDetected);
-
-            setFaceCount(totalFacesDetected);
-
-            // 🔥 FORCE MULTIPLE FACE CHECK
-            if (totalFacesDetected >= 2) {
-              console.log("🚨 MULTIPLE FACES DETECTED");
-
-              if (!violationStartTimeRef.current) {
-                violationStartTimeRef.current = Date.now();
-              } else if (Date.now() - violationStartTimeRef.current >= 2000) {
-                handleSubmitExam("Multiple faces detected");
-              }
-            } else {
-              // Reset timer if normal
-              violationStartTimeRef.current = null;
-            }
-
-            // ✅ Keep existing checks also
-            checkViolations(totalFacesDetected);
-
-          }).catch(e => {
-            console.error("Face scan error", e);
-            checkViolations(1);
-          });
-        } catch (err) {
-          checkViolations(1);
-        }
-      } else {
-        checkViolations(1);
-      }
-    }, 100); // 5 frames per second for ultra-accurate mapping
-  };
+    return () => {
+      stopWebcam();
+      cleanup();
+      globalStreamsToClean.forEach(stream => {
+        stream.getTracks().forEach(track => track.stop());
+      });
+    };
+  }, [examStarted, examSubmitted]);
 
   const playAlarmSound = () => {
     // Create a simple beep sound
@@ -561,7 +274,7 @@ const PythonExam = () => {
         randomId: Math.floor(1000 + Math.random() * 9000)
       },
       examDate: new Date().toISOString(),
-      examTitle: "Python Programming Assessment"
+      examTitle: "Daily Exam"
     };
 
     localStorage.setItem("examFailure", JSON.stringify(failureResult));
@@ -569,6 +282,22 @@ const PythonExam = () => {
   };
 
   const startExam = async () => {
+    // Reset all exam state for fresh start
+    setAnswers(new Array(20).fill(null));
+    setMarkedForReview(new Array(20).fill(false));
+    setVisitedQuestions(new Array(20).fill(false));
+    setCurrentQuestion(0);
+    setTimeLeft(2700);
+    setExamSubmitted(false);
+    examSubmittedRef.current = false;
+    
+    // Clear any potential cached state
+    try {
+      sessionStorage.removeItem('pythonExamState');
+      localStorage.removeItem('examResult');
+      localStorage.removeItem('allExamResults');
+    } catch (e) {}
+    
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
@@ -660,7 +389,7 @@ const PythonExam = () => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Python Programming Assessment",
+      examTitle: "Daily Exam",
       submissionReason: reason
     };
 
@@ -701,7 +430,7 @@ const PythonExam = () => {
           <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4" />
 
           <h2 className="text-2xl font-bold mb-2">
-            {examType === 'daily' ? 'Python Programming Assessment' : `${examType.charAt(0).toUpperCase() + examType.slice(1)} Python Programming Assessment`}
+            Daily Exam
           </h2>
 
           <p className="text-gray-600 mb-6">
@@ -729,8 +458,8 @@ const PythonExam = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
 
-      {/* Webcam overlay (moved to bottom right so it doesn't obscure questions) */}
-      <div className="fixed bottom-8 right-8 z-50 bg-white rounded-lg shadow-lg p-2">
+      {/* Webcam overlay positioned below question area */}
+      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
           <video
             ref={videoRef}

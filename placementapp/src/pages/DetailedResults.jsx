@@ -35,7 +35,22 @@ function DetailedResults() {
       return;
     }
 
-    const passed = (result.correctAnswers * 2) >= 20;
+    // Determine passing criteria based on exam type
+    const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
+    const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
+    const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
+    
+    let totalQuestions = result.totalQuestions || 20; // use actual value from result
+    let totalMarks = result.totalMarks || 40; // use actual value from result
+    let passingScore = 15; // default (marks needed to pass)
+    
+    if (isDailyExam) {
+      passingScore = 20; // 20 marks to pass for daily exam (out of 40)
+    } else if (isWeeklyExam || isMonthlyExam) {
+      passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
+    }
+    
+    const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
     const studentName = result.user?.firstName || result.user?.username || "Unknown";
     const examDate = result.examDate ? new Date(result.examDate).toLocaleString() : "Unknown Date";
 
@@ -62,43 +77,29 @@ function DetailedResults() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Exam: ${result.examTitle || 'Python Programming Assessment'}`, 20, 100);
     doc.text(`Date: ${examDate}`, 20, 110);
-    doc.text(`Score: ${result.correctAnswers * 2}/40`, 20, 120);
+    doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
+    doc.text(`Passing Marks: ${passingScore}`, 20, 140);
     
-    // Add performance summary
+    // Add performance summary with detailed statistics
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Summary:', 20, 150);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Correct Answers: ${result.correctAnswers}/20`, 20, 160);
-    doc.text(`Incorrect Answers: ${result.incorrectAnswers || (20 - result.correctAnswers)}/20`, 20, 170);
-    doc.text(`Percentage: ${((result.correctAnswers / 20) * 100).toFixed(1)}%`, 20, 180);
+    doc.text(`Correct Answers: ${result.correctAnswers || 0}/${totalQuestions}`, 20, 160);
+    doc.text(`Incorrect Answers: ${result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}/${totalQuestions}`, 20, 170);
+    doc.text(`Not Attempted: ${result.answers?.filter(a => a === null || a === undefined).length || 0}/${totalQuestions}`, 20, 180);
+    doc.text(`Percentage: ${(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%`, 20, 190);
+    doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 200);
+    doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 210);
     
-    // Add question analysis (first 10 questions to fit on one page)
-    doc.setFont('helvetica', 'bold');
-    doc.text('Question Analysis (First 10):', 20, 200);
-    doc.setFont('helvetica', 'normal');
-    
-    let yPos = 210;
-    const questionsToShow = Math.min(10, result.questions.length);
-    
-    for (let i = 0; i < questionsToShow; i++) {
-      const q = result.questions[i];
-      const userAnswer = result.answers[i];
-      const isCorrect = userAnswer === q.correct;
-      
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFontSize(10);
-      doc.text(`Q${i + 1}: ${isCorrect ? '✓' : '✗'} ${userAnswer !== null ? String.fromCharCode(65 + userAnswer) : 'Not Attempted'}`, 20, yPos);
-      yPos += 7;
-    }
-    
-    // Add generation date
+    // Add generation date at the end
     doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 280, { align: 'center' });
+    doc.text(`Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, 240, { align: 'center' });
+    
+    // Add note about detailed analysis
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Note: For detailed question-by-question analysis, please view the results online.', 105, 255, { align: 'center' });
     
     // Save the PDF
     doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
@@ -120,16 +121,12 @@ function DetailedResults() {
     );
   }
 
-  const passed = (result.correctAnswers * 2) >= 20;
+  const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
 
   return (
-
     <div className="p-6">
-
       {/* HEADER */}
-
       <div className="flex justify-between mb-6">
-
         <button
           onClick={handleBack}
           className="bg-gray-600 text-white px-4 py-2 rounded flex gap-2 items-center"
@@ -145,40 +142,32 @@ function DetailedResults() {
           <FontAwesomeIcon icon={faDownload} />
           Download
         </button>
-
       </div>
 
       {/* STUDENT INFO */}
-
       <div className="bg-white shadow p-6 mb-6">
-
         <h2 className="text-xl font-bold mb-4">
           Student Information
         </h2>
-
         <div className="grid grid-cols-4 gap-4 text-center">
-
           <div>
             <h3 className="text-gray-600">Name</h3>
             <p className="font-bold text-blue-600">
               {result.user?.firstName || result.user?.username}
             </p>
           </div>
-
           <div>
             <h3 className="text-gray-600">ID</h3>
             <p className="font-bold text-blue-600">
               {result.user?.randomId}
             </p>
           </div>
-
           <div>
             <h3 className="text-gray-600">Score</h3>
             <p className="font-bold text-blue-600">
-              {result.correctAnswers * 2}/40
+              {result.score || (result.correctAnswers || 0) * 2}/{totalMarks}
             </p>
           </div>
-
           <div>
             <h3 className="text-gray-600">Status</h3>
             <p
@@ -189,71 +178,90 @@ function DetailedResults() {
               {passed ? "Pass" : "Fail"}
             </p>
           </div>
-
         </div>
-
       </div>
 
       {/* PERFORMANCE SUMMARY */}
-
       <div className="bg-white shadow p-6 mb-6">
-
         <h2 className="text-xl font-bold mb-4">
           Performance Summary
         </h2>
-
         <div className="grid grid-cols-3 gap-4 text-center">
-
           <div className="bg-green-50 p-4 rounded-lg">
             <h3 className="text-green-600 font-semibold">Correct</h3>
             <p className="text-2xl font-bold text-green-700">
-              {result.correctAnswers}
+              {result.correctAnswers || 0}
             </p>
             <p className="text-sm text-green-600">
-              {((result.correctAnswers / 20) * 100).toFixed(1)}%
+              {(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%
             </p>
           </div>
-
           <div className="bg-red-50 p-4 rounded-lg">
             <h3 className="text-red-600 font-semibold">Wrong</h3>
             <p className="text-2xl font-bold text-red-700">
-              {result.incorrectAnswers || (20 - result.correctAnswers)}
+              {result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}
             </p>
             <p className="text-sm text-red-600">
-              {(((result.incorrectAnswers || (20 - result.correctAnswers)) / 20) * 100).toFixed(1)}%
+              {(((result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))) / totalQuestions) * 100).toFixed(1)}%
             </p>
           </div>
-
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-gray-600 font-semibold">Not Attempted</h3>
             <p className="text-2xl font-bold text-gray-700">
               {result.answers?.filter(a => a === null || a === undefined).length || 0}
             </p>
             <p className="text-sm text-gray-600">
-              {((result.answers?.filter(a => a === null || a === undefined).length || 0) / 20 * 100).toFixed(1)}%
+              {((result.answers?.filter(a => a === null || a === undefined).length || 0) / totalQuestions * 100).toFixed(1)}%
             </p>
           </div>
-
         </div>
-
       </div>
 
-      {/* QUESTIONS - Show regardless of pass/fail score */}
-
+      {/* COMPLETE QUESTION ANALYSIS */}
       <div className="bg-white shadow p-6">
-
         <h2 className="text-xl font-bold mb-6">
-          Detailed Question Analysis
+          Complete Question Analysis (All {result.questions?.length || 0} Questions)
         </h2>
-
-        {/* Always show questions if data exists - regardless of score */}
+        
+        {/* Always show questions if data exists */}
         {result && result.questions && Array.isArray(result.questions) && result.questions.length > 0 ? (
           <div>
-            {/* Info about performance */}
-            <div className="mb-4 p-3 bg-blue-50 rounded">
-              <p className="text-blue-700">
-                Showing {result.questions.length} questions - Score: {result.correctAnswers || 0}/{result.totalQuestions || 20}
-              </p>
+            {/* Performance Overview Card */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-blue-800 mb-2">Exam Performance Overview</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-600">Total Questions:</span>
+                      <span className="font-bold text-blue-600">{result.questions?.length || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-600">Score Achieved:</span>
+                      <span className="font-bold text-blue-600">{result.correctAnswers || 0}/{totalQuestions}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-600">Percentage:</span>
+                      <span className="font-bold text-blue-600">{(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-600">Status:</span>
+                      <span className={`font-bold px-2 py-1 rounded-full text-xs ${passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {passed ? '✓ PASSED' : '✗ FAILED'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <button
+                    onClick={handleDownload}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md"
+                  >
+                    <FontAwesomeIcon icon={faDownload} />
+                    Download Full Report
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Map through all questions */}
@@ -268,7 +276,6 @@ function DetailedResults() {
               
               return (
                 <div key={questionIndex} className="border rounded-lg p-4 mb-4 bg-gray-50">
-                  
                   {/* Question header with status */}
                   <div className="mb-3">
                     <h3 className="font-bold text-lg mb-2">
@@ -364,20 +371,11 @@ function DetailedResults() {
           /* No questions available */
           <div className="text-center py-8">
             <p className="text-gray-500">No questions available</p>
-            <div className="mt-4 text-sm text-gray-400">
-              <p>Result exists: {result ? 'Yes' : 'No'}</p>
-              <p>Questions count: {result?.questions?.length || 0}</p>
-              <p>Answers count: {result?.answers?.length || 0}</p>
-            </div>
           </div>
         )}
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default DetailedResults;

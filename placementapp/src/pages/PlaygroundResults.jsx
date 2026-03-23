@@ -18,6 +18,17 @@ function PlaygroundResults() {
     const results = JSON.parse(localStorage.getItem("allExamResults") || "[]");
     setAllResults(results);
 
+    // Also check for failed exams
+    const examFailure = localStorage.getItem("examFailure");
+    if (examFailure) {
+      const failedResult = JSON.parse(examFailure);
+      // Add failed exam to results list
+      const updatedResults = [failedResult, ...results];
+      setAllResults(updatedResults);
+      localStorage.setItem("allExamResults", JSON.stringify(updatedResults));
+      // Clear the failure after adding to results
+      localStorage.removeItem("examFailure");
+    }
   }, []);
 
   // TAKE NEW EXAM
@@ -52,8 +63,23 @@ function PlaygroundResults() {
       return;
     }
 
-    const passed = (result.correctAnswers * 2) >= 20;
-    const examDate = new Date(result.examDate).toLocaleString();
+    // Determine passing criteria based on exam type
+    const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
+    const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
+    const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
+    
+    let totalQuestions = result.totalQuestions || 20; // use actual value from result
+    let totalMarks = result.totalMarks || 40; // use actual value from result
+    let passingScore = 15; // default (marks needed to pass)
+    
+    if (isDailyExam) {
+      passingScore = 20; // 20 marks to pass for daily exam (out of 40)
+    } else if (isWeeklyExam || isMonthlyExam) {
+      passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
+    }
+    
+    const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
+    const examDate = new Date(result.examDate || Date.now()).toLocaleString();
     const studentName = result.user?.firstName || result.user?.username || "Unknown";
 
     // Create new PDF document
@@ -79,47 +105,24 @@ function PlaygroundResults() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Exam: ${result.examTitle || 'Python Programming Assessment'}`, 20, 100);
     doc.text(`Date: ${examDate}`, 20, 110);
-    doc.text(`Score: ${result.correctAnswers * 2}/40`, 20, 120);
+    doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
+    doc.text(`Passing Marks: ${passingScore}`, 20, 140);
     
     // Add performance summary
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Summary:', 20, 150);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Correct Answers: ${result.correctAnswers}/20`, 20, 160);
-    doc.text(`Incorrect Answers: ${result.incorrectAnswers || (20 - result.correctAnswers)}/20`, 20, 170);
-    doc.text(`Percentage: ${((result.correctAnswers / 20) * 100).toFixed(1)}%`, 20, 180);
-    
-    // Add question analysis (first 10 questions to fit on one page)
-    if (result.questions && Array.isArray(result.questions)) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Question Analysis (First 10):', 20, 200);
-      doc.setFont('helvetica', 'normal');
-      
-      let yPos = 210;
-      const questionsToShow = Math.min(10, result.questions.length);
-      
-      for (let i = 0; i < questionsToShow; i++) {
-        const q = result.questions[i];
-        const userAnswer = result.answers[i];
-        const isCorrect = userAnswer === q.correct;
-        
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        doc.setFontSize(10);
-        doc.text(`Q${i + 1}: ${isCorrect ? '✓' : '✗'} ${userAnswer !== null ? String.fromCharCode(65 + userAnswer) : 'Not Attempted'}`, 20, yPos);
-        yPos += 7;
-      }
-    }
+    doc.text(`Correct Answers: ${result.correctAnswers || 0}/${totalQuestions}`, 20, 160);
+    doc.text(`Incorrect Answers: ${result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}/${totalQuestions}`, 20, 170);
+    doc.text(`Percentage: ${(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%`, 20, 180);
+    doc.text(`Marks Obtained: ${result.score || (result.correctAnswers || 0) * 2} out of ${totalMarks}`, 20, 190);
     
     // Add generation date
     doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 280, { align: 'center' });
+    doc.text(`Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: 'numeric' })}`, 105, 200, { align: 'center' });
     
-    // Save the PDF
+    // Save PDF
     doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
   };
 
@@ -181,67 +184,76 @@ function PlaygroundResults() {
       </h3>
 
       <div className="overflow-x-auto">
-
-        <table className="w-full">
-
-          <thead className="bg-gray-50 border-b">
-
+        <table className="w-full min-w-[1200px]">
+          <thead className="bg-gray-50 border-b sticky top-0 z-10">
             <tr>
-
-              <th className="px-4 py-3">S.No</th>
-              <th className="px-4 py-3">Student</th>
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">Exam</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Score</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
-
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[60px]">S.No</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Student</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">ID</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Exam Name</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Date</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Time</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Score</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Actions</th>
             </tr>
-
           </thead>
 
           <tbody>
-
             {allResults.map((result, index) => {
 
-              const passed = (result.correctAnswers * 2) >= 20;
+              // Determine passing criteria based on exam type
+              const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
+              const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
+              const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
+              
+              let totalQuestions = result.totalQuestions || 20; // use actual value from result
+              let totalMarks = result.totalMarks || 40; // use actual value from result
+              let passingScore = 15; // default (marks needed to pass)
+              
+              if (isDailyExam) {
+                passingScore = 20; // 20 marks to pass for daily exam (out of 40)
+              } else if (isWeeklyExam || isMonthlyExam) {
+                passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
+              }
+              
+              const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
 
               return (
-
                 <tr key={index} className="border-b">
-
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[60px]">
                     {index + 1}
                   </td>
-
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
                     {result.user?.firstName ||
                       result.user?.username ||
                       "Unknown"}
                   </td>
-
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
                     {result.user?.randomId || "N/A"}
                   </td>
-
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
                     {result.examTitle ||
                       "Python Programming"}
                   </td>
-
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                     {new Date(
                       result.examDate
                     ).toLocaleDateString()}
                   </td>
-
-                  <td className="px-4 py-3">
-                    {result.correctAnswers * 2}/40
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
+                    {new Date(
+                      result.examDate
+                    ).toLocaleTimeString('en-US', { 
+                      hour12: true, 
+                      hour: 'numeric', 
+                      minute: 'numeric'
+                    })}
                   </td>
-
-                  <td className="px-4 py-3">
-
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
+                    {result.score || (result.correctAnswers || 0) * 2}/{result.totalMarks || (result.correctAnswers || 0) * 2}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
                     <span
                       className={`px-2 py-1 text-xs rounded 
                       ${passed
@@ -249,41 +261,36 @@ function PlaygroundResults() {
                           : "bg-red-100 text-red-800"
                         }`}
                     >
-
                       {passed ? "Pass" : "Fail"}
-
                     </span>
-
                   </td>
-
-                  <td className="px-4 py-3 flex gap-2">
-
-                    <button
-                      onClick={() =>
-                        handleViewDetails(result,index)
-                      }
-                    >
-                      👁
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        handleDownload(result)
-                      }
-                    >
-                      📥
-                    </button>
-
+                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          handleViewDetails(result,index)
+                        }
+                        className="text-blue-600 hover:text-blue-800 px-2 py-1"
+                        title="View Details"
+                      >
+                        👁
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleDownload(result)
+                        }
+                        className="text-green-600 hover:text-green-800 px-2 py-1"
+                        title="Download Result"
+                      >
+                        📥
+                      </button>
+                    </div>
                   </td>
-
                 </tr>
               );
             })}
-
           </tbody>
-
         </table>
-
       </div>
 
     </div>
