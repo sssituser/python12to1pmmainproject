@@ -1,0 +1,18 @@
+{
+    "Weekly": {
+        "maxQuestions": 1,
+        "questions": [
+            {
+                "question": "What are the technologies Name?",
+                "options": [
+                    "HTML",
+                    "CSS",
+                    "JAVA SCRIPT",
+                    "ALL THE ABOVE"
+                ],
+                "answer": "ALL THE ABOVE",
+                "id": 1774283939772
+            }
+        ]
+    }
+}

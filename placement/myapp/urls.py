@@ -59,6 +59,7 @@ urlpatterns = [
 
     # ================= EXAM REPORTS =================
     path('all-exam-results/', api_views.exam_reports_api),
+    path('user-combined-results/', api_views.user_combined_results_api),
     path('save-exam-report/', api_views.save_exam_report_api),
     path('exam-report-detail/<int:pk>/', api_views.exam_report_detail_api),
     path('leaderboard/', api_views.leaderboard_api),

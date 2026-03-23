@@ -209,7 +209,13 @@ def exam_reports_api(request):
     """
     GET: Get all exam reports
     """
-    exam_attempts = ExamAttempt.objects.filter(exam_type='daily').order_by('-exam_date')
+    username = request.GET.get('username')
+    exam_attempts = ExamAttempt.objects.filter(exam_type='daily')
+    
+    if username:
+        exam_attempts = exam_attempts.filter(user__username__iexact=username)
+        
+    exam_attempts = exam_attempts.order_by('-exam_date')
     serializer = ExamAttemptSerializer(exam_attempts, many=True)
     
     # Format data for frontend
@@ -489,13 +495,19 @@ def weekly_exam_reports_api(request):
         from datetime import timedelta
         from django.utils import timezone
 
+        username = request.GET.get('username')
         now = timezone.now()
         start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
 
         attempts = ExamAttempt.objects.filter(
             exam_date__gte=start_of_week,
             exam_type='weekly'
-        ).order_by('-exam_date')
+        )
+        
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+            
+        attempts = attempts.order_by('-exam_date')
 
         formatted_data = []
         for attempt in attempts:
@@ -538,13 +550,19 @@ def monthly_exam_reports_api(request):
     try:
         from django.utils import timezone
 
+        username = request.GET.get('username')
         now = timezone.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         attempts = ExamAttempt.objects.filter(
             exam_date__gte=start_of_month,
             exam_type='monthly'
-        ).order_by('-exam_date')
+        )
+        
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+            
+        attempts = attempts.order_by('-exam_date')
 
         formatted_data = []
         for attempt in attempts:
@@ -570,6 +588,56 @@ def monthly_exam_reports_api(request):
             'data': formatted_data
         })
 
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def user_combined_results_api(request):
+    """
+    GET: Get all exam results for a specific user across all categories
+    """
+    try:
+        username = request.GET.get('username')
+        if not username:
+             return Response({
+                'success': False,
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+        
+        formatted_data = []
+        for attempt in attempts:
+            formatted_data.append({
+                'id': attempt.id,
+                'user': {
+                    'username': attempt.user.username,
+                    'randomId': attempt.random_id or 'N/A',
+                    'email': attempt.user.email,
+                    'firstName': attempt.user.first_name or attempt.user.username
+                },
+                'examTitle': attempt.exam_title,
+                'examType': attempt.exam_type,
+                'score': attempt.marks_obtained,
+                'totalMarks': attempt.total_marks,
+                'correctAnswers': attempt.correct_answers,
+                'incorrectAnswers': attempt.incorrect_answers,
+                'totalQuestions': attempt.total_questions,
+                'status': attempt.status,
+                'examDate': attempt.exam_date.isoformat(),
+                'timeTaken': attempt.time_taken,
+                'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
+                'questions': json.loads(attempt.questions_json) if attempt.questions_json else [],
+                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+            })
+            
+        return Response({
+            'success': True,
+            'data': formatted_data
+        })
     except Exception as e:
         return Response({
             'success': False,
