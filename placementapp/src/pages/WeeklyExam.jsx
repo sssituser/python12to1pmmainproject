@@ -71,18 +71,8 @@ const WeeklyExam = () => {
           setQuestions(mappedQuestions);
 
         } else {
-          // 2. Fallback to default static pool if Faculty hasn't uploaded questions yet
-          const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
-          const json = await res.json();
-          
-          if (json.success && json.data && Array.isArray(json.data) && json.data.length > 0) {
-            const maxQuestions = customJson.data?.maxQuestions || 50;
-            const displayLimit = Math.min(json.data.length, maxQuestions);
-            const weeklyQuestions = json.data.slice(0, displayLimit);
-            
-            const mappedQuestions = weeklyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
-            setQuestions(mappedQuestions);
-          }
+          // If no custom questions exist, leave questions array empty
+          setQuestions([]);
         }
       } catch (err) {
         console.error("Failed to fetch questions from backend:", err);
@@ -560,16 +550,27 @@ const WeeklyExam = () => {
           </h2>
 
           <p className="text-gray-600 mb-6">
-            50 Questions • 75 Minutes
+            {!isLoadingQuestions && questions.length === 0 
+              ? <span className="text-red-600 font-semibold">No questions uploaded yet.</span>
+              : `${questions.length || 50} Questions • 75 Minutes`}
           </p>
           <button
             onClick={startExam}
-            disabled={isLoadingQuestions}
+            disabled={isLoadingQuestions || (!isLoadingQuestions && questions.length === 0)}
             className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
-              isLoadingQuestions ? 'bg-gray-400 cursor-not-allowed animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+              isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
             }`}
           >
             {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
+          </button>
+          
+          <button
+            onClick={() => navigate("/dashboard/playground")}
+            className="block mt-4 text-sm text-gray-500 hover:text-indigo-600 mx-auto"
+          >
+            Back to Playground
           </button>
         </div>
       </div>

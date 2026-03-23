@@ -12,6 +12,23 @@ function ExamManager() {
     answer: "",
   });
 
+  // Fetch existing settings when category changes
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/admin/exam-settings/?category=${category}`);
+        if (res.data && res.data.success && res.data.data) {
+          const { maxQuestions: savedMax, questions: savedQuestions } = res.data.data;
+          setMaxQuestions(savedMax || 50);
+          setQuestions(savedQuestions || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch settings:", err);
+      }
+    };
+    fetchSettings();
+  }, [category]);
+
   // handle input
   const handleChange = (e) => {
     setForm({ ...form, question: e.target.value });
