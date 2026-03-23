@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
-function Students() {
+function Stats() {
   const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    fetchStudents();
+    fetchStats();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchStats = async () => {
     const token = localStorage.getItem("access");
 
     const res = await fetch("http://127.0.0.1:8000/api/students/", {
@@ -51,4 +51,4 @@ function Students() {
   );
 }
 
-export default Students;
+export default Stats;

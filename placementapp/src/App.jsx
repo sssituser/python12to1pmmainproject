@@ -30,7 +30,7 @@ import Logout from "./pages/Logout";
 /* 🔹 FACULTY */
 import FacultyLayout from "./faculty/FacultyLayout";
 import FacultyDashboard from "./faculty/Dashboard";
-import Students from "./faculty/Students";
+import Stats from "./faculty/Stats";
 import Applications from "./faculty/Application";
 import Leaves from "./faculty/LeaveRequest";
 import ExamManager from "./faculty/ExamManager";
@@ -86,7 +86,7 @@ function App() {
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="weekly-exams" element={<WeeklyExamReports />} />
           <Route path="monthly-exams" element={<MonthlyExamReports />} />
-          <Route path="leaderboard" element={<ExamLeaderboard />} />
+          <Route path="Exam-leaderboard" element={<ExamLeaderboard />} />
           <Route path="exam-report-detail/:id" element={<ExamReportDetail />} />
 
           {/* Playground */}
@@ -113,7 +113,7 @@ function App() {
         >
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
-          <Route path="students" element={<Students />} />
+          <Route path="stats" element={<Stats />} />
           <Route path="jobs" element={<Jobs />} />
           <Route path="exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />

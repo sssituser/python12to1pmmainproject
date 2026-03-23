@@ -4,7 +4,7 @@ function FacultyLayout() {
 const location = useLocation();
 
 const menu = [
-    { name: "Students", path: "/faculty/students" },
+    { name: "Stats", path: "/faculty/Stats" },
     { name: "Jobs", path: "/faculty/jobs" },
     { name: "Applications", path: "/faculty/applications" },
     { name: "exam", path: "/faculty/Exam"},
