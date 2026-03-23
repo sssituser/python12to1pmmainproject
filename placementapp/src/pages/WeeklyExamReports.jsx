@@ -13,11 +13,8 @@ function WeeklyExamReports() {
   // FETCH DATA FROM BACKEND - Weekly exams only (this week)
   const fetchReports = async () => {
     try {
-      const token = localStorage.getItem("access");
-
-      const res = await axios.get("http://127.0.0.1:8000/api/weekly-exam-results/", {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      // Always fetch without auth so expired tokens don't block the page
+      const res = await axios.get("http://127.0.0.1:8000/api/weekly-exam-results/");
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {

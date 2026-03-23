@@ -22,9 +22,9 @@ const WeeklyExam = () => {
   const cleanTimeoutRef = useRef(null);
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState(new Array(50).fill(null));
-  const [markedForReview, setMarkedForReview] = useState(new Array(50).fill(false));
-  const [visitedQuestions, setVisitedQuestions] = useState(new Array(50).fill(false));
+  const [answers, setAnswers] = useState([]);
+  const [markedForReview, setMarkedForReview] = useState([]);
+  const [visitedQuestions, setVisitedQuestions] = useState([]);
 
   const [timeLeft, setTimeLeft] = useState(4500); // 75 minutes for weekly exam
   const [examStarted, setExamStarted] = useState(false);
@@ -47,36 +47,42 @@ const WeeklyExam = () => {
 
       try {
         setIsLoadingQuestions(true);
-        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
-        const json = await res.json();
-        
-        if (json.success && json.data && json.data.length > 0) {
-          // For weekly exam, ensure we have 50 questions
-          let weeklyQuestions;
+
+        // Fetch custom exam settings loaded manually by Faculty
+        const customRes = await fetch("http://127.0.0.1:8000/api/admin/exam-settings/?category=Weekly");
+        const customJson = await customRes.json();
+
+        // 1. Prioritize Custom Questions from Exam Manager
+        if (customJson.success && customJson.data && customJson.data.questions && customJson.data.questions.length > 0) {
           
-          if (json.data.length >= 50) {
-            // If backend has 50+ questions, use first 50
-            weeklyQuestions = json.data.slice(0, 50);
-          } else {
-            // If backend has less than 50 questions,
-            const targetCount = 50;
-            const availableQuestions = json.data;
-            weeklyQuestions = [];
-            
-            // Calculate how many times we need to repeat the available questions
-            const repeatTimes = Math.ceil(targetCount / availableQuestions.length);
-            
-            // Add questions until we reach target count
-            for (let i = 0; i < repeatTimes; i++) {
-              weeklyQuestions.push(...availableQuestions);
-            }
-            
-            // Trim to exactly 50 questions
-            weeklyQuestions = weeklyQuestions.slice(0, targetCount);
-          }
+          const maxQ = customJson.data.maxQuestions || 50;
+          const displayLimit = Math.min(customJson.data.questions.length, maxQ);
+          const weeklyQuestions = customJson.data.questions.slice(0, displayLimit);
           
-          const mappedQuestions = weeklyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+          const mappedQuestions = weeklyQuestions.map((q, idx) => ({
+             ...q, 
+             id: idx + 1,
+             // Map frontend form properties to generic schema if needed
+             question: q.question,
+             options: q.options,
+             correct: q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0
+          }));
+          
           setQuestions(mappedQuestions);
+
+        } else {
+          // 2. Fallback to default static pool if Faculty hasn't uploaded questions yet
+          const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+          const json = await res.json();
+          
+          if (json.success && json.data && Array.isArray(json.data) && json.data.length > 0) {
+            const maxQuestions = customJson.data?.maxQuestions || 50;
+            const displayLimit = Math.min(json.data.length, maxQuestions);
+            const weeklyQuestions = json.data.slice(0, displayLimit);
+            
+            const mappedQuestions = weeklyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+            setQuestions(mappedQuestions);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch questions from backend:", err);
@@ -332,9 +338,10 @@ const WeeklyExam = () => {
 
   const startExam = async () => {
     // Reset all exam state for fresh start
-    setAnswers(new Array(50).fill(null));
-    setMarkedForReview(new Array(50).fill(false));
-    setVisitedQuestions(new Array(50).fill(false));
+    const qLen = questions.length || 50;
+    setAnswers(new Array(qLen).fill(null));
+    setMarkedForReview(new Array(qLen).fill(false));
+    setVisitedQuestions(new Array(qLen).fill(false));
     setCurrentQuestion(0);
     setTimeLeft(4500);
     setExamSubmitted(false);
@@ -344,7 +351,6 @@ const WeeklyExam = () => {
     try {
       sessionStorage.removeItem('weeklyExamState');
       localStorage.removeItem('examResult');
-      localStorage.removeItem('allExamResults');
     } catch (e) {}
     
     try {
@@ -409,17 +415,19 @@ const WeeklyExam = () => {
     let correctCount = 0;
 
     answers.forEach((ans, index) => {
-      if (ans === questions[index].correct) correctCount++;
+      if (questions[index] && ans === questions[index].correct) correctCount++;
     });
+
+    const totalQ = questions.length || 50;
 
     const result = {
       status: "completed",
       correctAnswers: correctCount,
-      incorrectAnswers: 50 - correctCount,
-      totalQuestions: 50,
+      incorrectAnswers: totalQ - correctCount,
+      totalQuestions: totalQ,
       score: correctCount * 2,
       marks: correctCount * 2,
-      totalMarks: 100,
+      totalMarks: totalQ * 2,
       answers,
       questions,
       timeTaken: 4500 - timeLeft,
@@ -440,11 +448,11 @@ const WeeklyExam = () => {
       exam_title: "Weekly Python Programming Assessment",
       exam_type: "weekly",
       score: correctCount * 2,
-      total_questions: 50,
+      total_questions: totalQ,
       correct_answers: correctCount,
-      incorrect_answers: 50 - correctCount,
+      incorrect_answers: totalQ - correctCount,
       marks_obtained: correctCount * 2,
-      total_marks: 100,
+      total_marks: totalQ * 2,
       time_taken: 4500 - timeLeft,
       start_time: now,
       end_time: now,

@@ -95,7 +95,6 @@ function App() {
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
         <Route path="/exam" element={<Exams />} />
-        <Route path="/dashboard/playground/detailed-results/:index" element={<DetailedResults />} />
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
         <Route path="/dashboard/python-exam" element={<PythonExam />} />
@@ -132,13 +131,14 @@ function App() {
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="weekly-exams" element={<WeeklyExamReports />} />
           <Route path="monthly-exams" element={<MonthlyExamReports />} />
-          <Route path="Exam-leaderboard" element={<ExamLeaderboard />} />
+          <Route path="exam-leaderboard" element={<ExamLeaderboard />} />
           <Route path="exam-report-detail/:id" element={<ExamReportDetail />} />
 
           {/* Playground */}
           <Route path="playground" element={<Playground />} />
           <Route path="playground/:language" element={<PlaygroundDetail />} />
           <Route path="playground-results" element={<PlaygroundResults />} />
+          <Route path="playground/detailed-results/:index" element={<DetailedResults />} />
 
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />

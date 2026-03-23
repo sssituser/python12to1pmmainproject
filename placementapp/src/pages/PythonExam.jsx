@@ -283,9 +283,10 @@ const PythonExam = () => {
 
   const startExam = async () => {
     // Reset all exam state for fresh start
-    setAnswers(new Array(20).fill(null));
-    setMarkedForReview(new Array(20).fill(false));
-    setVisitedQuestions(new Array(20).fill(false));
+    const qLen = questions.length || 20;
+    setAnswers(new Array(qLen).fill(null));
+    setMarkedForReview(new Array(qLen).fill(false));
+    setVisitedQuestions(new Array(qLen).fill(false));
     setCurrentQuestion(0);
     setTimeLeft(2700);
     setExamSubmitted(false);
@@ -295,7 +296,6 @@ const PythonExam = () => {
     try {
       sessionStorage.removeItem('pythonExamState');
       localStorage.removeItem('examResult');
-      localStorage.removeItem('allExamResults');
     } catch (e) {}
     
     try {
@@ -368,17 +368,19 @@ const PythonExam = () => {
     let correctCount = 0;
 
     answers.forEach((ans, index) => {
-      if (ans === questions[index].correct) correctCount++;
+      if (questions[index] && ans === questions[index].correct) correctCount++;
     });
+
+    const totalQ = questions.length || 20;
 
     const result = {
       status: "completed",
       correctAnswers: correctCount,
-      incorrectAnswers: 20 - correctCount,
-      totalQuestions: 20,
+      incorrectAnswers: totalQ - correctCount,
+      totalQuestions: totalQ,
       score: correctCount * 2,
       marks: correctCount * 2,
-      totalMarks: 40,
+      totalMarks: totalQ * 2,
       answers,
       questions,
       timeTaken: 2700 - timeLeft,

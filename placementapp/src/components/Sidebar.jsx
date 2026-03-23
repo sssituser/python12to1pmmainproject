@@ -139,7 +139,7 @@ function Sidebar() {
 
           {/* REPORTS */}
           <NavLink
-            to="/dashboard/Exam-reports"
+            to="/dashboard/exam-reports"
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -154,7 +154,7 @@ function Sidebar() {
 
           {/* LEADERBOARD */}
           <NavLink
-            to="/dashboard/Exam-leaderboard"
+            to="/dashboard/exam-leaderboard"
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive

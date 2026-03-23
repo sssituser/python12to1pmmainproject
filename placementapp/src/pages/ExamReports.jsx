@@ -24,7 +24,7 @@ function ExamReports() {
           </div>
         </div>
 
-        {/* <div className="col-md-3">
+        <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Weekly Exam</h5>
             <button
@@ -34,17 +34,17 @@ function ExamReports() {
               VIEW
             </button>
           </div>
-        </div> */}
+        </div>
 
 
-        <div className="col-md-3">
+        {/* <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Weekly Exam</h5>
             <button className="btn btn-secondary">
               COMING SOON
             </button>
           </div>
-        </div>
+        </div> */}
 
         { <div className="col-md-3">
           <div className="card text-center p-3 shadow">
@@ -58,14 +58,14 @@ function ExamReports() {
           </div>
         </div> }
 
-        <div className="col-md-3">
+        {/* <div className="col-md-3">
           <div className="card text-center p-3 shadow">
             <h5>Monthly Exam</h5>
             <button className="btn btn-secondary">
               COMING SOON
             </button>
           </div>
-        </div>
+        </div> */}
 
 
         <div className="col-md-3">
