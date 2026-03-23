@@ -50,15 +50,20 @@ function ExamManager() {
   };
 
   // Save questions list to backend (category + questions, no maxQuestions override)
-  const saveQuestionsToBackend = async (questionsToSave) => {
+  const saveQuestionsToBackend = async (questionsToSave, categoryToSave) => {
     try {
       const payload = {
-        category,
+        category: categoryToSave,
         questions: questionsToSave
       };
-      await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      console.log("Saving questions to backend:", payload);
+      const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      if (res.data && res.data.success) {
+        console.log("✅ Questions saved:", res.data.message);
+      }
     } catch (err) {
       console.error("Failed to save questions:", err);
+      alert("Backend error saving questions - check console!");
     }
   };
 
@@ -72,8 +77,8 @@ function ExamManager() {
     const newQuestionArray = [...questions, { ...form, id: Date.now() }];
     setQuestions(newQuestionArray);
     
-    // Automatically save questions to backend instantly
-    saveQuestionsToBackend(newQuestionArray);
+    // Pass category explicitly to avoid stale closure
+    saveQuestionsToBackend(newQuestionArray, category);
 
     // reset form
     setForm({
@@ -88,8 +93,8 @@ function ExamManager() {
     const updatedQuestions = questions.filter((q) => q.id !== id);
     setQuestions(updatedQuestions);
     
-    // Automatically save questions to backend instantly
-    saveQuestionsToBackend(updatedQuestions);
+    // Pass category explicitly to avoid stale closure
+    saveQuestionsToBackend(updatedQuestions, category);
   };
 
   return (

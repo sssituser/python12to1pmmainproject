@@ -29,27 +29,26 @@ function DetailedResults() {
     navigate("/dashboard/playground-results");
   };
 
+  // ─── Shared exam calculations (computed at component scope) ───
+  const isDailyExam = result?.examTitle?.toLowerCase().includes('daily');
+  const isWeeklyExam = result?.examTitle?.toLowerCase().includes('weekly');
+  const isMonthlyExam = result?.examTitle?.toLowerCase().includes('monthly');
+
+  const totalQuestions = result?.totalQuestions || 20;
+  const totalMarks = result?.totalMarks || 40;
+  let passingScore = 15;
+  if (isDailyExam) passingScore = 20;
+  else if (isWeeklyExam || isMonthlyExam) passingScore = 35;
+
+  // Compute passed at component scope so it's available in render and download
+  const passed = result ? (result.score || (result.correctAnswers || 0) * 2) >= passingScore : false;
+
   const handleDownload = () => {
     if (!result) {
       alert("No result data available for download.");
       return;
     }
 
-    // Determine passing criteria based on exam type
-    const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
-    const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
-    const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
-    
-    let totalQuestions = result.totalQuestions || 20; // use actual value from result
-    let totalMarks = result.totalMarks || 40; // use actual value from result
-    let passingScore = 15; // default (marks needed to pass)
-    
-    if (isDailyExam) {
-      passingScore = 20; // 20 marks to pass for daily exam (out of 40)
-    } else if (isWeeklyExam || isMonthlyExam) {
-      passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
-    }
-    
     const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
     const studentName = result.user?.firstName || result.user?.username || "Unknown";
     const examDate = result.examDate ? new Date(result.examDate).toLocaleString() : "Unknown Date";
@@ -121,7 +120,6 @@ function DetailedResults() {
     );
   }
 
-  const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
 
   return (
     <div className="p-6">

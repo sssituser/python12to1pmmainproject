@@ -108,14 +108,27 @@ const PythonExam = () => {
     if (examStarted && !examSubmitted) {
       // Prevent F5, Ctrl+R, Ctrl+Shift+R refresh
       const preventRefresh = (e) => {
-        if ((e.key === 'F5') || 
-            (e.ctrlKey && e.key === 'r') || 
-            (e.ctrlKey && e.shiftKey && e.key === 'r')) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-      };
+  //  ESC → auto submit
+  if (e.key === "Escape") {
+    e.preventDefault();
+    handleSubmitExam("ESC pressed");
+    return;
+  }
+
+  if (
+    e.key === "F5" ||
+    (e.ctrlKey && e.key === "r") ||
+    (e.ctrlKey && e.shiftKey && e.key === "r") ||
+    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) ||
+    (e.ctrlKey && e.key === "Tab") ||
+    (e.ctrlKey && e.shiftKey && e.key === "Tab") ||
+    (e.altKey && e.key === "ArrowLeft")
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+};
 
       // Prevent backspace from triggering navigation
       const preventBackspace = (e) => {
@@ -170,114 +183,140 @@ const PythonExam = () => {
     }
   }, [examStarted, examSubmitted]);
 
-  // AI-powered security monitoring
-  useEffect(() => {
-    if (!examStarted || examSubmitted) return;
+// AI-powered security monitoring
+useEffect(() => {
+  if (!examStarted || examSubmitted) return;
 
-    let cleanup = () => {};
+  let cleanup = () => {};
+  let violationCount = 0;
+  const startSecurityMonitoring = () => {
+    if (!videoRef.current || !canvasRef.current) return;
 
-    const startSecurityMonitoring = () => {
-      if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-
-      const detectFaces = async () => {
-        if (!video.videoWidth || !video.videoHeight) return;
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const tData = ctx.getImageData(0, 0, 16, 16).data;
-        let rMax = 0, rMin = 255, gMax = 0, gMin = 255, bMax = 0, bMin = 255;
-        let rTotal = 0, gTotal = 0, bTotal = 0;
-
-        for (let i = 0; i < tData.length; i += 4) {
-          const r = tData[i], g = tData[i+1], b = tData[i+2];
-          rTotal += r; gTotal += g; bTotal += b;
-
-          if (r > rMax) rMax = r;
-          if (r < rMin) rMin = r;
-          if (g > gMax) gMax = g;
-          if (g < gMin) gMin = g;
-          if (b > bMax) bMax = b;
-          if (b < bMin) bMin = b;
-        }
-        
-        const pixelCount = 256; // 16x16
-        const avgBrightness = (0.299 * (rTotal/pixelCount) + 0.587 * (gTotal/pixelCount) + 0.114 * (bTotal/pixelCount));
-
-        // Neutralized Heuristics
-        const isDark = avgBrightness < 45;
-        const isRedDominant = (rTotal > gTotal * 1.5) && (rTotal > bTotal * 1.5);
-        
-        // If maximum difference of colors across the ENTIRE VIDEO is extremely narrow (< 40),
-        // it means the camera is physically covered, staring at a blank blur, or completely blocked by an object.
-        const isTotallyFlat = (rMax - rMin < 45) && (gMax - gMin < 45) && (bMax - bMin < 45);
-
-        const checkViolations = (faces) => {
-          const isCameraCovered = isDark || isTotallyFlat || isRedDominant;
-          const isMultipleFaces = faces && faces.length > 1;
-
-          if (isCameraCovered || isMultipleFaces) {
-            if (cleanTimeoutRef.current) {
-              clearTimeout(cleanTimeoutRef.current);
-              cleanTimeoutRef.current = null;
-            }
-            if (!violationStartTimeRef.current) {
-              console.log("🚨 SECURITY VIOLATION WARNING: Condition active, waiting 2 seconds...");
-              violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 2000) {
-              handleSubmitExam(isCameraCovered ? "Camera covered or blocked" : "Multiple faces detected on webcam");
-            }
-          } else {
-            if (violationStartTimeRef.current && !cleanTimeoutRef.current) {
-              cleanTimeoutRef.current = setTimeout(() => {
-                violationStartTimeRef.current = null;
-                cleanTimeoutRef.current = null;
-              }, 1000); // Require clean picture for 1s to forgive
-            }
+    const detectFaces = async () => {
+      if (!video.videoWidth || !video.videoHeight) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const tData = ctx.getImageData(0, 0, 16, 16).data;
+      let brightness = 0;
+      let max = 0, min = 255;
+      for (let i = 0; i < tData.length; i += 4) {
+        const val = tData[i];
+        brightness += val;
+        if (val > max) max = val;
+        if (val < min) min = val;
+      }
+      brightness = brightness / (tData.length / 4);
+      const variation = max - min;
+      const isDark = brightness < 40;
+      const isFlat = variation < 30;
+      const checkViolations = (faces) => {
+        const noFace = !faces || faces.length === 0;
+        const multipleFaces = faces && faces.length > 1;
+        let faceNotCentered = false;
+        if (faces && faces.length === 1) {
+          const f = faces[0].boundingBox;
+          const centerX = f.x + f.width / 2;
+          const centerY = f.y + f.height / 2;
+          if (
+            centerX < canvas.width * 0.2 ||
+            centerX > canvas.width * 0.8 ||
+            centerY < canvas.height * 0.2 ||
+            centerY > canvas.height * 0.8
+          ) {
+            faceNotCentered = true;
           }
-        };
+        }
 
-        // Face Detection using native Shape Detection API if available
-        if (window.FaceDetector) {
-          const faceDetector = new window.FaceDetector({ maxDetectedFaces: 5 });
-          faceDetector.detect(canvas)
-            .then(faces => {
-              setFaceCount(faces.length);
-              checkViolations(faces);
-            })
-            .catch(err => {
-              console.error(err);
-              checkViolations(null);
-            });
+        const violation =
+          isDark || isFlat || noFace || multipleFaces || faceNotCentered;
+        if (violation) {
+          if (!violationStartTimeRef.current) {
+            violationStartTimeRef.current = Date.now();
+          } else if (Date.now() - violationStartTimeRef.current > 2000) {
+            handleSubmitExam("Camera/face violation detected");
+          }
         } else {
-          setFaceCount(1);
-          checkViolations(null);
+          violationStartTimeRef.current = null;
         }
       };
 
-      const interval = setInterval(detectFaces, 500);
-      cleanup = () => clearInterval(interval);
-
-      startSecurityMonitoring();
+      if (window.FaceDetector) {
+        const detector = new window.FaceDetector({ maxDetectedFaces: 5 });
+        detector
+          .detect(canvas)
+          .then((faces) => {
+            setFaceCount(faces.length);
+            checkViolations(faces);
+          })
+          .catch(() => checkViolations(null));
+      } else {
+      checkViolations([{ boundingBox: { x: 100, y: 100, width: 100, height: 100 } }]);
+      }
     };
 
+    const interval = setInterval(detectFaces, 500);
+
+    // TAB SWITCH
+    const handleVisibility = () => {
+      if (document.hidden) {
+        violationCount++;
+        handleSubmitExam("Tab switching detected");
+      }
+    };
+
+    // ALT+TAB / MINIMIZE
+    const handleBlur = () => {
+      violationCount++;
+      handleSubmitExam("Window focus lost");
+    };
+
+    //  DEVTOOLS DETECTION
+    const detectDevTools = () => {
+      if (
+        window.outerWidth - window.innerWidth > 160 ||
+        window.outerHeight - window.innerHeight > 160
+      ) {
+        handleSubmitExam("DevTools opened");
+      }
+    };
+
+    const devtoolsInterval = setInterval(detectDevTools, 1000);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    cleanup = () => {
+      clearInterval(interval);
+      clearInterval(devtoolsInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+    };
+  };
+  startSecurityMonitoring();
+  return () => {
+    stopWebcam();
+    cleanup();
+  };
+}, [examStarted, examSubmitted]);
+
+// Detect reload / tab close
+useEffect(() => {
+  const handleBeforeUnload = (e) => {
     if (examStarted && !examSubmitted) {
-      startSecurityMonitoring();
+      handleSubmitExam("Page reload or close detected");
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
     }
-
-    return () => {
-      stopWebcam();
-      cleanup();
-      globalStreamsToClean.forEach(stream => {
-        stream.getTracks().forEach(track => track.stop());
-      });
-    };
-  }, [examStarted, examSubmitted]);
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  };
+}, [examStarted, examSubmitted]);
 
   const playAlarmSound = () => {
     // Create a simple beep sound
@@ -511,19 +550,22 @@ const PythonExam = () => {
       {/* Webcam overlay positioned at bottom-left */}
       <div className="fixed bottom-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-48 h-36 rounded border-2 border-gray-300"
-            style={{ transform: 'scaleX(-1)' }}
-          />
-          {!webcamActive && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded">
-              <FontAwesomeIcon icon={faCamera} className="text-gray-400 text-2xl" />
-            </div>
-          )}
+        <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-48 h-36 rounded border-2 border-gray-300"
+        style={{ transform: 'scaleX(-1)' }}/>
+
+  {/* ✅ ADD HERE */}
+  <canvas ref={canvasRef} style={{ display: "none" }} />
+
+  {!webcamActive && (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded">
+      <FontAwesomeIcon icon={faCamera} className="text-gray-400 text-2xl" />
+    </div>
+  )}
           <div className="absolute top-1 right-1">
             <div className={`w-3 h-3 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
           </div>
