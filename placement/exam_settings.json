@@ -1,10 +1,34 @@
 {
     "Weekly": {
         "maxQuestions": 1,
-        "questions": []
+        "questions": [
+            {
+                "question": "what is your name ?",
+                "options": [
+                    "sai",
+                    "harsha",
+                    "vardhan",
+                    "surya"
+                ],
+                "answer": "harsha",
+                "id": 1774276853779
+            }
+        ]
     },
     "Monthly": {
-        "maxQuestions": 30,
-        "questions": []
+        "maxQuestions": 1,
+        "questions": [
+            {
+                "question": "what is your name ?",
+                "options": [
+                    "sai",
+                    "sai12",
+                    "sai123",
+                    "sai1323"
+                ],
+                "answer": "sai",
+                "id": 1774276939789
+            }
+        ]
     }
 }
