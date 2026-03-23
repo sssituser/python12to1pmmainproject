@@ -64,4 +64,5 @@ urlpatterns = [
     path('leaderboard/', api_views.leaderboard_api),
     path('weekly-exam-results/', api_views.weekly_exam_reports_api),
     path('monthly-exam-results/', api_views.monthly_exam_reports_api),
+    path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
 ]

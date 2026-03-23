@@ -1,0 +1,10 @@
+{
+    "Weekly": {
+        "maxQuestions": 1,
+        "questions": []
+    },
+    "Monthly": {
+        "maxQuestions": 30,
+        "questions": []
+    }
+}

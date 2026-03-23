@@ -1,7 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import axios from "axios";
 
 function ExamManager() {
   const [questions, setQuestions] = useState([]);
+  const [maxQuestions, setMaxQuestions] = useState(50);
+  const [category, setCategory] = useState("Weekly");
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const [form, setForm] = useState({
     question: "",
     options: ["", "", "", ""],
@@ -25,14 +29,56 @@ function ExamManager() {
     setForm({ ...form, answer: opt });
   };
 
+  // Save only the category & maxQuestions limit (never touches saved questions)
+  const handleConfirmSettings = async () => {
+    try {
+      const payload = {
+        category,
+        maxQuestions: parseInt(maxQuestions, 10) || 1,
+        // DO NOT send questions here — we don't want to overwrite them
+      };
+      
+      const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      
+      if (res.data && res.data.success) {
+        setSettingsSaved(true);
+        setTimeout(() => setSettingsSaved(false), 3000);
+      }
+    } catch (err) {
+      console.error("Failed to save exam settings:", err);
+    }
+  };
+
+  // Save questions list to backend (category + questions, no maxQuestions override)
+  const saveQuestionsToBackend = async (questionsToSave, categoryToSave) => {
+    try {
+      const payload = {
+        category: categoryToSave,
+        questions: questionsToSave
+      };
+      console.log("Saving questions to backend:", payload);
+      const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      if (res.data && res.data.success) {
+        console.log("✅ Questions saved:", res.data.message);
+      }
+    } catch (err) {
+      console.error("Failed to save questions:", err);
+      alert("Backend error saving questions - check console!");
+    }
+  };
+
   // add question
   const addQuestion = () => {
     if (!form.question || !form.answer) {
-      alert("Fill all fields");
+      alert("Fill all question fields and select the correct answer!");
       return;
     }
 
-    setQuestions([...questions, { ...form, id: Date.now() }]);
+    const newQuestionArray = [...questions, { ...form, id: Date.now() }];
+    setQuestions(newQuestionArray);
+    
+    // Pass category explicitly to avoid stale closure
+    saveQuestionsToBackend(newQuestionArray, category);
 
     // reset form
     setForm({
@@ -44,22 +90,82 @@ function ExamManager() {
 
   // delete question
   const deleteQuestion = (id) => {
-    setQuestions(questions.filter((q) => q.id !== id));
+    const updatedQuestions = questions.filter((q) => q.id !== id);
+    setQuestions(updatedQuestions);
+    
+    // Pass category explicitly to avoid stale closure
+    saveQuestionsToBackend(updatedQuestions, category);
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-4xl mx-auto">
 
-      <h1 className="text-2xl font-bold mb-4">Exam Manager (Faculty)</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Exam Manager (Faculty)</h1>
 
-      {/* FORM */}
-      <div className="bg-white p-4 shadow rounded mb-6">
+      {/* EXAM SETTINGS */}
+      <div className="bg-white p-5 shadow rounded-lg mb-6 border border-gray-100">
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">Exam Settings</h2>
+        
+        <div className="bg-blue-50 p-4 rounded border border-blue-100 flex flex-col md:flex-row gap-6 mb-4">
+          
+          {/* CATEGORY DROPDOWN */}
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
+              Select Exam Category:
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+            >
+              <option value="Weekly">Weekly Exam</option>
+              <option value="Monthly">Monthly Exam</option>
+            </select>
+          </div>
+
+          {/* MAX QUESTIONS LIMIT */}
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
+              Max Questions to Display:
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={maxQuestions}
+              onChange={(e) => setMaxQuestions(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+            />
+            <p className="text-xs text-blue-600 mt-2">
+              Prevents crashing by enforcing an upper limit.
+            </p>
+          </div>
+
+        </div>
+
+        {/* CONFIRM SETTINGS BUTTON */}
+        <button
+          onClick={() => handleConfirmSettings()}
+          className={`px-5 py-2 rounded-lg font-medium transition ${
+            settingsSaved 
+            ? "bg-green-500 hover:bg-green-600 text-white" 
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+        >
+          {settingsSaved ? "✅ Verified & Saved!" : "Confirm Settings"}
+        </button>
+
+      </div>
+
+      {/* QUESTION FORM */}
+      <div className="bg-white p-6 shadow rounded-lg mb-6 border border-gray-100">
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Add New Question</h2>
+        
         <input
           type="text"
-          placeholder="Enter question"
+          placeholder="Enter question text..."
           value={form.question}
           onChange={handleChange}
-          className="w-full mb-3 p-2 border rounded"
+          className="w-full mb-4 p-3 border rounded focus:outline-none focus:border-blue-500"
         />
 
         {form.options.map((opt, i) => (

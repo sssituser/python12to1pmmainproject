@@ -1,10 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Playground() {
 
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
+
+  const [weeklyQuestions, setWeeklyQuestions] = useState(50);
+  const [monthlyQuestions, setMonthlyQuestions] = useState(50);
+
+  useEffect(() => {
+    // Fetch limits safely so UI is dynamic based on Faculty settings
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/admin/exam-settings/");
+        if (res.data && res.data.success && res.data.data) {
+          if (res.data.data.Weekly) setWeeklyQuestions(res.data.data.Weekly.maxQuestions || 50);
+          if (res.data.data.Monthly) setMonthlyQuestions(res.data.data.Monthly.maxQuestions || 50);
+        }
+      } catch (err) {
+        console.error("Could not fetch dynamic exact sizes", err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,7 +80,7 @@ function Playground() {
                   Daily Exam
                 </h3>
 
-                <span className="text-blue-500 text-lg">�</span>
+                <span className="text-blue-500 text-lg"></span>
 
               </div>
 
@@ -97,11 +117,11 @@ function Playground() {
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Comprehensive weekly exam to test your Python programming knowledge. Cover all topics with 50 multiple choice questions for thorough assessment.
+                Comprehensive weekly exam to test your Python programming knowledge. Cover all topics with multiple choice questions for thorough assessment.
               </p>
 
               <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-                50 MCQs • 75 min
+                {weeklyQuestions} MCQs • 75 min
               </span>
             </div>
 
@@ -129,11 +149,10 @@ function Playground() {
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Extensive monthly exam for complete Python programming evaluation. Test advanced concepts with 50 multiple choice questions for comprehensive assessment.
+                Extensive monthly exam for complete Python programming evaluation. Test advanced concepts with multiple choice questions for comprehensive assessment.
               </p>
-
               <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
-                50 MCQs • 75 min
+                {monthlyQuestions} MCQs • 75 min
               </span>
             </div>
 

@@ -192,7 +192,6 @@ function PlaygroundResults() {
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">ID</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Exam Name</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Date</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Time</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Score</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Status</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Actions</th>
@@ -240,15 +239,6 @@ function PlaygroundResults() {
                     {new Date(
                       result.examDate
                     ).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
-                    {new Date(
-                      result.examDate
-                    ).toLocaleTimeString('en-US', { 
-                      hour12: true, 
-                      hour: 'numeric', 
-                      minute: 'numeric'
-                    })}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
                     {result.score || (result.correctAnswers || 0) * 2}/{result.totalMarks || (result.correctAnswers || 0) * 2}

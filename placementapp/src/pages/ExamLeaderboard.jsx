@@ -199,6 +199,7 @@ function ExamLeaderboard() {
             <tr>
               <th className="py-3 px-4 text-center">Rank</th>
               <th className="py-3 px-4 text-center">Name</th>
+              <th className="py-3 px-4 text-center">Exam Type</th>
               <th className="py-3 px-4 text-center">Time</th>
               <th className="py-3 px-4 text-center">Score</th>
             </tr>
@@ -210,13 +211,14 @@ function ExamLeaderboard() {
                 <tr key={student.rank} className="border-t hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-4 text-center font-semibold text-gray-700">{student.rank}</td>
                   <td className="py-3 px-4 text-center font-medium uppercase tracking-wide">{student.username}</td>
+                  <td className="py-3 px-4 text-center text-gray-600 capitalize">{student.exam_type || '-'}</td>
                   <td className="py-3 px-4 text-center text-gray-600">{student.time_taken}</td>
                   <td className="py-3 px-4 text-center font-bold text-indigo-700">{student.score}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="py-6 text-center text-gray-500">
+                <td colSpan="5" className="py-6 text-center text-gray-500">
                   No data available
                 </td>
               </tr>
