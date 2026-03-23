@@ -108,17 +108,20 @@ const PythonExam = () => {
     if (examStarted && !examSubmitted) {
       // Prevent F5, Ctrl+R, Ctrl+Shift+R refresh
       const preventRefresh = (e) => {
+  //  ESC → auto submit
+  if (e.key === "Escape") {
+    e.preventDefault();
+    handleSubmitExam("ESC pressed");
+    return;
+  }
+
   if (
     e.key === "F5" ||
     (e.ctrlKey && e.key === "r") ||
     (e.ctrlKey && e.shiftKey && e.key === "r") ||
-    // arrow keys
     ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) ||
-    // ctrl + tab
     (e.ctrlKey && e.key === "Tab") ||
-    // ctrl + shift + tab
     (e.ctrlKey && e.shiftKey && e.key === "Tab") ||
-    // alt back
     (e.altKey && e.key === "ArrowLeft")
   ) {
     e.preventDefault();
@@ -231,7 +234,6 @@ useEffect(() => {
 
         const violation =
           isDark || isFlat || noFace || multipleFaces || faceNotCentered;
-
         if (violation) {
           if (!violationStartTimeRef.current) {
             violationStartTimeRef.current = Date.now();
@@ -297,6 +299,22 @@ useEffect(() => {
   return () => {
     stopWebcam();
     cleanup();
+  };
+}, [examStarted, examSubmitted]);
+
+// Detect reload / tab close
+useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (examStarted && !examSubmitted) {
+      handleSubmitExam("Page reload or close detected");
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    }
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
   };
 }, [examStarted, examSubmitted]);
 

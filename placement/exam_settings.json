@@ -1,6 +1,6 @@
 {
     "Weekly": {
-        "maxQuestions": 1,
+        "maxQuestions": 50,
         "questions": []
     },
     "Monthly": {
