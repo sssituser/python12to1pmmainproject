@@ -8,7 +8,7 @@ from myapp.serializers import LeaveRequestSerializer
 # -----------------------------------------------------------
 # LEAVE REQUEST FRONTEND PAGE
 # -----------------------------------------------------------
-@api_view(['GET'])
+@api_view(['GET','PUT'])
 @permission_classes([AllowAny])
 def leave_request_page(request):
     html = """
@@ -126,7 +126,7 @@ loadLeaves();
 # -----------------------------------------------------------
 # TEST ENDPOINT
 # -----------------------------------------------------------
-@api_view(['GET'])
+@api_view(['GET','PUT'])
 @permission_classes([AllowAny])
 def test_endpoint(request):
     """Simple test endpoint to check if server is working"""
@@ -140,7 +140,7 @@ def test_endpoint(request):
 # -----------------------------------------------------------
 # GET ALL LEAVES
 # -----------------------------------------------------------
-@api_view(['GET'])
+@api_view(['GET','PUT'])
 @permission_classes([AllowAny])
 def get_all_leave_requests(request):
 
@@ -203,7 +203,7 @@ def create_leave_request(request):
 # -----------------------------------------------------------
 # GET SINGLE LEAVE
 # -----------------------------------------------------------
-@api_view(['GET'])
+@api_view(['GET','PUT'])
 @permission_classes([AllowAny])
 def get_leave_request(request, pk):
 
@@ -296,7 +296,7 @@ def delete_leave_request(request, pk):
 # -----------------------------------------------------------
 # MY LEAVE REQUESTS
 # -----------------------------------------------------------
-@api_view(['GET'])
+@api_view(['GET','PUT'])
 @permission_classes([AllowAny])
 def my_leave_requests(request):
 

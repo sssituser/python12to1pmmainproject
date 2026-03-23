@@ -1,7 +1,7 @@
 // src/components/Leave.jsx
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrash, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faDownload } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faCalendarAlt, faUser, faFileAlt, faClock, faBell, faDownload } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -21,29 +21,14 @@ function LeaveRequest() {
     e.preventDefault();
     console.log("=== Form Submit Started ===");
     
+    // Basic validation
     if (!name || !startDate || !endDate || !reason) {
       console.log("Validation failed - missing fields");
-      alert("Fill all required fields");
+      alert("Please fill all required fields (Name, Start Date, End Date, Reason)");
       return;
     }
 
-    // First test if server is working
-    console.log("Testing server connection...");
-    try {
-      const testResponse = await fetch("http://127.0.0.1:8000/api/test/");
-      const testData = await testResponse.json();
-      console.log("Server test result:", testData);
-      
-      if (!testResponse.ok) {
-        console.error("Server test failed");
-        alert("Server is not responding correctly. Check Django server.");
-        return;
-      }
-    } catch (error) {
-      console.error("Cannot connect to server:", error);
-      alert("Cannot connect to Django server. Make sure it's running on http://127.0.0.1:8000");
-      return;
-    }
+    setLoading(true);
 
     const newRequest = {
       name,
@@ -76,7 +61,6 @@ function LeaveRequest() {
       console.log("- Status Text:", response.statusText);
       console.log("- OK:", response.ok);
       
-      // Get response text first to see what we received
       const responseText = await response.text();
       console.log("- Raw Response:", responseText);
       
@@ -88,19 +72,24 @@ function LeaveRequest() {
         console.error("Failed to parse JSON:", parseError);
         console.log("- Response was not valid JSON:", responseText);
         alert("Server returned invalid response. Check Django console for errors.");
+        setLoading(false);
         return;
       }
 
       if (response.ok) {
         console.log("Request successful!");
-        alert("Request submitted successfully!");
+        alert("Leave request submitted successfully!");
         
         // Reset form
         setReason("");
+        setStartDate("");
+        setEndDate("");
+        setEmail("");
+        setPhone("");
+        setStudentId("");
         setLeaveType("Medical");
         
-        // Reload requests from backend
-        console.log("Reloading requests...");
+        // Reload requests
         loadRequests();
       } else {
         console.error("Request failed with status:", response.status);
@@ -111,26 +100,36 @@ function LeaveRequest() {
           errorMessage += ": " + JSON.stringify(result.errors);
         } else if (result.error) {
           errorMessage += ": " + result.error;
-        } else if (result.message) {
-          errorMessage += ": " + result.message;
+        } else if (result.detail) {
+          errorMessage += ": " + result.detail;
         }
         
         alert(errorMessage);
       }
     } catch (error) {
-      console.error("Network error occurred:");
-      console.error("- Error:", error);
-      console.error("- Error message:", error.message);
-      console.error("- Error stack:", error.stack);
+      console.error("Network error:", error);
       alert("Network error: " + error.message);
     }
     
+    setLoading(false);
     console.log("=== Form Submit Ended ===");
   };
 
   const loadRequests = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/");
+      const token = localStorage.getItem("access");
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        console.error("Failed to load requests:", response.status);
+        return;
+      }
+      
       const data = await response.json();
       console.log("Backend response:", data);
       setRequests(data.data || data);
@@ -138,6 +137,15 @@ function LeaveRequest() {
       console.error("Error loading requests:", error);
     }
   };
+
+  // Auto-refresh requests every 30 seconds to get updated status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadRequests();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Load requests on component mount
   useEffect(() => {
@@ -150,25 +158,57 @@ function LeaveRequest() {
     setStudentId(user.randomId || '');
   }, []);
 
-  const handleDelete = async (id) => {
-    const requestToDelete = requests.find(req => req.id === id);
-    if (confirm(`Are you sure you want to permanently delete this leave request from ${requestToDelete?.name || 'Unknown'}? This action cannot be undone.`)) {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/api/leave-requests/${id}/delete/`, {
-          method: "DELETE"
-        });
-
-        if (response.ok) {
-          alert(`Leave request from ${requestToDelete?.name || 'Unknown'} has been permanently deleted.`);
-          loadRequests();
-        } else {
-          alert("Failed to delete request");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("Server error. Please try again.");
-      }
-    }
+  
+  const handleDownloadPDF = (request) => {
+    // Create new PDF document for individual request
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Leave Request Details', 105, 20, { align: 'center' });
+    
+    // Add generation date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+    
+    // Add leave request details
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Information:', 20, 50);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Name: ${request.name}`, 20, 60);
+    doc.text(`Email: ${request.email}`, 20, 70);
+    doc.text(`Student ID: ${request.student_id}`, 20, 80);
+    doc.text(`Phone: ${request.phone}`, 20, 90);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Leave Details:', 20, 110);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Leave Type: ${request.leave_type}`, 20, 120);
+    doc.text(`Start Date: ${formatDate(request.start_date)}`, 20, 130);
+    doc.text(`End Date: ${formatDate(request.end_date)}`, 20, 140);
+    doc.text(`Applied Date: ${formatDate(request.appliedDate || request.created_at)}`, 20, 150);
+    doc.text(`Status: ${request.status}`, 20, 160);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Reason for Leave:', 20, 180);
+    
+    doc.setFont('helvetica', 'normal');
+    // Split reason text if it's too long
+    const splitReason = doc.splitTextToSize(request.reason, 170);
+    doc.text(splitReason, 20, 190);
+    
+    // Add footer
+    doc.setFontSize(8);
+    doc.text(`Page 1 of 1`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+    
+    // Save the PDF with request ID and name
+    const fileName = `leave-request-${request.name}-${request.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
   };
 
   const handleExportData = () => {
@@ -279,40 +319,40 @@ function LeaveRequest() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 shadow-sm border-b border-gray-200 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600 text-xl" />
+              <div className="p-2 bg-white bg-opacity-20 rounded-full">
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-lg" />
               </div>
               <div>
                 <h4 className="text-lg font-black text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg">
               <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
-              <span className="text-gray-700 font-medium">Student</span>
+              <span className="text-gray-700 font-medium" style={{ fontFamily: 'Times New Roman, serif' }}>Student</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2">
-            <h6 className="text-xl font-black text-white flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+            <h6 className="text-xl font-black text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
               <FontAwesomeIcon icon={faPlus} />
               New Leave Request
             </h6>
           </div>
           
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {/* Personal Information Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Full Name *</label>
                 <input
                   type="text"
                   value={name}
@@ -324,7 +364,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Email</label>
                 <input
                   type="email"
                   value={email}
@@ -335,7 +375,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Phone</label>
                 <input
                   type="tel"
                   value={phone}
@@ -346,7 +386,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Student ID</label>
                 <input
                   type="text"
                   value={studentId}
@@ -358,7 +398,7 @@ function LeaveRequest() {
               
               {/* Leave Details Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Start Date *</label>
                 <input
                   type="date"
                   value={startDate}
@@ -369,7 +409,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>End Date *</label>
                 <input
                   type="date"
                   value={endDate}
@@ -380,7 +420,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Type</label>
                 <select 
                   value={leaveType} 
                   onChange={(e) => setLeaveType(e.target.value)}
@@ -396,7 +436,7 @@ function LeaveRequest() {
               
               {/* Reason Field - Spans multiple columns */}
               <div className="lg:col-span-2 xl:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Leave *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Reason for Leave *</label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -411,10 +451,20 @@ function LeaveRequest() {
               <div className="flex items-end">
                 <button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-gray-900 py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FontAwesomeIcon icon={faPlus} />
-                  Submit
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faPlus} />
+                      Submit
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -422,20 +472,19 @@ function LeaveRequest() {
         </div>
 
         {/* All Leave Requests */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-2">
             <div className="flex justify-between items-center">
-              <h5 className="text-xl font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
-                <FontAwesomeIcon icon={faBell} />
+            <h6 className="text-xl font-black text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+                <FontAwesomeIcon icon={faCalendarAlt} />
                 All Leave Requests
-              </h5>
-              <button
-                onClick={handleExportData}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                title="Download all leave requests"
+              </h6>
+              <button 
+                onClick={loadRequests}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm transition duration-200 flex items-center gap-2"
               >
-                <FontAwesomeIcon icon={faDownload} />
-                Download
+                <FontAwesomeIcon icon={faClock} />
+                Refresh Status
               </button>
             </div>
           </div>
@@ -446,8 +495,8 @@ function LeaveRequest() {
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Leave Requests</h3>
-                <p className="text-gray-600">Submit your first leave request to get started</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Times New Roman, serif' }}>No Leave Requests</h3>
+                <p className="text-gray-600" style={{ fontFamily: 'Times New Roman, serif' }}>Submit your first leave request to get started</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -460,52 +509,48 @@ function LeaveRequest() {
                             <FontAwesomeIcon icon={faUser} className="text-blue-600 text-sm" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">{req.name}</h3>
-                            <p className="text-sm text-gray-600">{req.email}</p>
+                            <h3 className="font-semibold text-gray-900 text-sm" style={{ fontFamily: 'Times New Roman, serif' }}>{req.name}</h3>
+                            <p className="text-sm text-gray-600" style={{ fontFamily: 'Times New Roman, serif' }}>{req.email}</p>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 mb-3">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400" />
-                            <span>{formatDate(req.start_date)} - {formatDate(req.end_date)}</span>
+                          <span style={{ fontFamily: 'Times New Roman, serif' }}>{formatDate(req.start_date)} - {formatDate(req.end_date)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <FontAwesomeIcon icon={faClock} className="text-gray-400" />
-                            <span>Applied: {formatDate(req.appliedDate || req.created_at)}</span>
+                            <span style={{ fontFamily: 'Times New Roman, serif' }}>Applied: {formatDate(req.appliedDate || req.created_at)}</span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 mb-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLeaveTypeColor(req.leave_type)}`}>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium border" style={{ fontFamily: 'Times New Roman, serif' }}>
                             {req.leave_type}
                           </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            req.status === "Approved" ? "bg-green-100 text-green-700" :
-                            req.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
-                          }`}>
+                          <span className="px-3 py-1 rounded-full text-lg font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>
                             {req.status}
                           </span>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-700 mb-3" style={{ fontFamily: 'Times New Roman, serif' }}>
                             <FontAwesomeIcon icon={faFileAlt} className="text-gray-400 mr-2" />
-                            {req.reason}
+                          <span style={{ fontFamily: 'Times New Roman, serif' }}>{req.reason}</span>
                           </p>
-                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex justify-end items-center gap-2 pt-4 border-t border-gray-100">
-                      <button 
-                        onClick={() => handleDelete(req.id)} 
-                        className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-1 text-sm"
-                        title="Delete this request"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                        Delete
-                      </button>
+                      
+                      {/* Download Button */}
+                      <div className="ml-4">
+                        <button
+                          onClick={() => handleDownloadPDF(req)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-md"
+                          title="Download leave request as PDF"
+                        >
+                          <FontAwesomeIcon icon={faDownload} />
+                          <span style={{ fontFamily: 'Times New Roman, serif' }}>Download PDF</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
