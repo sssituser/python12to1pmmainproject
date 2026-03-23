@@ -294,14 +294,19 @@ def save_exam_report_api(request):
         user = None
         if request.user and request.user.is_authenticated:
             user = request.user
-        elif data.get('username'):
-            username = data['username'].strip()
-            user = User.objects.filter(username__iexact=username).first()
-            if not user:
-                user, _ = User.objects.get_or_create(
-                    username=username,
-                    defaults={'email': f"{username}@example.com"}
-                )
+        else:
+            username = data.get('username')
+            if not username and isinstance(data.get('user'), dict):
+                username = data['user'].get('username')
+            
+            if username:
+                username = username.strip()
+                user = User.objects.filter(username__iexact=username).first()
+                if not user:
+                    user, _ = User.objects.get_or_create(
+                        username=username,
+                        defaults={'email': f"{username}@example.com"}
+                    )
 
         if not user:
             return Response({
@@ -310,24 +315,29 @@ def save_exam_report_api(request):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
-        start_time = data.get('start_time') or now
-        end_time   = data.get('end_time')   or now
+        start_time = data.get('start_time') or data.get('startTime') or now
+        end_time   = data.get('end_time')   or data.get('endTime') or now
+        
+        # safely extract random_id
+        random_id_val = data.get('random_id') or data.get('randomId') or ''
+        if not random_id_val and isinstance(data.get('user'), dict):
+            random_id_val = data['user'].get('randomId') or data['user'].get('random_id') or ''
 
         attempt = ExamAttempt.objects.create(
             user              = user,
-            exam_title        = data.get('exam_title', 'Python Exam'),
-            exam_type         = data.get('exam_type', 'daily'),
+            exam_title        = data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+            exam_type         = data.get('exam_type') or data.get('examType', 'daily'),
             score             = data.get('score', 0),
-            total_questions   = data.get('total_questions', 20),
-            correct_answers   = data.get('correct_answers', 0),
-            incorrect_answers = data.get('incorrect_answers', 0),
-            marks_obtained    = data.get('marks_obtained', 0),
-            total_marks       = data.get('total_marks', 40),
-            time_taken        = data.get('time_taken', 0),
+            total_questions   = data.get('total_questions') or data.get('totalQuestions', 20),
+            correct_answers   = data.get('correct_answers') or data.get('correctAnswers', 0),
+            incorrect_answers = data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
+            marks_obtained    = data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
+            total_marks       = data.get('total_marks') or data.get('totalMarks', 40),
+            time_taken        = data.get('time_taken') or data.get('timeTaken', 0),
             start_time        = start_time,
             end_time          = end_time,
             status            = data.get('status', 'completed'),
-            random_id         = str(data.get('random_id', '')),
+            random_id         = str(random_id_val),
             answers_json      = json.dumps(data.get('answers', [])),
             questions_json    = json.dumps(data.get('questions', []))
         )
@@ -451,6 +461,7 @@ def leaderboard_api(request):
                 'time_taken': f"{minutes}m {seconds}s",
                 'time_taken_seconds': attempt.time_taken or 0,
                 'exam_title': attempt.exam_title,
+                'exam_type': attempt.exam_type,
                 'exam_date': attempt.exam_date.isoformat() if attempt.exam_date else None,
             })
             rank += 1
@@ -478,13 +489,11 @@ def weekly_exam_reports_api(request):
         from datetime import timedelta
         from django.utils import timezone
 
-        today = timezone.now().date()
-        start_of_week = today - timedelta(days=today.weekday())  # Monday
-        end_of_week = start_of_week + timedelta(days=6)
+        now = timezone.now()
+        start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
 
         attempts = ExamAttempt.objects.filter(
-            exam_date__date__gte=start_of_week,
-            exam_date__date__lte=end_of_week,
+            exam_date__gte=start_of_week,
             exam_type='weekly'
         ).order_by('-exam_date')
 
@@ -529,10 +538,11 @@ def monthly_exam_reports_api(request):
     try:
         from django.utils import timezone
 
-        today = timezone.now()
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
         attempts = ExamAttempt.objects.filter(
-            exam_date__year=today.year,
-            exam_date__month=today.month,
+            exam_date__gte=start_of_month,
             exam_type='monthly'
         ).order_by('-exam_date')
 
@@ -631,4 +641,61 @@ def playground_questions_api(request):
         'success': True,
         'data': selected_questions
     })
+
+# ==================== EXAM MANAGER CUSTOM SETTINGS ====================
+
+import os
+
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SETTINGS_FILE = os.path.join(_BASE_DIR, 'exam_settings.json')
+
+@api_view(['GET', 'POST'])
+def exam_settings_api(request):
+    """
+    GET: Retrieve custom exam settings and questions for a category (e.g. ?category=Weekly)
+    POST: Save new settings and questions array to file.
+    """
+    if request.method == 'GET':
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        else:
+            data = {}
+            
+        category = request.GET.get('category')
+        if category:
+            # Return specific category config
+            return Response({'success': True, 'data': data.get(category, {'maxQuestions': 50, 'questions': []})})
+            
+        return Response({'success': True, 'data': data})
+
+    elif request.method == 'POST':
+        # Safely load existing settings to merge them
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+        else:
+            existing_data = {}
+            
+        category = request.data.get('category', 'Weekly')
+        new_questions = request.data.get('questions', None)
+        new_max = request.data.get('maxQuestions', None)
+
+        # Get existing category data to merge into
+        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': []})
+
+        # Only overwrite maxQuestions if explicitly sent
+        if new_max is not None:
+            existing_category['maxQuestions'] = int(new_max)
+
+        # Only overwrite questions if a non-None list was sent
+        if new_questions is not None:
+            existing_category['questions'] = new_questions
+
+        existing_data[category] = existing_category
+        
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(existing_data, f, indent=4)
+            
+        return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
