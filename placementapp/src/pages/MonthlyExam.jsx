@@ -171,12 +171,67 @@ const MonthlyExam = () => {
     };
   }, []);
 
+  // Prevent browser refresh and back button during exam
+  useEffect(() => {
+    if (examStarted && !examSubmitted) {
+      // Prevent F5, Ctrl+R, Ctrl+Shift+R refresh
+      const preventRefresh = (e) => {
+        if ((e.key === 'F5') || 
+            (e.ctrlKey && e.key === 'r') || 
+            (e.ctrlKey && e.shiftKey && e.key === 'r')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Prevent backspace from triggering navigation
+      const preventBackspace = (e) => {
+        if (e.key === 'Backspace' && !e.target.matches('input, textarea')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Prevent Alt+Left Arrow (back)
+      const preventAltBack = (e) => {
+        if (e.altKey && e.key === 'ArrowLeft') {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Prevent context menu (right-click refresh)
+      const preventContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      };
+
+      document.addEventListener('keydown', preventRefresh);
+      document.addEventListener('keydown', preventBackspace);
+      document.addEventListener('keydown', preventAltBack);
+      document.addEventListener('contextmenu', preventContextMenu);
+
+      return () => {
+        document.removeEventListener('keydown', preventRefresh);
+        document.removeEventListener('keydown', preventBackspace);
+        document.removeEventListener('keydown', preventAltBack);
+        document.removeEventListener('contextmenu', preventContextMenu);
+      };
+    }
+  }, [examStarted, examSubmitted]);
+
   // Prevent back button
   useEffect(() => {
     if (examStarted && !examSubmitted) {
       window.history.pushState(null, null, window.location.href);
       const handlePopState = (e) => {
+        e.preventDefault();
         window.history.pushState(null, null, window.location.href);
+        return false;
       };
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
@@ -513,8 +568,8 @@ const MonthlyExam = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
-      {/* Webcam overlay positioned below question area */}
-      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg p-2">
+      {/* Webcam overlay positioned at bottom-left */}
+      <div className="fixed bottom-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
           <video
             ref={videoRef}
@@ -583,20 +638,20 @@ const MonthlyExam = () => {
                   </button>
                 )}
                 {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                  >
-                    Submit Exam
-                  </button>
-                ) : (
-                  <button
-                    onClick={nextQuestion}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
-                  >
-                    Next
-                  </button>
-                )}
+  <button
+    onClick={() => handleSubmitExam("Manual submission")}
+    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+  >
+    Submit Exam
+  </button>
+) : (
+  <button
+    onClick={nextQuestion}
+    className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+  >
+    Next
+  </button>
+)}
               </div>
             </div>
           </div>
