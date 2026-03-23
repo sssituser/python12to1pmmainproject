@@ -140,7 +140,6 @@ function ExamManager() {
             >
               <option value="Weekly">Weekly Exam</option>
               <option value="Monthly">Monthly Exam</option>
-              <option value="Daily">Daily Exam (Practice)</option>
             </select>
           </div>
 
