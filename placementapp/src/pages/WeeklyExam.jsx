@@ -22,11 +22,11 @@ const WeeklyExam = () => {
   const cleanTimeoutRef = useRef(null);
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState(new Array(20).fill(null));
-  const [markedForReview, setMarkedForReview] = useState(new Array(20).fill(false));
-  const [visitedQuestions, setVisitedQuestions] = useState(new Array(20).fill(false));
+  const [answers, setAnswers] = useState(new Array(50).fill(null));
+  const [markedForReview, setMarkedForReview] = useState(new Array(50).fill(false));
+  const [visitedQuestions, setVisitedQuestions] = useState(new Array(50).fill(false));
 
-  const [timeLeft, setTimeLeft] = useState(2700);
+  const [timeLeft, setTimeLeft] = useState(4500); // 75 minutes for weekly exam
   const [examStarted, setExamStarted] = useState(false);
   const [examSubmitted, setExamSubmitted] = useState(false);
   const examSubmittedRef = useRef(false);
@@ -34,29 +34,126 @@ const WeeklyExam = () => {
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
 
-  // WEEKLY EXAM QUESTIONS - Different from Daily Exam
-  const questions = [
-    { id:1, question:"What is the purpose of the __init__ method in Python?", options:["Constructor","Destructor","Iterator","Generator"], correct:0 },
-    { id:2, question:"Which of the following is not a valid Python data type?", options:["int","float","char","str"], correct:2 },
-    { id:3, question:"What does the 'self' parameter represent in Python methods?", options:["Current instance","Class name","Method name","Parent class"], correct:0 },
-    { id:4, question:"Which method is used to find the index of an element in a list?", options:["index()","find()","search()","locate()"], correct:0 },
-    { id:5, question:"What is the output of print(2 + 3 * 2)?", options:["10","12","8","7"], correct:0 },
-    { id:6, question:"Which keyword is used to define a class in Python?", options:["class","Class","def","define"], correct:0 },
-    { id:7, question:"What is the output of print(len('Python'))?", options:["5","6","7","Error"], correct:1 },
-    { id:8, question:"Which method is used to sort a list in Python?", options:["sort()","sorted()","order()","arrange()"], correct:0 },
-    { id:9, question:"What is the output of print(3 ** 2 ** 1)?", options:["9","27","81","3"], correct:0 },
-    { id:10, question:"Which function is used to convert a string to uppercase?", options:["upper()","uppercase()","toUpper()","toUpperCase()"], correct:0 },
-    { id:11, question:"What is the output of print(bool([]))?", options:["True","False","[]","Error"], correct:1 },
-    { id:12, question:"Which operator is used for floor division in Python?", options:["//","/","%","%%"], correct:0 },
-    { id:13, question:"What is the output of print(type(5))?", options:["<class 'int'>","<class 'float'>","<class 'number'>","<class 'digit'>"], correct:0 },
-    { id:14, question:"Which method is used to remove the last element from a list?", options:["pop()","remove()","delete()","del()"], correct:0 },
-    { id:15, question:"What is the output of print('Hello'[-1])?", options:["o","H","Error","Hello"], correct:0 },
-    { id:16, question:"Which keyword is used to import modules in Python?", options:["import","include","require","using"], correct:0 },
-    { id:17, question:"What is the output of print(list((1,2,3)))?", options:["[1, 2, 3]","(1, 2, 3)","Error","[1, 2, 3, ]"], correct:0 },
-    { id:18, question:"Which method is used to join strings in a list?", options:["join()","concat()","merge()","combine()"], correct:0 },
-    { id:19, question:"What is the output of print(10 % 3)?", options:["1","3","0","10"], correct:0 },
-    { id:20, question:"Which function is used to get the type of a variable in Python?", options:["type()","typeof()","gettype()","vartype()"], correct:0 },
-  ];
+  const [questions, setQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Fetch 50 randomized questions from backend pool
+  useEffect(() => {
+    const fetchQuestionsFromBackend = async () => {
+      // Always clear any previous session state for fresh start
+      try {
+        sessionStorage.removeItem('weeklyExamState');
+      } catch (e) {}
+
+      try {
+        setIsLoadingQuestions(true);
+        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.length > 0) {
+          // For weekly exam, ensure we have 50 questions
+          let weeklyQuestions;
+          
+          if (json.data.length >= 50) {
+            // If backend has 50+ questions, use first 50
+            weeklyQuestions = json.data.slice(0, 50);
+          } else {
+            // If backend has less than 50 questions,
+            const targetCount = 50;
+            const availableQuestions = json.data;
+            weeklyQuestions = [];
+            
+            // Calculate how many times we need to repeat the available questions
+            const repeatTimes = Math.ceil(targetCount / availableQuestions.length);
+            
+            // Add questions until we reach target count
+            for (let i = 0; i < repeatTimes; i++) {
+              weeklyQuestions.push(...availableQuestions);
+            }
+            
+            // Trim to exactly 50 questions
+            weeklyQuestions = weeklyQuestions.slice(0, targetCount);
+          }
+          
+          const mappedQuestions = weeklyQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+          setQuestions(mappedQuestions);
+        }
+      } catch (err) {
+        console.error("Failed to fetch questions from backend:", err);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+    
+    fetchQuestionsFromBackend();
+  }, []);
+
+  // Control global browser back button for pre-exam screen
+  useEffect(() => {
+    if (!examStarted && !examSubmitted) {
+      window.allowBrowserBack = true;
+
+      const handleBrowserBack = (e) => {
+        // Allow normal browser back navigation to playground
+        navigate('/dashboard/playground');
+      };
+
+      window.addEventListener('popstate', handleBrowserBack);
+
+      return () => {
+        window.allowBrowserBack = false;
+        window.removeEventListener('popstate', handleBrowserBack);
+      };
+    } else {
+      window.allowBrowserBack = false;
+    }
+
+    return () => {
+      window.allowBrowserBack = false;
+    };
+  }, [examStarted, examSubmitted, navigate]);
+
+  // Load state from sessionStorage - DISABLED for fresh starts
+  // useEffect(() => {
+  //   const savedStateStr = sessionStorage.getItem('weeklyExamState');
+  //   if (savedStateStr) {
+  //     try {
+  //       const savedState = JSON.parse(savedStateStr);
+  //       if (savedState.examStarted && !savedState.examSubmitted) {
+  //         setAnswers(savedState.answers);
+  //         setMarkedForReview(savedState.markedForReview);
+  //         setVisitedQuestions(savedState.visitedQuestions);
+  //         setTimeLeft(savedState.timeLeft);
+  //         setCurrentQuestion(savedState.currentQuestion);
+  //         setExamStarted(true);
+  //         examSubmittedRef.current = false;
+  //         // Resume webcam if not already active
+  //         setTimeout(() => {
+  //           if (videoRef.current && !webcamActive) {
+  //             startWebcam();
+  //           }
+  //         }, 500);
+  //       }
+  //     } catch (e) {}
+  //   }
+  // }, []);
+
+  // Sync state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (examStarted && !examSubmitted && questions.length > 0) {
+      const stateToSave = {
+        questions,
+        answers,
+        markedForReview,
+        visitedQuestions,
+        timeLeft,
+        currentQuestion,
+        examStarted,
+        examSubmitted
+      };
+      sessionStorage.setItem('weeklyExamState', JSON.stringify(stateToSave));
+    }
+  }, [answers, markedForReview, visitedQuestions, timeLeft, currentQuestion, examStarted, examSubmitted, questions]);
 
   // TIMER
   useEffect(() => {
@@ -93,9 +190,12 @@ const WeeklyExam = () => {
       streamRef.current = null;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 320 }, height: { ideal: 240 } },
-        audio: false // No audio capture
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        },
+        audio: false // Disable audio capture permanently
       });
       
       globalStreamsToClean.push(stream);
@@ -230,9 +330,32 @@ const WeeklyExam = () => {
     }, 500);
   };
 
-  const startExam = () => {
+  const startExam = async () => {
+    // Reset all exam state for fresh start
+    setAnswers(new Array(50).fill(null));
+    setMarkedForReview(new Array(50).fill(false));
+    setVisitedQuestions(new Array(50).fill(false));
+    setCurrentQuestion(0);
+    setTimeLeft(4500);
+    setExamSubmitted(false);
+    examSubmittedRef.current = false;
+    
+    // Clear any potential cached state
+    try {
+      sessionStorage.removeItem('weeklyExamState');
+      localStorage.removeItem('examResult');
+      localStorage.removeItem('allExamResults');
+    } catch (e) {}
+    
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Error enabling fullscreen", err);
+    }
     setExamStarted(true);
-    startWebcam();
+    startWebcam(); // Start webcam when exam begins
   };
 
   const handleAnswerSelect = (qIndex, optionIndex) => {
@@ -292,23 +415,23 @@ const WeeklyExam = () => {
     const result = {
       status: "completed",
       correctAnswers: correctCount,
-      incorrectAnswers: 20 - correctCount,
-      totalQuestions: 20,
+      incorrectAnswers: 50 - correctCount,
+      totalQuestions: 50,
       score: correctCount * 2,
       marks: correctCount * 2,
-      totalMarks: 40,
-      answers: answers,
-      questions: questions,
-      timeTaken: 2700 - timeLeft,
+      totalMarks: 100,
+      answers,
+      questions,
+      timeTaken: 4500 - timeLeft,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
         firstName: user.firstName || user.username,
-        randomId: randomId
+        randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Weekly Python Programming Assessment",
-      examType: "weekly"
+      examTitle: "Weekly Exam",
+      submissionReason: reason
     };
 
     const now = new Date().toISOString();
@@ -317,12 +440,12 @@ const WeeklyExam = () => {
       exam_title: "Weekly Python Programming Assessment",
       exam_type: "weekly",
       score: correctCount * 2,
-      total_questions: 20,
+      total_questions: 50,
       correct_answers: correctCount,
-      incorrect_answers: 20 - correctCount,
+      incorrect_answers: 50 - correctCount,
       marks_obtained: correctCount * 2,
-      total_marks: 40,
-      time_taken: 2700 - timeLeft,
+      total_marks: 100,
+      time_taken: 4500 - timeLeft,
       start_time: now,
       end_time: now,
       status: "completed",
@@ -353,6 +476,8 @@ const WeeklyExam = () => {
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
+    sessionStorage.removeItem('weeklyExamState');
+
     navigate("/dashboard/playground-results",{replace:true});
   };
 
@@ -368,16 +493,20 @@ const WeeklyExam = () => {
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
           <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4"/>
           <h2 className="text-2xl font-bold mb-2">
-            Weekly Python Programming Exam
+            Weekly Exam
           </h2>
+
           <p className="text-gray-600 mb-6">
-            20 Questions • 45 Minutes
+            50 Questions • 75 Minutes
           </p>
           <button
             onClick={startExam}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            disabled={isLoadingQuestions}
+            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
+              isLoadingQuestions ? 'bg-gray-400 cursor-not-allowed animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+            }`}
           >
-            Start Exam
+            {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
           </button>
         </div>
       </div>
@@ -386,8 +515,8 @@ const WeeklyExam = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
-      {/* Webcam at Top Left */}
-      <div className="fixed top-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
+      {/* Webcam overlay positioned below question area */}
+      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
           <video
             ref={videoRef}

@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -17,6 +18,9 @@ import MonthlyExamReports from "./pages/MonthlyExamReports";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import ExamReportDetail from "./pages/ExamReportDetail";
 import PythonExam from "./pages/PythonExam";
+import WeeklyExam from "./pages/WeeklyExam";
+import MonthlyExam from "./pages/MonthlyExam";
+import ExamFailed from "./pages/ExamFailed";
 import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
@@ -39,11 +43,45 @@ import ExamManager from "./faculty/ExamManager";
 import Login from "./pages/Login";
 
 function App() {
+
+  const isLoggedIn = localStorage.getItem("access");
+  const location = useLocation();
+
+  // Disable browser back button only on exam pages
+  useEffect(() => {
+    if (window.allowBrowserBack) {
+      return;
+    }
+
+    // Only block back button if on exam pages
+    const isExamPage = location.pathname.includes('/python-exam') || 
+                      location.pathname.includes('/weekly-exam') || 
+                      location.pathname.includes('/monthly-exam');
+    
+    if (isExamPage) {
+      window.history.pushState(null, null, window.location.pathname + window.location.search);
+
+      const handlePopState = (event) => {
+        if (window.allowBrowserBack) {
+          return;
+        }
+        window.history.pushState(null, null, window.location.pathname + window.location.search);
+      };
+
+      window.addEventListener("popstate", handlePopState);
+
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    }
+  }, [location]);
+
   const token = localStorage.getItem("access");
   const user = JSON.parse(localStorage.getItem("user"));
 
   const isStudent = user?.role === "student";
   const isFaculty = user?.role === "faculty";
+
 
   return (
     <>
@@ -51,15 +89,23 @@ function App() {
 
       <Routes>
 
-        {/* 🔐 LOGIN */}
+        {/* 🔐 AUTH */}
         <Route path="/" element={<Login />} />
 
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
         <Route path="/exam" element={<Exams />} />
-        <Route path="/detailed-results/:index" element={<DetailedResults />} />
+        <Route path="/dashboard/playground/detailed-results/:index" element={<DetailedResults />} />
+
+        {/* Exams (Fullscreen, No Sidebar/Navbar) */}
+        <Route path="/dashboard/python-exam" element={<PythonExam />} />
+        <Route path="/dashboard/weekly-exam" element={<WeeklyExam />} />
+        <Route path="/dashboard/monthly-exam" element={<MonthlyExam />} />
+
+        {/* 🔐 Protected Dashboard */}
 
         {/* 👨‍🎓 STUDENT PANEL */}
+
         <Route
           path="/dashboard"
           element={
@@ -93,9 +139,6 @@ function App() {
           <Route path="playground" element={<Playground />} />
           <Route path="playground/:language" element={<PlaygroundDetail />} />
           <Route path="playground-results" element={<PlaygroundResults />} />
-
-          {/* Python Exam */}
-          <Route path="python-exam" element={<PythonExam />} />
 
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />

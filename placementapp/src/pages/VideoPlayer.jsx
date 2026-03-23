@@ -60,7 +60,7 @@ const VideoPlayer = () => {
     'Web API Development': 'xTSildbadAs', // Your provided video
     
     // React Topics
-    'React Basics': 's2skans2dP4', // Your provided video
+    'React Intro': 's2skans2dP4', // Your provided video
     'Components': 'Rh3tobg7hEo', // Your provided video
     'State Management': '_hgpcwmYH4g', // Your provided video
     'Hooks': 'HnXPKtro4SM', // Your provided video

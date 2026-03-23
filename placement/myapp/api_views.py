@@ -565,3 +565,70 @@ def monthly_exam_reports_api(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ==================== PLAYGROUND STATIC QUESTIONS ====================
+
+@api_view(['GET'])
+def playground_questions_api(request):
+    import random
+    
+    questions_pool = [
+        {"id": 1, "question": "What is the output of print(2 ** 3)?", "options": ["6", "8", "9", "12"], "correct": 1},
+        {"id": 2, "question": "Which keyword is used to define a function in Python?", "options": ["func", "def", "function", "define"], "correct": 1},
+        {"id": 3, "question": "What is the correct file extension for Python files?", "options": [".py", ".python", ".pt", ".pyth"], "correct": 0},
+        {"id": 4, "question": "Which of the following is a mutable data type in Python?", "options": ["Tuple", "String", "List", "Integer"], "correct": 2},
+        {"id": 5, "question": "What does len() function do in Python?", "options": ["Returns the length of an object", "Deletes an object", "Creates an object", "Copies an object"], "correct": 0},
+        {"id": 6, "question": "Which operator is used for exponentiation in Python?", "options": ["^", "**", "*", "^^"], "correct": 1},
+        {"id": 7, "question": "What is the output of print(type('Hello'))?", "options": ["<class 'int'>", "<class 'str'>", "<class 'string'>", "<class 'char'>"], "correct": 1},
+        {"id": 8, "question": "Which method is used to add an element to the end of a list?", "options": ["add()", "append()", "insert()", "extend()"], "correct": 1},
+        {"id": 9, "question": "What is the correct way to create a dictionary in Python?", "options": ["{}", "[]", "()", "||"], "correct": 0},
+        {"id": 10, "question": "Which statement is used to exit a loop in Python?", "options": ["exit", "break", "continue", "return"], "correct": 1},
+        {"id": 11, "question": "What is the output of print(10 // 3)?", "options": ["3.33", "3", "4", "Error"], "correct": 1},
+        {"id": 12, "question": "Which function is used to get input from user in Python 3?", "options": ["input()", "raw_input()", "scanf()", "cin()"], "correct": 0},
+        {"id": 13, "question": "What is the default value of a parameter if not specified?", "options": ["0", "None", "null", "undefined"], "correct": 1},
+        {"id": 14, "question": "Which module is used for mathematical operations in Python?", "options": ["math", "cmath", "maths", "calc"], "correct": 0},
+        {"id": 15, "question": "What is the output of print(bool(0))?", "options": ["True", "False", "0", "Error"], "correct": 1},
+        {"id": 16, "question": "Which method removes whitespace from both ends of a string?", "options": ["trim()", "strip()", "remove()", "clean()"], "correct": 1},
+        {"id": 17, "question": "What is the output of print(range(5))?", "options": ["[0,1,2,3,4]", "range(0,5)", "0,1,2,3,4", "Error"], "correct": 1},
+        {"id": 18, "question": "Which keyword is used to handle exceptions in Python?", "options": ["try", "except", "catch", "handle"], "correct": 1},
+        {"id": 19, "question": "What is the output of print('Hello' * 3)?", "options": ["HelloHelloHello", "Hello 3", "Hello3", "Error"], "correct": 0},
+        {"id": 20, "question": "Which function is used to open a file in Python?", "options": ["open()", "file()", "read()", "load()"], "correct": 0},
+        {"id": 21, "question": "What is the purpose of the __init__ method in Python?", "options": ["Constructor", "Destructor", "Iterator", "Generator"], "correct": 0},
+        {"id": 22, "question": "Which of the following is not a valid Python data type?", "options": ["int", "float", "char", "str"], "correct": 2},
+        {"id": 23, "question": "What does the 'self' parameter represent in Python methods?", "options": ["Current instance", "Class name", "Method name", "Parent class"], "correct": 0},
+        {"id": 24, "question": "Which method is used to find the index of an element in a list?", "options": ["index()", "find()", "search()", "locate()"], "correct": 0},
+        {"id": 25, "question": "What is the output of print(2 + 3 * 2)?", "options": ["10", "12", "8", "7"], "correct": 0},
+        {"id": 26, "question": "Which keyword is used to define a class in Python?", "options": ["class", "Class", "def", "define"], "correct": 0},
+        {"id": 27, "question": "What is the output of print(len('Python'))?", "options": ["5", "6", "7", "Error"], "correct": 1},
+        {"id": 28, "question": "Which method is used to sort a list in Python?", "options": ["sort()", "sorted()", "order()", "arrange()"], "correct": 0},
+        {"id": 29, "question": "What is the output of print(3 ** 2 ** 1)?", "options": ["9", "27", "81", "3"], "correct": 0},
+        {"id": 30, "question": "Which function is used to convert a string to uppercase?", "options": ["upper()", "uppercase()", "toUpper()", "toUpperCase()"], "correct": 0},
+        {"id": 31, "question": "What is the output of print(bool([]))?", "options": ["True", "False", "[]", "Error"], "correct": 1},
+        {"id": 32, "question": "Which operator is used for floor division in Python?", "options": ["//", "/", "%", "%%"], "correct": 0},
+        {"id": 33, "question": "What is the output of print(type(5))?", "options": ["<class 'int'>", "<class 'float'>", "<class 'number'>", "<class 'digit'>"], "correct": 0},
+        {"id": 34, "question": "Which method is used to remove the last element from a list?", "options": ["pop()", "remove()", "delete()", "del()"], "correct": 0},
+        {"id": 35, "question": "What is the output of print('Hello'[-1])?", "options": ["o", "H", "Error", "Hello"], "correct": 0},
+        {"id": 36, "question": "Which keyword is used to import modules in Python?", "options": ["import", "include", "require", "using"], "correct": 0},
+        {"id": 37, "question": "What is the output of print(list((1,2,3)))?", "options": ["[1, 2, 3]", "(1, 2, 3)", "Error", "[1, 2, 3, ]"], "correct": 0},
+        {"id": 38, "question": "Which method is used to join strings in a list?", "options": ["join()", "concat()", "merge()", "combine()"], "correct": 0},
+        {"id": 39, "question": "What is the output of print(10 % 3)?", "options": ["1", "3", "0", "10"], "correct": 0},
+        {"id": 40, "question": "Which function is used to get the type of a variable in Python?", "options": ["type()", "typeof()", "gettype()", "vartype()"], "correct": 0},
+        {"id": 41, "question": "What is the difference between list and tuple in Python?", "options": ["List is mutable, tuple is immutable", "Tuple is mutable, list is immutable", "Both are mutable", "Both are immutable"], "correct": 0},
+        {"id": 42, "question": "Which of the following is a built-in Python function?", "options": ["print()", "printf()", "cout()", "System.out.println()"], "correct": 0},
+        {"id": 43, "question": "What is the output of print([1,2,3] + [4,5,6])?", "options": ["[1, 2, 3, 4, 5, 6]", "[1, 2, 3, [4, 5, 6]]", "Error", "[1, 2, 3] + [4, 5, 6]"], "correct": 0},
+        {"id": 44, "question": "Which method is used to copy a list in Python?", "options": ["copy()", "clone()", "duplicate()", "replicate()"], "correct": 0},
+        {"id": 45, "question": "What is the output of print(dict(zip(['a','b'],[1,2])))?", "options": ["{'a': 1, 'b': 2}", "{'a': 1, 'b': 2, }", "Error", "{'a': 1, 'b': 2}"], "correct": 0},
+        {"id": 46, "question": "Which of the following is a valid Python variable name?", "options": ["my_var", "2var", "var-name", "class"], "correct": 0},
+        {"id": 47, "question": "What is the output of print(set([1,2,2,3,3]))?", "options": ["{1, 2, 3}", "{1, 2, 2, 3, 3}", "[1, 2, 3]", "Error"], "correct": 0},
+        {"id": 48, "question": "Which method is used to add elements to a set?", "options": ["add()", "append()", "insert()", "push()"], "correct": 0},
+        {"id": 49, "question": "What is the output of print('Python'[2:5])?", "options": ["tho", "th", "hon", "hon"], "correct": 0},
+        {"id": 50, "question": "Which keyword is used to define a generator function?", "options": ["yield", "return", "generate", "gen"], "correct": 0},
+    ]
+
+    selected_questions = random.sample(questions_pool, 20)
+    
+    return Response({
+        'success': True,
+        'data': selected_questions
+    })
+
