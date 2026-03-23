@@ -8,25 +8,66 @@ function PlaygroundResults() {
   const [currentResult, setCurrentResult] = useState(null);
   const [allResults, setAllResults] = useState([]);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
+    const fetchResults = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      const userStr = localStorage.getItem("user");
+      const username = localStorage.getItem("username");
+      
+      let currentUser = null;
+      try {
+        currentUser = userStr ? JSON.parse(userStr) : null;
+      } catch (e) {}
 
-    const examResult = localStorage.getItem("examResult");
-    if (examResult) {
-      setCurrentResult(JSON.parse(examResult));
-    }
+      const targetUsername = username || currentUser?.username;
 
-    const results = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-    setAllResults(results);
+      if (!targetUsername) {
+        setIsLoading(false);
+        return;
+      }
 
-    // Also check for failed exams
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/api/user-combined-results/?username=${targetUsername}`);
+        const json = await response.json();
+
+        if (json.success) {
+          setAllResults(json.data);
+          
+          // Also set current result if it exists in localStorage (most recent one)
+          const examResult = localStorage.getItem("examResult");
+          if (examResult) {
+            setCurrentResult(JSON.parse(examResult));
+          } else if (json.data.length > 0) {
+            // Fallback to most recent result from backend if nothing in localStorage
+            setCurrentResult(json.data[0]);
+          }
+        } else {
+          setError(json.error || "Failed to fetch results");
+        }
+      } catch (err) {
+        console.error("Error fetching results:", err);
+        setError("Network error. Please check if the server is running.");
+        
+        // Fallback to localStorage on network error
+        const results = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+        setAllResults(results);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+
+    // Still check for one-time results/failures from localStorage
     const examFailure = localStorage.getItem("examFailure");
     if (examFailure) {
       const failedResult = JSON.parse(examFailure);
-      // Add failed exam to results list
-      const updatedResults = [failedResult, ...results];
-      setAllResults(updatedResults);
-      localStorage.setItem("allExamResults", JSON.stringify(updatedResults));
-      // Clear the failure after adding to results
+      setAllResults(prev => [failedResult, ...prev]);
       localStorage.removeItem("examFailure");
     }
   }, []);

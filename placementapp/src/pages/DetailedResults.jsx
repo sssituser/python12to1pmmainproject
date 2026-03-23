@@ -12,7 +12,14 @@ function DetailedResults() {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
+    // 1. Try to get the specific selected result first
+    const selected = localStorage.getItem("selectedExamResult");
+    if (selected) {
+      setResult(JSON.parse(selected));
+      return;
+    }
 
+    // 2. Fallback to index-based lookup (legacy/compatibility)
     const results = JSON.parse(
       localStorage.getItem("allExamResults") || "[]"
     );
@@ -22,7 +29,6 @@ function DetailedResults() {
     } else {
       console.error("DetailedResults - No result found at index:", index);
     }
-
   }, [index]);
 
   const handleBack = () => {
