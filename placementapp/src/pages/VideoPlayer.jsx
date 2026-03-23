@@ -7,6 +7,10 @@ const VideoPlayer = () => {
   const [videoId, setVideoId] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Check if user is faculty
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isFaculty = user?.role === "faculty";
+
   // Predefined YouTube video IDs for each topic
   const topicVideos = {
     // Python Topics
@@ -103,10 +107,19 @@ const VideoPlayer = () => {
           {courseTitle} - {topicName}
         </h1>
         <button
-          onClick={() => navigate('/dashboard/course')}
+          onClick={() => {
+            // Generate course URL from course title
+            const courseName = courseTitle.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+            // Navigate to faculty or student course topics based on user role
+            if (isFaculty) {
+              navigate(`/faculty/Course/${courseName}`);
+            } else {
+              navigate(`/dashboard/course/${courseName}`);
+            }
+          }}
           className="text-white hover:text-gray-300 transition-colors"
         >
-          ← Back to Courses
+          ← Back to Topics
         </button>
       </div>
 

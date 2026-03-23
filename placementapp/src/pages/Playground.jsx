@@ -80,7 +80,7 @@ function Playground() {
                   Daily Exam
                 </h3>
 
-                <span className="text-blue-500 text-lg"></span>
+                <span className="text-purple-500 text-lg">🗓️</span>
 
               </div>
 
@@ -88,14 +88,14 @@ function Playground() {
                 Daily practice exam to test your Python programming skills. Cover variables, operators, data types, control flow, functions, and more with 20 multiple choice questions.
               </p>
 
-              <span className="inline-block bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">
+              <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
                 20 MCQs • 45 min
               </span>
             </div>
 
             <button
               onClick={() => navigate("/dashboard/python-exam")}
-              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition"
+              className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition"
             >
               Start Exam
             </button>

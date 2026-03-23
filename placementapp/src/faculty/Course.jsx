@@ -31,9 +31,27 @@ function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
   const [selectedCourse, setSelectedCourse] = useState(null);
+
+  // Disable browser back button permanently
+  const disableBrowserBack = () => {
+    window.history.pushState(null, null);
+    window.addEventListener('popstate', function(event) {
+      window.history.pushState(null, null);
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  };
+
+  // Call disable function immediately
+  disableBrowserBack();
+
+  const [newTopic, setNewTopic] = useState("");
   const [progressNotification, setProgressNotification] = useState(null);
-  
+  const [showAddCourse, setShowAddCourse] = useState(false);
+  const [newCourseName, setNewCourseName] = useState("");
+
   // Default courses for first-time setup
+  // ✅ Default courses for first-time setup
   const defaultCourses = [
     {
       id: 1,
@@ -330,55 +348,6 @@ function CoursesPage() {
     }
   }, [courses]);
 
-  // ✅ Sync courses from faculty - Check for new courses added by faculty
-  useEffect(() => {
-    const checkForNewCourses = () => {
-      const facultyCourses = localStorage.getItem('facultyCourses');
-      if (facultyCourses) {
-        try {
-          const parsedFacultyCourses = JSON.parse(facultyCourses);
-          const studentCourses = localStorage.getItem('courses');
-          
-          if (studentCourses) {
-            const parsedStudentCourses = JSON.parse(studentCourses);
-            
-            // Find courses that exist in faculty but not in student
-            const newCourses = parsedFacultyCourses.filter(facultyCourse => 
-              !parsedStudentCourses.some(studentCourse => studentCourse.id === facultyCourse.id)
-            );
-            
-            // Add new courses to student courses
-            if (newCourses.length > 0) {
-              const updatedStudentCourses = [...parsedStudentCourses, ...newCourses];
-              localStorage.setItem('courses', JSON.stringify(updatedStudentCourses));
-              setCourses(updatedStudentCourses);
-              
-              // Show notification for new courses
-              setProgressNotification({
-                type: 'new_courses',
-                message: `${newCourses.length} new course(s) added by faculty`,
-                courses: newCourses.map(course => course.title)
-              });
-              
-              // Hide notification after 5 seconds
-              setTimeout(() => {
-                setProgressNotification(null);
-              }, 5000);
-            }
-          }
-        } catch (error) {
-          console.error('Error syncing courses from faculty:', error);
-        }
-      }
-    };
-
-    // Check for new courses every 5 seconds
-    const interval = setInterval(checkForNewCourses, 5000);
-    
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
-  }, []);
-
   // ✅ Handle URL parameter for specific course
   useEffect(() => {
     if (courseId && courses.length > 0) {
@@ -391,8 +360,8 @@ function CoursesPage() {
       if (course) {
         setSelectedCourse(course);
       } else {
-        // Course not found, redirect to student courses list
-        navigate('/dashboard/course');
+        // Course not found, redirect to faculty courses list
+        navigate('/faculty/Course');
       }
     }
   }, [courseId, courses, navigate]);
@@ -479,32 +448,6 @@ function CoursesPage() {
       ];
     }
     
-    if (lowerName.includes('devops') || lowerName.includes('tools')) {
-      return [
-        "Introduction to DevOps",
-        "Version Control with Git",
-        "CI/CD Pipelines",
-        "Container Orchestration",
-        "Infrastructure as Code",
-        "Monitoring and Logging",
-        "Cloud Platforms",
-        "DevOps Best Practices"
-      ];
-    }
-    
-    if (lowerName.includes('security') || lowerName.includes('cyber')) {
-      return [
-        "Introduction to Cyber Security",
-        "Network Security Fundamentals",
-        "Cryptography and Encryption",
-        "Web Application Security",
-        "Ethical Hacking Basics",
-        "Security Auditing",
-        "Incident Response",
-        "Security Compliance"
-      ];
-    }
-    
     // Default topics for any course
     return [
       "Introduction",
@@ -514,20 +457,58 @@ function CoursesPage() {
       "Real-world Applications",
       "Troubleshooting",
       "Performance Optimization",
-      "Future Trends",
-      "New Topic"
+      "Future Trends"
     ];
-  }
-  
+  };
+
+  // ✅ Add New Course
+  const addNewCourse = () => {
+    if (!newCourseName.trim()) return;
+    
+    const newCourse = {
+      id: Math.max(...courses.map(c => c.id)) + 1,
+      title: newCourseName,
+      icon: getIconForCourse(newCourseName),
+      level: "Beginner",
+      duration: "3 hrs",
+      progress: 0,
+      locked: false,
+      topics: generateTopicsForCourse(newCourseName)
+    };
+    
+    setCourses([...courses, newCourse]);
+    setNewCourseName("");
+    setShowAddCourse(false);
+  };
+
+  // ✅ Add Topic
+  const addTopic = () => {
+    if (!newTopic.trim()) return;
+
+    // Find the course and add topic
+    const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
+    if (courseIndex !== -1) {
+      const updatedCourses = [...courses];
+      updatedCourses[courseIndex].topics.push(newTopic);
+      setCourses(updatedCourses);
+      setSelectedCourse({...updatedCourses[courseIndex]});
+    }
+
+    setNewTopic("");
+  };
+
   // ✅ Handle Watch Click
   const handleWatchClick = (courseTitle, topic) => {
     // Update progress when watching a video
     updateCourseProgress(courseTitle, topic);
+    
+    // Navigate to video player with course and topic
+    navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
   };
 
   // ✅ Update Course Progress
   const updateCourseProgress = (courseTitle, topic) => {
-    // Find course
+    // Find the course
     const courseIndex = courses.findIndex(c => c.title === courseTitle);
     if (courseIndex !== -1) {
       // Calculate new progress (increment by 10% for each video watched, max 100%)
@@ -560,9 +541,9 @@ function CoursesPage() {
 
   // ✅ Handle View Details Click
   const handleViewDetails = (course) => {
-    // Navigate to specific course URL with course name for student
+    // Navigate to specific course URL with course name for faculty
     const courseName = course.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-    navigate(`/dashboard/course/${courseName}`);
+    navigate(`/faculty/Course/${courseName}`);
     // Also set selected course for the component state
     setSelectedCourse(course);
   };
@@ -589,6 +570,24 @@ function CoursesPage() {
             className="text-blue-600 hover:underline"
           >
             ← Back 
+          </button>
+        </div>
+
+        {/* Add Topic */}
+        <div className="flex gap-3 mb-6">
+          <input
+            type="text"
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            placeholder="Enter new topic..."
+            className="flex-1 p-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <button
+            onClick={addTopic}
+            className="bg-blue-600 text-white px-5 rounded-lg hover:bg-blue-700"
+          >
+            Add Topic
           </button>
         </div>
 
@@ -620,13 +619,50 @@ function CoursesPage() {
       {progressNotification && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
           <div className="font-semibold">
-            {progressNotification.type === 'new_courses' ? 'New Courses Added!' : 'Progress Updated! 🎉'}
+            Progress Updated! 🎉
           </div>
           <div className="text-sm">
-            {progressNotification.type === 'new_courses' 
-              ? `${progressNotification.message}`
-              : `${progressNotification.course}: ${progressNotification.oldProgress}% → ${progressNotification.newProgress}%`
-            }
+            {progressNotification.course}: {progressNotification.oldProgress}% → {progressNotification.newProgress}%
+          </div>
+        </div>
+      )}
+
+      {/* Add Course Modal */}
+      {showAddCourse && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-900">Add New Course</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
+                <input
+                  type="text"
+                  value={newCourseName}
+                  onChange={(e) => setNewCourseName(e.target.value)}
+                  placeholder="Enter course name (e.g., Agentic AI)"
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowAddCourse(false);
+                  setNewCourseName("");
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addNewCourse}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+              >
+                Submit
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -635,9 +671,16 @@ function CoursesPage() {
         <h2 className="text-gray-900 text-2xl font-bold">
           Courses
         </h2>
+        <button
+          onClick={() => setShowAddCourse(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg"
+        >
+          + Add Course
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
         {courses.map((course, index) => {
           const Icon = course.icon;
 

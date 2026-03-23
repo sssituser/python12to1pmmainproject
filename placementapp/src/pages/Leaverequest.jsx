@@ -309,7 +309,7 @@ function LeaveRequest() {
     const colors = {
       'Medical': 'bg-red-100 text-red-700 border-red-200',
       'Personal': 'bg-blue-100 text-blue-700 border-blue-200',
-      'Academic': 'bg-purple-100 text-purple-700 border-purple-200',
+      'Academic': 'bg-blue-100 text-blue-700 border-blue-200',
       'Family': 'bg-green-100 text-green-700 border-green-200',
       'Other': 'bg-gray-100 text-gray-700 border-gray-200'
     };
@@ -317,9 +317,9 @@ function LeaveRequest() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 shadow-sm border-b border-gray-200 py-3">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm border-b border-gray-200 py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -327,7 +327,7 @@ function LeaveRequest() {
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-lg" />
               </div>
               <div>
-                <h4 className="text-lg font-black text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
+                <h4 className="text-lg font-black text-green-600" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg">
@@ -341,8 +341,8 @@ function LeaveRequest() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2">
-            <h6 className="text-xl font-black text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+          <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-2">
+            <h6 className="text-xl font-black text-sky-600 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
               <FontAwesomeIcon icon={faPlus} />
               New Leave Request
             </h6>
@@ -473,19 +473,12 @@ function LeaveRequest() {
 
         {/* All Leave Requests */}
         <div className="rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-2">
+          <div className="bg-gradient-to-r from-pink-400 to-pink-500 px-6 py-2">
             <div className="flex justify-between items-center">
             <h6 className="text-xl font-black text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
                 <FontAwesomeIcon icon={faCalendarAlt} />
                 All Leave Requests
               </h6>
-              <button 
-                onClick={loadRequests}
-                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm transition duration-200 flex items-center gap-2"
-              >
-                <FontAwesomeIcon icon={faClock} />
-                Refresh Status
-              </button>
             </div>
           </div>
           
