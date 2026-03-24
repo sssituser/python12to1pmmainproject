@@ -94,7 +94,7 @@ function ExamReportDetail() {
 
           <div className="d-flex justify-content-between mt-2 flex-wrap gap-1">
             <small className="text-muted">Student: <strong>{(report.user?.username || report.user?.first_name || "Unknown").toUpperCase()}</strong></small>
-            <small className="text-muted">ID: <strong>{report.random_id || report.id || "N/A"}</strong></small>
+            {/* <small className="text-muted">ID: <strong>{report.random_id || report.id || "N/A"}</strong></small> */}
             <small className="text-muted">Date: <strong>{report.exam_date ? new Date(report.exam_date).toLocaleDateString("en-GB") : "N/A"}</strong></small>
           </div>
         </div>

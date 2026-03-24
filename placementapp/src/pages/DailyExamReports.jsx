@@ -164,7 +164,7 @@ function DailyExamReports() {
                     onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
                     className="w-full py-3 bg-gray-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
-                    View Analysis ↗
+                    View Analysis 
                   </button>
                 </div>
               );

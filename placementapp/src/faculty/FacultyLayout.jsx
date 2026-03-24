@@ -13,15 +13,15 @@ function FacultyLayout() {
   const menu = [
     
 
-    { name: "Course", path: "/faculty/Course" },
-
     { name: "Stats", path: "/faculty/Stats" },
+
+    { name: "Course", path: "/faculty/Course" },
 
     { name: "Jobs", path: "/faculty/jobs" },
 
     { name: "Applications", path: "/faculty/applications" },
 
-    { name: "exam", path: "/faculty/Exam" },
+    { name: "Exam", path: "/faculty/Exam" },
 
     { name: "Leave Requests", path: "/faculty/leaves" },
 

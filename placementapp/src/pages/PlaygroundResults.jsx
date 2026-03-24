@@ -224,7 +224,7 @@ function PlaygroundResults() {
             <tr>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[60px]">S.No</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Student</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">ID</th>
+              {/* <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">ID</th> */}
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Exam Name</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Date</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Score</th>
@@ -262,9 +262,9 @@ function PlaygroundResults() {
                       result.user?.username ||
                       "Unknown"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
+                  {/* <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
                     {result.user?.randomId || "N/A"}
-                  </td>
+                  </td> */}
                   <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
                     {result.examTitle ||
                       "Python Programming"}
