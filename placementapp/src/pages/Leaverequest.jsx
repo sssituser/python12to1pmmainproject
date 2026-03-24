@@ -327,12 +327,12 @@ function LeaveRequest() {
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-lg" />
               </div>
               <div>
-                <h4 className="text-lg font-black text-green-600" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Request Portal</h4>
+                <h4 className="text-lg font-bold text-gray-800">Leave Request Portal</h4>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg">
               <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
-              <span className="text-gray-700 font-medium" style={{ fontFamily: 'Times New Roman, serif' }}>Student</span>
+              <span className="text-gray-800 font-semibold">Student</span>
             </div>
           </div>
         </div>
@@ -342,7 +342,7 @@ function LeaveRequest() {
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-2">
-            <h6 className="text-xl font-black text-sky-600 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+            <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <FontAwesomeIcon icon={faPlus} />
               New Leave Request
             </h6>
@@ -352,7 +352,7 @@ function LeaveRequest() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {/* Personal Information Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Full Name *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={name}
@@ -364,7 +364,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Email</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -375,7 +375,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Phone</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Phone</label>
                 <input
                   type="tel"
                   value={phone}
@@ -386,7 +386,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Student ID</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Student ID</label>
                 <input
                   type="text"
                   value={studentId}
@@ -398,7 +398,7 @@ function LeaveRequest() {
               
               {/* Leave Details Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Start Date *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Start Date *</label>
                 <input
                   type="date"
                   value={startDate}
@@ -409,7 +409,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>End Date *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">End Date *</label>
                 <input
                   type="date"
                   value={endDate}
@@ -420,7 +420,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Leave Type</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Leave Type</label>
                 <select 
                   value={leaveType} 
                   onChange={(e) => setLeaveType(e.target.value)}
@@ -436,7 +436,7 @@ function LeaveRequest() {
               
               {/* Reason Field - Spans multiple columns */}
               <div className="lg:col-span-2 xl:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Times New Roman, serif' }}>Reason for Leave *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Reason for Leave *</label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -475,7 +475,7 @@ function LeaveRequest() {
         <div className="rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-pink-400 to-pink-500 px-6 py-2">
             <div className="flex justify-between items-center">
-            <h6 className="text-xl font-black text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+            <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <FontAwesomeIcon icon={faCalendarAlt} />
                 All Leave Requests
               </h6>
@@ -488,8 +488,8 @@ function LeaveRequest() {
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Times New Roman, serif' }}>No Leave Requests</h3>
-                <p className="text-gray-600" style={{ fontFamily: 'Times New Roman, serif' }}>Submit your first leave request to get started</p>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">No Leave Requests</h3>
+                <p className="text-gray-600">Submit your first leave request to get started</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -522,8 +522,14 @@ function LeaveRequest() {
                           <span className="px-2 py-1 rounded-full text-xs font-medium border" style={{ fontFamily: 'Times New Roman, serif' }}>
                             {req.leave_type}
                           </span>
-                          <span className="px-3 py-1 rounded-full text-lg font-bold" style={{ fontFamily: 'Times New Roman, serif' }}>
-                            {req.status}
+                          <span className="px-3 py-1 rounded-full text-lg font-bold">
+                            {req.status === 'Approved' ? (
+                              <span className="text-green-600">{req.status}</span>
+                            ) : req.status === 'Rejected' ? (
+                              <span className="text-red-600">{req.status}</span>
+                            ) : (
+                              <span className="text-gray-800">{req.status}</span>
+                            )}
                           </span>
                         </div>
 
