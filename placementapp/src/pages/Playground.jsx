@@ -94,7 +94,7 @@ function Playground() {
                   Daily Exam
                 </h3>
 
-                <span className="text-purple-500 text-lg">🗓️</span>
+                <span className="text-purple-500 text-lg">📊</span>
 
               </div>
 
@@ -158,7 +158,7 @@ function Playground() {
                   Monthly Exam
                 </h3>
 
-                <span className="text-purple-500 text-lg">🗓️</span>
+                <span className="text-purple-500 text-lg">📊</span>
 
               </div>
 

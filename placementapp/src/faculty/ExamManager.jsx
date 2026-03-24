@@ -121,7 +121,7 @@ function ExamManager() {
   return (
     <div className="p-6 max-w-4xl mx-auto pb-20">
 
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Exam Manager (Faculty)</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Exam Manager</h1>
 
       {/* EXAM SETTINGS */}
       <div className="bg-white p-5 shadow rounded-lg mb-6 border border-gray-100">
@@ -214,7 +214,7 @@ function ExamManager() {
             : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
-          {settingsSaved ? "✅ Verified & Saved!" : "Confirm Settings"}
+          {settingsSaved ? "Saved" : "Confirm"}
         </button>
 
       </div>
@@ -280,6 +280,15 @@ function ExamManager() {
       </div>
 
       {/* QUESTION LIST */}
+      <div className="mt-10 mb-6 flex items-center justify-between border-b pb-4">
+        <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+          Current {category} Questions
+        </h2>
+        <span className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ring-1 ring-gray-200">
+          Total: {questions.length} / {maxQuestions}
+        </span>
+      </div>
+
       <div className="space-y-4">
         {questions.length === 0 && (
           <p className="text-gray-500">No questions added yet</p>
