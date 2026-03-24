@@ -88,7 +88,7 @@ function Sidebar() {
               <div className="ml-6 mt-2 space-y-1 text-sm">
 
                 <NavLink
-                  to="/dashboard/jobs"
+                  to="/dashboard/alljobs"
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <Folder size={14} />
@@ -96,7 +96,7 @@ function Sidebar() {
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/applied"
+                  to="/dashboard/appliedjobs"
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <CheckCircle size={14} />
@@ -154,7 +154,7 @@ function Sidebar() {
 
           {/* LEADERBOARD */}
           <NavLink
-            to="/dashboard/leaderboard"
+            to="/dashboard/exam-leaderboard"
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
