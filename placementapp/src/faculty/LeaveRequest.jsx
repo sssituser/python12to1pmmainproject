@@ -182,7 +182,7 @@ function Leaves() {
   return (
     <div className="container-fluid p-4 vh-100">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="mb-0">
+        <h4 className="mb-0 text-3xl font-bold text-gray-800">
           <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
           Leave Requests Management
         </h4>
@@ -199,8 +199,8 @@ function Leaves() {
         <div className="card shadow-sm">
           <div className="card-body text-center py-5">
             <FontAwesomeIcon icon={faFileAlt} className="text-gray-400 text-4xl mb-3" />
-            <h5 className="text-gray-600">No Leave Requests</h5>
-            <p className="text-gray-500">No leave requests have been submitted by students.</p>
+            <h5 className="text-gray-800 text-lg font-bold">No Leave Requests</h5>
+            <p className="text-gray-600 text-sm font-semibold">No leave requests have been submitted by students.</p>
           </div>
         </div>
       ) : (
@@ -254,8 +254,14 @@ function Leaves() {
                         </div>
                       </td>
                       <td className="py-4 px-3">
-                        <span className="fw-bold" style={{ color: '#000000', fontSize: '0.9rem' }}>
-                          {leave.status}
+                        <span className="font-bold text-lg">
+                          {leave.status === 'Approved' ? (
+                            <span className="text-green-600">{leave.status}</span>
+                          ) : leave.status === 'Rejected' ? (
+                            <span className="text-red-600">{leave.status}</span>
+                          ) : (
+                            <span className="text-gray-800">{leave.status}</span>
+                          )}
                         </span>
                       </td>
                       <td className="py-4 px-3">
@@ -292,13 +298,18 @@ function Leaves() {
                             </button>
                           </div>
                         ) : (
-                          <div className="text-muted small">
+                          <div className="text-muted small font-bold">
                             {leave.status === "Approved" ? (
-                              <FontAwesomeIcon icon={faCheckCircle} className="text-success me-1" />
+                              <>
+                                <FontAwesomeIcon icon={faCheckCircle} className="text-success me-1" />
+                                <span className="text-green-600">{leave.status}</span>
+                              </>
                             ) : (
-                              <FontAwesomeIcon icon={faTimesCircle} className="text-danger me-1" />
+                              <>
+                                <FontAwesomeIcon icon={faTimesCircle} className="text-danger me-1" />
+                                <span className="text-red-600">{leave.status}</span>
+                              </>
                             )}
-                            {leave.status}
                           </div>
                         )}
                       </td>

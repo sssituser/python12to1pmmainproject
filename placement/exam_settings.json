@@ -1,10 +1,27 @@
 {
     "Weekly": {
-        "maxQuestions": 50,
-        "questions": []
+        "maxQuestions": 1,
+        "questions": [
+            {
+                "question": "What are the technologies Name?",
+                "options": [
+                    "HTML",
+                    "CSS",
+                    "JAVA SCRIPT",
+                    "ALL THE ABOVE"
+                ],
+                "answer": "ALL THE ABOVE",
+                "id": 1774283939772
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 1,
+        "duration": 10
     },
-    "Monthly": {
-        "maxQuestions": 30,
-        "questions": []
+    "Daily": {
+        "maxQuestions": 5010000000000,
+        "questions": [],
+        "passingRule": "percentage",
+        "passingValue": 50
     }
 }

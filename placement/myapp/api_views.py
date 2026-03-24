@@ -209,7 +209,13 @@ def exam_reports_api(request):
     """
     GET: Get all exam reports
     """
-    exam_attempts = ExamAttempt.objects.filter(exam_type='daily').order_by('-exam_date')
+    username = request.GET.get('username')
+    exam_attempts = ExamAttempt.objects.filter(exam_type='daily')
+    
+    if username:
+        exam_attempts = exam_attempts.filter(user__username__iexact=username)
+        
+    exam_attempts = exam_attempts.order_by('-exam_date')
     serializer = ExamAttemptSerializer(exam_attempts, many=True)
     
     # Format data for frontend
@@ -269,7 +275,7 @@ def exam_report_detail_api(request, pk):
                 'questions': questions_data,
                 'answers': answers_data,
                 'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
-                'passed': attempt.marks_obtained >= (attempt.total_marks * 0.5)  # 50% pass criteria
+                'passed': attempt.status == 'Pass'
             }
         })
         
@@ -323,6 +329,15 @@ def save_exam_report_api(request):
         if not random_id_val and isinstance(data.get('user'), dict):
             random_id_val = data['user'].get('randomId') or data['user'].get('random_id') or ''
 
+        # Determine pass/fail status from frontend calculation
+        passed_input = data.get('passed')
+        if passed_input is True:
+            final_status = 'Pass'
+        elif passed_input is False:
+            final_status = 'Fail'
+        else:
+            final_status = data.get('status', 'completed')
+
         attempt = ExamAttempt.objects.create(
             user              = user,
             exam_title        = data.get('exam_title') or data.get('examTitle', 'Python Exam'),
@@ -336,7 +351,7 @@ def save_exam_report_api(request):
             time_taken        = data.get('time_taken') or data.get('timeTaken', 0),
             start_time        = start_time,
             end_time          = end_time,
-            status            = data.get('status', 'completed'),
+            status            = final_status,
             random_id         = str(random_id_val),
             answers_json      = json.dumps(data.get('answers', [])),
             questions_json    = json.dumps(data.get('questions', []))
@@ -489,13 +504,19 @@ def weekly_exam_reports_api(request):
         from datetime import timedelta
         from django.utils import timezone
 
+        username = request.GET.get('username')
         now = timezone.now()
         start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
 
         attempts = ExamAttempt.objects.filter(
             exam_date__gte=start_of_week,
             exam_type='weekly'
-        ).order_by('-exam_date')
+        )
+        
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+            
+        attempts = attempts.order_by('-exam_date')
 
         formatted_data = []
         for attempt in attempts:
@@ -538,13 +559,19 @@ def monthly_exam_reports_api(request):
     try:
         from django.utils import timezone
 
+        username = request.GET.get('username')
         now = timezone.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         attempts = ExamAttempt.objects.filter(
             exam_date__gte=start_of_month,
             exam_type='monthly'
-        ).order_by('-exam_date')
+        )
+        
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+            
+        attempts = attempts.order_by('-exam_date')
 
         formatted_data = []
         for attempt in attempts:
@@ -570,6 +597,56 @@ def monthly_exam_reports_api(request):
             'data': formatted_data
         })
 
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def user_combined_results_api(request):
+    """
+    GET: Get all exam results for a specific user across all categories
+    """
+    try:
+        username = request.GET.get('username')
+        if not username:
+             return Response({
+                'success': False,
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+        
+        formatted_data = []
+        for attempt in attempts:
+            formatted_data.append({
+                'id': attempt.id,
+                'user': {
+                    'username': attempt.user.username,
+                    'randomId': attempt.random_id or 'N/A',
+                    'email': attempt.user.email,
+                    'firstName': attempt.user.first_name or attempt.user.username
+                },
+                'examTitle': attempt.exam_title,
+                'examType': attempt.exam_type,
+                'score': attempt.marks_obtained,
+                'totalMarks': attempt.total_marks,
+                'correctAnswers': attempt.correct_answers,
+                'incorrectAnswers': attempt.incorrect_answers,
+                'totalQuestions': attempt.total_questions,
+                'status': attempt.status,
+                'examDate': attempt.exam_date.isoformat(),
+                'timeTaken': attempt.time_taken,
+                'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
+                'questions': json.loads(attempt.questions_json) if attempt.questions_json else [],
+                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+            })
+            
+        return Response({
+            'success': True,
+            'data': formatted_data
+        })
     except Exception as e:
         return Response({
             'success': False,
@@ -680,13 +757,25 @@ def exam_settings_api(request):
         category = request.data.get('category', 'Weekly')
         new_questions = request.data.get('questions', None)
         new_max = request.data.get('maxQuestions', None)
+        new_rule = request.data.get('passingRule', None)
+        new_val = request.data.get('passingValue', None)
+        new_duration = request.data.get('duration', None)
 
         # Get existing category data to merge into
-        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': []})
+        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
 
-        # Only overwrite maxQuestions if explicitly sent
+        # Only overwrite fields if explicitly sent
         if new_max is not None:
             existing_category['maxQuestions'] = int(new_max)
+        
+        if new_rule is not None:
+            existing_category['passingRule'] = str(new_rule)
+            
+        if new_val is not None:
+            existing_category['passingValue'] = int(new_val)
+            
+        if new_duration is not None:
+            existing_category['duration'] = int(new_duration)
 
         # Only overwrite questions if a non-None list was sent
         if new_questions is not None:
