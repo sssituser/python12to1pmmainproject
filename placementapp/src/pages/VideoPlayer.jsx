@@ -6,6 +6,7 @@ const VideoPlayer = () => {
   const navigate = useNavigate();
   const [videoId, setVideoId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isUsingDefaultVideo, setIsUsingDefaultVideo] = useState(false);
 
   // Check if user is faculty
   const user = JSON.parse(localStorage.getItem("user"));
@@ -13,56 +14,6 @@ const VideoPlayer = () => {
 
   // Predefined YouTube video IDs for each topic
   const topicVideos = {
-    // Python Topics
-    'Python Basics': 'kqtD5dpn9C8', // Your provided video
-    'Variables and Data Types': 'cQT33yu9pY8', // Your provided video
-    'Loops': '94UHCEmprCY', // Your provided video
-    'Functions': 'u-OmVr_fT4s', // Your provided video
-    'Lists and Tuples': '1uCH3zqbv2s', // Your provided video
-    'Dictionaries': '2IsF7DEtVjg', // Your provided video
-    'File Handling': 'aequTxAvQq4', // Your provided video
-    'Exception Handling': '6SPDvPK38tw', // Your provided video
-    
-    // JavaScript Topics
-    'JS Basics': 'TioxU0wdMQg', // Your provided video
-    'ES6': 'NCwa_xi0Uuc', // Your provided video
-    'DOM Manipulation': '5fb2aPlgoys', // Your provided video
-    'React Basics': 'm55PTVUrlnA', // Your provided video
-    'Arrays and Objects': 'S1dWe3f2zm0', // Your provided video
-    'Async Programming': 'wKY4-WMmbZw', // Your provided video
-    'Event Handling': '_i-uLJAh79U', // Your provided video
-    'Error Handling': '79RjHaAYT-4', // Your provided video
-    
-    // Java Topics
-    'Introduction to Java': 'r59xYe3Vyks', // Your provided video
-    'Java Operators': 'RbjB3SIaabM', // Your provided video
-    'Data Types': 'Le25I331_yU', // Your provided video
-    'Control Flow': 'fGeE6JFqNU8', // Your provided video
-    'Methods': 'KSS3MUbBWLk', // Your provided video
-    'Classes and Objects': 'Znmz_WxMxp4', // Your provided video
-    'Inheritance': 'dFuVh_Bzy9c', // Your provided video
-    'Polymorphism': '6U-0aUBiO5A', // Your provided video
-    
-    // SQL Topics
-    'SQL Basics': 'h0nxCDiD-zg', // Your provided video
-    'SELECT Queries': '1cWUUELO42c', // Your provided video
-    'Joins': 'xkYpNfpmbGY', // Your provided video
-    'Aggregate Functions': 'RGIVS8RGBaI', // Your provided video
-    'Subqueries': 'nJIEIzF7tDw', // Your provided video
-    'Indexes': 'NZgfYbAmge8', // Your provided video
-    'Transactions': '7S_tz1z_5bA', // Your provided video
-    'Database Normalization': 'rBPQ5fg_kiY', // Your provided video
-    
-    // .NET Topics
-    '.NET Introduction': 'h7huHkvPoEE', // Your provided video
-    'C# Basics': '0u9k-kOR3KE', // Your provided video
-    'ASP.NET Core': '6YIRKBsRWVI', // Your provided video
-    'MVC Pattern': 'lpA8dpYB18M', // Your provided video
-    'Entity Framework': '6YIRKBsRWVI', // Your provided video
-    'Dependency Injection': 'tTJetZj3vg0', // Your provided video
-    'Authentication': 'V-S5JZJUvvU', // Your provided video
-    'Web API Development': 'xTSildbadAs', // Your provided video
-    
     // React Topics
     'React Intro': 's2skans2dP4', // Your provided video
     'Components': 'Rh3tobg7hEo', // Your provided video
@@ -72,22 +23,22 @@ const VideoPlayer = () => {
     'Conditional Rendering': 'VwuwodgrIaU', // Your provided video
     'Forms in React': 'pFHsaFFcfAY', // Your provided video
     'React Router': 'oTIJunBa6MA', // Your provided video
-    
-    // DevOps Topics
-    'Introduction': '6GQRb4fGvtk', // Your provided video
-    'Basic Concepts': 'Ou9j73aWgyE', // Your provided video
-    'Advanced Features': 'RRBF2YWXFtY', // Your provided video
-    'Best Practices': 'Fhroavsqw6U', // Your provided video
-    'Real-world Applications': 'hQcFE0RD0cQ', // Your provided video
-    'Troubleshooting': 'DGjbi2alZK4', // Your provided video
-    'Performance Optimization': 'G_nVMUtaqCk', // Your provided video
-    'Future Trends': 'IiuWlqabx9M', // Your provided video
   };
 
   useEffect(() => {
-    // Get the specific video ID for the topic
-    const videoIdForTopic = topicVideos[topicName] || 'kqtD5dpn9C8'; // Updated default to your Python basics video
-    setVideoId(videoIdForTopic);
+    // Check if the topic has a specific video mapped
+    const hasVideo = topicVideos[topicName];
+    
+    if (hasVideo) {
+      // Play the specific video for this topic
+      setVideoId(topicVideos[topicName]);
+      setIsUsingDefaultVideo(false);
+    } else {
+      // No video available for this newly added topic
+      setVideoId(null);
+      setIsUsingDefaultVideo(true);
+    }
+    
     setLoading(false);
   }, [topicName]);
 
@@ -126,17 +77,39 @@ const VideoPlayer = () => {
       {/* Video Player */}
       <div className="flex-grow flex items-center justify-center p-4">
         <div className="w-full max-w-4xl">
-          <div className="relative pb-[56.25%] h-0 overflow-hidden rounded-lg">
-            <iframe
-              className="absolute top-0 left-0 w-full h-full"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              autoPlay
-            />
-          </div>
+          {videoId ? (
+            // Show video player for topics with videos
+            <div className="relative pb-[56.25%] h-0 overflow-hidden rounded-lg">
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                autoPlay
+              />
+            </div>
+          ) : (
+            // Show no video available message for newly added topics
+            <div className="bg-gray-800 border-2 border-gray-600 rounded-lg p-12 text-center">
+              <div className="text-6xl mb-4">🚫</div>
+              <h2 className="text-white text-3xl font-bold mb-4">
+                No Video Available
+              </h2>
+              <p className="text-gray-300 text-lg mb-2">
+                This is a newly added topic: "{topicName}"
+              </p>
+              <p className="text-gray-400 mb-6">
+                Faculty needs to add a specific video for this topic.
+              </p>
+              <div className="bg-blue-900 border border-blue-700 rounded p-4">
+                <p className="text-blue-300">
+                  💡 Faculty can add video mappings in the VideoPlayer component
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Video Info */}
           <div className="mt-4 text-center">

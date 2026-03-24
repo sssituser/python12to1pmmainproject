@@ -31,7 +31,6 @@ function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [progressNotification, setProgressNotification] = useState(null);
   
   // Default courses for first-time setup
   const defaultCourses = [
@@ -153,7 +152,7 @@ function CoursesPage() {
 
   const [courses, setCourses] = useState([]);
 
-  // ✅ Icon mapping for automatic logo generation
+  // Icon mapping for automatic logo generation
   const getIconForCourse = (courseName) => {
     const lowerName = courseName.toLowerCase();
     
@@ -183,12 +182,11 @@ function CoursesPage() {
     return FaCode; // Default icon
   };
 
-  // ✅ Load courses from localStorage on component mount
+  // Load courses from localStorage on component mount
   useEffect(() => {
     const savedCourses = localStorage.getItem('courses');
     if (savedCourses) {
       try {
-        // Parse saved courses and convert icon strings back to components
         const parsedCourses = JSON.parse(savedCourses);
         const coursesWithIcons = parsedCourses.map(course => ({
           ...course,
@@ -200,139 +198,21 @@ function CoursesPage() {
         setCourses(defaultCourses);
       }
     } else {
-      // First time visit - save default courses
       setCourses(defaultCourses);
       localStorage.setItem('courses', JSON.stringify(defaultCourses));
     }
-    
-    // ✅ Disable browser back button permanently - Enhanced version
-    const disableBrowserBack = () => {
-      // Push multiple null states to override history
-      window.history.pushState(null, null);
-      window.history.pushState(null, null);
-      window.history.pushState(null, null);
-      
-      // Add event listener to prevent back navigation
-      const preventBack = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        
-        // Push new null state to override any back attempt
-        window.history.pushState(null, null);
-        window.history.pushState(null, null);
-        window.history.forward();
-        
-        console.log('Browser back button blocked');
-        return false;
-      };
-      
-      // Add multiple listeners for redundancy
-      window.addEventListener('popstate', preventBack);
-      window.addEventListener('hashchange', preventBack);
-      window.addEventListener('beforeunload', preventBack);
-      
-      // Override browser back methods
-      window.history.back = () => {
-        console.log('Browser back method overridden');
-        return false;
-      };
-      
-      // Override keyboard shortcuts for back navigation
-      document.addEventListener('keydown', (event) => {
-        if ((event.key === 'Backspace' && !event.target.matches('input, textarea')) || 
-            event.key === 'ArrowLeft' && event.altKey) {
-          preventBack(event);
-        }
-      });
-    };
-    
-    // ✅ Disable browser refresh permanently
-    const disableBrowserRefresh = () => {
-      // Block F5, Ctrl+R, Ctrl+F5, Cmd+R, etc.
-      const preventRefresh = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        
-        // Show notification that refresh is blocked
-        console.log('Browser refresh blocked');
-        return false;
-      };
-      
-      // Block keyboard shortcuts for refresh
-      document.addEventListener('keydown', (event) => {
-        // F5
-        if (event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Ctrl+R / Cmd+R
-        if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
-          preventRefresh(event);
-        }
-        // Ctrl+F5 / Cmd+F5
-        if ((event.ctrlKey || event.metaKey) && event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Shift+F5
-        if (event.shiftKey && event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Ctrl+Shift+R
-        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'r') {
-          preventRefresh(event);
-        }
-      });
-      
-      // Block right-click refresh
-      document.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        console.log('Right-click refresh blocked');
-        return false;
-      });
-      
-      // Override location.reload
-      const originalReload = window.location.reload;
-      window.location.reload = () => {
-        console.log('Location reload method overridden');
-        return false;
-      };
-      
-      // Block visibility change events (some browsers trigger refresh on tab visibility)
-      document.addEventListener('visibilitychange', (event) => {
-        if (document.visibilityState === 'visible') {
-          event.preventDefault();
-          console.log('Visibility change refresh blocked');
-        }
-      });
-    };
-    
-    // Call disable functions immediately
-    disableBrowserBack();
-    disableBrowserRefresh();
-    
-    // Also call them periodically to ensure they stay active
-    const keepDisabled = setInterval(() => {
-      disableBrowserBack();
-      disableBrowserRefresh();
-    }, 1000);
-    
-    // Cleanup on unmount
-    return () => {
-      clearInterval(keepDisabled);
-    };
   }, []);
 
-  // ✅ Save courses to localStorage whenever they change
+  // Save courses to localStorage whenever they change
   useEffect(() => {
     if (courses.length > 0) {
       localStorage.setItem('courses', JSON.stringify(courses));
     }
   }, [courses]);
 
-  // ✅ Sync courses from faculty - Check for new courses added by faculty
+  // Sync courses from faculty - Check for new courses added by faculty
   useEffect(() => {
-    const checkForNewCourses = () => {
+    const checkForFacultyUpdates = () => {
       const facultyCourses = localStorage.getItem('facultyCourses');
       if (facultyCourses) {
         try {
@@ -342,29 +222,26 @@ function CoursesPage() {
           if (studentCourses) {
             const parsedStudentCourses = JSON.parse(studentCourses);
             
-            // Find courses that exist in faculty but not in student
-            const newCourses = parsedFacultyCourses.filter(facultyCourse => 
-              !parsedStudentCourses.some(studentCourse => studentCourse.id === facultyCourse.id)
-            );
+            // Check if faculty courses are different from student courses
+            const facultyUpdated = JSON.stringify(parsedFacultyCourses) !== JSON.stringify(parsedStudentCourses);
             
-            // Add new courses to student courses
-            if (newCourses.length > 0) {
-              const updatedStudentCourses = [...parsedStudentCourses, ...newCourses];
+            if (facultyUpdated) {
+              // Update student courses with faculty changes
+              const updatedStudentCourses = parsedFacultyCourses.map(course => ({
+                ...course,
+                icon: getIconForCourse(course.title)
+              }));
               localStorage.setItem('courses', JSON.stringify(updatedStudentCourses));
               setCourses(updatedStudentCourses);
-              
-              // Show notification for new courses
-              setProgressNotification({
-                type: 'new_courses',
-                message: `${newCourses.length} new course(s) added by faculty`,
-                courses: newCourses.map(course => course.title)
-              });
-              
-              // Hide notification after 5 seconds
-              setTimeout(() => {
-                setProgressNotification(null);
-              }, 5000);
             }
+          } else {
+            // If no student courses, use faculty courses
+            const coursesWithIcons = parsedFacultyCourses.map(course => ({
+              ...course,
+              icon: getIconForCourse(course.title)
+            }));
+            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
+            setCourses(coursesWithIcons);
           }
         } catch (error) {
           console.error('Error syncing courses from faculty:', error);
@@ -372,17 +249,16 @@ function CoursesPage() {
       }
     };
 
-    // Check for new courses every 5 seconds
-    const interval = setInterval(checkForNewCourses, 5000);
+    // Check for faculty updates every 2 seconds
+    const interval = setInterval(checkForFacultyUpdates, 2000);
     
     // Cleanup interval on component unmount
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Handle URL parameter for specific course
+  // Handle URL parameter for specific course
   useEffect(() => {
     if (courseId && courses.length > 0) {
-      // Find course by name (URL-friendly format)
       const course = courses.find(c => {
         const courseName = c.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
         return courseName === courseId;
@@ -391,185 +267,27 @@ function CoursesPage() {
       if (course) {
         setSelectedCourse(course);
       } else {
-        // Course not found, redirect to student courses list
         navigate('/dashboard/course');
       }
     }
   }, [courseId, courses, navigate]);
 
-  // ✅ Generate dynamic topics for new courses
-  const generateTopicsForCourse = (courseName) => {
-    const lowerName = courseName.toLowerCase();
-    
-    if (lowerName.includes('ai') || lowerName.includes('artificial') || lowerName.includes('agentic')) {
-      return [
-        "Introduction to AI",
-        "Machine Learning Basics",
-        "Neural Networks",
-        "Deep Learning",
-        "Natural Language Processing",
-        "Computer Vision",
-        "AI Ethics",
-        "Reinforcement Learning"
-      ];
-    }
-    
-    if (lowerName.includes('python')) {
-      return [
-        "Python Basics",
-        "Variables and Data Types",
-        "Loops",
-        "Functions",
-        "Lists and Tuples",
-        "Dictionaries",
-        "File Handling",
-        "Exception Handling"
-      ];
-    }
-    
-    if (lowerName.includes('javascript') || lowerName.includes('js')) {
-      return [
-        "JS Basics",
-        "ES6",
-        "DOM Manipulation",
-        "React Basics",
-        "Arrays and Objects",
-        "Async Programming",
-        "Event Handling",
-        "Error Handling"
-      ];
-    }
-    
-    if (lowerName.includes('java')) {
-      return [
-        "Introduction to Java",
-        "Java Operators",
-        "Data Types",
-        "Control Flow",
-        "Methods",
-        "Classes and Objects",
-        "Inheritance",
-        "Polymorphism"
-      ];
-    }
-    
-    if (lowerName.includes('sql') || lowerName.includes('database')) {
-      return [
-        "SQL Basics",
-        "SELECT Queries",
-        "Joins",
-        "Aggregate Functions",
-        "Subqueries",
-        "Indexes",
-        "Transactions",
-        "Database Normalization"
-      ];
-    }
-    
-    if (lowerName.includes('react')) {
-      return [
-        "React Intro",
-        "Components",
-        "State Management",
-        "Hooks",
-        "Props and PropTypes",
-        "Conditional Rendering",
-        "Forms in React",
-        "React Router"
-      ];
-    }
-    
-    if (lowerName.includes('devops') || lowerName.includes('tools')) {
-      return [
-        "Introduction to DevOps",
-        "Version Control with Git",
-        "CI/CD Pipelines",
-        "Container Orchestration",
-        "Infrastructure as Code",
-        "Monitoring and Logging",
-        "Cloud Platforms",
-        "DevOps Best Practices"
-      ];
-    }
-    
-    if (lowerName.includes('security') || lowerName.includes('cyber')) {
-      return [
-        "Introduction to Cyber Security",
-        "Network Security Fundamentals",
-        "Cryptography and Encryption",
-        "Web Application Security",
-        "Ethical Hacking Basics",
-        "Security Auditing",
-        "Incident Response",
-        "Security Compliance"
-      ];
-    }
-    
-    // Default topics for any course
-    return [
-      "Introduction",
-      "Basic Concepts",
-      "Advanced Features",
-      "Best Practices",
-      "Real-world Applications",
-      "Troubleshooting",
-      "Performance Optimization",
-      "Future Trends",
-      "New Topic"
-    ];
-  }
-  
-  // ✅ Handle Watch Click
-  const handleWatchClick = (courseTitle, topic) => {
-    // Update progress when watching a video
-    updateCourseProgress(courseTitle, topic);
-  };
-
-  // ✅ Update Course Progress
-  const updateCourseProgress = (courseTitle, topic) => {
-    // Find course
-    const courseIndex = courses.findIndex(c => c.title === courseTitle);
-    if (courseIndex !== -1) {
-      // Calculate new progress (increment by 10% for each video watched, max 100%)
-      const currentProgress = courses[courseIndex].progress;
-      const newProgress = Math.min(currentProgress + 10, 100);
-      
-      // Update the course progress
-      const updatedCourses = [...courses];
-      updatedCourses[courseIndex].progress = newProgress;
-      setCourses(updatedCourses);
-      
-      // Update selected course if it's currently displayed
-      if (selectedCourse && selectedCourse.title === courseTitle) {
-        setSelectedCourse({...updatedCourses[courseIndex]});
-      }
-      
-      // Show progress update notification
-      setProgressNotification({
-        course: courseTitle,
-        oldProgress: currentProgress,
-        newProgress: newProgress
-      });
-      
-      // Hide notification after 3 seconds
-      setTimeout(() => {
-        setProgressNotification(null);
-      }, 3000);
-    }
-  };
-
-  // ✅ Handle View Details Click
+  // Handle View Details Click
   const handleViewDetails = (course) => {
-    // Navigate to specific course URL with course name for student
     const courseName = course.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
     navigate(`/dashboard/course/${courseName}`);
-    // Also set selected course for the component state
     setSelectedCourse(course);
   };
 
   // Handle Back to Topics
   const handleBackToTopics = () => {
     setSelectedCourse(null);
+  };
+
+  // Handle Watch Click
+  const handleWatchClick = (courseTitle, topic) => {
+    // Navigate to video player with course and topic
+    navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
   };
 
   // =========================
@@ -615,22 +333,6 @@ function CoursesPage() {
   // =========================
   return (
     <div className="min-h-screen bg-white p-6">
-
-      {/* Progress Notification */}
-      {progressNotification && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
-          <div className="font-semibold">
-            {progressNotification.type === 'new_courses' ? 'New Courses Added!' : 'Progress Updated! 🎉'}
-          </div>
-          <div className="text-sm">
-            {progressNotification.type === 'new_courses' 
-              ? `${progressNotification.message}`
-              : `${progressNotification.course}: ${progressNotification.oldProgress}% → ${progressNotification.newProgress}%`
-            }
-          </div>
-        </div>
-      )}
-
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-gray-900 text-2xl font-bold">
           Courses
@@ -646,14 +348,12 @@ function CoursesPage() {
               key={index}
               className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 hover:scale-105 transition duration-300 relative overflow-hidden flex flex-col h-80"
             >
-
               {/* Background faded icon */}
               <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10">
                 <Icon />
               </div>
 
               <div className="relative z-10 flex flex-col h-full">
-
                 {/* Top Row */}
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-4xl">
@@ -706,15 +406,11 @@ function CoursesPage() {
                     View Details
                   </button>
                 )}
-
               </div>
-
             </div>
           );
         })}
-
       </div>
-
     </div>
   );
 }
