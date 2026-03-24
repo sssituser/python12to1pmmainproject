@@ -1,63 +1,69 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 function ExamLeaderboard() {
 
-  // 🔥 STATE
+  //  STATE
   const [leaderboard, setLeaderboard] = useState([]);
   const [date, setDate] = useState("");
   const [batch, setBatch] = useState("");
   const [examType, setExamType] = useState("");
   const [showRules, setShowRules] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);       // only true on first load
+  const [isRefreshing, setIsRefreshing] = useState(false); // silent background refresh
 
-  // 🔥 FETCH FUNCTION
-  const fetchLeaderboard = async () => {
+  //  FETCH FUNCTION
+  const fetchLeaderboard = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setIsRefreshing(true);
 
-      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/`);
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (batch) params.append('batch', batch);
+      if (examType) params.append('exam_type', examType);
+
+      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
         setLeaderboard(data.data || []);
-        toast.success("Leaderboard updated");
+        // Only show toast on manual/initial load, not on every 15-sec refresh
+        if (isInitial) toast.success("Leaderboard loaded", { toastId: "leaderboardToast" });
       } else {
-        toast.error("Failed to load leaderboard");
+        if (isInitial) toast.error("Failed to load leaderboard", { toastId: "leaderboardToast" });
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load leaderboard");
+      if (isInitial) toast.error("Failed to load leaderboard", { toastId: "leaderboardToast" });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  // 🔥 AUTO LOAD + AUTO REFRESH
+  //  AUTO LOAD + SILENT AUTO REFRESH every 30 sec
   useEffect(() => {
-    fetchLeaderboard();
+    fetchLeaderboard(true); // initial load — shows spinner + toast
 
-    const interval = setInterval(fetchLeaderboard, 15000); // every 15 sec
+    const interval = setInterval(() => fetchLeaderboard(false), 30000); // silent refresh
     return () => clearInterval(interval);
   }, [date, batch, examType]);
 
-  // 🔥 SAFE PODIUM
+  //  SAFE PODIUM
   const first = leaderboard.find((s) => s.rank === 1) || {};
   const second = leaderboard.find((s) => s.rank === 2) || {};
   const third = leaderboard.find((s) => s.rank === 3) || {};
 
-  // 🔥 LOADING STATE
+  // LOADING STATE
   if (loading) {
     return <p className="text-center mt-10">Loading leaderboard...</p>;
   }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-
-      <ToastContainer position="top-right" autoClose={3000} />
 
       {/* Rules Popup */}
       {showRules && (
@@ -117,16 +123,9 @@ function ExamLeaderboard() {
 
         <div>
           <label className="text-sm font-medium">Batch</label>
-          <select
-            value={batch}
-            onChange={(e) => setBatch(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          >
-            <option value="">All Batches</option>
-            <option value="1">Batch 1</option>
-            <option value="2">Batch 2</option>
-            <option value="3">Batch 3</option>
-          </select>
+          <div className="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100 text-gray-500 cursor-not-allowed">
+            All Batches
+          </div>
         </div>
 
         <div>
@@ -161,7 +160,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">2</span>
-            <p>{second.name || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(second.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -173,7 +172,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-yellow-400 text-black rounded-xl w-36 h-48 flex items-center justify-center flex-col shadow-xl">
             <span className="text-4xl font-bold">1</span>
-            <p>{first.name || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(first.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -185,7 +184,7 @@ function ExamLeaderboard() {
         >
           <div className="bg-blue-500 text-white rounded-xl w-32 h-36 flex items-center justify-center flex-col shadow-lg">
             <span className="text-3xl font-bold">3</span>
-            <p>{third.name || "-"}</p>
+            <p className="text-sm font-semibold mt-1">{(third.username || "-").toUpperCase()}</p>
           </div>
         </motion.div>
 
@@ -194,30 +193,32 @@ function ExamLeaderboard() {
       {/* Table */}
       <div className="mt-10 max-w-4xl mx-auto overflow-x-auto">
 
-        <table className="w-full border rounded-lg shadow-md">
+        <table className="w-full border-collapse rounded-lg shadow-md text-sm">
 
           <thead className="bg-gray-800 text-white">
             <tr>
-              <th className="p-3">Rank</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Time</th>
-              <th className="p-3">Score</th>
+              <th className="py-3 px-4 text-center">Rank</th>
+              <th className="py-3 px-4 text-center">Name</th>
+              <th className="py-3 px-4 text-center">Exam Type</th>
+              <th className="py-3 px-4 text-center">Time</th>
+              <th className="py-3 px-4 text-center">Score</th>
             </tr>
           </thead>
 
           <tbody>
             {leaderboard.length > 0 ? (
               leaderboard.map((student) => (
-                <tr key={student.rank} className="text-center border-t hover:bg-gray-100">
-                  <td>{student.rank}</td>
-                  <td>{student.name}</td>
-                  <td>{student.time}</td>
-                  <td>{student.score}</td>
+                <tr key={student.rank} className="border-t hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-center font-semibold text-gray-700">{student.rank}</td>
+                  <td className="py-3 px-4 text-center font-medium uppercase tracking-wide">{student.username}</td>
+                  <td className="py-3 px-4 text-center text-gray-600 capitalize">{student.exam_type || '-'}</td>
+                  <td className="py-3 px-4 text-center text-gray-600">{student.time_taken}</td>
+                  <td className="py-3 px-4 text-center font-bold text-indigo-700">{student.score}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="p-5 text-center">
+                <td colSpan="5" className="py-6 text-center text-gray-500">
                   No data available
                 </td>
               </tr>

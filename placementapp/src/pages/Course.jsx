@@ -1,102 +1,326 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  FaPython,
+  FaJs,
+  FaJava,
+  FaDatabase,
+  FaMicrosoft,
+  FaReact,
+  FaLock,
+  FaCode,
+  FaBrain,
+  FaRobot,
+  FaCloud,
+  FaShieldAlt,
+  FaChartLine,
+  FaMobile,
+  FaGamepad,
+  FaServer,
+  FaCogs,
+  FaLaptopCode,
+  FaGitAlt,
+  FaDocker,
+  FaAws,
+  FaGoogle,
+  FaApple,
+  FaAndroid
+} from "react-icons/fa";
 
-export default function Course() {
+function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
-
-  // ✅ Dynamic state
-  const [courses, setCourses] = useState({
-    1: {
-      title: "Java",
-      color: "from-orange-500 to-red-500",
-      icon: "☕",
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  
+  // Default courses for first-time setup
+  const defaultCourses = [
+    {
+      id: 1,
+      title: "Python (Basic)",
+      icon: FaPython,
+      level: "Beginner",
+      duration: "3 hrs",
       progress: 60,
-      topics: [
-        "Introduction to Java",
-        "Java Operators",
-        "Data Types"
-      ]
-    },
-    2: {
-      title: "Python",
-      color: "from-green-500 to-emerald-600",
-      icon: "🐍",
-      progress: 40,
+      locked: false,
       topics: [
         "Python Basics",
         "Variables and Data Types",
         "Loops",
-        "Functions"
+        "Functions",
+        "Lists and Tuples",
+        "Dictionaries",
+        "File Handling",
+        "Exception Handling"
       ]
     },
-    3: {
-      title: "JavaScript",
-      color: "from-yellow-400 to-yellow-600",
-      icon: "🟨",
-      progress: 75,
+    {
+      id: 2,
+      title: "JavaScript (Basic)",
+      icon: FaJs,
+      level: "Beginner",
+      duration: "2.5 hrs",
+      progress: 40,
+      locked: false,
       topics: [
         "JS Basics",
         "ES6",
         "DOM Manipulation",
-        "React Basics"
+        "React Basics",
+        "Arrays and Objects",
+        "Async Programming",
+        "Event Handling",
+        "Error Handling"
+      ]
+    },
+    {
+      id: 3,
+      title: "Java (Intermediate)",
+      icon: FaJava,
+      level: "Intermediate",
+      duration: "4 hrs",
+      progress: 20,
+      locked: false,
+      topics: [
+        "Introduction to Java",
+        "Java Operators",
+        "Data Types",
+        "Control Flow",
+        "Methods",
+        "Classes and Objects",
+        "Inheritance",
+        "Polymorphism"
+      ]
+    },
+    {
+      id: 4,
+      title: "SQL (Basic)",
+      icon: FaDatabase,
+      level: "Beginner",
+      duration: "2 hrs",
+      progress: 80,
+      locked: false,
+      topics: [
+        "SQL Basics",
+        "SELECT Queries",
+        "Joins",
+        "Aggregate Functions",
+        "Subqueries",
+        "Indexes",
+        "Transactions",
+        "Database Normalization"
+      ]
+    },
+    {
+      id: 5,
+      title: ".NET (Intermediate)",
+      icon: FaMicrosoft,
+      level: "Intermediate",
+      duration: "5 hrs",
+      progress: 0,
+      locked: false,
+      topics: [
+        ".NET Introduction",
+        "C# Basics",
+        "ASP.NET Core",
+        "MVC Pattern",
+        "Entity Framework",
+        "Dependency Injection",
+        "Authentication",
+        "Web API Development"
+      ]
+    },
+    {
+      id: 6,
+      title: "React (Basic)",
+      icon: FaReact,
+      level: "Beginner",
+      duration: "3 hrs",
+      progress: 30,
+      locked: false,
+      topics: [
+        "React Intro",
+        "Components",
+        "State Management",
+        "Hooks",
+        "Props and PropTypes",
+        "Conditional Rendering",
+        "Forms in React",
+        "React Router"
       ]
     }
-  });
+  ];
 
-  const [newTopic, setNewTopic] = useState("");
+  const [courses, setCourses] = useState([]);
 
-  // ✅ Add Topic
-  const addTopic = () => {
-    if (!newTopic.trim()) return;
+  // Icon mapping for automatic logo generation
+  const getIconForCourse = (courseName) => {
+    const lowerName = courseName.toLowerCase();
+    
+    if (lowerName.includes('python')) return FaPython;
+    if (lowerName.includes('javascript') || lowerName.includes('js')) return FaJs;
+    if (lowerName.includes('java')) return FaJava;
+    if (lowerName.includes('sql') || lowerName.includes('database')) return FaDatabase;
+    if (lowerName.includes('.net') || lowerName.includes('dotnet')) return FaMicrosoft;
+    if (lowerName.includes('react')) return FaReact;
+    if (lowerName.includes('ai') || lowerName.includes('artificial')) return FaBrain;
+    if (lowerName.includes('agentic') || lowerName.includes('agent')) return FaRobot;
+    if (lowerName.includes('cloud')) return FaCloud;
+    if (lowerName.includes('security') || lowerName.includes('cyber')) return FaShieldAlt;
+    if (lowerName.includes('data') || lowerName.includes('analytics')) return FaChartLine;
+    if (lowerName.includes('mobile') || lowerName.includes('app')) return FaMobile;
+    if (lowerName.includes('game') || lowerName.includes('gaming')) return FaGamepad;
+    if (lowerName.includes('server') || lowerName.includes('backend')) return FaServer;
+    if (lowerName.includes('devops') || lowerName.includes('tools')) return FaCogs;
+    if (lowerName.includes('web') || lowerName.includes('frontend')) return FaLaptopCode;
+    if (lowerName.includes('git') || lowerName.includes('version')) return FaGitAlt;
+    if (lowerName.includes('docker') || lowerName.includes('container')) return FaDocker;
+    if (lowerName.includes('aws') || lowerName.includes('amazon')) return FaAws;
+    if (lowerName.includes('google') || lowerName.includes('gcp')) return FaGoogle;
+    if (lowerName.includes('apple') || lowerName.includes('ios')) return FaApple;
+    if (lowerName.includes('android')) return FaAndroid;
+    
+    return FaCode; // Default icon
+  };
 
-    setCourses((prev) => ({
-      ...prev,
-      [courseId]: {
-        ...prev[courseId],
-        topics: [...prev[courseId].topics, newTopic]
+  // Load courses from localStorage on component mount
+  useEffect(() => {
+    const savedCourses = localStorage.getItem('courses');
+    if (savedCourses) {
+      try {
+        const parsedCourses = JSON.parse(savedCourses);
+        const coursesWithIcons = parsedCourses.map(course => ({
+          ...course,
+          icon: getIconForCourse(course.title)
+        }));
+        setCourses(coursesWithIcons);
+      } catch (error) {
+        console.error('Error loading courses from localStorage:', error);
+        setCourses(defaultCourses);
       }
-    }));
+    } else {
+      setCourses(defaultCourses);
+      localStorage.setItem('courses', JSON.stringify(defaultCourses));
+    }
+  }, []);
 
-    setNewTopic("");
+  // Save courses to localStorage whenever they change
+  useEffect(() => {
+    if (courses.length > 0) {
+      localStorage.setItem('courses', JSON.stringify(courses));
+    }
+  }, [courses]);
+
+  // Sync courses from faculty - Check for new courses added by faculty
+  useEffect(() => {
+    const checkForFacultyUpdates = () => {
+      const facultyCourses = localStorage.getItem('facultyCourses');
+      if (facultyCourses) {
+        try {
+          const parsedFacultyCourses = JSON.parse(facultyCourses);
+          const studentCourses = localStorage.getItem('courses');
+          
+          if (studentCourses) {
+            const parsedStudentCourses = JSON.parse(studentCourses);
+            
+            // Check if faculty courses are different from student courses
+            const facultyUpdated = JSON.stringify(parsedFacultyCourses) !== JSON.stringify(parsedStudentCourses);
+            
+            if (facultyUpdated) {
+              // Update student courses with faculty changes
+              const updatedStudentCourses = parsedFacultyCourses.map(course => ({
+                ...course,
+                icon: getIconForCourse(course.title)
+              }));
+              localStorage.setItem('courses', JSON.stringify(updatedStudentCourses));
+              setCourses(updatedStudentCourses);
+            }
+          } else {
+            // If no student courses, use faculty courses
+            const coursesWithIcons = parsedFacultyCourses.map(course => ({
+              ...course,
+              icon: getIconForCourse(course.title)
+            }));
+            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
+            setCourses(coursesWithIcons);
+          }
+        } catch (error) {
+          console.error('Error syncing courses from faculty:', error);
+        }
+      }
+    };
+
+    // Check for faculty updates every 2 seconds
+    const interval = setInterval(checkForFacultyUpdates, 2000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle URL parameter for specific course
+  useEffect(() => {
+    if (courseId && courses.length > 0) {
+      const course = courses.find(c => {
+        const courseName = c.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+        return courseName === courseId;
+      });
+      
+      if (course) {
+        setSelectedCourse(course);
+      } else {
+        navigate('/dashboard/course');
+      }
+    }
+  }, [courseId, courses, navigate]);
+
+  // Handle View Details Click
+  const handleViewDetails = (course) => {
+    const courseName = course.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+    navigate(`/dashboard/course/${courseName}`);
+    setSelectedCourse(course);
+  };
+
+  // Handle Back to Topics
+  const handleBackToTopics = () => {
+    setSelectedCourse(null);
+  };
+
+  // Handle Watch Click
+  const handleWatchClick = (courseTitle, topic) => {
+    // Navigate to video player with course and topic
+    navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
   };
 
   // =========================
-  // 👉 COURSE LIST
+  // SINGLE COURSE VIEW
   // =========================
-  if (!courseId) {
+  if (selectedCourse) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <h2 className="text-3xl font-bold mb-8">Courses</h2>
+      <div className="p-6 bg-white min-h-screen">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-gray-900">
+            {selectedCourse.title} Topics
+          </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(courses).map(([id, course]) => (
-            <div
-              key={id}
-              onClick={() => navigate(`/dashboard/course/${id}`)}
-              className={`bg-gradient-to-r ${course.color} 
-                          text-white p-6 rounded-2xl cursor-pointer 
-                          shadow-lg hover:shadow-2xl 
-                          transform hover:-translate-y-2 hover:scale-105 
-                          transition duration-300`}
-            >
-              <div className="flex justify-between mb-4">
-                <span className="text-4xl">{course.icon}</span>
-                <span className="text-sm bg-white/20 px-2 py-1 rounded">
-                  {course.progress}%
-                </span>
-              </div>
+          <button
+            onClick={handleBackToTopics}
+            className="text-blue-600 hover:underline"
+          >
+            ← Back 
+          </button>
+        </div>
 
-              <h3 className="text-2xl font-semibold mb-2">
-                {course.title}
-              </h3>
-
-              <div className="w-full bg-white/30 h-2 rounded-full">
-                <div
-                  className="bg-white h-2 rounded-full"
-                  style={{ width: `${course.progress}%` }}
-                ></div>
-              </div>
+        {/* Topics */}
+        <div className="space-y-4">
+          {selectedCourse.topics.map((topic, index) => (
+            <div key={index} className="flex justify-between items-center">
+              <p className="text-lg font-medium">{topic}</p>
+              <button
+                onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Watch
+              </button>
             </div>
           ))}
         </div>
@@ -105,69 +329,90 @@ export default function Course() {
   }
 
   // =========================
-  // 👉 SINGLE COURSE
+  // COURSE LIST VIEW
   // =========================
-  const course = courses[courseId];
-
-  if (!course) {
-    return <h3 className="p-6 text-red-500">Course not found</h3>;
-  }
-
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen bg-white p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">
-          {course.title} Topics
+        <h2 className="text-gray-900 text-2xl font-bold">
+          Courses
         </h2>
-
-        <button
-          onClick={() => navigate("/dashboard/course")}
-          className="text-blue-600 hover:underline"
-        >
-          ← Back
-        </button>
       </div>
 
-      {/* Add Topic */}
-      <div className="flex gap-3 mb-6">
-        <input
-          type="text"
-          value={newTopic}
-          onChange={(e) => setNewTopic(e.target.value)}
-          placeholder="Enter new topic..."
-          className="flex-1 p-3 rounded-lg border outline-none"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {courses.map((course, index) => {
+          const Icon = course.icon;
 
-        <button
-          onClick={addTopic}
-          className="bg-blue-600 text-white px-5 rounded-lg hover:bg-blue-700"
-        >
-          Add
-        </button>
-      </div>
+          return (
+            <div
+              key={index}
+              className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 hover:scale-105 transition duration-300 relative overflow-hidden flex flex-col h-80"
+            >
+              {/* Background faded icon */}
+              <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10">
+                <Icon />
+              </div>
 
-      {/* Topics */}
-      <div className="space-y-4">
-        {course.topics.map((topic, index) => (
-          <div
-            key={index}
-            onClick={() =>
-              navigate(`/dashboard/course/video/${courseId}/${index}`)
-            }
-            className="flex justify-between items-center
-                      bg-white p-4 rounded-xl shadow
-                      hover:shadow-md hover:bg-gray-50
-                      cursor-pointer transition"
-          >
-            <span>{index + 1}. {topic}</span>
+              <div className="relative z-10 flex flex-col h-full">
+                {/* Top Row */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-4xl">
+                    <Icon />
+                  </div>
 
-            <span className="text-blue-500 text-sm">
-              Watch →
-            </span>
-          </div>
-        ))}
+                  {course.locked && (
+                    <FaLock className="text-gray-400" />
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg font-semibold mb-1">
+                  {course.title}
+                </h3>
+
+                {/* Level + Duration */}
+                <p className="text-sm text-gray-600 mb-3">
+                  {course.level} • {course.duration}
+                </p>
+
+                {/* Progress Bar */}
+                {!course.locked && (
+                  <div className="mb-4">
+                    <div className="w-full bg-gray-200 h-2 rounded">
+                      <div
+                        className="bg-green-500 h-2 rounded"
+                        style={{ width: `${course.progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {course.progress}% completed
+                    </p>
+                  </div>
+                )}
+
+                {/* Spacer to push button to bottom */}
+                <div className="flex-grow"></div>
+
+                {/* Button */}
+                {course.locked ? (
+                  <button className="w-full bg-gray-200 text-gray-600 py-2 rounded">
+                    Locked
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleViewDetails(course)}
+                    className="w-full border border-gray-900 py-2 rounded hover:bg-gray-900 hover:text-white transition"
+                  >
+                    View Details
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
+
+export default CoursesPage;

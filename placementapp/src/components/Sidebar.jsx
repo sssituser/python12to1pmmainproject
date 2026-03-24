@@ -139,7 +139,7 @@ function Sidebar() {
 
           {/* REPORTS */}
           <NavLink
-            to="/dashboard/reports"
+            to="/dashboard/exam-reports"
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -190,7 +190,7 @@ function Sidebar() {
               <div className="ml-6 mt-2 space-y-1 text-sm">
 
                 <NavLink
-                  to="/dashboard/techlab"
+                  to="/dashboard/playground"
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <Code size={14} />
@@ -198,7 +198,7 @@ function Sidebar() {
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/results"
+                  to="/dashboard/playground-results"
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <CheckCircle size={14} />
@@ -211,7 +211,7 @@ function Sidebar() {
 
           {/* LEAVE */}
           <NavLink
-            to="/dashboard/leave"
+            to="/dashboard/leave-request"
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive

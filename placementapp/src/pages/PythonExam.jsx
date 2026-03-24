@@ -9,125 +9,341 @@ import {
   faArrowRight,
   faCamera,
 } from "@fortawesome/free-solid-svg-icons";
+import * as faceapi from "@vladmandic/face-api";
+
+// Indestructible global array to catch all streams outside React DOM scope
+let globalStreamsToClean = [];
 
 const PythonExam = () => {
 
   const navigate = useNavigate();
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const faceDetectionIntervalRef = useRef(null);
-
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState(new Array(20).fill(null));
-  const [markedForReview, setMarkedForReview] = useState(new Array(20).fill(false));
-  const [visitedQuestions, setVisitedQuestions] = useState(new Array(20).fill(false));
-
-  const [timeLeft, setTimeLeft] = useState(2700);
+  const canvasRef = useRef(null);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [isAILoading, setIsAILoading] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const [examSubmitted, setExamSubmitted] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  // Custom Passing Rules from Faculty
+  const [passingRule, setPassingRule] = useState("percentage"); 
+  const [passingValue, setPassingValue] = useState(50); // Default 50% for daily
+  const [answers, setAnswers] = useState([]);
+  const [markedForReview, setMarkedForReview] = useState([]);
+  const [visitedQuestions, setVisitedQuestions] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(2700); // placeholder
+  const [examDuration, setExamDuration] = useState(45); // default 45 min
   const [webcamActive, setWebcamActive] = useState(false);
-  const [faceCount, setFaceCount] = useState(0);
+  const [faceCount, setFaceCount] = useState(1);
   const [examFailed, setExamFailed] = useState(false);
 
-  // QUESTIONS
-  const questions = [
-    { id:1, question:"What is the output of print(2 ** 3)?", options:["6","8","9","12"], correct:1 },
-    { id:2, question:"Which keyword is used to define a function in Python?", options:["func","def","function","define"], correct:1 },
-    { id:3, question:"What is the correct file extension for Python files?", options:[".py",".python",".pt",".pyth"], correct:0 },
-    { id:4, question:"Which of the following is a mutable data type in Python?", options:["Tuple","String","List","Integer"], correct:2 },
-    { id:5, question:"What does len() function do in Python?", options:["Returns the length of an object","Deletes an object","Creates an object","Copies an object"], correct:0 },
-    { id:6, question:"Which operator is used for exponentiation in Python?", options:["^","**","*","^^"], correct:1 },
-    { id:7, question:"What is the output of print(type('Hello'))?", options:["<class 'int'>","<class 'str'>","<class 'string'>","<class 'char'>"], correct:1 },
-    { id:8, question:"Which method is used to add an element to the end of a list?", options:["add()","append()","insert()","extend()"], correct:1 },
-    { id:9, question:"What is the correct way to create a dictionary in Python?", options:["{}","[]","()","||"], correct:0 },
-    { id:10, question:"Which statement is used to exit a loop in Python?", options:["exit","break","continue","return"], correct:1 },
-    { id:11, question:"What is the output of print(10 // 3)?", options:["3.33","3","4","Error"], correct:1 },
-    { id:12, question:"Which function is used to get input from user in Python 3?", options:["input()","raw_input()","scanf()","cin()"], correct:0 },
-    { id:13, question:"What is the default value of a parameter if not specified?", options:["0","None","null","undefined"], correct:1 },
-    { id:14, question:"Which module is used for mathematical operations in Python?", options:["math","cmath","maths","calc"], correct:0 },
-    { id:15, question:"What is the output of print(bool(0))?", options:["True","False","0","Error"], correct:1 },
-    { id:16, question:"Which method removes whitespace from both ends of a string?", options:["trim()","strip()","remove()","clean()"], correct:1 },
-    { id:17, question:"What is the output of print(range(5))?", options:["[0,1,2,3,4]","range(0,5)","0,1,2,3,4","Error"], correct:1 },
-    { id:18, question:"Which keyword is used to handle exceptions in Python?", options:["try","except","catch","handle"], correct:1 },
-    { id:19, question:"What is the output of print('Hello' * 3)?", options:["HelloHelloHello","Hello 3","Hello3","Error"], correct:0 },
-    { id:20, question:"Which function is used to open a file in Python?", options:["open()","file()","read()","load()"], correct:0 },
-  ];
+  const examSubmittedRef = useRef(false);
+  const violationStartTimeRef = useRef(null);
+  const cleanTimeoutRef = useRef(null);
 
-  // TIMER
-  useEffect(() => {
-    if (examStarted && !examSubmitted && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    if (timeLeft === 0 && !examSubmitted) handleSubmitExam();
-  }, [timeLeft, examStarted, examSubmitted]);
-
-  // WEBCAM FUNCTIONS
+  // Webcam functions - moved outside security monitoring scope
   const startWebcam = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          width: { ideal: 320 },
-          height: { ideal: 240 }
-        } 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        },
+        audio: false // Disable audio capture permanently
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        streamRef.current = stream;
         setWebcamActive(true);
-        
-        // Start face detection interval
-        startFaceDetection();
       }
+
+      globalStreamsToClean.push(stream);
     } catch (err) {
-      console.error("Error accessing webcam:", err);
-      alert("Unable to access webcam. Please ensure camera permissions are granted.");
+      console.error("Webcam access denied:", err);
+      setWebcamActive(false);
     }
   };
 
   const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
       setWebcamActive(false);
     }
-    
-    if (faceDetectionIntervalRef.current) {
-      clearInterval(faceDetectionIntervalRef.current);
-      faceDetectionIntervalRef.current = null;
-    }
+    globalStreamsToClean.forEach(stream => {
+      stream.getTracks().forEach(track => track.stop());
+    });
+    globalStreamsToClean = [];
   };
 
-  const startFaceDetection = () => {
-    // Simple face detection simulation (you can replace with actual face detection)
-    faceDetectionIntervalRef.current = setInterval(() => {
-      // Simulate random face count between 0-2
-      const randomFaceCount = Math.floor(Math.random() * 3);
-      setFaceCount(randomFaceCount);
-      
-      // If no face detected for more than 5 seconds, you can add logic here
-      if (randomFaceCount === 0) {
-        console.log("No face detected");
+  // Fetch questions from backend
+  useEffect(() => {
+    // Always start fresh - don't restore previous exam state
+    try {
+      sessionStorage.removeItem('pythonExamState');
+    } catch (e) {
+      console.error("Failed to clear session storage:", e);
+    }
+
+    const fetchQuestions = async () => {
+      try {
+        setIsLoadingQuestions(true);
+        const res = await fetch("http://127.0.0.1:8000/api/playground-questions/");
+        const json = await res.json();
+        const data = json.data || json;
+
+        if (data && data.length > 0) {
+          const mappedQuestions = data.map((q, idx) => ({
+            ...q,
+            id: idx + 1,
+            marks: 2,
+          }));
+          setQuestions(mappedQuestions);
+          setExamDuration(45);
+          setTimeLeft(45 * 60);
+          setPassingRule("percentage");
+          setPassingValue(50);
+        }
+      } catch (err) {
+        console.error("Failed to fetch practice questions:", err);
+      } finally {
+        setIsLoadingQuestions(false);
       }
-    }, 2000);
+    };
+    fetchQuestions();
+  }, []);
+
+  // Prevent browser refresh and back button during exam
+  useEffect(() => {
+    if (examStarted && !examSubmitted) {
+      // Prevent F5, Ctrl+R, Ctrl+Shift+R refresh
+      const preventRefresh = (e) => {
+  //  ESC → auto submit
+  if (e.key === "Escape") {
+    e.preventDefault();
+    handleSubmitExam("ESC pressed");
+    return;
+  }
+
+  if (
+    e.key === "F5" ||
+    (e.ctrlKey && e.key === "r") ||
+    (e.ctrlKey && e.shiftKey && e.key === "r") ||
+    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) ||
+    (e.ctrlKey && e.key === "Tab") ||
+    (e.ctrlKey && e.shiftKey && e.key === "Tab") ||
+    (e.altKey && e.key === "ArrowLeft")
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+};
+
+      // Prevent backspace from triggering navigation
+      const preventBackspace = (e) => {
+        if (e.key === 'Backspace' && !e.target.matches('input, textarea')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Prevent Alt+Left Arrow (back)
+      const preventAltBack = (e) => {
+        if (e.altKey && e.key === 'ArrowLeft') {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Prevent context menu (right-click refresh)
+      const preventContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      };
+
+      document.addEventListener('keydown', preventRefresh);
+      document.addEventListener('keydown', preventBackspace);
+      document.addEventListener('keydown', preventAltBack);
+      document.addEventListener('contextmenu', preventContextMenu);
+
+      return () => {
+        document.removeEventListener('keydown', preventRefresh);
+        document.removeEventListener('keydown', preventBackspace);
+        document.removeEventListener('keydown', preventAltBack);
+        document.removeEventListener('contextmenu', preventContextMenu);
+      };
+    }
+  }, [examStarted, examSubmitted]);
+
+  // Prevent back button
+  useEffect(() => {
+    if (examStarted && !examSubmitted) {
+      window.history.pushState(null, null, window.location.href);
+      const handlePopState = (e) => {
+        e.preventDefault();
+        window.history.pushState(null, null, window.location.href);
+        return false;
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [examStarted, examSubmitted]);
+
+// AI-powered security monitoring
+useEffect(() => {
+  if (!examStarted || examSubmitted) return;
+
+  let cleanup = () => {};
+  let violationCount = 0;
+  const startSecurityMonitoring = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    const detectFaces = async () => {
+      if (!video.videoWidth || !video.videoHeight) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const tData = ctx.getImageData(0, 0, 16, 16).data;
+      let brightness = 0;
+      let max = 0, min = 255;
+      for (let i = 0; i < tData.length; i += 4) {
+        const val = tData[i];
+        brightness += val;
+        if (val > max) max = val;
+        if (val < min) min = val;
+      }
+      brightness = brightness / (tData.length / 4);
+      const variation = max - min;
+      const isDark = brightness < 40;
+      const isFlat = variation < 30;
+      const checkViolations = (faces) => {
+        const noFace = !faces || faces.length === 0;
+        const multipleFaces = faces && faces.length > 1;
+        let faceNotCentered = false;
+        if (faces && faces.length === 1) {
+          const f = faces[0].boundingBox;
+          const centerX = f.x + f.width / 2;
+          const centerY = f.y + f.height / 2;
+          if (
+            centerX < canvas.width * 0.2 ||
+            centerX > canvas.width * 0.8 ||
+            centerY < canvas.height * 0.2 ||
+            centerY > canvas.height * 0.8
+          ) {
+            faceNotCentered = true;
+          }
+        }
+
+        const violation =
+          isDark || isFlat || noFace || multipleFaces || faceNotCentered;
+        if (violation) {
+          if (!violationStartTimeRef.current) {
+            violationStartTimeRef.current = Date.now();
+          } else if (Date.now() - violationStartTimeRef.current > 2000) {
+            handleSubmitExam("Camera/face violation detected");
+          }
+        } else {
+          violationStartTimeRef.current = null;
+        }
+      };
+
+      if (window.FaceDetector) {
+        const detector = new window.FaceDetector({ maxDetectedFaces: 5 });
+        detector
+          .detect(canvas)
+          .then((faces) => {
+            setFaceCount(faces.length);
+            checkViolations(faces);
+          })
+          .catch(() => checkViolations(null));
+      } else {
+      checkViolations([{ boundingBox: { x: 100, y: 100, width: 100, height: 100 } }]);
+      }
+    };
+
+    const interval = setInterval(detectFaces, 500);
+
+    // TAB SWITCH
+    const handleVisibility = () => {
+      if (document.hidden) {
+        violationCount++;
+        handleSubmitExam("Tab switching detected");
+      }
+    };
+
+    // ALT+TAB / MINIMIZE
+    const handleBlur = () => {
+      violationCount++;
+      handleSubmitExam("Window focus lost");
+    };
+
+    //  DEVTOOLS DETECTION
+    const detectDevTools = () => {
+      if (
+        window.outerWidth - window.innerWidth > 160 ||
+        window.outerHeight - window.innerHeight > 160
+      ) {
+        handleSubmitExam("DevTools opened");
+      }
+    };
+
+    const devtoolsInterval = setInterval(detectDevTools, 1000);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    cleanup = () => {
+      clearInterval(interval);
+      clearInterval(devtoolsInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+    };
   };
+  startSecurityMonitoring();
+  return () => {
+    stopWebcam();
+    cleanup();
+  };
+}, [examStarted, examSubmitted]);
+
+// Detect reload / tab close
+useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (examStarted && !examSubmitted) {
+      handleSubmitExam("Page reload or close detected");
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    }
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => {
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  };
+}, [examStarted, examSubmitted]);
 
   const playAlarmSound = () => {
     // Create a simple beep sound
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.frequency.value = 800; // 800Hz beep sound
     oscillator.type = 'sine';
-    
+
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-    
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.5);
   };
@@ -136,7 +352,14 @@ const PythonExam = () => {
     setExamFailed(true);
     stopWebcam();
     playAlarmSound();
-    
+    sessionStorage.removeItem('pythonExamState');
+
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    } catch (err) { }
+
     // Store failure reason
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const failureResult = {
@@ -150,14 +373,37 @@ const PythonExam = () => {
         randomId: Math.floor(1000 + Math.random() * 9000)
       },
       examDate: new Date().toISOString(),
-      examTitle: "Python Programming Assessment"
+      examTitle: "Daily Exam"
     };
-    
+
     localStorage.setItem("examFailure", JSON.stringify(failureResult));
     navigate("/dashboard/exam-failed");
   };
 
-  const startExam = () => {
+  const startExam = async () => {
+    // Reset all exam state for fresh start
+    const qLen = questions.length || 20;
+    setAnswers(new Array(qLen).fill(null));
+    setMarkedForReview(new Array(qLen).fill(false));
+    setVisitedQuestions(new Array(qLen).fill(false));
+    setCurrentQuestion(0);
+    // TimeLeft is already set by fetchQuestionsFromBackend based on examDuration
+    setExamSubmitted(false);
+    examSubmittedRef.current = false;
+    
+    // Clear any potential cached state
+    try {
+      sessionStorage.removeItem('pythonExamState');
+      localStorage.removeItem('examResult');
+    } catch (e) {}
+    
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.error("Error enabling fullscreen", err);
+    }
     setExamStarted(true);
     startWebcam(); // Start webcam when exam begins
   };
@@ -194,80 +440,105 @@ const PythonExam = () => {
   };
 
   // SUBMIT EXAM
-  const handleSubmitExam = async () => {
+  const handleSubmitExam = async (reason = "Manual submission") => {
+    if (examSubmittedRef.current) return;
+
+    examSubmittedRef.current = true;
     setExamSubmitted(true);
-    stopWebcam(); // Stop webcam when submitting
+
+    stopWebcam();
+    sessionStorage.removeItem('pythonExamState');
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch (err) { }
 
     const userStr = localStorage.getItem("user");
     let user = {};
+
     try {
       user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
-    } catch(e) {
-      console.error(e);
-    }
+    } catch (e) { }
+
     const randomId = Math.floor(1000 + Math.random() * 9000);
+    const now = new Date().toISOString();
 
     let correctCount = 0;
+    let earnedMarks = 0;
+    let maxPossibleMarks = 0;
 
     answers.forEach((ans, index) => {
-      if (ans === questions[index].correct) correctCount++;
+      const q = questions[index];
+      if (!q) return;
+
+      const qMarks = parseInt(q.marks) || 2;
+      maxPossibleMarks += qMarks;
+
+      if (ans === q.correct) {
+        correctCount++;
+        earnedMarks += qMarks;
+      }
     });
+
+    const totalQ = questions.length;
+    const finalScore = earnedMarks;
+
+    // Calculate passing status
+    let passed = false;
+    if (passingRule === "percentage") {
+       const percent = maxPossibleMarks > 0 ? (earnedMarks / maxPossibleMarks) * 100 : 0;
+       passed = percent >= passingValue;
+    } else {
+       passed = correctCount >= passingValue;
+    }
 
     const result = {
       status: "completed",
       correctAnswers: correctCount,
-      incorrectAnswers: 20 - correctCount,
-      totalQuestions: 20,
-      score: correctCount * 2, // Each question carries 2 marks (total 40)
-      marks: correctCount * 2, // Total marks obtained
-      totalMarks: 40, // Total possible marks
-      answers: answers,
-      questions: questions,
-      timeTaken: 2700 - timeLeft,
+      incorrectAnswers: totalQ - correctCount,
+      totalQuestions: totalQ,
+      score: finalScore,
+      marks: finalScore,
+      total_marks: maxPossibleMarks,
+      passed: passed,
+      time_taken: (examDuration * 60) - timeLeft,
+      start_time: now,
+      answers,
+      questions,
+      timeTaken: (examDuration * 60) - timeLeft,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
         firstName: user.firstName || user.username,
-        randomId: randomId
+        randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Python Programming Assessment"
-    };
-
-    const payload = {
-      username: user.username || "Unknown",
-      exam_title: "Python Programming Assessment",
-      score: correctCount * 2,
-      total_questions: 20,
-      correct_answers: correctCount,
-      incorrect_answers: 20 - correctCount,
-      marks_obtained: correctCount * 2,
-      total_marks: 40,
-      time_taken: 2700 - timeLeft,
-      status: "completed",
-      random_id: randomId,
-      answers: answers,
-      questions: questions
+      examTitle: "Daily Exam",
+      submissionReason: reason
     };
 
     try {
       await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(result)
       });
     } catch (err) {
-      console.error("Failed to sync exam gracefully:", err);
+      console.error("Backend error:", err);
     }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-
     allResults.unshift(result);
 
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
-    navigate("/dashboard/playground-results");
+    // Clear session storage so a new start will shuffle fresh questions
+    sessionStorage.removeItem('pythonExamState');
+
+    navigate("/dashboard/playground-results", { replace: true });
   };
 
   const formatTime = (seconds) => {
@@ -282,10 +553,10 @@ const PythonExam = () => {
 
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
 
-          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4"/>
+          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4" />
 
           <h2 className="text-2xl font-bold mb-2">
-            Python Programming Exam
+            Daily Exam
           </h2>
 
           <p className="text-gray-600 mb-6">
@@ -294,11 +565,16 @@ const PythonExam = () => {
 
           <button
             onClick={startExam}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            disabled={isAILoading || isLoadingQuestions}
+            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${(isAILoading || isLoadingQuestions)
+              ? 'bg-gray-400 cursor-not-allowed animate-pulse'
+              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+              }`}
           >
-            Start Exam
+            {isLoadingQuestions ? 'Fetching Paper...' 
+            : isAILoading ? 'Loading Security AI...' 
+            : 'Start Exam'}
           </button>
-
         </div>
 
       </div>
@@ -308,22 +584,25 @@ const PythonExam = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
 
-      {/* Webcam at Top Left */}
-      <div className="fixed top-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
+      {/* Webcam overlay positioned at bottom-left */}
+      <div className="fixed bottom-4 left-4 z-50 bg-white rounded-lg shadow-lg p-2">
         <div className="relative">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-48 h-36 rounded border-2 border-gray-300"
-            style={{ transform: 'scaleX(-1)' }}
-          />
-          {!webcamActive && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded">
-              <FontAwesomeIcon icon={faCamera} className="text-gray-400 text-2xl" />
-            </div>
-          )}
+        <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-48 h-36 rounded border-2 border-gray-300"
+        style={{ transform: 'scaleX(-1)' }}/>
+
+  {/* ✅ ADD HERE */}
+  <canvas ref={canvasRef} style={{ display: "none" }} />
+
+  {!webcamActive && (
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded">
+      <FontAwesomeIcon icon={faCamera} className="text-gray-400 text-2xl" />
+    </div>
+  )}
           <div className="absolute top-1 right-1">
             <div className={`w-3 h-3 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
           </div>
@@ -338,7 +617,7 @@ const PythonExam = () => {
         <div className="bg-white p-4 rounded shadow flex justify-between mb-4">
 
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faClock}/>
+            <FontAwesomeIcon icon={faClock} />
             {formatTime(timeLeft)}
           </div>
 
@@ -393,19 +672,19 @@ const PythonExam = () => {
                   </button>
                 )}
 
-                {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={handleSubmitExam}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                  >
-                    Submit Exam
-                  </button>
-                ) : (
+                {currentQuestion < questions.length - 1 ? (
                   <button
                     onClick={nextQuestion}
                     className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
                   >
                     Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSubmitExam("Manual submission")}
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                  >
+                    Submit Exam
                   </button>
                 )}
               </div>
@@ -425,7 +704,7 @@ const PythonExam = () => {
               {questions.map((_, index) => {
                 // Determine button color based on state
                 let buttonClass = "p-2 rounded text-sm font-semibold ";
-                
+
                 if (markedForReview[index]) {
                   buttonClass += "bg-violet-500 text-white hover:bg-violet-600";
                 } else if (answers[index] !== null) {
@@ -457,6 +736,6 @@ const PythonExam = () => {
 
     </div>
   );
-}
+};
 
 export default PythonExam;
