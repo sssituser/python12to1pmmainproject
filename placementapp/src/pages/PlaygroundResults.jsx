@@ -111,15 +111,9 @@ function PlaygroundResults() {
     
     let totalQuestions = result.totalQuestions || 20; // use actual value from result
     let totalMarks = result.totalMarks || 40; // use actual value from result
-    let passingScore = 15; // default (marks needed to pass)
-    
-    if (isDailyExam) {
-      passingScore = 20; // 20 marks to pass for daily exam (out of 40)
-    } else if (isWeeklyExam || isMonthlyExam) {
-      passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
-    }
-    
-    const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
+    // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
+    const passed = result.passed !== undefined ? result.passed : (result.score >= (totalMarks * 0.5));
+    const criteriaText = result.passed !== undefined ? "Faculty Rule Applied" : `${totalMarks * 0.5} (50%)`;
     const examDate = new Date(result.examDate || Date.now()).toLocaleString();
     const studentName = result.user?.firstName || result.user?.username || "Unknown";
 
@@ -148,7 +142,7 @@ function PlaygroundResults() {
     doc.text(`Date: ${examDate}`, 20, 110);
     doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
-    doc.text(`Passing Marks: ${passingScore}`, 20, 140);
+    doc.text(`Criteria: ${criteriaText}`, 20, 140);
     
     // Add performance summary
     doc.setFont('helvetica', 'bold');

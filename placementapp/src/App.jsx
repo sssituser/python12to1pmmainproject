@@ -54,13 +54,12 @@ function App() {
       return;
     }
 
-    // Block back button if on exam pages or faculty course pages
+    // Block back button only on exam pages (not faculty course pages)
     const isExamPage = location.pathname.includes('/python-exam') || 
                       location.pathname.includes('/weekly-exam') || 
                       location.pathname.includes('/monthly-exam');
-    const isFacultyCoursePage = location.pathname.includes('/faculty/Course');
     
-    if (isExamPage || isFacultyCoursePage) {
+    if (isExamPage) {
       window.history.pushState(null, null, window.location.pathname + window.location.search);
 
       const handlePopState = (event) => {

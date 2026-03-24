@@ -16,6 +16,8 @@ function LeaveRequest() {
   const [phone, setPhone] = useState("");
   const [studentId, setStudentId] = useState("");
   const [leaveType, setLeaveType] = useState("Medical");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationDetails, setConfirmationDetails] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,17 +30,121 @@ function LeaveRequest() {
       return;
     }
 
-    setLoading(true);
+    // Student ID validation (required for unique identification)
+    if (!studentId || studentId.trim() === '') {
+      alert("Student ID is required. Please enter your unique Student ID.");
+      return;
+    }
 
-    const newRequest = {
+    // Phone number validation (required for unique identification)
+    if (!phone || phone.trim() === '') {
+      alert("Phone number is required for verification.");
+      return;
+    }
+
+    // Check if this Student ID and Phone combination already exists in localStorage
+    const storedName = localStorage.getItem('lastSubmittedName') || '';
+    const storedEmail = localStorage.getItem('lastSubmittedEmail') || '';
+    const storedPhone = localStorage.getItem('lastSubmittedPhone') || '';
+    const storedStudentId = localStorage.getItem('lastSubmittedStudentId') || '';
+
+    // If there are stored values, enforce that the user must use the same ID and phone
+    if (storedPhone && storedStudentId) {
+      if (studentId !== storedStudentId || phone !== storedPhone) {
+        alert(`⚠️  ID and Phone Mismatch!\n\n` +
+          `You must use your registered credentials:\n` +
+          `Student ID: ${storedStudentId}\n` +
+          `Phone: ${storedPhone}\n\n` +
+          `You cannot use different credentials for leave requests.\n` +
+          `Please use your correct Student ID and Phone number.`);
+        return;
+      }
+    }
+
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone.replace(/[^0-9]/g, ''))) {
+      alert("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    // Validate Student ID format (basic validation)
+    if (studentId.length < 3) {
+      alert("Student ID must be at least 3 characters long.");
+      return;
+    }
+
+    // Check existing credentials in database
+    console.log("=== CHECKING DATABASE FOR EXISTING CREDENTIALS ===");
+    const credentialCheck = await checkExistingCredentials(studentId, phone);
+    
+    if (credentialCheck.error) {
+      alert("Error checking existing credentials. Please try again.");
+      return;
+    }
+    
+    if (credentialCheck.exists) {
+      if (credentialCheck.type === 'student_id') {
+        alert(`⚠️  Student ID Already Exists!\n\n` +
+          `This Student ID is already registered to another student:\n` +
+          `Student ID: ${credentialCheck.existingData.student_id}\n` +
+          `Phone: ${credentialCheck.existingData.phone}\n` +
+          `Name: ${credentialCheck.existingData.name}\n\n` +
+          `Please use your own unique Student ID.\n` +
+          `Names can be the same, but Student IDs must be different.`);
+        return;
+      }
+      
+      if (credentialCheck.type === 'phone') {
+        alert(`⚠️  Phone Number Already Exists!\n\n` +
+          `This Phone number is already registered to another student:\n` +
+          `Student ID: ${credentialCheck.existingData.student_id}\n` +
+          `Phone: ${credentialCheck.existingData.phone}\n` +
+          `Name: ${credentialCheck.existingData.name}\n\n` +
+          `Please use your own unique Phone number.\n` +
+          `Names can be the same, but Phone numbers must be different.`);
+        return;
+      }
+    }
+    
+    if (credentialCheck.sameStudent) {
+      console.log("Same student submitting additional request - allowing");
+      // This is the same student submitting another request
+    }
+
+    // Show custom confirmation modal instead of browser confirm
+    const details = {
       name,
       email,
       phone,
-      student_id: studentId,
-      start_date: startDate,
-      end_date: endDate,
-      reason,
-      leave_type: leaveType,
+      studentId,
+      startDate,
+      endDate,
+      leaveType,
+      reason
+    };
+    showCustomConfirmation(details);
+  };
+
+  const showCustomConfirmation = (details) => {
+    setConfirmationDetails(details);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmationSubmit = async () => {
+    setShowConfirmation(false);
+    
+    setLoading(true);
+
+    const newRequest = {
+      name: confirmationDetails.name,
+      email: confirmationDetails.email,
+      phone: confirmationDetails.phone,
+      student_id: confirmationDetails.studentId,
+      start_date: confirmationDetails.startDate,
+      end_date: confirmationDetails.endDate,
+      reason: confirmationDetails.reason,
+      leave_type: confirmationDetails.leaveType,
       status: "Pending",
       approved_by: null,
       appliedDate: new Date().toISOString()
@@ -80,6 +186,13 @@ function LeaveRequest() {
         console.log("Request successful!");
         alert("Leave request submitted successfully!");
         
+        // Store submitted values in localStorage for filtering
+        localStorage.setItem('lastSubmittedName', confirmationDetails.name);
+        localStorage.setItem('lastSubmittedEmail', confirmationDetails.email);
+        localStorage.setItem('lastSubmittedPhone', confirmationDetails.phone);
+        localStorage.setItem('lastSubmittedStudentId', confirmationDetails.studentId);
+        console.log("Stored submitted values in localStorage for filtering");
+        
         // Reset form
         setReason("");
         setStartDate("");
@@ -115,6 +228,113 @@ function LeaveRequest() {
     console.log("=== Form Submit Ended ===");
   };
 
+  const handleConfirmationCancel = () => {
+    setShowConfirmation(false);
+    console.log("User cancelled leave submission");
+  };
+
+  const checkExistingCredentials = async (studentId, phone) => {
+    try {
+      const token = localStorage.getItem("access");
+      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        console.error("Failed to check existing credentials");
+        return { exists: false, error: true };
+      }
+      
+      const data = await response.json();
+      const allRequests = data.data || data || [];
+      
+      console.log("=== CHECKING EXISTING CREDENTIALS ===");
+      console.log("Checking Student ID:", studentId);
+      console.log("Checking Phone:", phone);
+      
+      // Check for existing Student ID
+      const existingById = allRequests.find(req => 
+        req.student_id && req.student_id.toString() === studentId.toString()
+      );
+      
+      // Check for existing Phone
+      const existingByPhone = allRequests.find(req => 
+        req.phone && req.phone.toString() === phone.toString()
+      );
+      
+      console.log("Existing by ID:", existingById);
+      console.log("Existing by Phone:", existingByPhone);
+      
+      if (existingById && existingByPhone) {
+        // Both ID and Phone exist (could be same student)
+        if (existingById.phone === phone) {
+          console.log("Same student found - allowing submission");
+          return { exists: false, sameStudent: true, student: existingById };
+        }
+      }
+      
+      if (existingById) {
+        console.log("Student ID already exists with different phone");
+        return { 
+          exists: true, 
+          type: 'student_id', 
+          existingData: {
+            student_id: existingById.student_id,
+            phone: existingById.phone,
+            name: existingById.name
+          }
+        };
+      }
+      
+      if (existingByPhone) {
+        console.log("Phone already exists with different student ID");
+        return { 
+          exists: true, 
+          type: 'phone', 
+          existingData: {
+            student_id: existingByPhone.student_id,
+            phone: existingByPhone.phone,
+            name: existingByPhone.name
+          }
+        };
+      }
+      
+      console.log("No existing credentials found - new student");
+      return { exists: false, sameStudent: false };
+      
+    } catch (error) {
+      console.error("Error checking existing credentials:", error);
+      return { exists: false, error: true };
+    }
+  };
+
+  const clearAllData = async () => {
+    if (!confirm("⚠️  WARNING: This will delete ALL leave requests from the database and clear all local data. Are you absolutely sure?")) {
+      return;
+    }
+
+    try {
+      // Clear localStorage data
+      localStorage.removeItem('lastSubmittedName');
+      localStorage.removeItem('lastSubmittedEmail');
+      localStorage.removeItem('lastSubmittedPhone');
+      localStorage.removeItem('lastSubmittedStudentId');
+      console.log("Cleared localStorage data");
+
+      // Clear the requests state
+      setRequests([]);
+      
+      alert("✅ All local data cleared successfully!\n\nNote: To clear database records, you need to:\n1. Go to Django admin panel\n2. Navigate to Leave requests\n3. Delete all records\n\nOr contact your administrator to clear the database.");
+      
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      alert("Error clearing data: " + error.message);
+    }
+  };
+
   const loadRequests = async () => {
     try {
       const token = localStorage.getItem("access");
@@ -131,8 +351,90 @@ function LeaveRequest() {
       }
       
       const data = await response.json();
-      console.log("Backend response:", data);
-      setRequests(data.data || data);
+      console.log("=== RAW API RESPONSE ===");
+      console.log("Full response data:", data);
+      console.log("Data type:", typeof data);
+      console.log("Data keys:", Object.keys(data));
+      
+      // Get current logged-in user info (for reference only)
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUserEmail = currentUser.email || '';
+      const currentUserName = currentUser.username || currentUser.firstName || '';
+      const currentStudentId = currentUser.randomId || currentUser.studentId || '';
+      const currentUserPhone = currentUser.phone || '';
+      
+      console.log("=== CURRENT USER INFO (from localStorage) ===");
+      console.log("Current user from localStorage:", currentUser);
+      console.log("Current user name:", currentUserName);
+      console.log("Current user email:", currentUserEmail);
+      console.log("Current user student ID:", currentStudentId);
+      console.log("Current user phone:", currentUserPhone);
+      
+      // IMPORTANT: Use the most recently submitted values for filtering
+      // Store submitted values in localStorage when form is submitted
+      const lastSubmittedName = localStorage.getItem('lastSubmittedName') || '';
+      const lastSubmittedEmail = localStorage.getItem('lastSubmittedEmail') || '';
+      const lastSubmittedPhone = localStorage.getItem('lastSubmittedPhone') || '';
+      const lastSubmittedStudentId = localStorage.getItem('lastSubmittedStudentId') || '';
+      
+      console.log("=== LAST SUBMITTED VALUES (for filtering) ===");
+      console.log("Last submitted name:", lastSubmittedName);
+      console.log("Last submitted email:", lastSubmittedEmail);
+      console.log("Last submitted phone:", lastSubmittedPhone);
+      console.log("Last submitted student ID:", lastSubmittedStudentId);
+      
+      // Use last submitted values for filtering (what was actually submitted)
+      const filterName = lastSubmittedName || name;
+      const filterEmail = lastSubmittedEmail || email;
+      const filterPhone = lastSubmittedPhone || phone;
+      const filterStudentId = lastSubmittedStudentId || studentId;
+      
+      console.log("=== FILTERING CRITERIA ===");
+      console.log("Using name for filtering:", filterName);
+      console.log("Using email for filtering:", filterEmail);
+      console.log("Using phone for filtering:", filterPhone);
+      console.log("Using student ID for filtering:", filterStudentId);
+      
+      // Get all requests from database
+      const allRequests = data.data || data || [];
+      console.log("=== ALL REQUESTS FROM DATABASE ===");
+      console.log("All requests array:", allRequests);
+      console.log("Number of requests:", allRequests.length);
+      
+      allRequests.forEach((req, index) => {
+        console.log(`Request ${index + 1}:`, {
+          id: req.id,
+          name: req.name,
+          email: req.email,
+          phone: req.phone,
+          student_id: req.student_id,
+          status: req.status,
+          leave_type: req.leave_type
+        });
+      });
+      
+      // Filter requests - require BOTH Student ID AND Phone to match (strict uniqueness)
+      const filteredRequests = allRequests.filter(req => {
+        // STRATEGY: Match by Student ID AND Phone (BOTH must match for security)
+        if (req.student_id && filterStudentId && req.phone && filterPhone &&
+            req.student_id.toString() === filterStudentId.toString() && 
+            req.phone.toString() === filterPhone.toString()) {
+          console.log("✅ MATCHED BY STUDENT ID + PHONE (SECURE):", req.student_id, req.phone);
+          return true;
+        }
+        
+        console.log("❌ NO MATCH for request:", req.id);
+        console.log("❌ Required: Student ID:", filterStudentId, "AND Phone:", filterPhone);
+        console.log("❌ Found: Student ID:", req.student_id, "AND Phone:", req.phone);
+        return false;
+      });
+      
+      console.log("=== FILTERING RESULTS ===");
+      console.log("Total requests in database:", allRequests.length);
+      console.log("Filtered requests count:", filteredRequests.length);
+      console.log("Filtered requests data:", filteredRequests);
+      
+      setRequests(filteredRequests);
     } catch (error) {
       console.error("Error loading requests:", error);
     }
@@ -151,11 +453,26 @@ function LeaveRequest() {
   useEffect(() => {
     loadRequests();
     
-    // Auto-fill user data from localStorage
+    // Auto-fill user data from localStorage with better logging
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setName(user.username || user.firstName || '');
-    setEmail(user.email || '');
-    setStudentId(user.randomId || '');
+    console.log("Auto-filling user data:", user);
+    
+    const userName = user.username || user.firstName || '';
+    const userEmail = user.email || '';
+    const userStudentId = user.randomId || user.studentId || '';
+    const userPhone = user.phone || '';
+    
+    console.log("Setting form fields:", {
+      name: userName,
+      email: userEmail,
+      studentId: userStudentId,
+      phone: userPhone
+    });
+    
+    setName(userName);
+    setEmail(userEmail);
+    setStudentId(userStudentId);
+    setPhone(userPhone);
   }, []);
 
   
@@ -317,6 +634,7 @@ function LeaveRequest() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm border-b border-gray-200 py-3">
@@ -327,7 +645,8 @@ function LeaveRequest() {
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-lg" />
               </div>
               <div>
-                <h4 className="text-lg font-bold text-gray-800">Leave Request Portal</h4>
+                <h4 className="text-lg font-bold text-gray-800">My Leave Requests</h4>
+                <p className="text-sm text-gray-600">View and manage your leave history</p>
               </div>
             </div>
             <div className="flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg">
@@ -375,25 +694,30 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Phone</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Phone * (Unique Identifier)</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 9876543210"
+                  placeholder="Enter your unique 10-digit phone number"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
+                  maxLength={10}
                 />
+                <p className="text-xs text-gray-500 mt-1">This phone number + Student ID combination will be permanently linked to you</p>
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Student ID</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">Student ID * (Unique Identifier)</label>
                 <input
                   type="text"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Student ID"
+                  placeholder="Enter your unique Student ID (e.g., 8090)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
                 />
+                <p className="text-xs text-gray-500 mt-1">This ID + Phone combination will be permanently linked to you</p>
               </div>
               
               {/* Leave Details Fields */}
@@ -471,13 +795,13 @@ function LeaveRequest() {
           </form>
         </div>
 
-        {/* All Leave Requests */}
+        {/* My Leave Requests */}
         <div className="rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-pink-400 to-pink-500 px-6 py-2">
             <div className="flex justify-between items-center">
             <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <FontAwesomeIcon icon={faCalendarAlt} />
-                All Leave Requests
+                My Leave History
               </h6>
             </div>
           </div>
@@ -488,8 +812,8 @@ function LeaveRequest() {
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-2">No Leave Requests</h3>
-                <p className="text-gray-600">Submit your first leave request to get started</p>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">No Leave Requests Found</h3>
+                <p className="text-gray-600">You haven't submitted any leave requests yet</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -559,6 +883,134 @@ function LeaveRequest() {
         </div>
       </div>
     </div>
+
+      {/* Custom Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white bg-opacity-20 rounded-full">
+                    <FontAwesomeIcon icon={faCalendarAlt} className="text-white text-xl" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Confirm Leave Request Submission</h3>
+                    <p className="text-blue-100 text-sm">Please review your details before submitting</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleConfirmationCancel}
+                  className="text-white hover:text-blue-200 transition-colors p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Student Information */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <FontAwesomeIcon icon={faUser} className="text-blue-600" />
+                  Student Information
+                </h4>
+                <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Name</p>
+                    <p className="font-medium text-gray-800">{confirmationDetails.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="font-medium text-gray-800">{confirmationDetails.email || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Phone <span className="text-red-500">*</span></p>
+                    <p className="font-medium text-gray-800">{confirmationDetails.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Student ID <span className="text-red-500">*</span></p>
+                    <p className="font-medium text-gray-800">{confirmationDetails.studentId}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leave Details */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600" />
+                  Leave Details
+                </h4>
+                <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Leave Type</p>
+                    <p className="font-medium text-gray-800">{confirmationDetails.leaveType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Duration</p>
+                    <p className="font-medium text-gray-800">
+                      {confirmationDetails.startDate} to {confirmationDetails.endDate}
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600">Reason for Leave</p>
+                    <p className="font-medium text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {confirmationDetails.reason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Notice */}
+              <div className="mb-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1 bg-yellow-100 rounded-full">
+                      <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-gray-800 mb-2">🔐 Uniqueness Policy</h5>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Names can be the same (multiple students can have same name)</li>
+                        <li>• Student ID must be unique (no two students can share same ID)</li>
+                        <li>• Phone number must be unique (no two students can share same phone)</li>
+                        <li>• This Student ID + Phone combination will be permanently linked to you</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleConfirmationCancel}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmationSubmit}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all transform hover:scale-105 flex items-center gap-2"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  Submit Leave Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

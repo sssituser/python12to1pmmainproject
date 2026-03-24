@@ -31,27 +31,13 @@ function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
   const [selectedCourse, setSelectedCourse] = useState(null);
-
-  // Disable browser back button permanently
-  const disableBrowserBack = () => {
-    window.history.pushState(null, null);
-    window.addEventListener('popstate', function(event) {
-      window.history.pushState(null, null);
-      event.preventDefault();
-      event.stopPropagation();
-    });
-  };
-
-  // Call disable function immediately
-  disableBrowserBack();
-
   const [newTopic, setNewTopic] = useState("");
-  const [progressNotification, setProgressNotification] = useState(null);
   const [showAddCourse, setShowAddCourse] = useState(false);
-  const [newCourseName, setNewCourseName] = useState("");
+  const [newCourseName, setNewCourseName] = useState('');
+  const [generatedTopics, setGeneratedTopics] = useState([]);
+  const [showTopicPreview, setShowTopicPreview] = useState(false);
 
   // Default courses for first-time setup
-  // ✅ Default courses for first-time setup
   const defaultCourses = [
     {
       id: 1,
@@ -171,7 +157,7 @@ function CoursesPage() {
 
   const [courses, setCourses] = useState([]);
 
-  // ✅ Icon mapping for automatic logo generation
+  // Icon mapping for automatic logo generation
   const getIconForCourse = (courseName) => {
     const lowerName = courseName.toLowerCase();
     
@@ -201,176 +187,37 @@ function CoursesPage() {
     return FaCode; // Default icon
   };
 
-  // ✅ Load courses from localStorage on component mount
-  useEffect(() => {
-    const savedCourses = localStorage.getItem('courses');
-    if (savedCourses) {
-      try {
-        // Parse saved courses and convert icon strings back to components
-        const parsedCourses = JSON.parse(savedCourses);
-        const coursesWithIcons = parsedCourses.map(course => ({
-          ...course,
-          icon: getIconForCourse(course.title)
-        }));
-        setCourses(coursesWithIcons);
-      } catch (error) {
-        console.error('Error loading courses from localStorage:', error);
-        setCourses(defaultCourses);
-      }
-    } else {
-      // First time visit - save default courses
-      setCourses(defaultCourses);
-      localStorage.setItem('courses', JSON.stringify(defaultCourses));
-    }
-    
-    // ✅ Disable browser back button permanently - Enhanced version
-    const disableBrowserBack = () => {
-      // Push multiple null states to override history
-      window.history.pushState(null, null);
-      window.history.pushState(null, null);
-      window.history.pushState(null, null);
-      
-      // Add event listener to prevent back navigation
-      const preventBack = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        
-        // Push new null state to override any back attempt
-        window.history.pushState(null, null);
-        window.history.pushState(null, null);
-        window.history.forward();
-        
-        console.log('Browser back button blocked');
-        return false;
-      };
-      
-      // Add multiple listeners for redundancy
-      window.addEventListener('popstate', preventBack);
-      window.addEventListener('hashchange', preventBack);
-      window.addEventListener('beforeunload', preventBack);
-      
-      // Override browser back methods
-      window.history.back = () => {
-        console.log('Browser back method overridden');
-        return false;
-      };
-      
-      // Override keyboard shortcuts for back navigation
-      document.addEventListener('keydown', (event) => {
-        if ((event.key === 'Backspace' && !event.target.matches('input, textarea')) || 
-            event.key === 'ArrowLeft' && event.altKey) {
-          preventBack(event);
-        }
-      });
-    };
-    
-    // ✅ Disable browser refresh permanently
-    const disableBrowserRefresh = () => {
-      // Block F5, Ctrl+R, Ctrl+F5, Cmd+R, etc.
-      const preventRefresh = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        
-        // Show notification that refresh is blocked
-        console.log('Browser refresh blocked');
-        return false;
-      };
-      
-      // Block keyboard shortcuts for refresh
-      document.addEventListener('keydown', (event) => {
-        // F5
-        if (event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Ctrl+R / Cmd+R
-        if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
-          preventRefresh(event);
-        }
-        // Ctrl+F5 / Cmd+F5
-        if ((event.ctrlKey || event.metaKey) && event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Shift+F5
-        if (event.shiftKey && event.key === 'F5') {
-          preventRefresh(event);
-        }
-        // Ctrl+Shift+R
-        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'r') {
-          preventRefresh(event);
-        }
-      });
-      
-      // Block right-click refresh
-      document.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        console.log('Right-click refresh blocked');
-        return false;
-      });
-      
-      // Override location.reload
-      const originalReload = window.location.reload;
-      window.location.reload = () => {
-        console.log('Location reload method overridden');
-        return false;
-      };
-      
-      // Block visibility change events (some browsers trigger refresh on tab visibility)
-      document.addEventListener('visibilitychange', (event) => {
-        if (document.visibilityState === 'visible') {
-          event.preventDefault();
-          console.log('Visibility change refresh blocked');
-        }
-      });
-    };
-    
-    // Call disable functions immediately
-    disableBrowserBack();
-    disableBrowserRefresh();
-    
-    // Also call them periodically to ensure they stay active
-    const keepDisabled = setInterval(() => {
-      disableBrowserBack();
-      disableBrowserRefresh();
-    }, 1000);
-    
-    // Cleanup on unmount
-    return () => {
-      clearInterval(keepDisabled);
-    };
-  }, []);
-
-  // ✅ Save courses to localStorage whenever they change
-  useEffect(() => {
-    if (courses.length > 0) {
-      localStorage.setItem('courses', JSON.stringify(courses));
-    }
-  }, [courses]);
-
-  // ✅ Handle URL parameter for specific course
-  useEffect(() => {
-    if (courseId && courses.length > 0) {
-      // Find course by name (URL-friendly format)
-      const course = courses.find(c => {
-        const courseName = c.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-        return courseName === courseId;
-      });
-      
-      if (course) {
-        setSelectedCourse(course);
-      } else {
-        // Course not found, redirect to faculty courses list
-        navigate('/faculty/Course');
-      }
-    }
-  }, [courseId, courses, navigate]);
-
-  // ✅ Generate dynamic topics for new courses
+  // Generate dynamic topics for new courses
   const generateTopicsForCourse = (courseName) => {
     const lowerName = courseName.toLowerCase();
+    console.log('Generating topics for:', courseName, 'Lowercase:', lowerName);
     
+    // Debug specific conditions
+    console.log('Checking conditions:');
+    console.log('  - includes("python testing"):', lowerName.includes('python testing'));
+    console.log('  - includes("automation testing"):', lowerName.includes('automation testing'));
+    console.log('  - includes("test automation"):', lowerName.includes('test automation'));
+    console.log('  - includes("testing"):', lowerName.includes('testing'));
+    console.log('  - includes("python"):', lowerName.includes('python'));
+    
+    // Power BI / Business Intelligence
+    if (lowerName.includes('power bi') || lowerName.includes('powerbi') || lowerName.includes('business intelligence') || lowerName.includes('bi')) {
+      console.log('Matched Power BI/BI topics');
+      return [
+        "Introduction to Power BI",
+        "Data Modeling in Power BI",
+        "DAX Functions",
+        "Power Query and Data Transformation",
+        "Creating Visualizations",
+        "Power BI Service",
+        "Dashboard Design",
+        "Advanced Analytics"
+      ];
+    }
+    
+    // AI/Agentic AI
     if (lowerName.includes('ai') || lowerName.includes('artificial') || lowerName.includes('agentic')) {
+      console.log('Matched AI/Agentic topics');
       return [
         "Introduction to AI",
         "Machine Learning Basics",
@@ -383,7 +230,39 @@ function CoursesPage() {
       ];
     }
     
-    if (lowerName.includes('python')) {
+    // Python Testing / Automation Testing (more specific check first)
+    if (lowerName.includes('python testing') || lowerName.includes('automation testing') || lowerName.includes('test automation')) {
+      console.log('Matched Python Testing/Automation topics');
+      return [
+        "Introduction to Python Testing",
+        "Unit Testing with PyTest",
+        "Test Driven Development",
+        "Automation Testing Frameworks",
+        "Selenium with Python",
+        "API Testing with Python",
+        "Test Data Management",
+        "Continuous Integration Testing"
+      ];
+    }
+    
+    // General Testing (fallback for any testing-related courses)
+    if (lowerName.includes('testing')) {
+      console.log('Matched General Testing topics');
+      return [
+        "Introduction to Software Testing",
+        "Manual Testing Basics",
+        "Test Planning and Design",
+        "Test Execution and Reporting",
+        "Quality Assurance",
+        "Test Management Tools",
+        "Bug Tracking and Reporting",
+        "Testing Best Practices"
+      ];
+    }
+    
+    // Python (general - checked after specific variants)
+    if (lowerName.includes('python') && !lowerName.includes('testing') && !lowerName.includes('automation')) {
+      console.log('Matched Python topics');
       return [
         "Python Basics",
         "Variables and Data Types",
@@ -396,7 +275,9 @@ function CoursesPage() {
       ];
     }
     
+    // JavaScript
     if (lowerName.includes('javascript') || lowerName.includes('js')) {
+      console.log('Matched JavaScript topics');
       return [
         "JS Basics",
         "ES6",
@@ -409,7 +290,9 @@ function CoursesPage() {
       ];
     }
     
+    // Java
     if (lowerName.includes('java')) {
+      console.log('Matched Java topics');
       return [
         "Introduction to Java",
         "Java Operators",
@@ -422,7 +305,9 @@ function CoursesPage() {
       ];
     }
     
+    // SQL/Database
     if (lowerName.includes('sql') || lowerName.includes('database')) {
+      console.log('Matched SQL/Database topics');
       return [
         "SQL Basics",
         "SELECT Queries",
@@ -435,7 +320,9 @@ function CoursesPage() {
       ];
     }
     
+    // React
     if (lowerName.includes('react')) {
+      console.log('Matched React topics');
       return [
         "React Intro",
         "Components",
@@ -448,6 +335,97 @@ function CoursesPage() {
       ];
     }
     
+    // DevOps
+    if (lowerName.includes('devops') || lowerName.includes('tools')) {
+      console.log('Matched DevOps topics');
+      return [
+        "Introduction to DevOps",
+        "Version Control with Git",
+        "CI/CD Pipelines",
+        "Container Orchestration",
+        "Infrastructure as Code",
+        "Monitoring and Logging",
+        "Cloud Platforms",
+        "DevOps Best Practices"
+      ];
+    }
+    
+    // Cyber Security
+    if (lowerName.includes('security') || lowerName.includes('cyber')) {
+      console.log('Matched Cyber Security topics');
+      return [
+        "Introduction to Cyber Security",
+        "Network Security Fundamentals",
+        "Cryptography and Encryption",
+        "Web Application Security",
+        "Ethical Hacking Basics",
+        "Security Auditing",
+        "Incident Response",
+        "Security Compliance"
+      ];
+    }
+    
+    // Data Science
+    if (lowerName.includes('data science') || lowerName.includes('datascience') || lowerName.includes('analytics')) {
+      console.log('Matched Data Science topics');
+      return [
+        "Data Science Introduction",
+        "Statistics for Data Science",
+        "Data Collection and Cleaning",
+        "Exploratory Data Analysis",
+        "Machine Learning Fundamentals",
+        "Data Visualization",
+        "Big Data Technologies",
+        "Data Science Projects"
+      ];
+    }
+    
+    // Cloud Computing
+    if (lowerName.includes('cloud') || lowerName.includes('aws') || lowerName.includes('azure') || lowerName.includes('gcp')) {
+      console.log('Matched Cloud Computing topics');
+      return [
+        "Cloud Computing Basics",
+        "AWS Fundamentals",
+        "Azure Services",
+        "Google Cloud Platform",
+        "Cloud Architecture",
+        "Cloud Security",
+        "DevOps in Cloud",
+        "Cloud Cost Management"
+      ];
+    }
+    
+    // Mobile Development
+    if (lowerName.includes('mobile') || lowerName.includes('android') || lowerName.includes('ios')) {
+      console.log('Matched Mobile Development topics');
+      return [
+        "Mobile App Development",
+        "Android Studio Setup",
+        "iOS Development Basics",
+        "React Native",
+        "Flutter Basics",
+        "Mobile UI/UX",
+        "App Deployment",
+        "Mobile Testing"
+      ];
+    }
+    
+    // Web Development
+    if (lowerName.includes('web') || lowerName.includes('html') || lowerName.includes('css') || lowerName.includes('frontend')) {
+      console.log('Matched Web Development topics');
+      return [
+        "HTML Fundamentals",
+        "CSS Styling",
+        "JavaScript for Web",
+        "Responsive Design",
+        "Web Frameworks",
+        "Backend Basics",
+        "Web APIs",
+        "Web Performance"
+      ];
+    }
+    
+    console.log('Using default topics');
     // Default topics for any course
     return [
       "Introduction",
@@ -461,9 +439,125 @@ function CoursesPage() {
     ];
   };
 
-  // ✅ Add New Course
+  // Load courses from localStorage on component mount
+  useEffect(() => {
+    console.log('=== LOADING COURSES FROM LOCALSTORAGE ===');
+    const savedCourses = localStorage.getItem('courses');
+    console.log('Saved courses from localStorage:', savedCourses);
+    
+    if (savedCourses) {
+      try {
+        const parsedCourses = JSON.parse(savedCourses);
+        console.log('Parsed courses:', parsedCourses);
+        
+        // Check if any courses have generic topics and regenerate them
+        const updatedCourses = parsedCourses.map(course => {
+          const hasGenericTopics = course.topics && (
+            course.topics.includes("Introduction") ||
+            course.topics.includes("Basic Concepts") ||
+            course.topics.includes("Advanced Features") ||
+            course.topics.includes("Best Practices") ||
+            course.topics.includes("Real-world Applications") ||
+            course.topics.includes("Troubleshooting") ||
+            course.topics.includes("Performance Optimization") ||
+            course.topics.includes("Future Trends")
+          );
+          
+          if (hasGenericTopics) {
+            console.log(`Course "${course.title}" has generic topics, regenerating...`);
+            const newTopics = generateTopicsForCourse(course.title);
+            console.log(`New topics for "${course.title}":`, newTopics);
+            return {
+              ...course,
+              topics: newTopics
+            };
+          }
+          
+          return course;
+        });
+        
+        // Check if any courses were updated
+        const coursesWereUpdated = JSON.stringify(updatedCourses) !== JSON.stringify(parsedCourses);
+        
+        if (coursesWereUpdated) {
+          console.log('Courses were updated with new topics, saving to localStorage...');
+          localStorage.setItem('courses', JSON.stringify(updatedCourses));
+          localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+        }
+        
+        // Debug each course's topics
+        updatedCourses.forEach((course, index) => {
+          console.log(`Course ${index + 1}: "${course.title}"`);
+          console.log(`  Topics:`, course.topics);
+          console.log(`  Topic count:`, course.topics?.length || 0);
+        });
+        
+        const coursesWithIcons = updatedCourses.map(course => ({
+          ...course,
+          icon: getIconForCourse(course.title)
+        }));
+        setCourses(coursesWithIcons);
+        console.log('Courses set with icons:', coursesWithIcons);
+      } catch (error) {
+        console.error('Error loading courses from localStorage:', error);
+        setCourses(defaultCourses);
+      }
+    } else {
+      console.log('No saved courses found, using default courses');
+      setCourses(defaultCourses);
+      localStorage.setItem('courses', JSON.stringify(defaultCourses));
+    }
+    console.log('=== COURSE LOADING COMPLETE ===');
+  }, []);
+
+  // Save courses to localStorage whenever they change
+  useEffect(() => {
+    if (courses.length > 0) {
+      localStorage.setItem('courses', JSON.stringify(courses));
+      localStorage.setItem('facultyCourses', JSON.stringify(courses)); // Sync with student view
+    }
+  }, [courses]);
+
+  // Handle URL parameter for specific course
+  useEffect(() => {
+    if (courseId && courses.length > 0) {
+      const course = courses.find(c => {
+        const courseName = c.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+        return courseName === courseId;
+      });
+      
+      if (course) {
+        setSelectedCourse(course);
+      } else {
+        navigate('/faculty/Course');
+      }
+    }
+  }, [courseId, courses, navigate]);
+
+  // Generate Topics for Preview
+  const generateTopicsForPreview = () => {
+    if (!newCourseName.trim()) {
+      alert('Please enter a course name first');
+      return;
+    }
+    
+    console.log('Generating topics for preview:', newCourseName);
+    const topics = generateTopicsForCourse(newCourseName);
+    console.log('Generated topics:', topics);
+    setGeneratedTopics(topics);
+    setShowTopicPreview(true);
+  };
+
+  // Add New Course
   const addNewCourse = () => {
     if (!newCourseName.trim()) return;
+    
+    if (generatedTopics.length === 0) {
+      alert('Please generate topics first by clicking "Generate Topics" button');
+      return;
+    }
+    
+    console.log('Adding new course:', newCourseName);
     
     const newCourse = {
       id: Math.max(...courses.map(c => c.id)) + 1,
@@ -473,19 +567,46 @@ function CoursesPage() {
       duration: "3 hrs",
       progress: 0,
       locked: false,
-      topics: generateTopicsForCourse(newCourseName)
+      topics: generatedTopics
     };
     
-    setCourses([...courses, newCourse]);
+    console.log('Generated course with topics:', newCourse);
+    
+    // Add the new course to the courses array
+    const updatedCourses = [...courses, newCourse];
+    setCourses(updatedCourses);
+    
+    // Save to localStorage immediately
+    localStorage.setItem('courses', JSON.stringify(updatedCourses));
+    localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+    console.log('Saved to localStorage');
+    
+    // Clear form and reset state
     setNewCourseName("");
+    setGeneratedTopics([]);
+    setShowTopicPreview(false);
     setShowAddCourse(false);
+    
+    // Navigate to the newly created course topics page after a short delay
+    setTimeout(() => {
+      const courseName = newCourse.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+      console.log('Navigating to:', `/faculty/Course/${courseName}`);
+      navigate(`/faculty/Course/${courseName}`);
+      setSelectedCourse(newCourse);
+    }, 100);
   };
 
-  // ✅ Add Topic
+  // Reset Course Creation Form
+  const resetCourseForm = () => {
+    setNewCourseName("");
+    setGeneratedTopics([]);
+    setShowTopicPreview(false);
+  };
+
+  // Add Topic
   const addTopic = () => {
     if (!newTopic.trim()) return;
 
-    // Find the course and add topic
     const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
     if (courseIndex !== -1) {
       const updatedCourses = [...courses];
@@ -497,60 +618,35 @@ function CoursesPage() {
     setNewTopic("");
   };
 
-  // ✅ Handle Watch Click
-  const handleWatchClick = (courseTitle, topic) => {
-    // Update progress when watching a video
-    updateCourseProgress(courseTitle, topic);
-    
-    // Navigate to video player with course and topic
-    navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
-  };
-
-  // ✅ Update Course Progress
-  const updateCourseProgress = (courseTitle, topic) => {
-    // Find the course
-    const courseIndex = courses.findIndex(c => c.title === courseTitle);
+  // Remove Topic
+  const removeTopic = (topicToRemove) => {
+    const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
     if (courseIndex !== -1) {
-      // Calculate new progress (increment by 10% for each video watched, max 100%)
-      const currentProgress = courses[courseIndex].progress;
-      const newProgress = Math.min(currentProgress + 10, 100);
-      
-      // Update the course progress
       const updatedCourses = [...courses];
-      updatedCourses[courseIndex].progress = newProgress;
+      updatedCourses[courseIndex].topics = updatedCourses[courseIndex].topics.filter(
+        topic => topic !== topicToRemove
+      );
       setCourses(updatedCourses);
-      
-      // Update selected course if it's currently displayed
-      if (selectedCourse && selectedCourse.title === courseTitle) {
-        setSelectedCourse({...updatedCourses[courseIndex]});
-      }
-      
-      // Show progress update notification
-      setProgressNotification({
-        course: courseTitle,
-        oldProgress: currentProgress,
-        newProgress: newProgress
-      });
-      
-      // Hide notification after 3 seconds
-      setTimeout(() => {
-        setProgressNotification(null);
-      }, 3000);
+      setSelectedCourse({...updatedCourses[courseIndex]});
     }
   };
 
-  // ✅ Handle View Details Click
+  // Handle View Details Click
   const handleViewDetails = (course) => {
-    // Navigate to specific course URL with course name for faculty
     const courseName = course.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
     navigate(`/faculty/Course/${courseName}`);
-    // Also set selected course for the component state
     setSelectedCourse(course);
   };
 
   // Handle Back to Topics
   const handleBackToTopics = () => {
     setSelectedCourse(null);
+  };
+
+  // Handle Watch Click
+  const handleWatchClick = (courseTitle, topic) => {
+    // Navigate to video player with course and topic
+    navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
   };
 
   // =========================
@@ -596,12 +692,20 @@ function CoursesPage() {
           {selectedCourse.topics.map((topic, index) => (
             <div key={index} className="flex justify-between items-center">
               <p className="text-lg font-medium">{topic}</p>
-              <button
-                onClick={() => handleWatchClick(selectedCourse.title, topic)}
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Watch
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                  className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Watch
+                </button>
+                <button
+                  onClick={() => removeTopic(topic)}
+                  className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -614,23 +718,10 @@ function CoursesPage() {
   // =========================
   return (
     <div className="min-h-screen bg-white p-6">
-
-      {/* Progress Notification */}
-      {progressNotification && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse">
-          <div className="font-semibold">
-            Progress Updated! 🎉
-          </div>
-          <div className="text-sm">
-            {progressNotification.course}: {progressNotification.oldProgress}% → {progressNotification.newProgress}%
-          </div>
-        </div>
-      )}
-
       {/* Add Course Modal */}
       {showAddCourse && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-2xl font-bold mb-6 text-gray-900">Add New Course</h3>
             
             <div className="space-y-4">
@@ -639,29 +730,66 @@ function CoursesPage() {
                 <input
                   type="text"
                   value={newCourseName}
-                  onChange={(e) => setNewCourseName(e.target.value)}
-                  placeholder="Enter course name (e.g., Agentic AI)"
+                  onChange={(e) => {
+                    setNewCourseName(e.target.value);
+                    setShowTopicPreview(false);
+                    setGeneratedTopics([]);
+                  }}
+                  placeholder="Enter course name (e.g., Python Automation Testing)"
                   className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              {/* Topic Preview Section */}
+              {showTopicPreview && generatedTopics.length > 0 && (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-blue-900 mb-3">
+                    Generated Topics for "{newCourseName}":
+                  </h4>
+                  <ul className="space-y-2">
+                    {generatedTopics.map((topic, index) => (
+                      <li key={index} className="flex items-center text-blue-800">
+                        <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs mr-2">
+                          {index + 1}
+                        </span>
+                        {topic}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-sm text-blue-600 mt-3">
+                    These topics will be added to your course. Click "Submit" to create the course.
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-between items-center mt-6">
               <button
                 onClick={() => {
+                  resetCourseForm();
                   setShowAddCourse(false);
-                  setNewCourseName("");
                 }}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
               >
                 Cancel
               </button>
-              <button
-                onClick={addNewCourse}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold"
-              >
-                Submit
-              </button>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={generateTopicsForPreview}
+                  disabled={!newCourseName.trim()}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                >
+                  Generate Topics
+                </button>
+                <button
+                  onClick={addNewCourse}
+                  disabled={generatedTopics.length === 0}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+                >
+                  Submit
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -680,7 +808,6 @@ function CoursesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-
         {courses.map((course, index) => {
           const Icon = course.icon;
 
@@ -689,14 +816,12 @@ function CoursesPage() {
               key={index}
               className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 hover:scale-105 transition duration-300 relative overflow-hidden flex flex-col h-80"
             >
-
               {/* Background faded icon */}
               <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10">
                 <Icon />
               </div>
 
               <div className="relative z-10 flex flex-col h-full">
-
                 {/* Top Row */}
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-4xl">
@@ -749,15 +874,11 @@ function CoursesPage() {
                     View Details
                   </button>
                 )}
-
               </div>
-
             </div>
           );
         })}
-
       </div>
-
     </div>
   );
 }

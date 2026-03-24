@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { Outlet } from "react-router-dom";
@@ -6,22 +6,6 @@ import { Outlet } from "react-router-dom";
 function Dashboard() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  //  BLOCK BACK + FORWARD BUTTON
-  useEffect(() => {
-    // Push current state
-    window.history.pushState(null, "", window.location.href);
-
-    const handleBack = () => {
-      window.history.pushState(null, "", window.location.href);
-    };
-
-    window.addEventListener("popstate", handleBack);
-
-    return () => {
-      window.removeEventListener("popstate", handleBack);
-    };
-  }, []);
 
   return (
 
