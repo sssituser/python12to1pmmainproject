@@ -157,9 +157,9 @@ function App() {
         >
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
-          <Route path="stats" element={<Stats />} />
+          <Route path="Stats" element={<Stats />} />
           <Route path="jobs" element={<Jobs />} />
-          <Route path="exam" element={<ExamManager />} />
+          <Route path="Exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
           <Route path="leaves" element={<Leaves />} />
           <Route path="Course" element={<FacultyCourse />} />

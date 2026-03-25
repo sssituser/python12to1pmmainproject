@@ -98,7 +98,7 @@ export default function ProfileCard() {
       }
     });
 
-    await axios.put("http://localhost:8000/api/profile/", data);
+    await axios.put("http://localhost:8000/api/profile/update/", data);
     alert("Profile Saved ✅");
     setEditMode(false);
   };
