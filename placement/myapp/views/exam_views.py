@@ -27,12 +27,14 @@ def start_exam_session(request):
 
 # ---------------- SUBMIT ANSWER ----------------
 @api_view(['POST'])
-def submit_answer(request):
+def submit_answer(request, session_id=None):
 
     data = request.data
 
     try:
-        session = ExamSession.objects.get(id=data.get("session_id"))
+        # Use session_id from URL if available, else from data
+        s_id = session_id or data.get("session_id")
+        session = ExamSession.objects.get(id=s_id)
         question = PythonQuestion.objects.get(id=data.get("question_id"))
     except Exception:
         return Response({"error": "Invalid session or question"}, status=status.HTTP_400_BAD_REQUEST)

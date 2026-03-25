@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User
+from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User, Job
 from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from datetime import datetime
 import json
@@ -748,11 +748,16 @@ def exam_settings_api(request):
 
     elif request.method == 'POST':
         # Safely load existing settings to merge them
+        existing_data = {}
         if os.path.exists(SETTINGS_FILE):
-            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-        else:
-            existing_data = {}
+            try:
+                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    if content:
+                        existing_data = json.loads(content)
+            except (json.JSONDecodeError, Exception) as e:
+                print(f"Error loading settings file: {e}")
+                existing_data = {}
             
         category = request.data.get('category', 'Weekly')
         new_questions = request.data.get('questions', None)
@@ -788,3 +793,52 @@ def exam_settings_api(request):
             
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
+
+# ---------------- DASHBOARD STATS (FACULTY) ----------------
+@api_view(['GET'])
+def dashboard_stats_api(request):
+    """
+    Returns statistics for the faculty dashboard.
+    """
+    total_students = User.objects.filter(is_staff=False).count()
+    # Mock some data if specific status field doesn't exist yet
+    active_jobs = Job.objects.all().count()
+    pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
+    
+    # Simple count of unique students who have attempts
+    successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
+
+    return Response({
+        "total_students": total_students,
+        "placed_students": 12, # Static/Mock or from some model
+        "active_jobs": active_jobs,
+        "pending_reviews": pending_leaves
+    })
+
+# ---------------- STUDENT STATS (FACULTY) ----------------
+@api_view(['GET'])
+def student_stats_api(request):
+    """
+    Returns list of students with their status and progress.
+    """
+    students = User.objects.filter(is_staff=False)
+    data = []
+    
+    for student in students:
+        # Get latest exam result to derive status/progress
+        latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
+        status = "Inactive"
+        progress = 0
+        
+        if latest:
+            status = latest.status
+            progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
+            
+        data.append({
+            "id": student.id,
+            "name": student.username,
+            "status": status,
+            "progress": progress
+        })
+        
+    return Response(data)
