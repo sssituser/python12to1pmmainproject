@@ -11,68 +11,63 @@ import json
 
 @api_view(['GET', 'POST'])
 def leave_requests_api(request):
-    """
-    GET: Get all leave requests
-    POST: Create new leave request
-    """
-    if request.method == 'GET':
-        leave_requests = LeaveRequest.objects.all().order_by('-created_at')
-        serializer = LeaveRequestSerializer(leave_requests, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = LeaveRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            leave_requests = LeaveRequest.objects.all().order_by('-created_at')
+            serializer = LeaveRequestSerializer(leave_requests, many=True)
             return Response({
                 'success': True,
-                'message': 'Leave request created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = LeaveRequestSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Leave request created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PUT', 'DELETE'])
 def leave_request_detail_api(request, pk):
-    """
-    PUT: Update leave request (approve/reject)
-    DELETE: Delete leave request
-    """
-    leave_request = get_object_or_404(LeaveRequest, pk=pk)
-    
-    if request.method == 'PUT':
-        serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        leave_request = get_object_or_404(LeaveRequest, pk=pk)
+        
+        if request.method == 'PUT':
+            serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Leave request updated successfully',
+                    'data': serializer.data
+                })
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif request.method == 'DELETE':
+            leave_request.delete()
             return Response({
                 'success': True,
-                'message': 'Leave request updated successfully',
-                'data': serializer.data
+                'message': 'Leave request deleted successfully'
             })
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        leave_request.delete()
-        return Response({
-            'success': True,
-            'message': 'Leave request deleted successfully'
-        })
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== PLAYGROUND API ====================
 
 @api_view(['GET'])
 def playground_api(request):
-    """
-    GET: Get playground data (languages, templates, snippets)
-    """
     languages = [
         {'name': 'Python', 'icon': '🐍', 'color': 'blue'},
         {'name': 'JavaScript', 'icon': '🟨', 'color': 'yellow'},
@@ -96,65 +91,60 @@ def playground_api(request):
 
 @api_view(['GET', 'POST'])
 def code_templates_api(request):
-    """
-    GET: Get all code templates
-    POST: Create new code template
-    """
-    if request.method == 'GET':
-        templates = CodeTemplate.objects.all()
-        serializer = CodeTemplateSerializer(templates, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = CodeTemplateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            templates = CodeTemplate.objects.all()
+            serializer = CodeTemplateSerializer(templates, many=True)
             return Response({
                 'success': True,
-                'message': 'Code template created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = CodeTemplateSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Code template created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET', 'POST'])
 def code_snippets_api(request):
-    """
-    GET: Get all code snippets
-    POST: Create new code snippet
-    """
-    if request.method == 'GET':
-        snippets = CodeSnippet.objects.all()
-        serializer = CodeSnippetSerializer(snippets, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = CodeSnippetSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            snippets = CodeSnippet.objects.all()
+            serializer = CodeSnippetSerializer(snippets, many=True)
             return Response({
                 'success': True,
-                'message': 'Code snippet created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = CodeSnippetSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Code snippet created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def execute_code_api(request):
-    """
-    POST: Execute code and return result
-    """
     code = request.data.get('code')
     language = request.data.get('language', 'python')
     
@@ -165,10 +155,9 @@ def execute_code_api(request):
         status='running'
     )
     
-    # Simulate code execution (in real implementation, use actual code runner)
+    # Simulate code execution
     if language.lower() == 'python':
         try:
-            # Safe execution simulation
             exec_result = eval(code) if code.strip() else "Code executed successfully"
             output = str(exec_result)
             session.status = 'completed'
@@ -200,20 +189,20 @@ def execute_code_api(request):
 @api_view(['GET'])
 def exam_reports_api(request):
     """
-    GET: Get all exam reports
+    GET: Get all exam reports for a user or all users (daily reports)
     """
     username = request.GET.get('username')
-    exam_attempts = ExamAttempt.objects.filter(exam_type='daily')
+    exam_type = request.GET.get('exam_type', 'daily')
+    
+    attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
     if username:
-        exam_attempts = exam_attempts.filter(user__username__iexact=username)
+        attempts = attempts.filter(user__username__iexact=username)
         
-    exam_attempts = exam_attempts.order_by('-exam_date')
-    serializer = ExamAttemptSerializer(exam_attempts, many=True)
+    attempts = attempts.order_by('-exam_date')
     
-    # Format data for frontend
     formatted_data = []
-    for attempt in exam_attempts:
+    for attempt in attempts:
         formatted_data.append({
             'id': attempt.id,
             'user': {
@@ -230,7 +219,7 @@ def exam_reports_api(request):
             'timeTaken': attempt.time_taken,
             'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
         })
-    
+
     return Response({
         'success': True,
         'data': formatted_data
@@ -380,31 +369,31 @@ def exam_questions_api(request):
 
 @api_view(['POST'])
 def login_api(request):
-    """
-    POST: User login
-    """
-    username = request.data.get('username')
-    password = request.data.get('password')
-    
-    # Simple authentication (in real app, use Django auth)
-    user, created = User.objects.get_or_create(
-        username=username,
-        defaults={'email': f"{username}@example.com", 'password': password}
-    )
-    
-    # Generate random 4-digit ID
-    import random
-    random_id = f"{random.randint(1000, 9999)}"
-    
-    return Response({
-        'success': True,
-        'message': 'Login successful',
-        'data': {
-            'user': UserSerializer(user).data,
-            'randomId': random_id,
-            'token': f"token_{user.id}_{random_id}"  # Simple token
-        }
-    })
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        # Simple authentication (in real app, use Django auth)
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': f"{username}@example.com", 'password': password}
+        )
+        
+        # Generate random 4-digit ID
+        import random
+        random_id = f"{random.randint(1000, 9999)}"
+        
+        return Response({
+            'success': True,
+            'message': 'Login successful',
+            'data': {
+                'user': UserSerializer(user).data,
+                'randomId': random_id,
+                'token': f"token_{user.id}_{random_id}"  # Simple token
+            }
+        })
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== LEADERBOARD API ====================
 
@@ -684,17 +673,12 @@ def exam_settings_api(request):
         return Response({'success': True, 'data': data})
 
     elif request.method == 'POST':
-        # Safely load existing settings to merge them
         existing_data = {}
         if os.path.exists(SETTINGS_FILE):
-            try:
-                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
-                    if content:
-                        existing_data = json.loads(content)
-            except (json.JSONDecodeError, Exception) as e:
-                print(f"Error loading settings file: {e}")
-                existing_data = {}
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    existing_data = json.loads(content)
             
         category = request.data.get('category', 'Weekly')
         new_questions = request.data.get('questions', None)
@@ -734,48 +718,48 @@ def exam_settings_api(request):
 # ---------------- DASHBOARD STATS (FACULTY) ----------------
 @api_view(['GET'])
 def dashboard_stats_api(request):
-    """
-    Returns statistics for the faculty dashboard.
-    """
-    total_students = User.objects.filter(is_staff=False).count()
-    # Mock some data if specific status field doesn't exist yet
-    active_jobs = Job.objects.all().count()
-    pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
-    
-    # Simple count of unique students who have attempts
-    successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
+    try:
+        total_students = User.objects.filter(is_staff=False).count()
+        # Mock some data if specific status field doesn't exist yet
+        active_jobs = Job.objects.all().count()
+        pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
+        
+        # Simple count of unique students who have attempts
+        successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
 
-    return Response({
-        "total_students": total_students,
-        "placed_students": 12, # Static/Mock or from some model
-        "active_jobs": active_jobs,
-        "pending_reviews": pending_leaves
-    })
+        return Response({
+            "total_students": total_students,
+            "placed_students": 12, # Static/Mock or from some model
+            "active_jobs": active_jobs,
+            "pending_reviews": pending_leaves
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ---------------- STUDENT STATS (FACULTY) ----------------
 @api_view(['GET'])
 def student_stats_api(request):
-    """
-    Returns list of students with their status and progress.
-    """
-    students = User.objects.filter(is_staff=False)
-    data = []
-    
-    for student in students:
-        # Get latest exam result to derive status/progress
-        latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
-        status = "Inactive"
-        progress = 0
+    try:
+        students = User.objects.filter(is_staff=False)
+        data = []
         
-        if latest:
-            status = latest.status
-            progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
+        for student in students:
+            # Get latest exam result to derive status/progress
+            latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
+            status_val = "Inactive"
+            progress = 0
             
-        data.append({
-            "id": student.id,
-            "name": student.username,
-            "status": status,
-            "progress": progress
-        })
-        
-    return Response(data)
+            if latest:
+                status_val = latest.status
+                progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
+                
+            data.append({
+                "id": student.id,
+                "name": student.username,
+                "status": status_val,
+                "progress": progress
+            })
+            
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

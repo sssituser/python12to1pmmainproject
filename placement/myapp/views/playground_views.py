@@ -31,7 +31,6 @@ def create_playground(request):
 # GET SINGLE PLAYGROUND
 @api_view(['GET'])
 def get_playground(request, pk):
-
     playground = get_object_or_404(Playground, id=pk)
     serializer = PlaygroundSerializer(playground)
     return Response(serializer.data)
@@ -40,7 +39,6 @@ def get_playground(request, pk):
 # DELETE PLAYGROUND
 @api_view(['DELETE'])
 def delete_playground(request, pk):
-
     playground = get_object_or_404(Playground, id=pk)
     playground.delete()
     return Response({"message": "Deleted successfully"})

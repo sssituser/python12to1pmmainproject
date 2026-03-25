@@ -12,7 +12,6 @@ from ..serializers import PythonQuestionSerializer
 # ---------------- START EXAM SESSION ----------------
 @api_view(['POST'])
 def start_exam_session(request):
-
     data = request.data
 
     session = ExamSession.objects.create(
@@ -29,7 +28,6 @@ def start_exam_session(request):
 # ---------------- SUBMIT ANSWER ----------------
 @api_view(['POST'])
 def submit_answer(request, session_id=None):
-
     data = request.data
 
     # Use session_id from URL if available, else from data
@@ -52,7 +50,6 @@ def submit_answer(request, session_id=None):
 # ---------------- END EXAM SESSION ----------------
 @api_view(['POST'])
 def end_exam_session(request, session_id):
-
     session = get_object_or_404(ExamSession, id=session_id)
 
     session.end_time = timezone.now()
@@ -91,7 +88,6 @@ def end_exam_session(request, session_id):
 # ---------------- SAVE WEBCAM SNAPSHOT ----------------
 @api_view(['POST'])
 def save_webcam_snapshot(request):
-
     data = request.data
 
     session_id = data.get('session_id')
