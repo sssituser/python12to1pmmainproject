@@ -1485,6 +1485,7 @@ function CoursesPage() {
   // Handle Back to Topics
   const handleBackToTopics = () => {
     setSelectedCourse(null);
+    navigate('/faculty/Course');
   };
 
   // Handle Watch Click

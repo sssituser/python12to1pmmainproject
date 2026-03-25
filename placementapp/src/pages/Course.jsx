@@ -282,6 +282,7 @@ function CoursesPage() {
   // Handle Back to Topics
   const handleBackToTopics = () => {
     setSelectedCourse(null);
+    navigate('/dashboard/course');
   };
 
   // Handle Watch Click
