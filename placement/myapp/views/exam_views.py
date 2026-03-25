@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 import json
 
 from ..models import ExamSession, ExamAnswer, PythonQuestion, Choice, WebcamSnapshot
@@ -31,13 +32,10 @@ def submit_answer(request, session_id=None):
 
     data = request.data
 
-    try:
-        # Use session_id from URL if available, else from data
-        s_id = session_id or data.get("session_id")
-        session = ExamSession.objects.get(id=s_id)
-        question = PythonQuestion.objects.get(id=data.get("question_id"))
-    except Exception:
-        return Response({"error": "Invalid session or question"}, status=status.HTTP_400_BAD_REQUEST)
+    # Use session_id from URL if available, else from data
+    s_id = session_id or data.get("session_id")
+    session = get_object_or_404(ExamSession, id=s_id)
+    question = get_object_or_404(PythonQuestion, id=data.get("question_id"))
 
     answer = ExamAnswer.objects.create(
         session=session,
@@ -55,10 +53,7 @@ def submit_answer(request, session_id=None):
 @api_view(['POST'])
 def end_exam_session(request, session_id):
 
-    try:
-        session = ExamSession.objects.get(id=session_id)
-    except ExamSession.DoesNotExist:
-        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+    session = get_object_or_404(ExamSession, id=session_id)
 
     session.end_time = timezone.now()
     session.status = "completed"
@@ -97,74 +92,58 @@ def end_exam_session(request, session_id):
 @api_view(['POST'])
 def save_webcam_snapshot(request):
 
-    try:
+    data = request.data
 
-        data = request.data
+    session_id = data.get('session_id')
+    image_path = data.get('image_path')
+    is_suspicious = data.get('is_suspicious', False)
+    reason = data.get('reason', '')
 
-        session_id = data.get('session_id')
-        image_path = data.get('image_path')
-        is_suspicious = data.get('is_suspicious', False)
-        reason = data.get('reason', '')
-
-        if not session_id or not image_path:
-            return Response(
-                {"error": "session_id and image_path required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        session = ExamSession.objects.get(id=session_id)
-
-        snapshot = WebcamSnapshot.objects.create(
-            session=session,
-            image_path=image_path,
-            is_suspicious=is_suspicious,
-            reason=reason
+    if not session_id or not image_path:
+        return Response(
+            {"error": "session_id and image_path required"},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        return Response({
-            "message": "Snapshot saved",
-            "snapshot_id": snapshot.id
-        }, status=status.HTTP_201_CREATED)
+    session = get_object_or_404(ExamSession, id=session_id)
 
-    except Exception as e:
+    snapshot = WebcamSnapshot.objects.create(
+        session=session,
+        image_path=image_path,
+        is_suspicious=is_suspicious,
+        reason=reason
+    )
 
-        return Response({
-            "error": str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({
+        "message": "Snapshot saved",
+        "snapshot_id": snapshot.id
+    }, status=status.HTTP_201_CREATED)
 
 
 # ---------------- GET ALL EXAM SESSIONS ----------------
 @api_view(['GET'])
 def get_exam_sessions(request):
 
-    try:
+    sessions = ExamSession.objects.all().order_by('-created_at')
 
-        sessions = ExamSession.objects.all().order_by('-created_at')
+    data = []
 
-        data = []
+    for session in sessions:
 
-        for session in sessions:
+        data.append({
+            "id": session.id,
+            "student_name": session.student_name,
+            "student_email": session.student_email,
+            "start_time": session.start_time,
+            "end_time": session.end_time,
+            "status": session.status,
+            "score": session.score,
+            "total_marks": session.total_marks,
+            "webcam_enabled": session.webcam_enabled,
+            "created_at": session.created_at
+        })
 
-            data.append({
-                "id": session.id,
-                "student_name": session.student_name,
-                "student_email": session.student_email,
-                "start_time": session.start_time,
-                "end_time": session.end_time,
-                "status": session.status,
-                "score": session.score,
-                "total_marks": session.total_marks,
-                "webcam_enabled": session.webcam_enabled,
-                "created_at": session.created_at
-            })
-
-        return Response(data)
-
-    except Exception as e:
-
-        return Response({
-            "error": str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response(data)
 
 
 # ---------------- GET ALL QUESTIONS ----------------
@@ -196,11 +175,7 @@ def create_question(request):
 @api_view(['DELETE'])
 def delete_exam_session(request, pk):
 
-    try:
-        session = ExamSession.objects.get(id=pk)
-        session.delete()
+    session = get_object_or_404(ExamSession, id=pk)
+    session.delete()
 
-        return Response({"message": "Deleted successfully"}, status=status.HTTP_200_OK)
-
-    except ExamSession.DoesNotExist:
-        return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response({"message": "Deleted successfully"}, status=status.HTTP_200_OK)

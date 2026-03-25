@@ -16,7 +16,7 @@ function FacultyLayout() {
   const [isOpen, setIsOpen] = useState(false);
 
   const menu = [
-<<<<<<< HEAD
+
     { name: "Dashboard", path: "/faculty/Dashboard", icon: <LayoutDashboard size={20}/> },
     { name: "Course", path: "/faculty/Course", icon: <BookOpen size={20}/> },
     { name: "Stats", path: "/faculty/Stats", icon: <BarChart3 size={20}/> },
@@ -24,25 +24,7 @@ function FacultyLayout() {
     { name: "Applications", path: "/faculty/applications", icon: <FileText size={20}/> },
     { name: "Exam", path: "/faculty/Exam", icon: <ClipboardList size={20}/> },
     { name: "Leave Requests", path: "/faculty/leaves", icon: <CalendarDays size={20}/> },
-=======
-    
-
-    { name: "Stats", path: "/faculty/Stats" },
-
-    { name: "Course", path: "/faculty/Course" },
-
-    { name: "Jobs", path: "/faculty/jobs" },
-
-    { name: "Applications", path: "/faculty/applications" },
-
-    { name: "Exam", path: "/faculty/Exam" },
-
-    { name: "Leave Requests", path: "/faculty/leaves" },
-
-    
-
->>>>>>> c1cfd3a3604c7da664e1d9b506706ec08bfb4669
-  ];
+    ];
 
   return (
     <div className="flex h-screen">
