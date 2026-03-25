@@ -163,7 +163,7 @@ function WeeklyExamReports() {
                     onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
                     className="w-full py-3 bg-gray-50 text-green-600 rounded-xl font-bold text-sm hover:bg-green-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
-                    View Report ↗
+                    View Report 
                   </button>
                 </div>
               );
