@@ -843,27 +843,6 @@ function LeaveRequest() {
   return (
     <>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm border-b border-gray-200 py-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="p-1 bg-white bg-opacity-20 rounded-full">
-                <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-sm" />
-              </div>
-              <div>
-                <h4 className="text-base font-bold text-gray-800" style={welcomeBackFont}>My Leave Requests</h4>
-                <p className="text-xs text-gray-600" style={welcomeBackFont}>View and manage your leave history</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-2 py-1 bg-white bg-opacity-20 rounded-lg">
-              <FontAwesomeIcon icon={faUser} className="text-gray-600 text-xs" />
-              <span className="text-gray-800 font-semibold text-sm">Student</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
@@ -929,7 +908,7 @@ function LeaveRequest() {
                   required
                   maxLength={10}
                 />
-                <p className="text-xs text-gray-500 mt-1">This phone number + Student ID combination will be permanently linked to you</p>
+                
               </div>
               
               <div>
@@ -942,7 +921,7 @@ function LeaveRequest() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">This ID + Phone combination will be permanently linked to you</p>
+                
               </div>
               
               {/* Leave Details Fields */}
