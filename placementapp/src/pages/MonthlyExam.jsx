@@ -60,9 +60,24 @@ const MonthlyExam = () => {
         // 1. Prioritize Custom Questions from Exam Manager
         if (customJson.success && customJson.data && customJson.data.questions && customJson.data.questions.length > 0) {
           
+          // Helper for Fisher-Yates shuffle
+          const shuffleArray = (array) => {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+          };
+          
           const maxQ = customJson.data.maxQuestions || 50;
           const displayLimit = Math.min(customJson.data.questions.length, maxQ);
-          const monthlyQuestions = customJson.data.questions.slice(0, displayLimit);
+          
+          // 2. Shuffle ALL available questions from Faculty FIRST
+          const allShuffled = shuffleArray(customJson.data.questions);
+          
+          // 3. Take the limit (e.g. random 50)
+          const monthlyQuestions = allShuffled.slice(0, displayLimit);
           
           const dur = customJson.data.duration || 45;
           setExamDuration(dur);
@@ -74,7 +89,7 @@ const MonthlyExam = () => {
           const mappedQuestions = monthlyQuestions.map((q, idx) => ({
              ...q, 
              id: idx + 1,
-             marks: parseInt(q.marks) || 2, // Use custom marks if set, else fallback 2
+             marks: parseInt(q.marks) || 2,
              question: q.question,
              options: q.options,
              correct: q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0

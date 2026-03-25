@@ -10,7 +10,6 @@ import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
 import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
-import Exams from "./pages/Exams";
 import ExamReports from "./pages/ExamReports";
 import DailyExamReports from "./pages/DailyExamReports";
 import WeeklyExamReports from "./pages/WeeklyExamReports";
@@ -95,9 +94,10 @@ function App() {
 
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
-        <Route path="/exam" element={<Exams />} />
+
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
+
         <Route path="/dashboard/python-exam" element={<PythonExam />} />
         <Route path="/dashboard/weekly-exam" element={<WeeklyExam />} />
         <Route path="/dashboard/monthly-exam" element={<MonthlyExam />} />
@@ -127,7 +127,7 @@ function App() {
           <Route path="jobs/:id" element={<JobDetails />} />
 
           {/* Exams */}
-          <Route path="exams" element={<Exams />} />
+
           <Route path="exam-reports" element={<ExamReports />} />
           <Route path="daily-exams" element={<DailyExamReports />} />
           <Route path="weekly-exams" element={<WeeklyExamReports />} />
@@ -157,9 +157,9 @@ function App() {
         >
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
-          <Route path="stats" element={<Stats />} />
+          <Route path="Stats" element={<Stats />} />
           <Route path="jobs" element={<Jobs />} />
-          <Route path="exam" element={<ExamManager />} />
+          <Route path="Exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
           <Route path="leaves" element={<Leaves />} />
           <Route path="Course" element={<FacultyCourse />} />

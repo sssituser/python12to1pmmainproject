@@ -8,6 +8,12 @@ function Leaves() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Welcome Back font styles - exact same as Playground
+  const welcomeBackFont = {
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+    fontWeight: '700', // font-bold equivalent
+  };
+
   useEffect(() => {
     fetchLeaves();
   }, []);
@@ -63,7 +69,6 @@ function Leaves() {
 
   const handleApprove = async (leaveId) => {
     console.log("Approving leave request:", leaveId);
-    if (!confirm("Are you sure you want to approve this leave request?")) return;
 
     try {
       const token = localStorage.getItem("access");
@@ -89,7 +94,6 @@ function Leaves() {
       console.log("Approve response ok:", res.ok);
 
       if (res.ok) {
-        alert("Leave request approved successfully!");
         fetchLeaves(); // Refresh the list
       } else {
         const errorData = await res.text();
@@ -105,7 +109,6 @@ function Leaves() {
 
   const handleReject = async (leaveId) => {
     console.log("Rejecting leave request:", leaveId);
-    if (!confirm("Are you sure you want to reject this leave request?")) return;
 
     try {
       const token = localStorage.getItem("access");
@@ -135,7 +138,6 @@ function Leaves() {
       if (res.ok) {
         const responseData = await res.json();
         console.log("Reject response data:", responseData);
-        alert("Leave request rejected successfully!");
         fetchLeaves(); // Refresh the list
       } else {
         const errorData = await res.text();
@@ -182,7 +184,7 @@ function Leaves() {
       {/* Header */}
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h4 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+          <h4 className="text-3xl font-bold text-gray-800 flex items-center gap-3" style={welcomeBackFont}>
             <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600" />
             Leave Requests Management
           </h4>
@@ -191,7 +193,7 @@ function Leaves() {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-md"
           >
             <FontAwesomeIcon icon={faClock} />
-            Refresh
+            <span style={welcomeBackFont}>Refresh</span>
           </button>
         </div>
 
@@ -199,8 +201,8 @@ function Leaves() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-8 text-center">
               <FontAwesomeIcon icon={faFileAlt} className="text-gray-400 text-5xl mb-4" />
-              <h5 className="text-gray-800 text-xl font-bold mb-2">No Leave Requests</h5>
-              <p className="text-gray-600">No leave requests have been submitted by students.</p>
+              <h5 className="text-gray-800 text-xl font-bold mb-2" style={welcomeBackFont}>No Leave Requests</h5>
+              <p className="text-gray-600" style={welcomeBackFont}>No leave requests have been submitted by students.</p>
             </div>
           </div>
         ) : (
@@ -211,13 +213,13 @@ function Leaves() {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Student Details</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Leave Period</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Type</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Reason</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Applied On</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Student Details</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Leave Period</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Type</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Reason</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Applied On</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700" style={welcomeBackFont}>Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">

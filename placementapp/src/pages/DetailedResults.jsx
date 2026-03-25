@@ -107,11 +107,11 @@ function DetailedResults() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-gray-50/50 py-4 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
         
         {/* TOP MINI HEADER */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <button
             onClick={handleBack}
             className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-indigo-600 transition-all bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 group"
@@ -130,9 +130,9 @@ function DetailedResults() {
         </div>
 
         {/* HERO SECTION / STUDENT INFO */}
-        <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden mb-4">
           <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-1 px-8"></div>
-          <div className="p-8 sm:p-10">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-8 h-[2px] bg-indigo-500"></span>
               Student Assessment Summary
@@ -144,14 +144,14 @@ function DetailedResults() {
                 <p className="text-xl font-black text-gray-900 truncate">
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
                 </p>
-              </div>
-              <div className="space-y-1">
+              </div> 
+              {/* <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Report ID</p>
                 <p className="text-xl font-black text-gray-900 font-mono">
                    #{result.user?.randomId || 'N/A'}
                 </p>
-              </div>
-              <div className="space-y-1">
+              </div> */}
+                <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Final Score</p>
                 <p className="text-xl font-black text-indigo-600">
                   {result.score || (result.correctAnswers || 0) * 2} <span className="text-gray-300 font-normal">/ {totalMarks}</span>
@@ -170,9 +170,9 @@ function DetailedResults() {
         </div>
 
         {/* PERFORMANCE KPI CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           
-          <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
+          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-green-600 font-black text-xs uppercase tracking-widest mb-2">Accurate</p>
             <p className="text-5xl font-black text-gray-900 mb-1">{result.correctAnswers || 0}</p>
@@ -181,7 +181,7 @@ function DetailedResults() {
             </p>
           </div>
 
-          <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
+          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-red-600 font-black text-xs uppercase tracking-widest mb-2">Incorrect</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
@@ -190,7 +190,7 @@ function DetailedResults() {
             <p className="text-sm font-bold text-gray-400 italic">Missed Potential</p>
           </div>
 
-          <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
+          <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-gray-500 font-black text-xs uppercase tracking-widest mb-2">Skipped</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
@@ -202,8 +202,8 @@ function DetailedResults() {
         </div>
 
         {/* DETAILED ANALYSIS SECTION */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between mb-8 px-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-2 px-4">
              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
                Question Breakdown <span className="text-indigo-500 ml-2">{result.questions?.length || 0} ITEMS</span>
              </h3>

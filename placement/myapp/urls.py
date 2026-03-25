@@ -38,6 +38,9 @@ urlpatterns = [
     path('leave-requests/<int:pk>/delete/', delete_leave_request),
     path('leave-requests/my-requests/', my_leave_requests),
 
+
+
+
     # ================= EXAM SYSTEM =================
     path('questions/', get_questions),
     path('questions/create/', create_question),
@@ -49,6 +52,7 @@ urlpatterns = [
     path('exam/sessions/', get_exam_sessions),
 
     # ================= PLAYGROUND =================
+
     path('playground-questions/', api_views.playground_questions_api, name='playground-questions'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
@@ -65,5 +69,9 @@ urlpatterns = [
     path('leaderboard/', api_views.leaderboard_api),
     path('weekly-exam-results/', api_views.weekly_exam_reports_api),
     path('monthly-exam-results/', api_views.monthly_exam_reports_api),
+    
+    # DASHBOARD & STATS
+    path('dashboard-stats/', api_views.dashboard_stats_api),
+    path('students/', api_views.student_stats_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
 ]

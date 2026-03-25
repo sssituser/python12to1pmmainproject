@@ -16,47 +16,154 @@ function LeaveRequest() {
   const [phone, setPhone] = useState("");
   const [studentId, setStudentId] = useState("");
   const [leaveType, setLeaveType] = useState("Medical");
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationDetails, setConfirmationDetails] = useState({});
+  const [error, setError] = useState("");
+  const [historyCleared, setHistoryCleared] = useState(false);
+
+  // Welcome Back font styles - exact same as Playground
+  const welcomeBackFont = {
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+    fontWeight: '700', // font-bold equivalent
+  };
+
+  // Real-time validation for Student ID
+  const handleStudentIdChange = async (e) => {
+    const newStudentId = e.target.value;
+    setStudentId(newStudentId);
+    
+    // Check if Student ID already exists when user has typed at least 3 characters
+    if (newStudentId.length >= 3) {
+      try {
+        const token = localStorage.getItem("access");
+        if (token) {
+          // Fetch fresh data from database
+          const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const allRequests = data.data || data || [];
+            
+            // Get permanent credentials for comparison
+            const permanentName = localStorage.getItem('registeredName') || '';
+            const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+            const permanentPhone = localStorage.getItem('registeredPhone') || '';
+            
+            // Check for existing Student ID
+            const existingById = allRequests.find(req => 
+              req.student_id && req.student_id.toString() === newStudentId.toString()
+            );
+            
+            // Only show error if ID exists AND it's not the user's permanent ID
+            if (existingById && permanentStudentId && existingById.student_id.toString() !== permanentStudentId.toString()) {
+              setError("Student ID Already Exists! This ID is already taken by another student.");
+            } else {
+              setError(""); // Clear error if no conflict or it's user's own ID
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Student ID:", error);
+      }
+    }
+  };
+
+  // Real-time validation for Phone Number
+  const handlePhoneChange = async (e) => {
+    const newPhone = e.target.value.replace(/[^0-9]/g, ''); // Only allow numbers
+    setPhone(newPhone);
+    
+    // Check if Phone number already exists when user has typed 10 digits
+    if (newPhone.length === 10) {
+      try {
+        const token = localStorage.getItem("access");
+        if (token) {
+          // Fetch fresh data from database
+          const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const allRequests = data.data || data || [];
+            
+            // Get permanent credentials for comparison
+            const permanentName = localStorage.getItem('registeredName') || '';
+            const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+            const permanentPhone = localStorage.getItem('registeredPhone') || '';
+            
+            // Check for existing Phone number
+            const existingByPhone = allRequests.find(req => 
+              req.phone && req.phone.toString() === newPhone.toString()
+            );
+            
+            // Only show error if phone exists AND it's not the user's permanent phone
+            if (existingByPhone && permanentPhone && existingByPhone.phone.toString() !== permanentPhone.toString()) {
+              setError("Phone Number Already Exists! This phone number is already taken by another student.");
+            } else {
+              setError(""); // Clear error if no conflict or it's user's own phone
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Phone:", error);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("=== Form Submit Started ===");
     
+    // Get permanent credentials once at the beginning
+    const permanentName = localStorage.getItem('registeredName') || '';
+    const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+    const permanentPhone = localStorage.getItem('registeredPhone') || '';
+    
+    console.log("=== PERMANENT CREDENTIALS ===");
+    console.log("Permanent Name:", permanentName);
+    console.log("Permanent Student ID:", permanentStudentId);
+    console.log("Permanent Phone:", permanentPhone);
+    console.log("Input Name:", name, "Stored Name:", permanentName);
+    console.log("Input ID:", studentId, "Stored ID:", permanentStudentId);
+    console.log("Input Phone:", phone, "Stored Phone:", permanentPhone);
+    
+    // Check if there are any current error messages
+    if (error && error !== "") {
+      console.log("Form submission blocked - there are error messages:", error);
+      return; // Prevent submission if there are errors
+    }
+    
     // Basic validation
     if (!name || !startDate || !endDate || !reason) {
       console.log("Validation failed - missing fields");
-      alert("Please fill all required fields (Name, Start Date, End Date, Reason)");
+      setError("Please fill all required fields (Name, Start Date, End Date, Reason)");
       return;
     }
 
     // Student ID validation (required for unique identification)
     if (!studentId || studentId.trim() === '') {
-      alert("Student ID is required. Please enter your unique Student ID.");
+      setError("Student ID is required. Please enter your unique Student ID.");
       return;
     }
 
     // Phone number validation (required for unique identification)
     if (!phone || phone.trim() === '') {
-      alert("Phone number is required for verification.");
+      setError("Phone number is required for verification.");
       return;
     }
 
     // Check if this Student ID and Phone combination already exists in localStorage
-    const storedName = localStorage.getItem('lastSubmittedName') || '';
-    const storedEmail = localStorage.getItem('lastSubmittedEmail') || '';
-    const storedPhone = localStorage.getItem('lastSubmittedPhone') || '';
-    const storedStudentId = localStorage.getItem('lastSubmittedStudentId') || '';
-
-    // If there are stored values, enforce that the user must use the same ID and phone
-    if (storedPhone && storedStudentId) {
-      if (studentId !== storedStudentId || phone !== storedPhone) {
-        alert(`⚠️  ID and Phone Mismatch!\n\n` +
-          `You must use your registered credentials:\n` +
-          `Student ID: ${storedStudentId}\n` +
-          `Phone: ${storedPhone}\n\n` +
-          `You cannot use different credentials for leave requests.\n` +
-          `Please use your correct Student ID and Phone number.`);
+    // If there are permanent credentials, enforce that user must use same ID and phone
+    if (permanentName && permanentStudentId && permanentPhone) {
+      if (studentId !== permanentStudentId || phone !== permanentPhone) {
+        setError(`ID and Phone Mismatch! You must use your registered credentials: Student ID: ${permanentStudentId}, Phone: ${permanentPhone}`);
         return;
       }
     }
@@ -64,87 +171,79 @@ function LeaveRequest() {
     // Validate phone number format (basic validation)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(phone.replace(/[^0-9]/g, ''))) {
-      alert("Please enter a valid 10-digit phone number.");
+      setError("Please enter a valid 10-digit phone number.");
       return;
     }
 
     // Validate Student ID format (basic validation)
     if (studentId.length < 3) {
-      alert("Student ID must be at least 3 characters long.");
+      setError("Student ID must be at least 3 characters long.");
       return;
     }
 
     // Check existing credentials in database
     console.log("=== CHECKING DATABASE FOR EXISTING CREDENTIALS ===");
-    const credentialCheck = await checkExistingCredentials(studentId, phone);
     
-    if (credentialCheck.error) {
-      alert("Error checking existing credentials. Please try again.");
-      return;
-    }
-    
-    if (credentialCheck.exists) {
-      if (credentialCheck.type === 'student_id') {
-        alert(`⚠️  Student ID Already Exists!\n\n` +
-          `This Student ID is already registered to another student:\n` +
-          `Student ID: ${credentialCheck.existingData.student_id}\n` +
-          `Phone: ${credentialCheck.existingData.phone}\n` +
-          `Name: ${credentialCheck.existingData.name}\n\n` +
-          `Please use your own unique Student ID.\n` +
-          `Names can be the same, but Student IDs must be different.`);
+    // Skip credential check if user already has permanent credentials
+    if (permanentStudentId && permanentPhone) {
+      console.log("User has permanent credentials - skipping database check");
+    } else {
+      const credentialCheck = await checkExistingCredentials(studentId, phone);
+      
+      if (credentialCheck.error) {
+        setError("Error checking existing credentials. Please try again.");
         return;
       }
       
-      if (credentialCheck.type === 'phone') {
-        alert(`⚠️  Phone Number Already Exists!\n\n` +
-          `This Phone number is already registered to another student:\n` +
-          `Student ID: ${credentialCheck.existingData.student_id}\n` +
-          `Phone: ${credentialCheck.existingData.phone}\n` +
-          `Name: ${credentialCheck.existingData.name}\n\n` +
-          `Please use your own unique Phone number.\n` +
-          `Names can be the same, but Phone numbers must be different.`);
-        return;
+      if (credentialCheck.exists) {
+        if (credentialCheck.type === 'student_id') {
+          setError(`Student ID Already Exists! This ID is already taken by another student.`);
+          return;
+        }
+        
+        if (credentialCheck.type === 'phone') {
+          setError(`Phone Number Already Exists! This phone number is already taken by another student.`);
+          return;
+        }
       }
     }
     
-    if (credentialCheck.sameStudent) {
-      console.log("Same student submitting additional request - allowing");
-      // This is the same student submitting another request
+    // If credentials are permanently linked to a specific name
+    if (permanentName && permanentStudentId && permanentPhone) {
+      // User must use EXACTLY the same name, ID, and phone
+      if (name !== permanentName || studentId !== permanentStudentId || phone !== permanentPhone) {
+        console.log("PERMANENT CREDENTIALS MISMATCH - Blocking submission");
+        setError("You must use your permanently registered credentials only! You cannot change name, ID, or phone number after first registration.");
+        return;
+      }
+      
+      // Allow same student to submit (same name + same ID + same phone)
+      console.log("Same student with same permanent credentials - allowing submission");
+    } else {
+      // First time registration - store credentials permanently with this name
+      console.log("First time registration - storing credentials permanently for name:", name);
+      localStorage.setItem('registeredName', name);
+      localStorage.setItem('registeredEmail', email);
+      localStorage.setItem('registeredStudentId', studentId);
+      localStorage.setItem('registeredPhone', phone);
+      console.log("Credentials permanently stored for:", name, studentId, phone);
     }
 
-    // Show custom confirmation modal instead of browser confirm
-    const details = {
-      name,
-      email,
-      phone,
-      studentId,
-      startDate,
-      endDate,
-      leaveType,
-      reason
-    };
-    showCustomConfirmation(details);
-  };
-
-  const showCustomConfirmation = (details) => {
-    setConfirmationDetails(details);
-    setShowConfirmation(true);
-  };
-
-  const handleConfirmationSubmit = async () => {
-    setShowConfirmation(false);
+    // Clear any previous errors
+    setError("");
     
+    // Submit directly without confirmation modal
     setLoading(true);
 
     const newRequest = {
-      name: confirmationDetails.name,
-      email: confirmationDetails.email,
-      phone: confirmationDetails.phone,
-      student_id: confirmationDetails.studentId,
-      start_date: confirmationDetails.startDate,
-      end_date: confirmationDetails.endDate,
-      reason: confirmationDetails.reason,
-      leave_type: confirmationDetails.leaveType,
+      name,
+      email,
+      phone,
+      student_id: studentId,
+      start_date: startDate,
+      end_date: endDate,
+      reason,
+      leave_type: leaveType,
       status: "Pending",
       approved_by: null,
       appliedDate: new Date().toISOString()
@@ -177,20 +276,23 @@ function LeaveRequest() {
       } catch (parseError) {
         console.error("Failed to parse JSON:", parseError);
         console.log("- Response was not valid JSON:", responseText);
-        alert("Server returned invalid response. Check Django console for errors.");
+        setError("Server returned invalid response. Check Django console for errors.");
         setLoading(false);
         return;
       }
 
       if (response.ok) {
         console.log("Request successful!");
-        alert("Leave request submitted successfully!");
+        setError("Leave request submitted successfully!");
+        
+        // Reset history cleared flag when new request is submitted
+        setHistoryCleared(false);
         
         // Store submitted values in localStorage for filtering
-        localStorage.setItem('lastSubmittedName', confirmationDetails.name);
-        localStorage.setItem('lastSubmittedEmail', confirmationDetails.email);
-        localStorage.setItem('lastSubmittedPhone', confirmationDetails.phone);
-        localStorage.setItem('lastSubmittedStudentId', confirmationDetails.studentId);
+        localStorage.setItem('lastSubmittedName', name);
+        localStorage.setItem('lastSubmittedEmail', email);
+        localStorage.setItem('lastSubmittedPhone', phone);
+        localStorage.setItem('lastSubmittedStudentId', studentId);
         console.log("Stored submitted values in localStorage for filtering");
         
         // Reset form
@@ -204,6 +306,9 @@ function LeaveRequest() {
         
         // Reload requests
         loadRequests();
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setError(""), 3000);
       } else {
         console.error("Request failed with status:", response.status);
         console.error("Backend response:", result);
@@ -217,25 +322,30 @@ function LeaveRequest() {
           errorMessage += ": " + result.detail;
         }
         
-        alert(errorMessage);
+        setError(errorMessage);
       }
     } catch (error) {
       console.error("Network error:", error);
-      alert("Network error: " + error.message);
+      setError("Network error: " + error.message);
     }
     
     setLoading(false);
     console.log("=== Form Submit Ended ===");
   };
 
-  const handleConfirmationCancel = () => {
-    setShowConfirmation(false);
-    console.log("User cancelled leave submission");
-  };
-
   const checkExistingCredentials = async (studentId, phone) => {
     try {
+      console.log("=== CHECKING EXISTING CREDENTIALS DEBUG ===");
+      console.log("Input Student ID:", studentId);
+      console.log("Input Phone:", phone);
+      
       const token = localStorage.getItem("access");
+      if (!token) {
+        console.error("No authentication token found");
+        return { exists: false, error: true };
+      }
+      
+      console.log("Making API call to check credentials...");
       const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -243,24 +353,36 @@ function LeaveRequest() {
         }
       });
       
+      console.log("API Response Status:", response.status);
+      console.log("API Response OK:", response.ok);
+      
       if (!response.ok) {
-        console.error("Failed to check existing credentials");
+        console.error("Failed to check existing credentials - HTTP Status:", response.status);
         return { exists: false, error: true };
       }
       
       const data = await response.json();
-      const allRequests = data.data || data || [];
+      console.log("API Response Data:", data);
       
-      console.log("=== CHECKING EXISTING CREDENTIALS ===");
-      console.log("Checking Student ID:", studentId);
-      console.log("Checking Phone:", phone);
+      const allRequests = data.data || data || [];
+      console.log("Total requests in database:", allRequests.length);
+      
+      // Get permanent credentials for comparison
+      const permanentName = localStorage.getItem('registeredName') || '';
+      const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+      const permanentPhone = localStorage.getItem('registeredPhone') || '';
+      
+      console.log("Permanent credentials for comparison:");
+      console.log("- Permanent Name:", permanentName);
+      console.log("- Permanent Student ID:", permanentStudentId);
+      console.log("- Permanent Phone:", permanentPhone);
       
       // Check for existing Student ID
       const existingById = allRequests.find(req => 
         req.student_id && req.student_id.toString() === studentId.toString()
       );
       
-      // Check for existing Phone
+      // Check for existing Phone number
       const existingByPhone = allRequests.find(req => 
         req.phone && req.phone.toString() === phone.toString()
       );
@@ -268,75 +390,80 @@ function LeaveRequest() {
       console.log("Existing by ID:", existingById);
       console.log("Existing by Phone:", existingByPhone);
       
-      if (existingById && existingByPhone) {
-        // Both ID and Phone exist (could be same student)
-        if (existingById.phone === phone) {
-          console.log("Same student found - allowing submission");
-          return { exists: false, sameStudent: true, student: existingById };
+      // Only return exists=true if credentials belong to someone else
+      if (existingById || existingByPhone) {
+        if (existingById && permanentStudentId && existingById.student_id.toString() !== permanentStudentId.toString()) {
+          console.log("Student ID exists but belongs to different permanent user - blocking");
+          return { 
+            exists: true, 
+            type: 'student_id', 
+            existingData: {
+              student_id: existingById.student_id,
+              phone: existingById.phone,
+              name: existingById.name
+            }
+          };
+        }
+        
+        if (existingByPhone && permanentPhone && existingByPhone.phone.toString() !== permanentPhone.toString()) {
+          console.log("Phone exists but belongs to different permanent user - blocking");
+          return { 
+            exists: true, 
+            type: 'phone', 
+            existingData: {
+              student_id: existingByPhone.student_id,
+              phone: existingByPhone.phone,
+              name: existingByPhone.name
+            }
+          };
         }
       }
       
-      if (existingById) {
-        console.log("Student ID already exists with different phone");
-        return { 
-          exists: true, 
-          type: 'student_id', 
-          existingData: {
-            student_id: existingById.student_id,
-            phone: existingById.phone,
-            name: existingById.name
-          }
-        };
-      }
-      
-      if (existingByPhone) {
-        console.log("Phone already exists with different student ID");
-        return { 
-          exists: true, 
-          type: 'phone', 
-          existingData: {
-            student_id: existingByPhone.student_id,
-            phone: existingByPhone.phone,
-            name: existingByPhone.name
-          }
-        };
-      }
-      
-      console.log("No existing credentials found - new student");
-      return { exists: false, sameStudent: false };
+      console.log("No conflicting credentials found - allowing submission");
+      return { exists: false };
       
     } catch (error) {
       console.error("Error checking existing credentials:", error);
+      console.error("Error details:", error.message || error);
       return { exists: false, error: true };
     }
   };
 
-  const clearAllData = async () => {
-    if (!confirm("⚠️  WARNING: This will delete ALL leave requests from the database and clear all local data. Are you absolutely sure?")) {
-      return;
-    }
-
-    try {
-      // Clear localStorage data
-      localStorage.removeItem('lastSubmittedName');
-      localStorage.removeItem('lastSubmittedEmail');
-      localStorage.removeItem('lastSubmittedPhone');
-      localStorage.removeItem('lastSubmittedStudentId');
-      console.log("Cleared localStorage data");
-
-      // Clear the requests state
-      setRequests([]);
-      
-      alert("✅ All local data cleared successfully!\n\nNote: To clear database records, you need to:\n1. Go to Django admin panel\n2. Navigate to Leave requests\n3. Delete all records\n\nOr contact your administrator to clear the database.");
-      
-    } catch (error) {
-      console.error("Error clearing data:", error);
-      alert("Error clearing data: " + error.message);
-    }
+  const clearPermanentCredentials = () => {
+    console.log("Clearing all permanent credentials...");
+    localStorage.removeItem('registeredName');
+    localStorage.removeItem('registeredEmail');
+    localStorage.removeItem('registeredPhone');
+    localStorage.removeItem('registeredStudentId');
+    localStorage.removeItem('lastSubmittedName');
+    localStorage.removeItem('lastSubmittedEmail');
+    localStorage.removeItem('lastSubmittedPhone');
+    localStorage.removeItem('lastSubmittedStudentId');
+    console.log("All credentials cleared! Starting fresh...");
+    
+    // Reset form fields
+    setName("");
+    setEmail("");
+    setPhone("");
+    setStudentId("");
+    setStartDate("");
+    setEndDate("");
+    setReason("");
+    setLeaveType("Medical");
+    setError("");
+    
+    // Reload requests
+    loadRequests();
   };
 
   const loadRequests = async () => {
     try {
+      // Don't reload if history was cleared by user
+      if (historyCleared) {
+        console.log("History was cleared by user - skipping automatic reload");
+        return;
+      }
+      
       const token = localStorage.getItem("access");
       const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
         headers: {
@@ -346,93 +473,25 @@ function LeaveRequest() {
       });
       
       if (!response.ok) {
-        console.error("Failed to load requests:", response.status);
+        console.error("Failed to load requests");
         return;
       }
       
       const data = await response.json();
-      console.log("=== RAW API RESPONSE ===");
-      console.log("Full response data:", data);
-      console.log("Data type:", typeof data);
-      console.log("Data keys:", Object.keys(data));
-      
-      // Get current logged-in user info (for reference only)
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const currentUserEmail = currentUser.email || '';
-      const currentUserName = currentUser.username || currentUser.firstName || '';
-      const currentStudentId = currentUser.randomId || currentUser.studentId || '';
-      const currentUserPhone = currentUser.phone || '';
-      
-      console.log("=== CURRENT USER INFO (from localStorage) ===");
-      console.log("Current user from localStorage:", currentUser);
-      console.log("Current user name:", currentUserName);
-      console.log("Current user email:", currentUserEmail);
-      console.log("Current user student ID:", currentStudentId);
-      console.log("Current user phone:", currentUserPhone);
-      
-      // IMPORTANT: Use the most recently submitted values for filtering
-      // Store submitted values in localStorage when form is submitted
-      const lastSubmittedName = localStorage.getItem('lastSubmittedName') || '';
-      const lastSubmittedEmail = localStorage.getItem('lastSubmittedEmail') || '';
-      const lastSubmittedPhone = localStorage.getItem('lastSubmittedPhone') || '';
-      const lastSubmittedStudentId = localStorage.getItem('lastSubmittedStudentId') || '';
-      
-      console.log("=== LAST SUBMITTED VALUES (for filtering) ===");
-      console.log("Last submitted name:", lastSubmittedName);
-      console.log("Last submitted email:", lastSubmittedEmail);
-      console.log("Last submitted phone:", lastSubmittedPhone);
-      console.log("Last submitted student ID:", lastSubmittedStudentId);
-      
-      // Use last submitted values for filtering (what was actually submitted)
-      const filterName = lastSubmittedName || name;
-      const filterEmail = lastSubmittedEmail || email;
-      const filterPhone = lastSubmittedPhone || phone;
-      const filterStudentId = lastSubmittedStudentId || studentId;
-      
-      console.log("=== FILTERING CRITERIA ===");
-      console.log("Using name for filtering:", filterName);
-      console.log("Using email for filtering:", filterEmail);
-      console.log("Using phone for filtering:", filterPhone);
-      console.log("Using student ID for filtering:", filterStudentId);
-      
-      // Get all requests from database
       const allRequests = data.data || data || [];
-      console.log("=== ALL REQUESTS FROM DATABASE ===");
-      console.log("All requests array:", allRequests);
-      console.log("Number of requests:", allRequests.length);
       
-      allRequests.forEach((req, index) => {
-        console.log(`Request ${index + 1}:`, {
-          id: req.id,
-          name: req.name,
-          email: req.email,
-          phone: req.phone,
-          student_id: req.student_id,
-          status: req.status,
-          leave_type: req.leave_type
-        });
-      });
+      // Filter requests for current user
+      const permanentName = localStorage.getItem('registeredName') || '';
+      const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+      const permanentPhone = localStorage.getItem('registeredPhone') || '';
       
-      // Filter requests - require BOTH Student ID AND Phone to match (strict uniqueness)
       const filteredRequests = allRequests.filter(req => {
-        // STRATEGY: Match by Student ID AND Phone (BOTH must match for security)
-        if (req.student_id && filterStudentId && req.phone && filterPhone &&
-            req.student_id.toString() === filterStudentId.toString() && 
-            req.phone.toString() === filterPhone.toString()) {
-          console.log("✅ MATCHED BY STUDENT ID + PHONE (SECURE):", req.student_id, req.phone);
-          return true;
+        if (req.student_id && req.phone && permanentStudentId && permanentPhone) {
+          return req.student_id.toString() === permanentStudentId.toString() && 
+                 req.phone.toString() === permanentPhone.toString();
         }
-        
-        console.log("❌ NO MATCH for request:", req.id);
-        console.log("❌ Required: Student ID:", filterStudentId, "AND Phone:", filterPhone);
-        console.log("❌ Found: Student ID:", req.student_id, "AND Phone:", req.phone);
         return false;
       });
-      
-      console.log("=== FILTERING RESULTS ===");
-      console.log("Total requests in database:", allRequests.length);
-      console.log("Filtered requests count:", filteredRequests.length);
-      console.log("Filtered requests data:", filteredRequests);
       
       setRequests(filteredRequests);
     } catch (error) {
@@ -440,10 +499,136 @@ function LeaveRequest() {
     }
   };
 
+  const clearLeaveHistory = async () => {
+    console.log("=== CLEAR LEAVE HISTORY BUTTON CLICKED ===");
+    
+    try {
+      console.log("Permanently deleting all leave history from database...");
+      
+      // Get authentication token
+      const token = localStorage.getItem("access");
+      if (!token) {
+        console.error("No authentication token found");
+        setError("No authentication token found. Please log in again.");
+        return;
+      }
+
+      // First, get all current requests
+      const getResponse = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!getResponse.ok) {
+        console.error("Failed to get current requests");
+        setError("Failed to retrieve current requests for deletion.");
+        return;
+      }
+
+      const data = await getResponse.json();
+      const allRequests = data.data || data || [];
+      console.log(`Found ${allRequests.length} requests to permanently delete`);
+
+      // Delete each request individually
+      let deletedCount = 0;
+      let failedCount = 0;
+      
+      for (const request of allRequests) {
+        try {
+          const deleteResponse = await fetch(`http://127.0.0.1:8000/api/leave-requests/${request.id}/`, {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+
+          if (deleteResponse.ok) {
+            deletedCount++;
+            console.log(`✅ Permanently deleted request ${request.id} by ${request.name}`);
+          } else {
+            failedCount++;
+            console.error(`❌ Failed to delete request ${request.id}`);
+          }
+        } catch (error) {
+          failedCount++;
+          console.error(`❌ Error deleting request ${request.id}:`, error);
+        }
+      }
+
+      // Clear local state
+      setRequests([]);
+      
+      // Set flag to prevent automatic reload
+      setHistoryCleared(true);
+      
+      // Show result message
+      if (deletedCount > 0 && failedCount === 0) {
+        console.log(`✅ Successfully permanently deleted ${deletedCount} leave requests from database`);
+        setError(`Successfully permanently deleted ${deletedCount} leave requests from database!`);
+      } else if (failedCount > 0) {
+        console.log(`❌ Failed to delete ${failedCount} out of ${allRequests.length} requests`);
+        setError(`Failed to delete ${failedCount} requests. Please try again.`);
+      } else {
+        console.log("⚠️ No requests found to delete");
+        setError("No leave requests found to delete.");
+      }
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setError(""), 5000);
+      
+    } catch (error) {
+      console.error("Error in permanent deletion process:", error);
+      setError("Error deleting leave history: " + error.message);
+    }
+  };
+
+  const clearAllData = async () => {
+    try {
+      const token = localStorage.getItem("access");
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      // Clear all leave requests from database
+      const res = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (res.ok) {
+        console.log("All leave requests cleared from database");
+      } else {
+        console.error("Failed to clear database records");
+      }
+      
+      // Clear localStorage
+      localStorage.removeItem('registeredName');
+      localStorage.removeItem('registeredEmail');
+      localStorage.removeItem('registeredPhone');
+      localStorage.removeItem('registeredStudentId');
+      
+      // Clear requests state
+      setRequests([]);
+      
+    } catch (error) {
+      console.error("Error clearing data:", error);
+    }
+  };
+
   // Auto-refresh requests every 30 seconds to get updated status
   useEffect(() => {
     const interval = setInterval(() => {
-      loadRequests();
+      // Only reload if there are requests showing (don't override cleared state)
+      if (requests.length > 0) {
+        loadRequests();
+      }
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
@@ -451,29 +636,52 @@ function LeaveRequest() {
 
   // Load requests on component mount
   useEffect(() => {
-    loadRequests();
+    // Only load requests if history wasn't cleared
+    if (!historyCleared) {
+      loadRequests();
+    }
     
     // Auto-fill user data from localStorage with better logging
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     console.log("Auto-filling user data:", user);
     
-    const userName = user.username || user.firstName || '';
-    const userEmail = user.email || '';
-    const userStudentId = user.randomId || user.studentId || '';
-    const userPhone = user.phone || '';
+    // Use permanent credentials if available (highest priority)
+    const permanentName = localStorage.getItem('registeredName') || '';
+    const permanentStudentId = localStorage.getItem('registeredStudentId') || '';
+    const permanentPhone = localStorage.getItem('registeredPhone') || '';
     
-    console.log("Setting form fields:", {
-      name: userName,
-      email: userEmail,
-      studentId: userStudentId,
-      phone: userPhone
-    });
+    console.log("=== AUTO-FILL WITH PERMANENT CREDENTIALS ===");
+    console.log("Permanent Name:", permanentName);
+    console.log("Permanent Student ID:", permanentStudentId);
+    console.log("Permanent Phone:", permanentPhone);
     
-    setName(userName);
-    setEmail(userEmail);
-    setStudentId(userStudentId);
-    setPhone(userPhone);
-  }, []);
+    // If permanent credentials exist, auto-fill them
+    if (permanentName && permanentStudentId && permanentPhone) {
+      console.log("Auto-filling permanent credentials");
+      setName(permanentName);
+      setStudentId(permanentStudentId);
+      setPhone(permanentPhone);
+      setEmail(user.email || ''); // Use user email if available
+    } else {
+      console.log("No permanent credentials found, using user profile");
+      const userName = user.username || user.firstName || '';
+      const userEmail = user.email || '';
+      const userStudentId = user.randomId || user.studentId || '';
+      const userPhone = user.phone || '';
+      
+      console.log("Setting form fields from user profile:", {
+        name: userName,
+        email: userEmail,
+        studentId: userStudentId,
+        phone: userPhone
+      });
+      
+      setName(userName);
+      setEmail(userEmail);
+      setStudentId(userStudentId);
+      setPhone(userPhone);
+    }
+  }, [historyCleared]);
 
   
   const handleDownloadPDF = (request) => {
@@ -611,7 +819,6 @@ function LeaveRequest() {
     
     // Save the PDF
     doc.save(`leave-requests-report-${new Date().toISOString().split('T')[0]}.pdf`);
-    alert('Leave requests report downloaded successfully as PDF!');
   };
 
   const formatDate = (dateStr) => {
@@ -636,42 +843,39 @@ function LeaveRequest() {
   return (
     <>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm border-b border-gray-200 py-3">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white bg-opacity-20 rounded-full">
-                <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600 text-lg" />
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-gray-800">My Leave Requests</h4>
-                <p className="text-sm text-gray-600">View and manage your leave history</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-white bg-opacity-20 rounded-lg">
-              <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
-              <span className="text-gray-800 font-semibold">Student</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Leave Request Form - Horizontal Layout */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-2">
-            <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-2">
+            <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2" style={welcomeBackFont}>
               <FontAwesomeIcon icon={faPlus} />
               New Leave Request
             </h6>
           </div>
           
           <form onSubmit={handleSubmit} className="p-4">
+            {/* Error/Success Message Display */}
+            {error && (
+              <div className={`mb-4 p-3 rounded-lg text-sm ${error.includes("successfully") ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}>
+                <div className="flex items-center gap-2">
+                  {error.includes("successfully") ? (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <span className="font-medium">{error}</span>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {/* Personal Information Fields */}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Full Name *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Full Name *</label>
                 <input
                   type="text"
                   value={name}
@@ -683,7 +887,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Email</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Email</label>
                 <input
                   type="email"
                   value={email}
@@ -694,35 +898,35 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Phone * (Unique Identifier)</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Phone * (Unique Identifier)</label>
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
                   placeholder="Enter your unique 10-digit phone number"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                   maxLength={10}
                 />
-                <p className="text-xs text-gray-500 mt-1">This phone number + Student ID combination will be permanently linked to you</p>
+                
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Student ID * (Unique Identifier)</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Student ID * (Unique Identifier)</label>
                 <input
                   type="text"
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={handleStudentIdChange}
                   placeholder="Enter your unique Student ID (e.g., 8090)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">This ID + Phone combination will be permanently linked to you</p>
+                
               </div>
               
               {/* Leave Details Fields */}
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Start Date *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Start Date *</label>
                 <input
                   type="date"
                   value={startDate}
@@ -733,7 +937,7 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">End Date *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>End Date *</label>
                 <input
                   type="date"
                   value={endDate}
@@ -744,11 +948,12 @@ function LeaveRequest() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1">Leave Type</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-1" style={welcomeBackFont}>Leave Type *</label>
                 <select 
                   value={leaveType} 
                   onChange={(e) => setLeaveType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
                 >
                   <option value="Medical">Medical</option>
                   <option value="Personal">Personal</option>
@@ -776,7 +981,7 @@ function LeaveRequest() {
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-gray-900 py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
@@ -800,10 +1005,10 @@ function LeaveRequest() {
           <div className="bg-gradient-to-r from-pink-400 to-pink-500 px-6 py-2">
             <div className="flex justify-between items-center">
             <h6 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <FontAwesomeIcon icon={faCalendarAlt} />
-                My Leave History
-              </h6>
-            </div>
+              <FontAwesomeIcon icon={faCalendarAlt} />
+              My Leave History
+            </h6>
+          </div>
           </div>
           
           <div className="p-6">
@@ -883,133 +1088,6 @@ function LeaveRequest() {
         </div>
       </div>
     </div>
-
-      {/* Custom Confirmation Modal */}
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white bg-opacity-20 rounded-full">
-                    <FontAwesomeIcon icon={faCalendarAlt} className="text-white text-xl" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Confirm Leave Request Submission</h3>
-                    <p className="text-blue-100 text-sm">Please review your details before submitting</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleConfirmationCancel}
-                  className="text-white hover:text-blue-200 transition-colors p-2"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6">
-              {/* Student Information */}
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="text-blue-600" />
-                  Student Information
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Name</p>
-                    <p className="font-medium text-gray-800">{confirmationDetails.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium text-gray-800">{confirmationDetails.email || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Phone <span className="text-red-500">*</span></p>
-                    <p className="font-medium text-gray-800">{confirmationDetails.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Student ID <span className="text-red-500">*</span></p>
-                    <p className="font-medium text-gray-800">{confirmationDetails.studentId}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Leave Details */}
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600" />
-                  Leave Details
-                </h4>
-                <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Leave Type</p>
-                    <p className="font-medium text-gray-800">{confirmationDetails.leaveType}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Duration</p>
-                    <p className="font-medium text-gray-800">
-                      {confirmationDetails.startDate} to {confirmationDetails.endDate}
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-600">Reason for Leave</p>
-                    <p className="font-medium text-gray-800 bg-white p-3 rounded border border-gray-200">
-                      {confirmationDetails.reason}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security Notice */}
-              <div className="mb-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-1 bg-yellow-100 rounded-full">
-                      <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-semibold text-gray-800 mb-2">🔐 Uniqueness Policy</h5>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        <li>• Names can be the same (multiple students can have same name)</li>
-                        <li>• Student ID must be unique (no two students can share same ID)</li>
-                        <li>• Phone number must be unique (no two students can share same phone)</li>
-                        <li>• This Student ID + Phone combination will be permanently linked to you</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleConfirmationCancel}
-                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmationSubmit}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all transform hover:scale-105 flex items-center gap-2"
-                >
-                  <FontAwesomeIcon icon={faPlus} />
-                  Submit Leave Request
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
