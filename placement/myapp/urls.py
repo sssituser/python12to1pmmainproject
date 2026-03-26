@@ -8,13 +8,10 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
-
+from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
 from .views import course_views
 from .views.course_views import CourseViewSet
-from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
-
 from . import api_views
-
 
 # ROUTER
 router = DefaultRouter()
