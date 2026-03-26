@@ -105,12 +105,19 @@ function App() {
         <Route path="/leave-request/new" element={<Navigate to="/dashboard/leave-request/new" replace />} />
         <Route path="/leave-request/history" element={<Navigate to="/dashboard/leave-request/history" replace />} />
         <Route path="/leave-request/summary" element={<Navigate to="/dashboard/leave-request/summary" replace />} />
+        <Route path="/leave-summary" element={<LeaveSummary />} />
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 
         <Route path="/dashboard/python-exam" element={<PythonExam />} />
         <Route path="/dashboard/weekly-exam" element={<WeeklyExam />} />
         <Route path="/dashboard/monthly-exam" element={<MonthlyExam />} />
+
+        {/* Leave History (Fullscreen, No Sidebar/Navbar) */}
+        <Route path="/dashboard/leave-request/history" element={<LeaveHistory />} />
+
+        {/* Leave Summary (Fullscreen, No Sidebar/Navbar) */}
+        <Route path="/dashboard/leave-request/summary" element={<LeaveSummary />} />
 
         {/* 🔐 Protected Dashboard */}
 
@@ -154,7 +161,6 @@ function App() {
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />
           <Route path="leave-request/new" element={<NewLeaveRequest />} />
-          <Route path="leave-request/history" element={<LeaveHistory />} />
           <Route path="leave-request/summary" element={<LeaveSummary />} />
 
           {/* Logout */}

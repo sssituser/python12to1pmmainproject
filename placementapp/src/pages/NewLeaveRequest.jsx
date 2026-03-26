@@ -664,6 +664,10 @@ function NewLeaveRequest() {
           const data = await response.json();
           console.log("Leave request submitted successfully:", data);
           
+          // Notify other pages that a new leave request was submitted
+          localStorage.setItem('leaveRequestUpdated', Date.now().toString());
+          localStorage.setItem('leaveRequestAction', 'submitted');
+          
           // Clear form
           setName('');
           setEmail('');
@@ -844,19 +848,19 @@ function NewLeaveRequest() {
                       >
                         <option value="">Select Leave Type</option>
                         <option value="CL">Casual Leave</option>
-                        <option value="SL">Sick Leave / Medical Leave</option>
-                        <option value="EL">Earned Leave / Privilege Leave</option>
+                        <option value="SL">Sick Leave </option>
+                        <option value="EL">Earned Leave </option>
                         <option value="PTO">Paid Time Off</option>
                         <option value="ML">Maternity Leave</option>
                         <option value="PL">Paternity Leave</option>
                         <option value="BL">Bereavement Leave</option>
                         <option value="CO">Compensatory Off</option>
                         <option value="PH">Public Holidays</option>
-                        <option value="LWP">Loss of Pay / Leave Without Pay</option>
-                        <option value="WFH">Work From Home / Remote Leave</option>
+                        <option value="LWP">Loss of Pay </option>
+                        <option value="WFH">Work From Home</option>
                         <option value="SAB">Sabbatical Leave</option>
                         <option value="MRL">Marriage Leave</option>
-                        <option value="STL">Study / Examination Leave</option>
+                       
                       </select>
                     </div>
                   </div>

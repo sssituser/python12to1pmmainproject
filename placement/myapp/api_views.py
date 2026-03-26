@@ -62,6 +62,7 @@ def leave_request_detail_api(request, pk):
                 'message': 'Leave request deleted successfully'
             })
     except Exception as e:
+        
         return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== PLAYGROUND API ====================
