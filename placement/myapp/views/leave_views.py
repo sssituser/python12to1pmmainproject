@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from myapp.models import LeaveRequest
 from myapp.serializers import LeaveRequestSerializer
+from myapp.email_utils import send_leave_request_email
 
 # -----------------------------------------------------------
 # LEAVE REQUEST FRONTEND PAGE
@@ -177,6 +178,22 @@ def create_leave_request(request):
             print("Validated data:", serializer.validated_data)
             leave = serializer.save()
             print("Leave saved:", leave)
+
+            # Send leave request email to the student (non-blocking).
+            try:
+                if leave.email:
+                    send_leave_request_email(
+                        user_email=leave.email,
+                        username=leave.name,
+                        leave_type=leave.leave_type,
+                        start_date=leave.start_date.strftime("%Y-%m-%d"),
+                        end_date=leave.end_date.strftime("%Y-%m-%d"),
+                        reason=leave.reason,
+                        status=(leave.status or "pending").strip().lower(),
+                    )
+            except Exception as email_exc:
+                print(f"Leave request email sending error: {email_exc}")
+
             return Response({
                 "success": True,
                 "message": "Leave request created successfully",
@@ -233,6 +250,21 @@ def approve_leave_request(request, pk):
         leave.status = "Approved"
         leave.approved_by = request.data.get("approved_by", "System")
         leave.save()
+
+        # Send leave approval email to the student (non-blocking).
+        try:
+            if leave.email:
+                send_leave_request_email(
+                    user_email=leave.email,
+                    username=leave.name,
+                    leave_type=leave.leave_type,
+                    start_date=leave.start_date.strftime("%Y-%m-%d"),
+                    end_date=leave.end_date.strftime("%Y-%m-%d"),
+                    reason=leave.reason,
+                    status="approved",
+                )
+        except Exception as email_exc:
+            print(f"Leave approval email sending error: {email_exc}")
         
         return Response({
             "success": True,
@@ -258,6 +290,21 @@ def reject_leave_request(request, pk):
         leave.status = "Rejected"
         leave.approved_by = request.data.get("approved_by", "System")
         leave.save()
+
+        # Send leave rejection email to the student (non-blocking).
+        try:
+            if leave.email:
+                send_leave_request_email(
+                    user_email=leave.email,
+                    username=leave.name,
+                    leave_type=leave.leave_type,
+                    start_date=leave.start_date.strftime("%Y-%m-%d"),
+                    end_date=leave.end_date.strftime("%Y-%m-%d"),
+                    reason=leave.reason,
+                    status="rejected",
+                )
+        except Exception as email_exc:
+            print(f"Leave rejection email sending error: {email_exc}")
         
         return Response({
             "success": True,

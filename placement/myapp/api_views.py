@@ -4,6 +4,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User, Job
 from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
+from .email_utils import send_exam_confirmation_email
 from datetime import datetime
 import json
 
@@ -356,6 +357,29 @@ def save_exam_report_api(request):
             answers_json      = json.dumps(data.get('answers', [])),
             questions_json    = json.dumps(data.get('questions', []))
         )
+
+        # Send exam confirmation email (non-blocking).
+        try:
+            user_email = user.email
+            if not user_email and isinstance(data.get('user'), dict):
+                user_email = data['user'].get('email')
+
+            if user_email:
+                end_dt = attempt.end_time or attempt.exam_date
+                duration_minutes = int(round((attempt.time_taken or 0) / 60))
+
+                send_exam_confirmation_email(
+                    user_email=user_email,
+                    username=user.username,
+                    exam_name=attempt.exam_title,
+                    exam_date=end_dt.strftime("%Y-%m-%d"),
+                    exam_time=end_dt.strftime("%H:%M"),
+                    duration=duration_minutes,
+                    total_questions=attempt.total_questions,
+                )
+        except Exception as email_exc:
+            # We don't fail the API call if email sending fails.
+            print(f"Exam confirmation email sending error: {email_exc}")
 
         return Response({
             'success': True,
