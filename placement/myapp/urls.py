@@ -90,4 +90,5 @@ urlpatterns = [
     path('course/create/', course_views.create_course),
     path('course/<int:course_id>/', course_views.get_course_details),
     path('course/<str:course_name>/topics/', course_views.get_course_topics),
+    path('execute-code-api/', api_views.execute_code_api),
 ]

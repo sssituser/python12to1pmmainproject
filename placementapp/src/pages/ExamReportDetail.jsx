@@ -123,6 +123,46 @@ function ExamReportDetail() {
               ? `${getLetter(correctKey)}. ${options[correctKey] || correctKey}` 
               : "Not answered";
 
+            const isCoding = q.type === 'coding' || !q.options || Object.keys(q.options).length === 0;
+
+            if (isCoding) {
+              // For coding questions, the status is determined by whether the student's code passed all test cases
+              // or some other logic. Basic check: if it's correct in report, we honor it.
+              return (
+                <div key={i} className="card mb-4 border-0 shadow-sm" style={{ borderRadius: "12px", overflow: "hidden" }}>
+                  <div className="card-body">
+                    <div className="mb-3 d-flex justify-content-between align-items-start">
+                      <div>
+                        <p className="fw-bold fs-6 mb-1">Question {i + 1}: {q.question}</p>
+                        <span className={`badge rounded-pill px-3 py-1 ${isCorrect ? "bg-success-soft" : "bg-danger-soft"}`}
+                          style={{
+                            background: isCorrect ? "#d1fae5" : "#fee2e2",
+                            color: isCorrect ? "#065f46" : "#991b1b",
+                            fontSize: "0.75rem", fontWeight: "600"
+                          }}>
+                          {isCorrect ? "✓ PASSED" : "✗ FAILED"}
+                        </span>
+                        <span className="ms-2 badge bg-dark text-white" style={{ fontSize: "0.7rem" }}>CODING CHALLENGE</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-dark rounded-3 p-3 mb-3 position-relative">
+                      <div className="text-secondary text-[10px] uppercase font-bold mb-2 tracking-wider">Student Submission:</div>
+                      <pre className="text-success font-monospace m-0" style={{ fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
+                        {userAnswer || "# No code submitted"}
+                      </pre>
+                    </div>
+
+                    {q.testCases && q.testCases.length > 0 && (
+                      <div className="mt-2 text-muted small">
+                        <strong>Test Case Validation:</strong> {isCorrect ? "All cases passed" : "Failed some test cases"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={i}

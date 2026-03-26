@@ -23,9 +23,12 @@ function ExamManager() {
   const [isQuestionsSaving, setIsQuestionsSaving] = useState(false);
 
   const [form, setForm] = useState({
+    type: "mcq", // "mcq" or "coding"
     question: "",
     options: ["", "", "", ""],
     answer: "",
+    language: "python",
+    testCases: [{ input: "", output: "" }],
     marks: 2, // default marks
   });
 
@@ -66,6 +69,22 @@ function ExamManager() {
   // handle answer select
   const handleAnswer = (opt) => {
     setForm({ ...form, answer: opt });
+  };
+
+  // handle test case change
+  const handleTestCaseChange = (index, field, value) => {
+    const newTestCases = [...form.testCases];
+    newTestCases[index][field] = value;
+    setForm({ ...form, testCases: newTestCases });
+  };
+
+  const addTestCase = () => {
+    setForm({ ...form, testCases: [...form.testCases, { input: "", output: "" }] });
+  };
+
+  const removeTestCase = (index) => {
+    const newTestCases = form.testCases.filter((_, i) => i !== index);
+    setForm({ ...form, testCases: newTestCases });
   };
 
   // Save Exam Rules (category, limit, duration, passing rules)
@@ -119,8 +138,13 @@ function ExamManager() {
 
   // add question
   const addQuestion = () => {
-    if (!form.question || !form.answer) {
-      alert("Fill all question fields and select the correct answer!");
+    if (!form.question) {
+      alert("Fill the question field!");
+      return;
+    }
+
+    if (form.type === "mcq" && !form.answer) {
+      alert("Select the correct answer for MCQ!");
       return;
     }
 
@@ -130,9 +154,12 @@ function ExamManager() {
 
     // reset form
     setForm({
+      type: form.type, // keep same type for convenience
       question: "",
       options: ["", "", "", ""],
       answer: "",
+      language: "python",
+      testCases: [{ input: "", output: "" }],
       marks: 2,
     });
   };
@@ -261,63 +288,153 @@ function ExamManager() {
 
       {/* QUESTION FORM */}
       <div className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-100">
-        <h2 className="text-lg font-bold mb-4 text-gray-700 flex items-center gap-2">
-           <FontAwesomeIcon icon={faPlus} className="text-green-500" />
-           Add Assessment Questions
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
+             <FontAwesomeIcon icon={faPlus} className="text-green-500" />
+             Add Assessment Questions
+          </h2>
+          
+          <div className="flex bg-gray-100 p-1 rounded-xl">
+            <button 
+              onClick={() => setForm({...form, type: 'mcq'})}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${form.type === 'mcq' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+            >MCQ</button>
+            <button 
+              onClick={() => setForm({...form, type: 'coding'})}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${form.type === 'coding' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+            >Coding</button>
+          </div>
+        </div>
         
         <div className="flex gap-4 mb-4">
-          <input
-            type="text"
-            placeholder="Type your question here..."
-            value={form.question}
-            onChange={handleChange}
-            className="flex-1 p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50"
-          />
+          <div className="flex-1">
+            <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Question Prompt</label>
+            <textarea
+              placeholder="Type your question or coding problem statement here..."
+              value={form.question}
+              onChange={handleChange}
+              rows="3"
+              className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50 resize-none"
+            />
+          </div>
           <div style={{ width: "120px" }}>
-             <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Marks</label>
+             <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Marks</label>
              <input
                type="number"
                value={form.marks}
                onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
-               className="w-full p-2 border rounded-lg bg-gray-50/50"
+               className="w-full p-3 border rounded-lg bg-gray-50/50"
              />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-          {form.options.map((opt, i) => (
-            <input
-              key={i}
-              type="text"
-              placeholder={`Option ${i + 1}`}
-              value={opt}
-              onChange={(e) => handleOptionChange(i, e.target.value)}
-              className="w-full p-2.5 border rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
-            />
-          ))}
-        </div>
+        {form.type === "mcq" ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              {form.options.map((opt, i) => (
+                <div key={i}>
+                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {i + 1}</label>
+                  <input
+                    type="text"
+                    placeholder={`Option ${i + 1} content`}
+                    value={opt}
+                    onChange={(e) => handleOptionChange(i, e.target.value)}
+                    className="w-full p-2.5 border rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
+                  />
+                </div>
+              ))}
+            </div>
 
-        {/* Select Answer */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <p className="text-sm font-bold text-gray-600 mb-3">Identify Correct Answer Key:</p>
-          <div className="flex flex-wrap gap-2">
-            {form.options.map((opt, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => handleAnswer(opt)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
-                  form.answer === opt && opt !== ""
-                    ? "bg-green-600 text-white border-green-700 shadow-md ring-2 ring-green-200"
-                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"
-                }`}
+            {/* Select Answer */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+              <p className="text-sm font-bold text-gray-600 mb-3">Identify Correct Answer Key:</p>
+              <div className="flex flex-wrap gap-2">
+                {form.options.map((opt, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleAnswer(opt)}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
+                      form.answer === opt && opt !== ""
+                        ? "bg-green-600 text-white border-green-700 shadow-md ring-2 ring-green-200"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {opt || `Option ${i + 1}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Target Language</label>
+              <select 
+                value={form.language}
+                onChange={(e) => setForm({...form, language: e.target.value})}
+                className="w-full p-3 border rounded-xl bg-gray-50/50 focus:border-blue-500 outline-none"
               >
-                {opt || `Option ${i + 1}`}
-              </button>
-            ))}
+                <option value="python">Python 3</option>
+                <option value="java">Java 11</option>
+                <option value="c">C (GCC)</option>
+              </select>
+            </div>
+
+            <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-black text-blue-800">Auto-Matching Rules (Validation)</p>
+                  <p className="text-[10px] text-blue-500 font-medium tracking-tight">The system will use these to grade the student automatically.</p>
+                </div>
+                <button 
+                  onClick={addTestCase}
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 shadow-md transition-all active:scale-95"
+                >+ Add Rule</button>
+              </div>
+              
+              <div className="space-y-4">
+                {form.testCases.map((tc, idx) => (
+                  <div key={idx} className="flex gap-3 items-start bg-white p-3 rounded-xl border border-blue-50 shadow-sm">
+                    <div className="flex-1">
+                      <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Input to Provide (Question data)</label>
+                      <input 
+                        placeholder="Ex: 5 10 (Values student's code will read)"
+                        value={tc.input}
+                        onChange={(e) => handleTestCaseChange(idx, 'input', e.target.value)}
+                        className="w-full p-2 text-xs border border-gray-100 rounded-lg bg-gray-50 focus:bg-white transition-colors font-mono"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Correct Answer (Expected result)</label>
+                      <input 
+                        placeholder="Ex: 15 (What the code MUST print)"
+                        value={tc.output}
+                        onChange={(e) => handleTestCaseChange(idx, 'output', e.target.value)}
+                        className="w-full p-2 text-xs border border-gray-100 rounded-lg bg-gray-50 focus:bg-white transition-colors font-mono"
+                      />
+                    </div>
+                    {form.testCases.length > 1 && (
+                      <button 
+                        onClick={() => removeTestCase(idx)}
+                        className="mt-5 p-2 text-red-300 hover:text-red-500 transition-colors"
+                      ><FontAwesomeIcon icon={faTrash} className="text-xs" /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex items-start gap-2 bg-white/60 p-3 rounded-xl border border-dashed border-blue-200">
+                <div className="bg-blue-100 text-blue-600 h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px]">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                </div>
+                <p className="text-[10px] text-blue-700/80 leading-relaxed italic">
+                  <strong>Faculty Tip:</strong> Think of "Input" as the data you give the student, and "Correct Answer" as the key you expect them to return. For multiple inputs, separate them with a space.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         <button
           onClick={addQuestion}
@@ -325,7 +442,7 @@ function ExamManager() {
           className="bg-gray-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-lg flex items-center gap-2"
         >
           {isQuestionsSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPlus} />}
-          Add Question to Bank
+          Add {form.type === 'mcq' ? 'Question' : 'Coding Challenge'} to Bank
         </button>
       </div>
 
@@ -349,36 +466,50 @@ function ExamManager() {
         )}
 
         {questions.map((q, index) => (
-          <div key={q.id} className="bg-white p-5 shadow-md rounded-2xl border border-gray-50 hover:shadow-xl transition-shadow relative group">
+          <div key={q.id} className="bg-white p-6 shadow-md rounded-2xl border border-gray-50 hover:shadow-xl transition-shadow relative group">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <span className="bg-gray-100 text-gray-600 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black">
                     {index + 1}
                   </span>
-                  <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
-                    {q.marks || 2} Marks Item
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest ${q.type === 'coding' ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
+                    {q.type === 'coding' ? `Coding (${q.language})` : 'MCQ'} • {q.marks || 2} Marks
                   </span>
                 </div>
-                <h3 className="font-bold text-gray-800 text-lg mb-4 tracking-tight leading-snug">
+                <h3 className="font-bold text-gray-800 text-lg mb-4 tracking-tight leading-snug whitespace-pre-wrap">
                   {q.question}
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-                  {q.options.map((opt, i) => (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-xl border text-sm flex items-center gap-2 ${
-                        opt === q.answer 
-                        ? "bg-green-50 border-green-200 text-green-700 font-bold shadow-sm" 
-                        : "bg-white border-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {opt === q.answer && <FontAwesomeIcon icon={faCheckCircle} className="text-[10px]" />}
-                      {opt}
+                {q.type === 'coding' ? (
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Test Cases:</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      {q.testCases?.map((tc, idx) => (
+                        <div key={idx} className="text-xs font-mono bg-white p-2 rounded border border-gray-200">
+                          <div className="text-blue-500 mb-1">In: {tc.input || "Empty"}</div>
+                          <div className="text-green-600">Out: {tc.output}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                    {q.options.map((opt, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-xl border text-sm flex items-center gap-2 ${
+                          opt === q.answer 
+                          ? "bg-green-50 border-green-200 text-green-700 font-bold shadow-sm" 
+                          : "bg-white border-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {opt === q.answer && <FontAwesomeIcon icon={faCheckCircle} className="text-[10px]" />}
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button
