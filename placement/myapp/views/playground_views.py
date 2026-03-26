@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+from django.shortcuts import get_object_or_404
 from myapp.models import Playground
 from myapp.serializers import PlaygroundSerializer
 
@@ -30,11 +31,7 @@ def create_playground(request):
 # GET SINGLE PLAYGROUND
 @api_view(['GET'])
 def get_playground(request, pk):
-
-    try:
-        playground = Playground.objects.get(id=pk)
-    except Playground.DoesNotExist:
-        return Response({"error": "Not found"}, status=404)
+    playground = get_object_or_404(Playground, id=pk)
     serializer = PlaygroundSerializer(playground)
     return Response(serializer.data)
 
@@ -42,10 +39,6 @@ def get_playground(request, pk):
 # DELETE PLAYGROUND
 @api_view(['DELETE'])
 def delete_playground(request, pk):
-
-    try:
-        playground = Playground.objects.get(id=pk)
-    except Playground.DoesNotExist:
-        return Response({"error": "Not found"}, status=404)
+    playground = get_object_or_404(Playground, id=pk)
     playground.delete()
     return Response({"message": "Deleted successfully"})

@@ -48,8 +48,8 @@ function FacultyLayout() {
 
     { name: "Leave Requests", path: "/faculty/leaves", icon: <CalendarDays size={20}/> },
 
-  ];
 
+  ];
 
 
   return (
