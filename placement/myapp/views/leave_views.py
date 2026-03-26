@@ -116,16 +116,25 @@ def leave_request_page(request):
 <form id="leaveForm">
 <h3>Submit Leave</h3>
 <input name="name" placeholder="Name" required>
-<input name="email" placeholder="Email">
+<input name="email" placeholder="Email" type="email" required>
 <input name="student_id" placeholder="Student ID">
 <input type="date" name="start_date" required>
 <input type="date" name="end_date" required>
 <select name="leave_type">
-    <option value="Medical">Medical</option>
-    <option value="Personal">Personal</option>
-    <option value="Academic">Academic</option>
-    <option value="Family">Family</option>
-    <option value="Other">Other</option>
+    <option value="SL">Sick Leave / Medical Leave</option>
+    <option value="CL">Casual Leave</option>
+    <option value="EL">Earned Leave / Privilege Leave</option>
+    <option value="PTO">Paid Time Off</option>
+    <option value="ML">Maternity Leave</option>
+    <option value="PL">Paternity Leave</option>
+    <option value="BL">Bereavement Leave</option>
+    <option value="CO">Compensatory Off</option>
+    <option value="PH">Public Holidays</option>
+    <option value="LWP">Loss of Pay / Leave Without Pay</option>
+    <option value="WFH">Work From Home / Remote Leave</option>
+    <option value="SAB">Sabbatical Leave</option>
+    <option value="MRL">Marriage Leave</option>
+    <option value="STL">Study / Examination Leave</option>
 </select>
 <textarea name="reason" placeholder="Reason"></textarea>
 <button class="submit" type="submit">Submit</button>
@@ -247,6 +256,12 @@ def create_leave_request(request):
     print("Content type:", request.content_type)
     
     try:
+        if not request.data.get("email"):
+            return Response({
+                "success": False,
+                "errors": {"email": ["Email is required to send leave notifications."]}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = LeaveRequestSerializer(data=request.data)
         print("Serializer created:", serializer)
 

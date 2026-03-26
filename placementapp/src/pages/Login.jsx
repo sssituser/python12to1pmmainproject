@@ -39,6 +39,7 @@ function Login() {
       let data = {};
       try {
         data = await response.json();
+        console.log("LOGIN RESPONSE:", data);
       } catch {}
 
       if (response.ok) {

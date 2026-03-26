@@ -4,6 +4,8 @@ from rest_framework.exceptions import ValidationError
 
 from ..models import Job, AppliedJob
 from ..serializers import JobSerializer, AppliedJobSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 
 class JobViewSet(viewsets.ModelViewSet):
@@ -35,3 +37,16 @@ class AppliedJobViewSet(viewsets.ModelViewSet):
             raise ValidationError("Already applied")
 
         serializer.save(user=user)
+
+# ================= ADMIN JOB API =================
+from rest_framework.permissions import IsAdminUser
+
+class AdminJobViewSet(viewsets.ModelViewSet):
+
+    queryset = Job.objects.all().order_by("-created_at")
+    serializer_class = JobSerializer
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
+
+    def perform_create(self, serializer):
+        serializer.save()
