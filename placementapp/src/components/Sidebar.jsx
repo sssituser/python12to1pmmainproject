@@ -122,22 +122,13 @@ function Sidebar() {
             {open && "Course"}
           </NavLink>
 
-          {/* EXAMS */}
-          <NavLink
-            to="/dashboard/exams"
-            className={({ isActive }) =>
-              `${linkClass} ${
-                isActive
-                  ? "bg-slate-800 text-white"
-                  : "hover:bg-slate-800 hover:text-white"
-              }`
-            }
-          >
-            <FileText size={18} />
-            {open && "Exams"}
-          </NavLink>
+
+
+
 
           {/* REPORTS */}
+
+
           <NavLink
             to="/dashboard/exam-reports"
             className={({ isActive }) =>

@@ -163,7 +163,7 @@ function MonthlyExamReports() {
                     onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
                     className="w-full py-3 bg-purple-50 text-purple-700 rounded-xl font-bold text-sm hover:bg-purple-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
-                    View Result Analysis ↗
+                    View Result Analysis 
                   </button>
                 </div>
               );

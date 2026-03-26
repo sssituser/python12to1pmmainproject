@@ -1,5 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { 
+  faSave, 
+  faCheckCircle, 
+  faSpinner, 
+  faPlus, 
+  faTrash, 
+  faInfoCircle,
+  faHistory
+} from "@fortawesome/free-solid-svg-icons";
 
 function ExamManager() {
   const [questions, setQuestions] = useState([]);
@@ -9,6 +19,9 @@ function ExamManager() {
   const [passingValue, setPassingValue] = useState(50); // 50% or 15 correct
   const [category, setCategory] = useState("Weekly");
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isQuestionsSaving, setIsQuestionsSaving] = useState(false);
+
   const [form, setForm] = useState({
     question: "",
     options: ["", "", "", ""],
@@ -16,11 +29,13 @@ function ExamManager() {
     marks: 2, // default marks
   });
 
+  const BASE_URL = "http://127.0.0.1:8000/api/admin/exam-settings/";
+
   // Fetch existing settings when category changes
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/admin/exam-settings/?category=${category}`);
+        const res = await axios.get(`${BASE_URL}?category=${category}`);
         if (res.data && res.data.success && res.data.data) {
           const { maxQuestions: savedMax, questions: savedQuestions, passingRule: rule, passingValue: val, duration: savedDuration } = res.data.data;
           setMaxQuestions(savedMax || 50);
@@ -53,8 +68,9 @@ function ExamManager() {
     setForm({ ...form, answer: opt });
   };
 
-  // Save only the category & maxQuestions limit (never touches saved questions)
+  // Save Exam Rules (category, limit, duration, passing rules)
   const handleConfirmSettings = async () => {
+    setIsSaving(true);
     try {
       const payload = {
         category,
@@ -64,30 +80,40 @@ function ExamManager() {
         passingValue: parseInt(passingValue, 10) || 0,
       };
       
-      const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      const res = await axios.post(BASE_URL, payload);
       
       if (res.data && res.data.success) {
         setSettingsSaved(true);
         setTimeout(() => setSettingsSaved(false), 3000);
+      } else {
+        alert("Server error: " + (res.data.message || "Could not save settings."));
       }
     } catch (err) {
       console.error("Failed to save exam settings:", err);
+      alert("Error: Connection to backend failed. Please check if server is running.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Save questions list to backend
   const saveQuestionsToBackend = async (questionsToSave, categoryToSave) => {
+    setIsQuestionsSaving(true);
     try {
       const payload = {
         category: categoryToSave,
         questions: questionsToSave
       };
-      const res = await axios.post("http://127.0.0.1:8000/api/admin/exam-settings/", payload);
+      const res = await axios.post(BASE_URL, payload);
       if (res.data && res.data.success) {
-        console.log("✅ Questions saved");
+        console.log("✅ Questions synced to " + categoryToSave);
+      } else {
+        console.error("Failed to sync questions:", res.data.message);
       }
     } catch (err) {
       console.error("Failed to save questions:", err);
+    } finally {
+      setIsQuestionsSaving(false);
     }
   };
 
@@ -113,6 +139,7 @@ function ExamManager() {
 
   // delete question
   const deleteQuestion = (id) => {
+    // if (!window.confirm("Are you sure you want to delete this question?")) return;
     const updatedQuestions = questions.filter((q) => q.id !== id);
     setQuestions(updatedQuestions);
     saveQuestionsToBackend(updatedQuestions, category);
@@ -121,22 +148,28 @@ function ExamManager() {
   return (
     <div className="p-6 max-w-4xl mx-auto pb-20">
 
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Exam Manager</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
+         <FontAwesomeIcon icon={faHistory} className="text-blue-600" />
+         Exam Manager
+      </h1>
 
       {/* EXAM SETTINGS */}
-      <div className="bg-white p-5 shadow rounded-lg mb-6 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">Exam Settings & Passing Rules</h2>
+      <div className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-200">
+        <h2 className="text-lg font-bold mb-4 text-gray-700 flex items-center gap-2">
+           <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />
+           Assessment Rules & Configuration
+        </h2>
         
-        <div className="bg-blue-50 p-4 rounded border border-blue-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+        <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           
           <div>
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
-              Select Exam Category:
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+              Exam Category
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
             >
               <option value="Weekly">Weekly Exam</option>
               <option value="Monthly">Monthly Exam</option>
@@ -144,184 +177,218 @@ function ExamManager() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
-              Max Questions to Display:
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+              Max Questions To Display
             </label>
             <input
               type="number"
               min="1"
               value={maxQuestions}
               onChange={(e) => setMaxQuestions(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
-               Exam Duration (Minutes):
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+               Duration (Mins)
             </label>
             <input
               type="number"
               min="1"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
-              Passing Rule Type:
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+              Passing Strategy
             </label>
             <select
               value={passingRule}
               onChange={(e) => setPassingRule(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
             >
               <option value="percentage">Percentage (%)</option>
-              <option value="correct_answers">Minimum Correct Answers</option>
+              <option value="correct_answers">Correct Answers</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
-              Required Value to Pass:
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+              Requirement
             </label>
             <input
               type="number"
               value={passingValue}
               onChange={(e) => setPassingValue(e.target.value)}
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-300"
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
               placeholder={passingRule === "percentage" ? "e.g. 50" : "e.g. 15"}
             />
           </div>
 
         </div>
 
-        <div className="mb-4">
-            <p className="text-sm font-medium text-blue-700 bg-blue-100 p-2 rounded inline-block">
-              {passingRule === "percentage" 
-                ? "Requirement: Student must score " + passingValue + "% marks within " + duration + " minutes." 
-                : "Requirement: Student must get at least " + passingValue + " correct answers within " + duration + " minutes."}
+        <div className="flex items-center justify-between gap-4 border-t pt-4">
+            <p className="text-sm font-semibold text-blue-700">
+               {passingRule === "percentage" 
+                 ? `Requirement: Students must score ${passingValue}% to pass.` 
+                 : `Requirement: Students must get ${passingValue} correct answers to pass.`}
             </p>
-        </div>
 
-        <button
-          onClick={() => handleConfirmSettings()}
-          className={`px-5 py-2 rounded-lg font-medium transition ${
-            settingsSaved 
-            ? "bg-green-500 hover:bg-green-600 text-white" 
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-          }`}
-        >
-          {settingsSaved ? "Saved" : "Confirm"}
-        </button>
+            <button
+              onClick={() => handleConfirmSettings()}
+              disabled={isSaving}
+              className={`px-8 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-md ${
+                settingsSaved 
+                ? "bg-green-600 hover:bg-green-700 text-white" 
+                : "bg-blue-600 hover:bg-blue-700 text-white active:scale-95"
+              } ${isSaving ? "opacity-75 cursor-wait" : ""}`}
+            >
+              {isSaving ? (
+                <> <FontAwesomeIcon icon={faSpinner} spin /> Saving... </>
+              ) : settingsSaved ? (
+                <> <FontAwesomeIcon icon={faCheckCircle} /> Saved </>
+              ) : (
+                <> <FontAwesomeIcon icon={faSave} /> Confirm </>
+              )}
+            </button>
+        </div>
 
       </div>
 
       {/* QUESTION FORM */}
-      <div className="bg-white p-6 shadow rounded-lg mb-6 border border-gray-100">
-        <h2 className="text-lg font-semibold mb-4 text-gray-700">Add New Question</h2>
+      <div className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-100">
+        <h2 className="text-lg font-bold mb-4 text-gray-700 flex items-center gap-2">
+           <FontAwesomeIcon icon={faPlus} className="text-green-500" />
+           Add Assessment Questions
+        </h2>
         
         <div className="flex gap-4 mb-4">
           <input
             type="text"
-            placeholder="Enter question text..."
+            placeholder="Type your question here..."
             value={form.question}
             onChange={handleChange}
-            className="flex-1 p-3 border rounded focus:outline-none focus:border-blue-500"
+            className="flex-1 p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50"
           />
-          <div style={{ width: "100px" }}>
-             <label className="text-xs font-bold text-gray-500 uppercase">Marks</label>
+          <div style={{ width: "120px" }}>
+             <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1">Marks</label>
              <input
                type="number"
                value={form.marks}
                onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
-               className="w-full p-2 border rounded"
+               className="w-full p-2 border rounded-lg bg-gray-50/50"
              />
           </div>
         </div>
 
-        {form.options.map((opt, i) => (
-          <input
-            key={i}
-            type="text"
-            placeholder={`Option ${i + 1}`}
-            value={opt}
-            onChange={(e) => handleOptionChange(i, e.target.value)}
-            className="w-full mb-2 p-2 border rounded"
-          />
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          {form.options.map((opt, i) => (
+            <input
+              key={i}
+              type="text"
+              placeholder={`Option ${i + 1}`}
+              value={opt}
+              onChange={(e) => handleOptionChange(i, e.target.value)}
+              className="w-full p-2.5 border rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
+            />
+          ))}
+        </div>
 
         {/* Select Answer */}
-        <div className="mb-3">
-          <p className="font-semibold mb-1">Select Correct Answer:</p>
-          {form.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => handleAnswer(opt)}
-              className={`mr-2 mb-2 px-3 py-1 border rounded ${
-                form.answer === opt
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              {opt || `Option ${i + 1}`}
-            </button>
-          ))}
+        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+          <p className="text-sm font-bold text-gray-600 mb-3">Identify Correct Answer Key:</p>
+          <div className="flex flex-wrap gap-2">
+            {form.options.map((opt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleAnswer(opt)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
+                  form.answer === opt && opt !== ""
+                    ? "bg-green-600 text-white border-green-700 shadow-md ring-2 ring-green-200"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {opt || `Option ${i + 1}`}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button
           onClick={addQuestion}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          disabled={isQuestionsSaving}
+          className="bg-gray-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-lg flex items-center gap-2"
         >
-          Add Question
+          {isQuestionsSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPlus} />}
+          Add Question to Bank
         </button>
       </div>
 
       {/* QUESTION LIST */}
-      <div className="mt-10 mb-6 flex items-center justify-between border-b pb-4">
-        <h2 className="text-2xl font-black text-gray-800 tracking-tight">
+      <div className="mt-12 mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+        <h2 className="text-2xl font-black text-gray-800 tracking-tight flex items-center gap-3">
           Current {category} Questions
+          {isQuestionsSaving && <FontAwesomeIcon icon={faSpinner} spin className="text-blue-500 text-sm" />}
         </h2>
-        <span className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ring-1 ring-gray-200">
-          Total: {questions.length} / {maxQuestions}
+        <span className="bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg shadow-blue-100 flex items-center gap-2 uppercase tracking-tighter">
+          Total Content: {questions.length} / {maxQuestions}
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {questions.length === 0 && (
-          <p className="text-gray-500">No questions added yet</p>
+          <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+             <FontAwesomeIcon icon={faInfoCircle} className="text-4xl text-gray-300 mb-2" />
+             <p className="text-gray-400 font-medium">No assessment questions found in the {category} category.</p>
+          </div>
         )}
 
         {questions.map((q, index) => (
-          <div key={q.id} className="bg-white p-4 shadow rounded">
-            <h3 className="font-semibold">
-              {index + 1}. {q.question} 
-              <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">
-                {q.marks || 0} Marks
-              </span>
-            </h3>
+          <div key={q.id} className="bg-white p-5 shadow-md rounded-2xl border border-gray-50 hover:shadow-xl transition-shadow relative group">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-gray-100 text-gray-600 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black">
+                    {index + 1}
+                  </span>
+                  <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
+                    {q.marks || 2} Marks Item
+                  </span>
+                </div>
+                <h3 className="font-bold text-gray-800 text-lg mb-4 tracking-tight leading-snug">
+                  {q.question}
+                </h3>
 
-            <ul className="ml-4 mt-2">
-              {q.options.map((opt, i) => (
-                <li
-                  key={i}
-                  className={`${
-                    opt === q.answer ? "text-green-600 font-bold" : ""
-                  }`}
-                >
-                  {opt}
-                </li>
-              ))}
-            </ul>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                  {q.options.map((opt, i) => (
+                    <div
+                      key={i}
+                      className={`p-3 rounded-xl border text-sm flex items-center gap-2 ${
+                        opt === q.answer 
+                        ? "bg-green-50 border-green-200 text-green-700 font-bold shadow-sm" 
+                        : "bg-white border-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {opt === q.answer && <FontAwesomeIcon icon={faCheckCircle} className="text-[10px]" />}
+                      {opt}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <button
-              onClick={() => deleteQuestion(q.id)}
-              className="mt-2 text-red-500"
-            >
-              Delete
-            </button>
+              <button
+                onClick={() => deleteQuestion(q.id)}
+                className="text-red-300 hover:text-red-500 transition-colors p-2"
+                title="Purge this item"
+              >
+                <FontAwesomeIcon icon={faTrash} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

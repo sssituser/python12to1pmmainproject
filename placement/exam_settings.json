@@ -1,50 +1,10 @@
 {
     "Weekly": {
-<<<<<<< HEAD
-        "maxQuestions": 30,
-=======
-        "maxQuestions": 2,
->>>>>>> b2f252f8fe53e06652611eab2a29380e866b118d
-        "questions": [
-            {
-                "question": "What are the technologies Name?",
-                "options": [
-                    "HTML",
-                    "CSS",
-                    "JAVA SCRIPT",
-                    "ALL THE ABOVE"
-                ],
-                "answer": "ALL THE ABOVE",
-                "marks": 2,
-                "id": 1774337296911
-            },
-            {
-                "question": "What are the technologies Name?",
-                "options": [
-                    "HTML",
-                    "CSS",
-                    "JAVA SCRIPT",
-                    "ALL THE ABOVE"
-                ],
-                "answer": "ALL THE ABOVE",
-                "marks": 2,
-                "id": 1774338014733
-            }
-        ],
-        "passingRule": "correct_answers",
-<<<<<<< HEAD
-        "passingValue": 14,
-        "duration": 30
-=======
-        "passingValue": 1,
-        "duration": 1
->>>>>>> b2f252f8fe53e06652611eab2a29380e866b118d
-    },
-    "Daily": {
-        "maxQuestions": 5010000000000,
+        "maxQuestions": 1,
         "questions": [],
         "passingRule": "percentage",
-        "passingValue": 50
+        "passingValue": 50,
+        "duration": 1
     },
     "Monthly": {
         "maxQuestions": 50,

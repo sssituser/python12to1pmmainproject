@@ -8,7 +8,13 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
+<<<<<<< HEAD
 from .views.job_views import JobViewSet, AppliedJobViewSet,AdminJobViewSet
+=======
+from .views import course_views
+from .views.course_views import CourseViewSet
+from .views.job_views import JobViewSet, AppliedJobViewSet
+>>>>>>> 7adaa783bfb3bd2b680825fb18b98e355a909e6f
 from . import api_views
 
 
@@ -16,7 +22,11 @@ from . import api_views
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='jobs')
 router.register(r'applied-jobs', AppliedJobViewSet)
+<<<<<<< HEAD
 router.register(r'admin/jobs', AdminJobViewSet, basename='admin-jobs')
+=======
+router.register(r'courses', CourseViewSet, basename='courses')
+>>>>>>> 7adaa783bfb3bd2b680825fb18b98e355a909e6f
 
 
 urlpatterns = [
@@ -39,6 +49,9 @@ urlpatterns = [
     path('leave-requests/<int:pk>/delete/', delete_leave_request),
     path('leave-requests/my-requests/', my_leave_requests),
 
+
+
+
     # ================= EXAM SYSTEM =================
     path('questions/', get_questions),
     path('questions/create/', create_question),
@@ -50,6 +63,7 @@ urlpatterns = [
     path('exam/sessions/', get_exam_sessions),
 
     # ================= PLAYGROUND =================
+
     path('playground-questions/', api_views.playground_questions_api, name='playground-questions'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
@@ -67,5 +81,16 @@ urlpatterns = [
     path('leaderboard/', api_views.leaderboard_api),
     path('weekly-exam-results/', api_views.weekly_exam_reports_api),
     path('monthly-exam-results/', api_views.monthly_exam_reports_api),
+    
+    # DASHBOARD & STATS
+    path('dashboard-stats/', api_views.dashboard_stats_api),
+    path('students/', api_views.student_stats_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
+
+    # ================= COURSE SYSTEM =================
+    path('student/courses/', course_views.student_courses),
+    path('faculty/courses/', course_views.faculty_courses),
+    path('course/create/', course_views.create_course),
+    path('course/<int:course_id>/', course_views.get_course_details),
+    path('course/<str:course_name>/topics/', course_views.get_course_topics),
 ]
