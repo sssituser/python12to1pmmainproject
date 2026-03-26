@@ -16,7 +16,7 @@ import WeeklyExamReports from "./pages/WeeklyExamReports";
 import MonthlyExamReports from "./pages/MonthlyExamReports";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import ExamReportDetail from "./pages/ExamReportDetail";
-import PythonExam from "./pages/PythonExam";
+import DailyExam from "./pages/DailyExam";
 import WeeklyExam from "./pages/WeeklyExam";
 import MonthlyExam from "./pages/MonthlyExam";
 import ExamFailed from "./pages/ExamFailed";
@@ -109,7 +109,8 @@ function App() {
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 
-        <Route path="/dashboard/python-exam" element={<PythonExam />} />
+        <Route path="/dashboard/daily-exam" element={<DailyExam />} />
+        <Route path="/dashboard/python-exam" element={<DailyExam />} />
         <Route path="/dashboard/weekly-exam" element={<WeeklyExam />} />
         <Route path="/dashboard/monthly-exam" element={<MonthlyExam />} />
 

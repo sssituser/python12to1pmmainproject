@@ -172,7 +172,7 @@ function DailyExamReports() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl p-12 text-center shadow-inner border border-dashed border-gray-200 mt-8">
-            <div className="text-5xl mb-4">📝</div>
+            <div className="text-5xl mb-4">📊</div>
             <h3 className="text-xl font-bold text-gray-800">No practice reports yet.</h3>
             <p className="text-gray-500 mt-2 max-w-sm mx-auto">
               Ready to sharp your skills? Take a Daily Exam from the playground and your results will appear here!

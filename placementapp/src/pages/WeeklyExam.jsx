@@ -229,30 +229,6 @@ const WeeklyExam = () => {
     };
   }, [examStarted, examSubmitted, navigate]);
 
-  // Load state from sessionStorage - DISABLED for fresh starts
-  // useEffect(() => {
-  //   const savedStateStr = sessionStorage.getItem('weeklyExamState');
-  //   if (savedStateStr) {
-  //     try {
-  //       const savedState = JSON.parse(savedStateStr);
-  //       if (savedState.examStarted && !savedState.examSubmitted) {
-  //         setAnswers(savedState.answers);
-  //         setMarkedForReview(savedState.markedForReview);
-  //         setVisitedQuestions(savedState.visitedQuestions);
-  //         setTimeLeft(savedState.timeLeft);
-  //         setCurrentQuestion(savedState.currentQuestion);
-  //         setExamStarted(true);
-  //         examSubmittedRef.current = false;
-  //         // Resume webcam if not already active
-  //         setTimeout(() => {
-  //           if (videoRef.current && !webcamActive) {
-  //             startWebcam();
-  //           }
-  //         }, 500);
-  //       }
-  //     } catch (e) {}
-  //   }
-  // }, []);
 
   // Sync state to sessionStorage whenever it changes
   useEffect(() => {
