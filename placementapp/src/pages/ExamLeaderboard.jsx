@@ -25,7 +25,7 @@ function ExamLeaderboard() {
       if (batch) params.append('batch', batch);
       if (examType) params.append('exam_type', examType);
 
-      const res = await fetch(`http://127.0.0.1:8000/api/leaderboard/?${params.toString()}`);
+      const res = await fetch(`/api/leaderboard/?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {

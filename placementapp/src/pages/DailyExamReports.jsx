@@ -14,7 +14,7 @@ function DailyExamReports() {
   const fetchReports = async () => {
     try {
       // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("http://127.0.0.1:8000/api/all-exam-results/");
+      const res = await axios.get("/api/all-exam-results/");
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {

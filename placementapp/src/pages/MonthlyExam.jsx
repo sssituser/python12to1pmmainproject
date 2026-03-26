@@ -60,6 +60,54 @@ const MonthlyExam = () => {
     }
   };
 
+  // Webcam functions - moved outside security monitoring scope
+  const startWebcam = async () => {
+    if (webcamStatus === 'active' || webcamStatus === 'loading') return;
+    
+    try {
+      setWebcamStatus('loading');
+      setWebcamActive(false);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        },
+        audio: false 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setWebcamActive(true);
+      setWebcamStatus('active');
+
+      globalStreamsToClean.push(stream);
+    } catch (err) {
+      console.error("Webcam access denied:", err);
+      setWebcamActive(false);
+      setWebcamStatus('error');
+    }
+  };
+
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setWebcamActive(false);
+      setWebcamStatus('idle');
+    }
+    // Clean all potentially leaked streams
+    globalStreamsToClean.forEach(stream => {
+      try {
+        stream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+    });
+    globalStreamsToClean = [];
+  };
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [markedForReview, setMarkedForReview] = useState([]);
@@ -71,6 +119,7 @@ const MonthlyExam = () => {
   const [examSubmitted, setExamSubmitted] = useState(false);
   const examSubmittedRef = useRef(false);
   const [webcamActive, setWebcamActive] = useState(false);
+  const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
 
@@ -93,11 +142,11 @@ const MonthlyExam = () => {
         setIsLoadingQuestions(true);
 
         // Fetch custom exam settings loaded manually by Faculty
-        const customRes = await fetch("http://127.0.0.1:8000/api/admin/exam-settings/?category=Monthly");
+        const customRes = await fetch("/api/admin/exam-settings/?category=Monthly");
         const customJson = await customRes.json();
 
         // 1. Prioritize Custom Questions from Exam Manager
-        if (customJson.success && customJson.data && customJson.data.questions && customJson.data.questions.length > 0) {
+        if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
           
           // Helper for Fisher-Yates shuffle
           const shuffleArray = (array) => {
@@ -148,6 +197,11 @@ const MonthlyExam = () => {
     };
     
     fetchQuestionsFromBackend();
+    
+    // Auto-start webcam for preparation/preview screen
+    if (!webcamActive) {
+      startWebcam();
+    }
   }, []);
 
   // Control global browser back button for pre-exam screen
@@ -314,8 +368,8 @@ useEffect(() => {
       }
       brightness = brightness / (tData.length / 4);
       const variation = max - min;
-      const isDark = brightness < 40;
-      const isFlat = variation < 30;
+      const isDark = brightness < 20;
+      const isFlat = variation < 15;
       const checkViolations = (faces) => {
         const noFace = !faces || faces.length === 0;
         const multipleFaces = faces && faces.length > 1;
@@ -445,64 +499,7 @@ useEffect(() => {
   }, [examStarted, examSubmitted]);
 
   // WEBCAM FUNCTIONS
-  const startWebcam = async () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 }, 
-          height: { ideal: 480 } 
-        },
-        audio: false // Disable audio capture permanently
-      });
-      
-      globalStreamsToClean.push(stream);
-      
-      // Stop stream immediately if the exam was already submitted or window unmounted
-      if (examSubmittedRef.current || !videoRef.current) {
-        stopWebcam();
-        return;
-      }
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setWebcamActive(true);
-        startFaceDetection();
-      }
-    } catch (err) {
-      console.error("Error accessing webcam:", err);
-      alert("Unable to access webcam. Please ensure camera permissions are granted.");
-    }
-  };
-
-  const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    globalStreamsToClean.forEach(s => {
-      s.getTracks().forEach(track => track.stop());
-    });
-    globalStreamsToClean = []; // reset
-    setWebcamActive(false);
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    if (faceDetectionIntervalRef.current) {
-      clearInterval(faceDetectionIntervalRef.current);
-      faceDetectionIntervalRef.current = null;
-    }
-    if (cleanTimeoutRef.current) {
-      clearTimeout(cleanTimeoutRef.current);
-      cleanTimeoutRef.current = null;
-    }
-    violationStartTimeRef.current = null;
-  };
 
   const startFaceDetection = () => {
     faceDetectionIntervalRef.current = setInterval(() => {
@@ -742,7 +739,7 @@ useEffect(() => {
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+      const res = await fetch("/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -765,6 +762,19 @@ useEffect(() => {
 
     sessionStorage.removeItem('monthlyExamState');
 
+    // Exit full screen mode
+    if (document.fullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+    }
+
     navigate("/dashboard/playground-results",{replace:true});
   };
 
@@ -776,37 +786,85 @@ useEffect(() => {
 
   if (!examStarted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4"/>
-          <h2 className="text-2xl font-bold mb-2">
-            Monthly Exam
-          </h2>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 max-w-lg w-full text-center border border-white">
+          
+          <div className="relative w-64 h-48 mx-auto mb-8 rounded-[2rem] overflow-hidden bg-gray-900 shadow-xl ring-4 ring-white border-4 border-white">
+             {webcamActive ? (
+                <video
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ transform: 'scaleX(-1)' }}
+                  className="w-full h-full object-cover"
+                  ref={(el) => {
+                    if (el && videoRef.current && el !== videoRef.current) {
+                      el.srcObject = videoRef.current.srcObject;
+                    } else if (el && !videoRef.current) {
+                      // fallback if startWebcam was too slow
+                      navigator.mediaDevices.getUserMedia({ video: true }).then(s => el.srcObject = s);
+                    }
+                  }}
+                />
+             ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                   <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activating Camera...</p>
+                </div>
+             )}
+             <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                <div className="flex items-center gap-1.5">
+                   <div className={`w-1.5 h-1.5 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                   <span className="text-[8px] font-black text-white uppercase tracking-[0.2em]">Preview</span>
+                </div>
+             </div>
+          </div>
 
-          <p className="text-gray-600 mb-6">
-            {!isLoadingQuestions && questions.length === 0 
-              ? <span className="text-red-600 font-semibold">No questions uploaded yet.</span>
-              : `${questions.length || 0} Questions • ${examDuration} Minutes`}
-          </p>
+          <div className="mb-8">
+            <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+              Monthly Assessment
+            </h2>
+            <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full mb-4"></div>
+            <p className="text-gray-500 font-medium leading-relaxed px-4">
+              {!isLoadingQuestions && questions.length === 0 
+                ? <span className="text-red-500 font-bold">No questions uploaded yet for this month.</span>
+                : `${questions.length || 0} Questions • ${examDuration} Minutes`}
+              <br/>
+              <span className="text-[10px] uppercase font-black tracking-widest text-indigo-600 mt-2 inline-block">Secure Proctored Mode</span>
+            </p>
+          </div>
+
           <button
             onClick={startExam}
-            disabled={isLoadingQuestions || (!isLoadingQuestions && questions.length === 0)}
-            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
-              isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
-            }`}
+            disabled={isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) || !webcamActive}
+            className={`w-full py-4 rounded-2xl text-white font-black uppercase tracking-[0.2em] transition-all shadow-lg ${(isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) || !webcamActive)
+              ? 'bg-gray-300 cursor-not-allowed shadow-none'
+              : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 shadow-indigo-100'
+              }`}
           >
-            {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
+            {isLoadingQuestions ? 'Preparing Questions...' 
+            : !webcamActive ? 'Waiting for Camera...'
+            : 'Start Assessment'}
           </button>
-          
+
           <button
             onClick={() => navigate("/dashboard/playground")}
-            className="block mt-4 text-sm text-gray-500 hover:text-indigo-600 mx-auto"
+            className="block mt-6 text-[10px] font-black text-gray-400 hover:text-indigo-600 uppercase tracking-widest mx-auto transition-colors"
           >
             Back to Playground
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center">
+         <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pre-loading Assessment...</p>
+         </div>
       </div>
     );
   }
@@ -845,115 +903,177 @@ useEffect(() => {
         </div>
       </div>
 
-       <div className="max-w-[100vw] px-4 md:px-8">
-        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-             <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
-                <FontAwesomeIcon icon={faClock} className="text-blue-500 text-xs" />
-                <span className="font-black text-blue-700 tabular-nums text-base">{formatTime(timeLeft)}</span>
-             </div>
-          </div>
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <div className="space-y-6">
-            <div className="bg-white p-8 rounded-[1.5rem] shadow-md border border-gray-100 relative overflow-hidden flex flex-col min-h-[400px]">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-20"></div>
-              
-              <div className="flex items-center justify-between mb-8">
-                 <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-500 border border-blue-100">
-                    Question {currentQuestion + 1}
-                 </span>
-                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {currentQ.marks || 2} Points
-                 </span>
-              </div>
-
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed">
-                  {currentQ.question}
-                </h3>
-
-                <div className="grid gap-4">
-                  {currentQ.options.map((option, index) => (
-                    <label 
-                      key={index} 
-                      className={`flex items-center p-5 rounded-2xl border-2 transition-all cursor-pointer group ${
-                        answers[currentQuestion] === index 
-                        ? 'bg-blue-50 border-blue-500 shadow-sm' 
-                        : 'bg-white border-gray-100 hover:border-gray-200'
-                      }`}
-                    >
-                      <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center transition-all ${
-                         answers[currentQuestion] === index ? 'border-blue-500 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-gray-300'
-                      }`}>
-                         {answers[currentQuestion] === index && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
-                      </div>
-                      <input
-                        type="radio"
-                        name={`q-${currentQuestion}`}
-                        checked={answers[currentQuestion] === index}
-                        onChange={() => handleAnswerSelect(currentQuestion, index)}
-                        className="hidden"
-                      />
-                      <span className={`text-base font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-blue-900' : 'text-gray-700'}`}>
-                         {option}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Navigation Footer */}
-              <div className="mt-12 pt-8 border-t border-gray-50 flex justify-between items-center">
-                <button
-                  onClick={() => toggleMarkForReview(currentQuestion)}
-                  className={`text-[11px] font-black uppercase tracking-widest flex items-center gap-2 ${markedForReview[currentQuestion] ? 'text-amber-600' : 'text-gray-400 hover:text-gray-600 transition-colors'}`}
-                >
-                  <FontAwesomeIcon icon={faFlag} />
-                  {markedForReview[currentQuestion] ? 'Flagged for Review' : 'Mark for Review'}
-                </button>
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-4 gap-6 items-start">
+          {/* Main Assessment Area */}
+          <div className="col-span-3 space-y-6">
+            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden flex flex-col min-h-[440px]">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10"></div>
                 
-                <div className="flex gap-3">
-                   {currentQuestion > 0 && (
-                     <button onClick={previousQuestion} className="px-6 py-2.5 rounded-xl bg-gray-50 text-gray-600 font-bold hover:bg-gray-100 transition-all border border-gray-100">
-                       Previous
-                     </button>
-                   )}
-                   {currentQuestion < questions.length - 1 ? (
-                     <button onClick={nextQuestion} className="bg-indigo-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
-                       Next Question
-                     </button>
-                   ) : (
-                     <button onClick={() => handleSubmitExam("Manual submission")} className="bg-green-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all active:scale-95">
-                       Finish Exam
-                     </button>
-                   )}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-blue-600 text-white h-6 w-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md shadow-blue-200">
+                      {currentQuestion + 1}
+                    </span>
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1">
+                      Monthly Assessment
+                    </span>
+                  </div>
+                  <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
+                    <span className="text-[10px] font-black text-gray-800">{currentQ.marks || 2}</span>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
+                      {currentQ.question}
+                    </h3>
+                    <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {currentQ.options.map((option, index) => (
+                      <label 
+                        key={index} 
+                        className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
+                          answers[currentQuestion] === index 
+                          ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
+                          : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
+                        }`}
+                      >
+                        <div className="flex flex-row items-center w-full gap-3">
+                          <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                             answers[currentQuestion] === index 
+                             ? 'border-white bg-white/25' 
+                             : 'border-gray-200 group-hover:border-blue-300'
+                          }`}>
+                             {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                          </div>
+                          <input
+                            type="radio"
+                            name={`q-${currentQuestion}`}
+                            checked={answers[currentQuestion] === index}
+                            onChange={() => handleAnswerSelect(currentQuestion, index)}
+                            className="hidden"
+                          />
+                          <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                             {option}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-10 pt-6 border-t border-gray-50 flex justify-between items-center">
+                  <button
+                    onClick={() => toggleMarkForReview(currentQuestion)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                      markedForReview[currentQuestion] 
+                      ? 'bg-amber-100 text-amber-600' 
+                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faFlag} className="text-[10px]" />
+                    {markedForReview[currentQuestion] ? 'Flagged' : 'Mark Review'}
+                  </button>
+                  
+                  <div className="flex gap-2">
+                     {currentQuestion > 0 && (
+                       <button 
+                         onClick={previousQuestion} 
+                         className="h-11 px-4 rounded-xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 transition-all flex items-center justify-center text-sm"
+                       >
+                         ←
+                       </button>
+                     )}
+                     {currentQuestion < questions.length - 1 ? (
+                       <button 
+                        onClick={nextQuestion} 
+                        className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
+                       >
+                         Next Question
+                       </button>
+                     ) : (
+                       <button 
+                        onClick={() => handleSubmitExam("Manual submission")} 
+                        className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
+                       >
+                         Finish Exam
+                       </button>
+                     )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Simple Progress Bar or Indicator */}
-            <div className="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-100 flex flex-wrap justify-center gap-2">
-              {questions.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToQuestion(index)}
-                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${
-                    currentQuestion === index 
-                    ? 'bg-indigo-600 text-white border-indigo-600' 
-                    : answers[index] !== null && answers[index] !== undefined
-                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
-                    : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+
+            {/* Right Section: Progress Tracker & Stats */}
+            <div className="col-span-1 flex flex-col gap-4 sticky top-24">
+              <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 flex flex-col gap-6">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
+                    <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
+                      {Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100)}%
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    {questions.map((_, index) => {
+                      let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
+                      if (currentQuestion === index) {
+                        statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
+                      } else if (markedForReview[index]) {
+                        statusColor = "bg-amber-500 text-white border-amber-500 shadow-sm";
+                      } else if (answers[index] !== null && answers[index] !== undefined && answers[index] !== "") {
+                        statusColor = "bg-green-500 text-white border-green-500 shadow-sm";
+                      }
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => goToQuestion(index)}
+                          className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95 flex items-center justify-center`}
+                        >
+                          {index + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="space-y-3 border-t border-gray-50 pt-5">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
+                       </div>
+                       <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Marked</span>
+                       </div>
+                       <span className="text-xs font-black text-gray-800">{markedForReview.filter(f => f).length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-lg border-2 border-blue-600"></div>
+                          <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Active</span>
+                       </div>
+                       <span className="text-xs font-black text-blue-600">{currentQuestion + 1}</span>
+                    </div>
+                </div>
+
+
+              </div>
             </div>
           </div>
         </div>
-      </div>
       {/* PROCTORING WARNING MODAL */}
       {showWarningModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

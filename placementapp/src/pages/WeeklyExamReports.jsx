@@ -14,7 +14,7 @@ function WeeklyExamReports() {
   const fetchReports = async () => {
     try {
       // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("http://127.0.0.1:8000/api/weekly-exam-results/");
+      const res = await axios.get("/api/weekly-exam-results/");
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {
