@@ -121,6 +121,22 @@ class LeaveRequest(models.Model):
         return f"{self.name} - {self.status}"
 
 
+class EmailConfiguration(models.Model):
+    provider_name = models.CharField(max_length=100, default='Gmail SMTP')
+    email_host = models.CharField(max_length=255, default='smtp.gmail.com')
+    email_port = models.PositiveIntegerField(default=587)
+    email_host_user = models.EmailField()
+    email_host_password = models.CharField(max_length=255)
+    email_use_tls = models.BooleanField(default=True)
+    email_use_ssl = models.BooleanField(default=False)
+    default_from_email = models.EmailField(blank=True)
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.provider_name} - {self.email_host_user}"
+
+
 # ===============================
 # Python Exam
 # ===============================
