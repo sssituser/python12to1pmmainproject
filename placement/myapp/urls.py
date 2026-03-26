@@ -8,6 +8,7 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
+from .views import course_views
 from .views.job_views import JobViewSet, AppliedJobViewSet
 from . import api_views
 
@@ -74,4 +75,11 @@ urlpatterns = [
     path('dashboard-stats/', api_views.dashboard_stats_api),
     path('students/', api_views.student_stats_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
+
+    # ================= COURSE SYSTEM =================
+    path('student/courses/', course_views.student_courses),
+    path('faculty/courses/', course_views.faculty_courses),
+    path('course/create/', course_views.create_course),
+    path('course/<int:course_id>/', course_views.get_course_details),
+    path('course/<str:course_name>/topics/', course_views.get_course_topics),
 ]

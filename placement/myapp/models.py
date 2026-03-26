@@ -95,13 +95,22 @@ class LeaveRequest(models.Model):
     leave_type = models.CharField(
         max_length=20,
         choices=[
-            ('Medical', 'Medical'),
-            ('Personal', 'Personal'),
-            ('Academic', 'Academic'),
-            ('Family', 'Family'),
-            ('Other', 'Other')
+            ('CL', 'Casual Leave'),
+            ('SL', 'Sick Leave / Medical Leave'),
+            ('EL', 'Earned Leave / Privilege Leave'),
+            ('PTO', 'Paid Time Off'),
+            ('ML', 'Maternity Leave'),
+            ('PL', 'Paternity Leave'),
+            ('BL', 'Bereavement Leave'),
+            ('CO', 'Compensatory Off'),
+            ('PH', 'Public Holidays'),
+            ('LWP', 'Loss of Pay / Leave Without Pay'),
+            ('WFH', 'Work From Home / Remote Leave'),
+            ('SAB', 'Sabbatical Leave'),
+            ('MRL', 'Marriage Leave'),
+            ('STL', 'Study / Examination Leave'),
         ],
-        default='Medical'
+        default='SL'
     )
 
     status = models.CharField(max_length=20, default="Pending")

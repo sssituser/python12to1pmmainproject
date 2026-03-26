@@ -25,6 +25,9 @@ import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
 import DetailedResults from "./pages/DetailedResults";
 import LeaveRequest from "./pages/Leaverequest";
+import NewLeaveRequest from "./pages/NewLeaveRequest";
+import LeaveHistory from "./pages/LeaveHistory";
+import LeaveSummary from "./pages/LeaveSummary";
 import Course from "./pages/Course";
 import TopicVideo from "./pages/TopicVideo";
 import VideoPlayer from "./pages/VideoPlayer";
@@ -95,6 +98,11 @@ function App() {
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
 
+        {/* Leave Request Redirect */}
+        <Route path="/leave-request" element={<Navigate to="/dashboard/leave-request" replace />} />
+        <Route path="/leave-request/new" element={<Navigate to="/dashboard/leave-request/new" replace />} />
+        <Route path="/leave-request/history" element={<Navigate to="/dashboard/leave-request/history" replace />} />
+        <Route path="/leave-request/summary" element={<Navigate to="/dashboard/leave-request/summary" replace />} />
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 
@@ -143,6 +151,9 @@ function App() {
 
           {/* Leave */}
           <Route path="leave-request" element={<LeaveRequest />} />
+          <Route path="leave-request/new" element={<NewLeaveRequest />} />
+          <Route path="leave-request/history" element={<LeaveHistory />} />
+          <Route path="leave-request/summary" element={<LeaveSummary />} />
 
           {/* Logout */}
           <Route path="logout" element={<Logout />} />
