@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faFileAlt, faPlus, faClock, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faCalendarAlt, faFileAlt, faPlus, faClock, faEye, faShieldAlt } from "@fortawesome/free-solid-svg-icons";
 
 function LeaveRequest() {
   const navigate = useNavigate();
@@ -74,44 +74,68 @@ function LeaveRequest() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
       <div className="w-full px-0 py-0">
         {/* Header */}
-        <div className="p-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2 font-sans">
-            Leave Management
-          </h1>
+        <div className="bg-white border-b border-slate-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
+                Leave Management System
+              </h1>
+            </div>
+          </div>
         </div>
 
         {/* Cards Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-8">
           {/* New Leave Request Card */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 h-[380px] flex flex-col">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
-              <h2 className="text-xl font-bold text-white mb-2 font-sans">
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:border-sky-400 group h-[450px] flex flex-col">
+            <div className="bg-gradient-to-r from-sky-500 to-sky-600 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+              <h2 className="text-xl font-bold text-white mb-2 font-sans relative z-10">
                 New Leave Request
               </h2>
+              <div className="flex items-center gap-2 text-sky-100 text-sm relative z-10">
+                <div className="w-2 h-2 bg-sky-200 rounded-full"></div>
+                <span>Submit Application</span>
+              </div>
             </div>
             
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div className="space-y-4 flex-1">
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-500" />
-                  <span className="text-sm">Apply for medical, personal, or academic leave</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faCalendarAlt} className="text-sky-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Apply for Leave</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Medical, personal, or academic leave</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faFileAlt} className="text-blue-500" />
-                  <span className="text-sm">Quick and easy application process</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faFileAlt} className="text-sky-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Quick Process</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Streamlined application workflow</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faClock} className="text-blue-500" />
-                  <span className="text-sm">Track your request status in real-time</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faClock} className="text-sky-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Real-time Tracking</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Monitor request status instantly</p>
+                  </div>
                 </div>
               </div>
               
               <button
                 onClick={() => navigate('/leave-request/new')}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg h-12"
+                className="w-full bg-gradient-to-r from-sky-500 to-sky-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-sky-600 hover:to-sky-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 h-12 group-hover:scale-[1.02]"
               >
                 <FontAwesomeIcon icon={faPlus} />
                 Create New Request
@@ -120,32 +144,52 @@ function LeaveRequest() {
           </div>
 
           {/* My Leave History Card */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 h-[380px] flex flex-col">
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6">
-              <h2 className="text-xl font-bold text-white mb-2 font-sans">
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:border-emerald-500 group h-[450px] flex flex-col">
+            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+              <h2 className="text-xl font-bold text-white mb-2 font-sans relative z-10">
                 My Leave History
               </h2>
+              <div className="flex items-center gap-2 text-emerald-100 text-sm relative z-10">
+                <div className="w-2 h-2 bg-emerald-200 rounded-full"></div>
+                <span>View Records</span>
+              </div>
             </div>
             
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div className="space-y-4 flex-1">
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faFileAlt} className="text-purple-500" />
-                  <span className="text-sm">View all your previous leave requests</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faFileAlt} className="text-emerald-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Previous Requests</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Access all leave applications</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="text-purple-500" />
-                  <span className="text-sm">Check status of pending applications</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faCalendarAlt} className="text-emerald-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Status Tracking</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Check pending applications</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FontAwesomeIcon icon={faClock} className="text-purple-500" />
-                  <span className="text-sm">Download request receipts</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FontAwesomeIcon icon={faClock} className="text-emerald-600 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Download Receipts</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Export request documentation</p>
+                  </div>
                 </div>
               </div>
               
               <button
                 onClick={() => navigate('/leave-request/history')}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg h-12"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 h-12 group-hover:scale-[1.02]"
               >
                 <FontAwesomeIcon icon={faCalendarAlt} />
                 View Leave History
@@ -154,41 +198,61 @@ function LeaveRequest() {
           </div>
 
           {/* Leave Summary Card */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-gray-100 h-[380px] flex flex-col">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
-              <h2 className="text-xl font-bold text-white mb-2 font-sans">
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:border-violet-500 group h-[450px] flex flex-col">
+            <div className="bg-gradient-to-r from-violet-500 to-violet-600 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-400 rounded-full -mr-16 -mt-16 opacity-20"></div>
+              <h2 className="text-xl font-bold text-white mb-2 font-sans relative z-10">
                 Leave Summary
               </h2>
+              <div className="flex items-center gap-2 text-violet-100 text-sm relative z-10">
+                <div className="w-2 h-2 bg-violet-200 rounded-full"></div>
+                <span>Analytics Dashboard</span>
+              </div>
             </div>
             
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div className="space-y-4 flex-1">
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-green-600">📍</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-4 h-4 bg-violet-600 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
                   </div>
-                  <span className="text-sm">Track all your leave requests in one place</span>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Centralized Tracking</span>
+                    <p className="text-xs text-slate-500 mt-0.5">All requests in one place</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-green-600">📊</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-4 h-4 bg-violet-600 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
                   </div>
-                  <span className="text-sm">View comprehensive statistics and analytics</span>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Statistics</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Comprehensive analytics</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-green-600">📈</span>
+                <div className="flex items-start gap-3 text-slate-600">
+                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-4 h-4 bg-violet-600 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
                   </div>
-                  <span className="text-sm">Monitor leave history and approval status</span>
+                  <div>
+                    <span className="text-sm font-medium text-slate-800">Monitoring</span>
+                    <p className="text-xs text-slate-500 mt-0.5">History & approval status</p>
+                  </div>
                 </div>
               </div>
               
               <button
                 onClick={() => navigate('/leave-request/summary')}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition duration-200 flex items-center justify-center gap-2 shadow-lg h-12"
+                className="w-full bg-gradient-to-r from-violet-500 to-violet-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-violet-600 hover:to-violet-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 h-12 group-hover:scale-[1.02]"
               >
                 <FontAwesomeIcon icon={faEye} />
-                View
+                View Summary
               </button>
             </div>
           </div>

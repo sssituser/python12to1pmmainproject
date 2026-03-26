@@ -37,7 +37,60 @@ function LeaveSummary() {
 
   // Load leave requests on component mount and add comprehensive refresh mechanism
   useEffect(() => {
+    // Initialize with cached data immediately for instant display
+    const cachedData = localStorage.getItem('leaveRequestsCache');
+    const backupData = localStorage.getItem('leaveRequestsBackup');
+    const sessionData = sessionStorage.getItem('leaveRequestsSession');
+    
+    let dataLoaded = false;
+    
+    // Try primary cache first
+    if (cachedData) {
+      try {
+        const parsedCache = JSON.parse(cachedData);
+        console.log("Initializing with cached data:", parsedCache.length, "leave requests");
+        setLeaveRequests(parsedCache);
+        dataLoaded = true;
+      } catch (cacheError) {
+        console.log("Failed to parse cache on init:", cacheError);
+      }
+    }
+    
+    // Try backup data if primary failed
+    if (backupData && !dataLoaded) {
+      try {
+        const parsedBackup = JSON.parse(backupData);
+        console.log("Loading from backup data on init:", parsedBackup.length, "leave requests");
+        setLeaveRequests(parsedBackup);
+        dataLoaded = true;
+      } catch (backupError) {
+        console.log("Failed to parse backup on init:", backupError);
+      }
+    }
+    
+    // Try session storage if others failed
+    if (sessionData && !dataLoaded) {
+      try {
+        const parsedSession = JSON.parse(sessionData);
+        console.log("Loading from session data on init:", parsedSession.length, "leave requests");
+        setLeaveRequests(parsedSession);
+        dataLoaded = true;
+      } catch (sessionError) {
+        console.log("Failed to parse session on init:", sessionError);
+      }
+    }
+    
+    if (!dataLoaded) {
+      console.log("No cached data found on initialization, will load from API");
+    }
+    
+    // Initial load
     loadLeaveRequests();
+    
+    // Check for any recent storage changes immediately
+    setTimeout(() => {
+      checkStorageChanges();
+    }, 1000);
     
     // Multiple refresh mechanisms for universal updates
     
@@ -63,11 +116,13 @@ function LeaveSummary() {
       }, 1000);
     };
     
-    // 4. Auto-refresh every 10 seconds (reduced for real-time updates)
+    // 4. Auto-refresh every 30 seconds (reduced to prevent blinking)
     const interval = setInterval(() => {
       console.log("Auto-refresh triggered - refreshing data");
       loadLeaveRequests();
-    }, 10000);
+      // Also check for storage changes
+      checkStorageChanges();
+    }, 30000);
     
     // 5. Refresh when user interacts with page
     const handleClick = () => {
@@ -82,7 +137,7 @@ function LeaveSummary() {
       mouseTimer = setTimeout(() => {
         console.log("User activity detected - refreshing data");
         loadLeaveRequests();
-      }, 5000); // 5 seconds after last mouse movement
+      }, 10000); // 10 seconds after last mouse movement
     };
     
     // 7. Refresh on keyboard activity
@@ -97,6 +152,43 @@ function LeaveSummary() {
       loadLeaveRequests();
     };
     
+    // 9. Refresh when storage changes (another tab updates data)
+    const handleStorageChange = (e) => {
+      console.log("Storage event detected:", e.key, e.newValue, e.oldValue);
+      if (e.key && (e.key.includes('leave') || e.key.includes('Leave'))) {
+        console.log("Leave-related storage changed - refreshing data");
+        loadLeaveRequests();
+      }
+    };
+    
+    // Also check for storage changes periodically
+    const checkStorageChanges = () => {
+      const lastUpdate = localStorage.getItem('leaveRequestUpdated');
+      const lastAction = localStorage.getItem('leaveRequestAction');
+      if (lastUpdate && lastAction) {
+        console.log("Storage check - found updates:", { lastUpdate, lastAction });
+        loadLeaveRequests();
+        // Clear after processing
+        localStorage.removeItem('leaveRequestUpdated');
+        localStorage.removeItem('leaveRequestAction');
+      }
+    };
+    
+    // 10. Refresh on page scroll (user actively viewing)
+    let scrollTimer;
+    const handleScroll = () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        console.log("Page scrolled - refreshing data");
+        loadLeaveRequests();
+      }, 15000); // 15 seconds after scroll
+    };
+    
+    // 11. More frequent storage check for leave changes
+    const storageCheckInterval = setInterval(() => {
+      checkStorageChanges();
+    }, 5000); // Every 5 seconds
+    
     // Add all event listeners for comprehensive coverage
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -105,6 +197,8 @@ function LeaveSummary() {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('keydown', handleKeyPress);
     window.addEventListener('online', handleOnline);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('scroll', handleScroll);
     
     // Cleanup function
     return () => {
@@ -115,19 +209,27 @@ function LeaveSummary() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('keydown', handleKeyPress);
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('scroll', handleScroll);
       clearTimeout(mouseTimer);
+      clearTimeout(scrollTimer);
       clearInterval(interval);
+      clearInterval(storageCheckInterval);
     };
   }, []);
 
   const loadLeaveRequests = async () => {
-    // Don't show loading state for manual refresh
-    // setLoading(true);
+    // Don't show loading state if we already have data (for quick refreshes)
+    const hasExistingData = leaveRequests.length > 0;
+    if (!hasExistingData) {
+      setLoading(true);
+    }
+    
     try {
       const token = localStorage.getItem('access');
       if (!token) {
         console.log("No token found - user not logged in");
-        setLeaveRequests([]);
+        // Don't clear existing data, just keep what we have
         setLoading(false);
         return;
       }
@@ -138,10 +240,61 @@ function LeaveSummary() {
       const userPhone = localStorage.getItem('permanentPhone');
       
       if (!userName || !userStudentId || !userPhone) {
-        console.log("User credentials not found - showing empty summary");
-        setLeaveRequests([]);
-        setLoading(false);
+        console.log("User credentials not found - keeping existing data");
+        // Don't clear existing data, just keep what we have
+        if (!hasExistingData) {
+          setLoading(false);
+        }
         return;
+      }
+      
+      // Try to load cached data first for immediate display
+      const cachedData = localStorage.getItem('leaveRequestsCache');
+      const backupData = localStorage.getItem('leaveRequestsBackup');
+      const sessionData = sessionStorage.getItem('leaveRequestsSession');
+      
+      // Always try to load from any available storage
+      let dataLoaded = false;
+      
+      // Try primary cache first
+      if (cachedData) {
+        try {
+          const parsedCache = JSON.parse(cachedData);
+          console.log("Using cached data for immediate display:", parsedCache.length, "requests");
+          setLeaveRequests(parsedCache);
+          dataLoaded = true;
+        } catch (cacheError) {
+          console.log("Cache parsing error, trying backup");
+        }
+      }
+      
+      // Try backup cache if primary failed
+      if (backupData && !dataLoaded) {
+        try {
+          const parsedBackup = JSON.parse(backupData);
+          console.log("Using backup data for immediate display:", parsedBackup.length, "requests");
+          setLeaveRequests(parsedBackup);
+          dataLoaded = true;
+        } catch (backupError) {
+          console.log("Backup parsing error, trying session");
+        }
+      }
+      
+      // Try session storage if others failed
+      if (sessionData && !dataLoaded) {
+        try {
+          const parsedSession = JSON.parse(sessionData);
+          console.log("Using session data for immediate display:", parsedSession.length, "requests");
+          setLeaveRequests(parsedSession);
+          dataLoaded = true;
+        } catch (sessionError) {
+          console.log("Session parsing error, proceeding with API call");
+        }
+      }
+      
+      // If no cached data found, still proceed with API call
+      if (!dataLoaded) {
+        console.log("No cached data found, loading from API");
       }
       
       // Try different endpoints to find the leave requests data
@@ -194,8 +347,8 @@ function LeaveSummary() {
         // Filter requests for current user only - SECURITY: Ensures students see only their own data
         const userRequests = data.filter(request => {
           const nameMatch = request.name === userName;
-          const idMatch = request.student_id.toString() === userStudentId.toString();
-          const phoneMatch = request.phone.toString() === userPhone.toString();
+          const idMatch = request.student_id && request.student_id.toString() === userStudentId.toString();
+          const phoneMatch = request.phone && request.phone.toString() === userPhone.toString();
           
           // Security logging
           if (!nameMatch || !idMatch || !phoneMatch) {
@@ -218,6 +371,24 @@ function LeaveSummary() {
         console.log(`Found ${userRequests.length} requests for user: ${userName}`);
         setLeaveRequests(userRequests);
         
+        // Cache the filtered data for persistence
+        try {
+          // Primary cache
+          localStorage.setItem('leaveRequestsCache', JSON.stringify(userRequests));
+          localStorage.setItem('leaveRequestsCacheTime', Date.now().toString());
+          
+          // Backup cache (permanent storage)
+          localStorage.setItem('leaveRequestsBackup', JSON.stringify(userRequests));
+          localStorage.setItem('leaveRequestsBackupTime', Date.now().toString());
+          
+          // Session storage backup (survives page refresh)
+          sessionStorage.setItem('leaveRequestsSession', JSON.stringify(userRequests));
+          
+          console.log("Data cached permanently with multiple backups");
+        } catch (cacheError) {
+          console.log("Failed to cache data:", cacheError);
+        }
+        
         // Update last update timestamp
         const now = new Date();
         setLastUpdate(now);
@@ -232,16 +403,23 @@ function LeaveSummary() {
           });
         }
       } else {
-        // Start with empty array instead of sample data
-        setLeaveRequests([]);
-        console.log('No data found, starting with empty array');
+        // Don't clear existing data if API returns no data
+        console.log('No new data found from API, keeping existing data');
+        // Only set empty if we have no existing data
+        if (leaveRequests.length === 0) {
+          console.log('No existing data, setting empty array');
+          setLeaveRequests([]);
+        }
       }
     } catch (error) {
       console.error('Error loading leave requests:', error);
-      // Start with empty array on error as well
-      setLeaveRequests([]);
+      // Don't clear existing data on error, keep what we have
+      console.log('Error occurred, keeping existing data');
     } finally {
-      setLoading(false);
+      // Only set loading false if we set it to true initially
+      if (!hasExistingData) {
+        setLoading(false);
+      }
     }
   };
 
@@ -339,7 +517,7 @@ function LeaveSummary() {
       
       // Add generation date
       doc.setFontSize(12);
-      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+      // doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
       
       // Add summary section
       doc.setFontSize(14);
@@ -412,203 +590,228 @@ function LeaveSummary() {
   };
 
   return (
-    <div id="pdf-container" className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      <div className="w-full px-0 py-0">
-        {/* Top Actions */}
-        <div data-html2canvas-ignore="true" className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center print:hidden">
-          <button
-            onClick={() => navigate('/leave-request')}
-            className="flex items-center gap-2 text-green-600 hover:text-green-800 transition-colors duration-200 font-medium"
-          >
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Back
-          </button>
-          
-          <div className="flex gap-3 items-center">
-            <button
-              onClick={handleDownloadPdf}
-              disabled={isDownloading}
-              className={`flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-5 py-2 rounded-xl transition-all duration-300 shadow-md font-medium ${isDownloading ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-lg transform hover:-translate-y-0.5'}`}
-            >
-              <FontAwesomeIcon icon={isDownloading ? faSpinner : faDownload} className={isDownloading ? "animate-spin" : ""} />
-              {isDownloading ? "Generating PDF..." : "Download"}
-            </button>
-          </div>
-        </div>
-        
-        {/* Leave Summary Content */}
-        <div className="w-full max-w-7xl mx-auto px-6 pb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-            <div className="p-8">
-              {/* Header */}
-              <div className="mb-8 text-center">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">Leave Summary Report</h2>
-                <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
-              </div>
+    <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 font-sans overflow-hidden z-50" style={{ 
+      position: 'fixed', 
+      top: '0px', 
+      left: '0px', 
+      right: '0px', 
+      bottom: '0px', 
+      width: '100vw', 
+      height: '100vh',
+      margin: '0px',
+      padding: '0px',
+      boxSizing: 'border-box',
+      transform: 'translateZ(0)',
+      willChange: 'transform'
+    }}>
+      <div className="h-full w-full flex flex-col" style={{ 
+        width: '100%', 
+        height: '100%',
+        margin: '0px',
+        padding: '0px',
+        boxSizing: 'border-box',
+        transform: 'translateZ(0)',
+        willChange: 'transform'
+      }}>
+        {/* Main Content - Full height remaining */}
+        <div className="flex-1 overflow-y-auto" style={{ 
+          margin: '0px',
+          padding: '0px',
+          boxSizing: 'border-box',
+          transform: 'translateZ(0)',
+          willChange: 'transform'
+        }}>
+          <div className="w-full h-full" style={{ 
+            margin: '0px',
+            padding: '0px',
+            boxSizing: 'border-box',
+            transform: 'translateZ(0)',
+            willChange: 'transform'
+          }}>
+            
+            {/* Leave Summary Content - Full Width */}
+            <div className="w-full" style={{ 
+              margin: '0px',
+              padding: '0px',
+              boxSizing: 'border-box',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}>
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden" style={{ 
+                margin: '0px',
+                padding: '0px',
+                boxSizing: 'border-box',
+                transform: 'translateZ(0)',
+                willChange: 'transform'
+              }}>
+                <div className="p-8">
+                  
+                  {/* Header with Back Button and Download - Full Width */}
+                  <div className="flex justify-between items-center px-4 py-4 bg-white border-b border-gray-200">
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => navigate('/dashboard/leave-request')} 
+                        className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"
+                      >
+                        <FontAwesomeIcon icon={faArrowLeft} />
+                      </button>
+                      <h2 className="text-3xl font-bold text-gray-800">Leave Summary Report</h2>
+                    </div>
+                    <div className="flex items-center">
+                      <button
+                        onClick={handleDownloadPdf}
+                        disabled={isDownloading}
+                        className={`flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-5 py-2 rounded-xl transition-all duration-300 shadow-md font-medium ${isDownloading ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-lg transform hover:-translate-y-0.5'}`}
+                      >
+                        <FontAwesomeIcon icon={isDownloading ? faSpinner : faDownload} className={isDownloading ? "animate-spin" : ""} />
+                        {isDownloading ? "Generating PDF..." : "Download"}
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Loading State */}
-              {/* Only show loading on initial load, not on manual refresh */}
-              {loading && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 border-4 border-green-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading leave summary...</p>
-                </div>
-              )}
-
-              {/* Table Content */}
-              {!loading && (
-                <div>
-                  {leaveRequests.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="flex flex-col items-center">
-                        <FontAwesomeIcon icon={faCalendarAlt} className="text-4xl text-gray-300 mb-4" />
-                        <p className="text-lg font-medium text-gray-500">No data to display</p>
-                        <p className="text-sm mt-2 text-gray-400">No leave requests have been submitted yet.</p>
+                  {/* Summary Overview */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600 mb-1">{stats.totalRequests}</div>
+                        <div className="text-sm text-blue-700 font-medium">Total Requests</div>
                       </div>
                     </div>
-                  ) : (
-                    <div>
-                      {/* Overall Statistics */}
-                      <div className="mb-8">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Overall Statistics</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="bg-blue-50 rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-blue-600">{stats.totalRequests}</div>
-                            <div className="text-sm text-gray-600">Total Requests</div>
-                          </div>
-                          <div className="bg-green-50 rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-green-600">{stats.approvedRequests}</div>
-                            <div className="text-sm text-gray-600">Approved</div>
-                          </div>
-                          <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-yellow-600">{stats.pendingRequests}</div>
-                            <div className="text-sm text-gray-600">Pending</div>
-                          </div>
-                          <div className="bg-red-50 rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-red-600">{stats.rejectedRequests}</div>
-                            <div className="text-sm text-gray-600">Rejected</div>
-                          </div>
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600 mb-1">{stats.approvedRequests}</div>
+                        <div className="text-sm text-green-700 font-medium">Approved</div>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl border border-yellow-200">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pendingRequests}</div>
+                        <div className="text-sm text-yellow-700 font-medium">Pending</div>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl border border-red-200">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-red-600 mb-1">{stats.rejectedRequests}</div>
+                        <div className="text-sm text-red-700 font-medium">Rejected</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Loading State */}
+                  {loading && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 border-4 border-green-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Loading leave summary...</p>
+                    </div>
+                  )}
+
+                  {/* Beautiful Leave History Table */}
+                  {!loading && (
+                    <div className="mt-8">
+                      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                        <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-600" />
+                            Leave Request History
+                          </h3>
                         </div>
-                      </div>
-
-                      {/* Leave Type Statistics */}
-                      <div className="mb-8">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Leave Type Statistics</h3>
-                        {Object.keys(stats.leaveTypeStats).length === 0 ? (
-                          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                            <p className="text-gray-500">No leave type data available</p>
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                            <table className="w-full">
-                              <thead>
-                                <tr className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-                                  <th className="px-4 py-3 text-left font-semibold">Leave Type</th>
-                                  <th className="px-4 py-3 text-center font-semibold">Times Applied</th>
-                                  <th className="px-4 py-3 text-center font-semibold">Total Days</th>
-                                  <th className="px-4 py-3 text-center font-semibold">Average Days</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {Object.entries(stats.leaveTypeStats).map(([leaveType, count]) => (
-                                  <tr key={leaveType} className="border-b border-gray-100 hover:bg-gray-50">
-                                    <td className="px-4 py-3">
-                                      <span className="font-medium text-gray-900">{leaveType}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
-                                        {count}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="font-semibold text-gray-700">{stats.totalDays[leaveType]}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="text-gray-600">
-                                        {(stats.totalDays[leaveType] / count).toFixed(1)}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Detailed Leave History */}
-                      <div className="mb-4">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Leave History</h3>
-                        {leaveRequests.length === 0 ? (
-                          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                            <p className="text-gray-500">No leave requests found</p>
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-gray-100 text-gray-700">
-                                  <th className="px-4 py-3 text-left font-semibold">Name</th>
-                                  <th className="px-4 py-3 text-left font-semibold">ID</th>
-                                  <th className="px-4 py-3 text-left font-semibold">Date Range</th>
-                                  <th className="px-4 py-3 text-left font-semibold">Leave Type</th>
-                                  <th className="px-4 py-3 text-left font-semibold">Reason</th>
-                                  <th className="px-4 py-3 text-center font-semibold">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {leaveRequests.map((request, index) => {
+                        
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-gray-200">
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Period</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Type</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {leaveRequests.length > 0 ? (
+                                leaveRequests.map((request, index) => {
                                   const startDate = request.startDate || request.start_date || '';
                                   const endDate = request.endDate || request.end_date || '';
                                   const formattedStart = startDate ? new Date(startDate).toLocaleDateString() : 'N/A';
                                   const formattedEnd = endDate ? new Date(endDate).toLocaleDateString() : 'N/A';
                                   const dateRange = formattedStart === formattedEnd ? formattedStart : `${formattedStart} - ${formattedEnd}`;
-
+                                  
                                   return (
-                                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                      <td className="px-4 py-3 text-gray-700 font-medium">
-                                        {request.name || 'N/A'}
+                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-6 py-4">
+                                        <div className="flex items-center space-x-3">
+                                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                                            <FontAwesomeIcon icon={faUser} className="text-blue-600 text-sm" />
+                                          </div>
+                                          <div>
+                                            <div className="font-semibold text-gray-900">{request.name || 'N/A'}</div>
+                                            <div className="text-xs text-gray-400 mt-1">{request.student_id || request.studentId || 'N/A'}</div>
+                                          </div>
+                                        </div>
                                       </td>
-                                      <td className="px-4 py-3 text-gray-700">
-                                        {request.student_id || request.studentId || 'N/A'}
+                                      <td className="px-6 py-4">
+                                        <div className="font-mono text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded">{request.student_id || request.studentId || 'N/A'}</div>
                                       </td>
-                                      <td className="px-4 py-3 text-gray-700 font-medium">
-                                        {dateRange}
+                                      <td className="px-6 py-4">
+                                        <div className="flex items-center space-x-2">
+                                          <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-sm" />
+                                          <span className="text-sm text-gray-700">{dateRange}</span>
+                                        </div>
                                       </td>
-                                      <td className="px-4 py-3 text-gray-700">
-                                        {request.leaveType || request.leave_type || 'N/A'}
+                                      <td className="px-6 py-4">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800">
+                                          {request.leaveType || request.leave_type || 'N/A'}
+                                        </span>
                                       </td>
-                                      <td className="px-4 py-3 text-gray-600 truncate max-w-[200px]">
-                                        {request.reason || 'No reason provided'}
+                                      <td className="px-6 py-4">
+                                        <p className="text-sm text-gray-600 line-clamp-2 max-w-xs" title={request.reason || 'No reason provided'}>
+                                          {request.reason || 'No reason provided'}
+                                        </p>
                                       </td>
-                                      <td className="px-4 py-3 text-center">
-                                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                                          request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                          request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                          'bg-yellow-100 text-yellow-800'
+                                      <td className="px-6 py-4 text-center">
+                                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold ${
+                                          request.status === 'Approved' || request.status === 'approved' 
+                                            ? 'bg-green-100 text-green-800 border border-green-300' 
+                                            : request.status === 'Rejected' || request.status === 'rejected'
+                                            ? 'bg-red-100 text-red-800 border border-red-300'
+                                            : 'bg-yellow-100 text-yellow-800 border border-yellow-300'
                                         }`}>
-                                          {(request.status || 'pending').toUpperCase()}
+                                          {request.status === 'Approved' || request.status === 'approved' 
+                                            ? '✓ Approved' 
+                                            : request.status === 'Rejected' || request.status === 'rejected'
+                                            ? '✗ Rejected'
+                                            : '⏳ Pending'
+                                          }
                                         </span>
                                       </td>
                                     </tr>
                                   );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                                })
+                              ) : (
+                                <tr>
+                                  <td colSpan="6" className="px-6 py-12 text-center">
+                                    <div className="flex flex-col items-center">
+                                      <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-300 text-4xl mb-4" />
+                                      <p className="text-gray-500 text-lg font-medium">No leave requests found</p>
+                                      <p className="text-gray-400 text-sm mt-2">Your leave history will appear here once you submit requests</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-
                     </div>
                   )}
                 </div>
-              )}
-
               </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      </div>
   );
 }
 
