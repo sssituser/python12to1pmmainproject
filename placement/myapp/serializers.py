@@ -20,7 +20,11 @@ from .models import (
     CodingQuestion,
     TestCase,
     MCQAnswer,
-    CodeSubmission
+    CodeSubmission,
+    Course,
+    CourseTopic,
+    CourseEnrollment,
+    StudentTopicProgress,
 )
 
 
@@ -284,3 +288,51 @@ class PlaygroundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Playground
         fields = '__all__'
+
+
+# ===============================
+# COURSE SYSTEM
+# ===============================
+
+class CourseTopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseTopic
+        fields = ['id', 'topic_text', 'order']
+
+
+class StudentTopicProgressSerializer(serializers.ModelSerializer):
+    topic = CourseTopicSerializer(read_only=True)
+
+    class Meta:
+        model = StudentTopicProgress
+        fields = ['id', 'topic', 'is_completed', 'completed_at']
+
+
+class CourseStudentSerializer(serializers.ModelSerializer):
+    """Serializer for student view - includes progress and locked status"""
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics']
+
+
+class CourseFacultySerializer(serializers.ModelSerializer):
+    """Serializer for faculty view - without progress tracking"""
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'level', 'duration', 'topics']
+
+
+class CourseCreateUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for creating and updating courses"""
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'progress']
+
+    def validate_topics(self, value):
+        """Ensure topics is always a list"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Topics must be a list")
+        return value
