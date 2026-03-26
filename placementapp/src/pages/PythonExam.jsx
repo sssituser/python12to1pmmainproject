@@ -834,7 +834,7 @@ useEffect(() => {
               onClick={handleCloseWarningModal}
               className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-100 active:scale-95"
             >
-              I Understand & Resume
+              Resume
             </button>
           </div>
         </div>
