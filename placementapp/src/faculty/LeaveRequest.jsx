@@ -28,6 +28,7 @@ function Leaves() {
         return;
       }
 
+      // Fetch ALL leave requests (not just faculty's own)
       const res = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
         headers: { 
           "Authorization": `Bearer ${token}`,
@@ -42,21 +43,20 @@ function Leaves() {
           localStorage.removeItem("access");
           localStorage.removeItem("refresh");
           alert("Session expired. Please login again.");
-          // You might want to redirect to login page here
           return;
         }
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
 
       const data = await res.json();
-      console.log("Fetched leaves data:", data);
+      console.log("Fetched ALL leave requests data:", data);
       
       // Handle different data structures
-      const leavesData = data.data || data || [];
-      if (Array.isArray(leavesData)) {
-        setLeaves(leavesData);
+      const allLeaves = data.data || data || [];
+      if (Array.isArray(allLeaves)) {
+        setLeaves(allLeaves);
       } else {
-        console.error("Leaves data is not an array:", leavesData);
+        console.error("Leaves data is not an array:", allLeaves);
         setLeaves([]);
       }
     } catch (error) {
