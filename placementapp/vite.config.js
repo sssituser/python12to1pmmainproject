@@ -7,6 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
+      '/yt-search': {
+        target: 'https://www.youtube.com/results',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/yt-search/, '')
+      },
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
