@@ -715,7 +715,6 @@ def exam_settings_api(request):
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
 
-<<<<<<< HEAD
 from rest_framework.decorators import  permission_classes
 from rest_framework.permissions import IsAuthenticated
 
@@ -739,7 +738,6 @@ def dashboard_stats(request):
         "active_jobs": active_jobs,
         "pending_reviews": pending_reviews
     })
-=======
 # ---------------- DASHBOARD STATS (FACULTY) ----------------
 @api_view(['GET'])
 def dashboard_stats_api(request):
@@ -788,4 +786,3 @@ def student_stats_api(request):
         return Response(data)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
->>>>>>> 7adaa783bfb3bd2b680825fb18b98e355a909e6f

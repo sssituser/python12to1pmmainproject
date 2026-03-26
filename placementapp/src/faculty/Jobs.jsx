@@ -278,8 +278,8 @@ fetch(url, {
           <th>Experience</th>
           <th>Salary</th>
           <th>Location</th>
-          <th>Description</th>
-          <th>Responsibilities</th>
+          {/* <th>Description</th>
+          <th>Responsibilities</th> */}
           <th>Deadline</th>
           <th>Action</th>
         </tr>
@@ -300,7 +300,7 @@ fetch(url, {
                 {j.job_title}
               </td>
 
-              <td className="text-start" style={{ minWidth: "130px" }}>
+              <td className="text-center" style={{ minWidth: "130px" }}>
                 {j.company}
               </td>
 
@@ -316,11 +316,11 @@ fetch(url, {
                 {j.salary}
               </td>
 
-              <td className="text-start" style={{ minWidth: "180px" }}>
+              <td className="text-center" style={{ minWidth: "180px" }}>
                 {j.location}
               </td>
 
-              <td style={{
+              {/* <td style={{
                 maxWidth: "200px",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -336,7 +336,7 @@ fetch(url, {
                 textOverflow: "ellipsis"
               }}>
                 {j.responsibilities}
-              </td>
+              </td> */}
 
               <td>
                 {j.deadline
@@ -401,7 +401,7 @@ fetch(url, {
               <p><b>Description:</b> {selectedJob.description}</p>
               {/* <p><b>Responsibilities:</b> {selectedJob.responsibilities}</p> */}
               <p><b>Responsibilities:</b></p>
-                <ul>
+                <ul style={{ listStyleType: "disc", paddingLeft: "20px" }}>
                 {selectedJob.responsibilities &&
                     selectedJob.responsibilities
                     .split("-")
