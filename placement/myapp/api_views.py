@@ -818,6 +818,8 @@ def dashboard_stats(request):
         "pending_reviews": pending_reviews
     })
 
+
+
 # ---------------- DASHBOARD STATS (FACULTY) ----------------
 @api_view(['GET'])
 def dashboard_stats_api(request):
