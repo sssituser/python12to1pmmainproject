@@ -145,13 +145,7 @@ function DetailedResults() {
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
                 </p>
               </div> 
-              {/* <div className="space-y-1">
-                <p className="text-gray-400 text-sm font-medium">Report ID</p>
-                <p className="text-xl font-black text-gray-900 font-mono">
-                   #{result.user?.randomId || 'N/A'}
-                </p>
-              </div> */}
-                <div className="space-y-1">
+              <div className="space-y-1 text-right md:text-left">
                 <p className="text-gray-400 text-sm font-medium">Final Score</p>
                 <p className="text-xl font-black text-indigo-600">
                   {result.score || (result.correctAnswers || 0) * 2} <span className="text-gray-300 font-normal">/ {totalMarks}</span>
@@ -219,7 +213,59 @@ function DetailedResults() {
                 const userAnswerIndex = Array.isArray(result?.answers) ? result.answers[questionIndex] : null;
                 const isCorrect = userAnswerIndex === correctAnswerIndex;
                 const notAttempted = userAnswerIndex === null || userAnswerIndex === undefined;
-                
+                const isCoding = question?.type === 'coding' || !options || options.length === 0;
+
+                if (isCoding) {
+                  return (
+                    <div 
+                      key={questionIndex} 
+                      className={`bg-white rounded-[2rem] border-2 overflow-hidden shadow-sm transition-all duration-300 ${
+                        isCorrect ? 'border-green-100 shadow-green-50/50' : 'border-red-100 shadow-red-50/50'
+                      }`}
+                    >
+                      <div className="p-6 sm:p-8">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                          <div className="flex-1">
+                            <p className="text-xs font-black text-gray-400 tracking-widest uppercase mb-1">Question {questionIndex + 1} • CODING CHALLENGE</p>
+                            <h4 className="text-lg font-bold text-gray-900 leading-snug">
+                              {questionText}
+                            </h4>
+                          </div>
+                          <div className={`shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {isCorrect ? '● Correct Code' : '● Incorrect Code'}
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                           <div className="bg-gray-900 rounded-3xl p-5 relative group overflow-hidden border border-gray-800 shadow-2xl">
+                              <div className="flex justify-between items-center mb-3">
+                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Student Submission</span>
+                                <span className="text-[9px] font-mono text-gray-500">{question.language || 'python'}</span>
+                              </div>
+                              <pre className="text-green-400 font-mono text-sm leading-relaxed overflow-x-auto selection:bg-indigo-500/30">
+                                {userAnswerIndex || "# No code was submitted for this question"}
+                              </pre>
+                           </div>
+
+                           {question.testCases && question.testCases.length > 0 && (
+                             <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100/50">
+                                <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                  Automated Validation Result
+                                </p>
+                                <p className="text-xs text-blue-600 font-medium">
+                                   {isCorrect ? "Implementation successfully passed all functional requirements." : "Implementation did not meet all required criteria for this challenge."}
+                                </p>
+                             </div>
+                           )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div 
                     key={questionIndex} 
