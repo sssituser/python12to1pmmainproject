@@ -154,12 +154,10 @@ function ExamManager() {
 
     // reset form
     setForm({
-      type: form.type, // keep same type for convenience
+      type: "mcq",
       question: "",
       options: ["", "", "", ""],
       answer: "",
-      language: "python",
-      testCases: [{ input: "", output: "" }],
       marks: 2,
     });
   };
@@ -291,19 +289,8 @@ function ExamManager() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
              <FontAwesomeIcon icon={faPlus} className="text-green-500" />
-             Add Assessment Questions
+             Add MCQ Assessment Questions
           </h2>
-          
-          <div className="flex bg-gray-100 p-1 rounded-xl">
-            <button 
-              onClick={() => setForm({...form, type: 'mcq'})}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${form.type === 'mcq' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
-            >MCQ</button>
-            <button 
-              onClick={() => setForm({...form, type: 'coding'})}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${form.type === 'coding' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
-            >Coding</button>
-          </div>
         </div>
         
         <div className="flex gap-4 mb-4">
@@ -328,113 +315,44 @@ function ExamManager() {
           </div>
         </div>
 
-        {form.type === "mcq" ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-              {form.options.map((opt, i) => (
-                <div key={i}>
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {i + 1}</label>
-                  <input
-                    type="text"
-                    placeholder={`Option ${i + 1} content`}
-                    value={opt}
-                    onChange={(e) => handleOptionChange(i, e.target.value)}
-                    className="w-full p-2.5 border rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
-                  />
-                </div>
-              ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {form.options.map((opt, i) => (
+            <div key={i}>
+              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {i + 1}</label>
+              <input
+                type="text"
+                placeholder={`Choice ${i + 1}`}
+                value={opt}
+                onChange={(e) => handleOptionChange(i, e.target.value)}
+                className="w-full p-2.5 border border-gray-100 rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
+              />
             </div>
+          ))}
+        </div>
 
-            {/* Select Answer */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-              <p className="text-sm font-bold text-gray-600 mb-3">Identify Correct Answer Key:</p>
-              <div className="flex flex-wrap gap-2">
-                {form.options.map((opt, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleAnswer(opt)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
-                      form.answer === opt && opt !== ""
-                        ? "bg-green-600 text-white border-green-700 shadow-md ring-2 ring-green-200"
-                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100"
-                    }`}
-                  >
-                    {opt || `Option ${i + 1}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-4 mb-6">
-            <div>
-              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Target Language</label>
-              <select 
-                value={form.language}
-                onChange={(e) => setForm({...form, language: e.target.value})}
-                className="w-full p-3 border rounded-xl bg-gray-50/50 focus:border-blue-500 outline-none"
+        {/* Correct Answer Selection */}
+        <div className="mb-6 p-4 bg-blue-50/30 rounded-xl border border-dashed border-blue-200">
+          <p className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <FontAwesomeIcon icon={faCheckCircle} className="text-green-500" />
+            Correct Answer Key
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {form.options.map((opt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleAnswer(opt)}
+                className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${
+                  form.answer === opt && opt !== ""
+                    ? "bg-green-600 text-white border-green-700 shadow-lg ring-2 ring-green-100"
+                    : "bg-white text-gray-400 border-gray-100 hover:border-gray-300 shadow-sm"
+                }`}
               >
-                <option value="python">Python 3</option>
-                <option value="java">Java 11</option>
-                <option value="c">C (GCC)</option>
-              </select>
-            </div>
-
-            <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-black text-blue-800">Auto-Matching Rules (Validation)</p>
-                  <p className="text-[10px] text-blue-500 font-medium tracking-tight">The system will use these to grade the student automatically.</p>
-                </div>
-                <button 
-                  onClick={addTestCase}
-                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-blue-700 shadow-md transition-all active:scale-95"
-                >+ Add Rule</button>
-              </div>
-              
-              <div className="space-y-4">
-                {form.testCases.map((tc, idx) => (
-                  <div key={idx} className="flex gap-3 items-start bg-white p-3 rounded-xl border border-blue-50 shadow-sm">
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Input to Provide (Question data)</label>
-                      <input 
-                        placeholder="Ex: 5 10 (Values student's code will read)"
-                        value={tc.input}
-                        onChange={(e) => handleTestCaseChange(idx, 'input', e.target.value)}
-                        className="w-full p-2 text-xs border border-gray-100 rounded-lg bg-gray-50 focus:bg-white transition-colors font-mono"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Correct Answer (Expected result)</label>
-                      <input 
-                        placeholder="Ex: 15 (What the code MUST print)"
-                        value={tc.output}
-                        onChange={(e) => handleTestCaseChange(idx, 'output', e.target.value)}
-                        className="w-full p-2 text-xs border border-gray-100 rounded-lg bg-gray-50 focus:bg-white transition-colors font-mono"
-                      />
-                    </div>
-                    {form.testCases.length > 1 && (
-                      <button 
-                        onClick={() => removeTestCase(idx)}
-                        className="mt-5 p-2 text-red-300 hover:text-red-500 transition-colors"
-                      ><FontAwesomeIcon icon={faTrash} className="text-xs" /></button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 flex items-start gap-2 bg-white/60 p-3 rounded-xl border border-dashed border-blue-200">
-                <div className="bg-blue-100 text-blue-600 h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px]">
-                  <FontAwesomeIcon icon={faInfoCircle} />
-                </div>
-                <p className="text-[10px] text-blue-700/80 leading-relaxed italic">
-                  <strong>Faculty Tip:</strong> Think of "Input" as the data you give the student, and "Correct Answer" as the key you expect them to return. For multiple inputs, separate them with a space.
-                </p>
-              </div>
-            </div>
+                {opt || `Opt ${i + 1}`}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <button
           onClick={addQuestion}
@@ -442,7 +360,7 @@ function ExamManager() {
           className="bg-gray-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-lg flex items-center gap-2"
         >
           {isQuestionsSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPlus} />}
-          Add {form.type === 'mcq' ? 'Question' : 'Coding Challenge'} to Bank
+          Add Question to Bank
         </button>
       </div>
 

@@ -598,7 +598,6 @@ useEffect(() => {
 
   const startExam = async () => {
     // Reset all exam state for fresh start
-    const qLen = questions.length || 50;
     setAnswers(new Array(qLen).fill(null));
     setMarkedForReview(new Array(qLen).fill(false));
     setVisitedQuestions(new Array(qLen).fill(false));
@@ -606,8 +605,6 @@ useEffect(() => {
     setTimeLeft(examDuration * 60);
     setExamSubmitted(false);
     examSubmittedRef.current = false;
-    setOutput("");
-    setExecutionResult(null);
     
     // Clear any potential cached state
     try {
@@ -632,65 +629,6 @@ useEffect(() => {
     setAnswers(newAnswers);
   };
 
-  const handleCodeChange = (qIndex, code) => {
-    const newAnswers = [...answers];
-    newAnswers[qIndex] = code;
-    setAnswers(newAnswers);
-  };
-
-  const runCode = async () => {
-    const q = questions[currentQuestion];
-    const code = answers[currentQuestion] || "";
-    if (!code.trim()) return alert("Please write some code before running!");
-
-    setExecuting(true);
-    setOutput("Running code...");
-    try {
-       const res = await fetch("http://127.0.0.1:8000/api/execute-code-api/", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-            code: code,
-            language: q.language || 'python',
-            test_cases: q.testCases || []
-         })
-       });
-       const data = await res.json();
-       if (data.success) {
-          let out = data.data.output || data.data.error || "";
-          
-          if (data.data.test_results && data.data.test_results.length > 0) {
-             const passedCount = data.data.test_results.filter(r => r.passed).length;
-             const totalCount = data.data.test_results.length;
-             
-             let testDetails = `[Verification Summary: ${passedCount}/${totalCount} Passed]\n\n`;
-             
-             data.data.test_results.forEach((res, idx) => {
-                testDetails += `Case ${idx + 1}:\n`;
-                testDetails += `-> Provided Input  : ${res.input || '(None)'}\n`;
-                testDetails += `-> Expected Result : ${res.expected || '(None)'}\n`;
-                testDetails += `-> Actual Output   : ${res.actual || (res.error ? 'Error: ' + res.error : '(No Output)')}\n`;
-                testDetails += `-> Status          : ${res.passed ? '✅ SUCCESS' : '❌ FAILED'}\n`;
-                testDetails += `-------------------\n`;
-             });
-             
-             out = testDetails + (out.trim() ? "\nDefault Output:\n" + out : "");
-          } else if (!out) {
-             out = "Code executed successfully (no test cases defined).";
-          }
-          
-          setOutput(out);
-          setExecutionResult(data.data);
-       } else {
-          setOutput("Runtime Error: " + data.error);
-       }
-    } catch (err) {
-       setOutput("Error: Could not connect to execution server.");
-    } finally {
-       setExecuting(false);
-    }
-  };
-
   const toggleMarkForReview = (index) => {
     const updated = [...markedForReview];
     updated[index] = !updated[index];
@@ -702,9 +640,6 @@ useEffect(() => {
     visited[index] = true;
     setVisitedQuestions(visited);
     setCurrentQuestion(index);
-    // Reset output when switching questions
-    setOutput("");
-    setExecutionResult(null);
   };
 
   const nextQuestion = () => {
@@ -747,19 +682,9 @@ useEffect(() => {
       const qMarks = parseInt(q.marks) || 2;
       maxPossibleMarks += qMarks;
 
-      if (q.type === 'mcq') {
-        if (ans === q.correct) {
-          correctCount++;
-          earnedMarks += qMarks;
-        }
-      } else if (q.type === 'coding') {
-        // Simple heuristic for coding: if no runtime error and has answer, partial marks? 
-        // For now, let's assume they get marks if they submitted code. 
-        // Real auto-grading would compare output against test cases.
-        if (ans && ans.length > 20) {
-           correctCount++;
-           earnedMarks += qMarks;
-        }
+      if (ans === q.correct) {
+        correctCount++;
+        earnedMarks += qMarks;
       }
     });
 
@@ -924,7 +849,7 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[100vw] px-4 md:px-8">
         <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
           <div className="flex items-center gap-4">
              <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
@@ -934,79 +859,39 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-3 space-y-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden">
-               {/* Accent line */}
-               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-10"></div>
-               
-               <div className="flex items-center justify-between mb-8">
-                  <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${currentQ.type === 'coding' ? 'bg-purple-50 text-purple-500 border border-purple-100' : 'bg-blue-50 text-blue-500 border border-blue-100'}`}>
-                     {currentQ.type === 'coding' ? `Coding Assessment (${currentQ.language})` : 'Multiple Choice Question'}
-                  </span>
-                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                     Worth {currentQ.marks || 2} Marks
-                  </span>
-               </div>
+        <div className="max-w-3xl mx-auto">
+          <div className="space-y-6">
+            <div className="bg-white p-8 rounded-[1.5rem] shadow-md border border-gray-100 relative overflow-hidden flex flex-col min-h-[400px]">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-20"></div>
+              
+              <div className="flex items-center justify-between mb-8">
+                 <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-500 border border-blue-100">
+                    Question {currentQuestion + 1}
+                 </span>
+                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {currentQ.marks || 2} Points
+                 </span>
+              </div>
 
-              <h3 className="text-xl font-bold text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed">
-                {currentQ.question}
-              </h3>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed">
+                  {currentQ.question}
+                </h3>
 
-              {currentQ.type === 'coding' ? (
-                <div className="space-y-4">
-                   <div className="relative group">
-                      <div className="absolute top-4 right-4 z-10 opacity-30 group-hover:opacity-100 transition-opacity">
-                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white/10 px-2 py-1 rounded">{currentQ.language} Editor</span>
-                      </div>
-                      <textarea
-                        value={answers[currentQuestion] || ""}
-                        onChange={(e) => handleCodeChange(currentQuestion, e.target.value)}
-                        placeholder={`Write your ${currentQ.language} code here...`}
-                        className="w-full h-80 p-6 bg-[#1e1e1e] text-blue-100 font-mono text-sm rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner"
-                        spellCheck="false"
-                      />
-                   </div>
-
-                   <div className="flex items-center gap-4">
-                      <button
-                        onClick={runCode}
-                        disabled={executing}
-                        className="bg-gray-800 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all active:scale-95 disabled:opacity-50"
-                      >
-                         <FontAwesomeIcon icon={faArrowRight} spin={executing} />
-                         {executing ? 'Executing...' : 'Run & Test'}
-                      </button>
-                      <div className="flex-1 bg-gray-100 h-px"></div>
-                   </div>
-
-                   {output && (
-                     <div className="bg-gray-900 rounded-2xl p-6 overflow-hidden">
-                        <div className="flex items-center justify-between mb-4">
-                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Execution Output</span>
-                           <button onClick={() => setOutput("")} className="text-gray-500 hover:text-white text-xs">Clear</button>
-                        </div>
-                        <pre className="text-green-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap">
-                           {output}
-                        </pre>
-                     </div>
-                   )}
-                </div>
-              ) : (
-                <div className="grid gap-3">
+                <div className="grid gap-4">
                   {currentQ.options.map((option, index) => (
                     <label 
                       key={index} 
-                      className={`flex items-center p-3 rounded-xl border-2 transition-all cursor-pointer group ${
+                      className={`flex items-center p-5 rounded-2xl border-2 transition-all cursor-pointer group ${
                         answers[currentQuestion] === index 
                         ? 'bg-blue-50 border-blue-500 shadow-sm' 
-                        : 'bg-white border-gray-100 hover:border-gray-300'
+                        : 'bg-white border-gray-100 hover:border-gray-200'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center transition-all ${
-                         answers[currentQuestion] === index ? 'border-blue-500 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]' : 'border-gray-200'
+                      <div className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center transition-all ${
+                         answers[currentQuestion] === index ? 'border-blue-500 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-gray-300'
                       }`}>
-                         {answers[currentQuestion] === index && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                         {answers[currentQuestion] === index && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
                       </div>
                       <input
                         type="radio"
@@ -1015,106 +900,60 @@ useEffect(() => {
                         onChange={() => handleAnswerSelect(currentQuestion, index)}
                         className="hidden"
                       />
-                      <span className={`text-sm font-semibold tracking-tight ${answers[currentQuestion] === index ? 'text-blue-900' : 'text-gray-600'}`}>
+                      <span className={`text-base font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-blue-900' : 'text-gray-700'}`}>
                          {option}
                       </span>
                     </label>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <button
-                onClick={() => toggleMarkForReview(currentQuestion)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all ${
-                  markedForReview[currentQuestion] 
-                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <FontAwesomeIcon icon={faFlag} className={markedForReview[currentQuestion] ? 'text-amber-500' : 'text-gray-400'} />
-                {markedForReview[currentQuestion] ? 'Flagged for Review' : 'Mark for Review'}
-              </button>
-              
-              <div className="flex gap-3">
-                {currentQuestion > 0 && (
-                  <button
-                    onClick={previousQuestion}
-                    className="bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all"
-                  >
-                    Previous
-                  </button>
-                )}
-                {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95"
-                  >
-                    Submit Final Exam
-                  </button>
-                ) : (
-                  <button
-                    onClick={nextQuestion}
-                    className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 flex items-center gap-2"
-                  >
-                    Next Question
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                )}
+              {/* Navigation Footer */}
+              <div className="mt-12 pt-8 border-t border-gray-50 flex justify-between items-center">
+                <button
+                  onClick={() => toggleMarkForReview(currentQuestion)}
+                  className={`text-[11px] font-black uppercase tracking-widest flex items-center gap-2 ${markedForReview[currentQuestion] ? 'text-amber-600' : 'text-gray-400 hover:text-gray-600 transition-colors'}`}
+                >
+                  <FontAwesomeIcon icon={faFlag} />
+                  {markedForReview[currentQuestion] ? 'Flagged for Review' : 'Mark for Review'}
+                </button>
+                
+                <div className="flex gap-3">
+                   {currentQuestion > 0 && (
+                     <button onClick={previousQuestion} className="px-6 py-2.5 rounded-xl bg-gray-50 text-gray-600 font-bold hover:bg-gray-100 transition-all border border-gray-100">
+                       Previous
+                     </button>
+                   )}
+                   {currentQuestion < questions.length - 1 ? (
+                     <button onClick={nextQuestion} className="bg-indigo-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+                       Next Question
+                     </button>
+                   ) : (
+                     <button onClick={() => handleSubmitExam("Manual submission")} className="bg-green-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all active:scale-95">
+                       Finish Exam
+                     </button>
+                   )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100">
-              <h4 className="text-lg font-black text-gray-800 uppercase tracking-[0.1em] mb-8">
-                 Navigator
-              </h4>
-              <div className="grid grid-cols-4 gap-2.5">
-                {questions.map((_, index) => {
-                  let statusColor = "bg-gray-50 text-gray-300 border-gray-100";
-                  
-                  if (currentQuestion === index) {
-                    statusColor = "bg-white text-blue-600 border-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.2)]";
-                  } else if (markedForReview[index]) {
-                    statusColor = "bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-100";
-                  } else if (answers[index] !== null) {
-                    statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100";
-                  } else if (visitedQuestions[index]) {
-                    statusColor = "bg-red-50 text-red-400 border-red-100";
-                  }
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => goToQuestion(index)}
-                      className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
-                    >
-                      {index + 1}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-gray-100 grid grid-cols-2 gap-y-4 gap-x-2">
-                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Answered</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Flagged</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-100"></div>
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Skipped</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded border-2 border-blue-600 bg-white"></div>
-                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Current</span>
-                 </div>
-              </div>
+            {/* Simple Progress Bar or Indicator */}
+            <div className="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-100 flex flex-wrap justify-center gap-2">
+              {questions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToQuestion(index)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${
+                    currentQuestion === index 
+                    ? 'bg-indigo-600 text-white border-indigo-600' 
+                    : answers[index] !== null && answers[index] !== undefined
+                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                    : 'bg-white text-gray-400 border-gray-100 hover:border-gray-300'
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
             </div>
           </div>
         </div>
