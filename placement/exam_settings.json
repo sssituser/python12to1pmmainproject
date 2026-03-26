@@ -1,17 +1,17 @@
 {
     "Weekly": {
-        "maxQuestions": 2,
+        "maxQuestions": 1,
         "questions": [
             {
                 "type": "mcq",
-                "question": "gehgwrtg4t2ggwwfewfwe",
+                "question": "conda",
                 "options": [
-                    "hjhjsdh",
-                    "jhhjhjh",
-                    "ihk",
-                    "khghgk"
+                    "condaf",
+                    "condaf",
+                    "condadd",
+                    "conda"
                 ],
-                "answer": "hjhjsdh",
+                "answer": "conda",
                 "language": "python",
                 "testCases": [
                     {
@@ -20,27 +20,7 @@
                     }
                 ],
                 "marks": 2,
-                "id": 1774521593385
-            },
-            {
-                "type": "coding",
-                "question": "a = int(input())\nb = int(input())\nprint(a + b)",
-                "options": [
-                    "",
-                    "",
-                    "",
-                    ""
-                ],
-                "answer": "",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
-                "marks": 2,
-                "id": 1774523579829
+                "id": 1774548809038
             }
         ],
         "passingRule": "percentage",
@@ -48,10 +28,35 @@
         "duration": 1
     },
     "Monthly": {
-        "maxQuestions": 50,
-        "questions": [],
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "id": 1001,
+                "question": "Which of the following is used to manage virtual environments in Python?",
+                "options": [
+                    "venv",
+                    "pip",
+                    "conda",
+                    "All of above"
+                ],
+                "answer": "All of above",
+                "marks": 2
+            },
+            {
+                "id": 1002,
+                "question": "What is the purpose of the 'with' statement in Python?",
+                "options": [
+                    "Exception handling",
+                    "Resource management",
+                    "Looping",
+                    "Function definition"
+                ],
+                "answer": "Resource management",
+                "marks": 2
+            }
+        ],
         "passingRule": "percentage",
-        "passingValue": 50,
-        "duration": 45
+        "passingValue": 1,
+        "duration": 1
     }
 }

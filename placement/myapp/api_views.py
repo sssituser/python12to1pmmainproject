@@ -345,6 +345,7 @@ def exam_report_detail_api(request, pk):
     })
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def save_exam_report_api(request):
     """
     POST: Save new exam report.
@@ -482,6 +483,7 @@ def login_api(request):
 # ==================== LEADERBOARD API ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def leaderboard_api(request):
     """
     GET: Get leaderboard - ranked by score (highest first), then by time_taken (fastest first)
