@@ -1,102 +1,161 @@
-import React, { useState } from "react";
-import { Menu, Bell, UserCircle, ChevronDown, LogOut } from "lucide-react";
+import { Bell, ChevronDown, Key, LogOut, Menu, Settings, UserCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Navbar({ toggleSidebar }) {
-const [openProfile, setOpenProfile] = useState(false);
-const navigate = useNavigate();
+function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
+  const [openProfile, setOpenProfile] = useState(false);
+  const [user, setUser] = useState({
+    name: "Student",
+    username: "student",
+    role: "student",
+    logoUrl: logoUrl
+  });
+  const navigate = useNavigate();
 
-const logout = () => {
-    localStorage.clear();
+  // Fetch user data on mount and listen for storage changes
+  useEffect(() => {
+    const updateUserFromStorage = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser({
+            name: userData.name || userData.username || "Student",
+            username: userData.username || "student",
+            role: userData.role || "student",
+            logoUrl: userData.logoUrl || logoUrl
+          });
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+          setUser({
+            name: "Student",
+            username: "student",
+            role: "student",
+            logoUrl: logoUrl
+          });
+        }
+      }
+    };
+
+    // Initial load
+    updateUserFromStorage();
+
+    // Listen for storage changes (cross-tab updates)
+    const handleStorageChange = (e) => {
+      if (e.key === "user") {
+        updateUserFromStorage();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [logoUrl]);
+
+  const logout = () => {
+    // Clear only auth-related items, not all localStorage
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("user");
     navigate("/");
-};
+  };
 
-return (
+  return (
     <div className="h-16 backdrop-blur-md bg-white/70 border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-50">
-
       {/* LEFT */}
-    <div className="flex items-center gap-4">
-
+      <div className="flex items-center gap-4">
         {/* MENU */}
         <button
-        onClick={toggleSidebar}
-        className="p-2 rounded-xl hover:bg-gray-200 transition"
+          onClick={toggleSidebar}
+          className="p-2 rounded-xl hover:bg-gray-200 transition"
         >
-        <Menu size={20} />
+          <Menu size={20} />
         </button>
 
         {/* LOGO */}
         <div className="flex items-center gap-3 cursor-pointer">
-            <img
-            src="/sssit-logo.png"
-            alt="SSSIT"
+          <img
+            src={user.logoUrl}
+            alt="Logo"
             className="h-9 object-contain"
-            />
-
-            <div className="hidden md:flex flex-col leading-tight">
+          />
+          <div className="hidden md:flex flex-col leading-tight">
             <span className="text-sm font-semibold text-gray-800">
-            SSSIT
+              SSSIT
             </span>
             <span className="text-xs text-gray-500">
-            Computer Education
+              Computer Education
             </span>
-            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
       {/* RIGHT */}
-        <div className="flex items-center gap-4">
-
+      <div className="flex items-center gap-4">
         {/* NOTIFICATIONS */}
         <div className="relative">
-        <button className="p-2 rounded-xl hover:bg-gray-200 transition relative">
+          <button className="p-2 rounded-xl hover:bg-gray-200 transition relative">
             <Bell size={20} />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-            3
+              3
             </span>
-        </button>
+          </button>
         </div>
 
         {/* PROFILE */}
         <div className="relative">
-
-            <button
+          <button
             onClick={() => setOpenProfile(!openProfile)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-200 transition"
-            >
+          >
             <UserCircle size={22} />
             <span className="text-sm font-medium text-gray-700 hidden md:block">
-            Student
+              {user.name}
             </span>
             <ChevronDown size={16} />
-            </button>
+          </button>
 
           {/* DROPDOWN */}
-            {openProfile && (
+          {openProfile && (
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fadeIn">
-
-                <button
+              <button
                 onClick={() => navigate("/dashboard/profile")}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
-                >
+              >
                 Profile
-                </button>
+              </button>
 
-                <button
+              <button
+                onClick={() => navigate("/dashboard/settings")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+              >
+                <Settings size={14} />
+                Settings
+              </button>
+
+              <button
+                onClick={() => navigate("/dashboard/change-password")}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+              >
+                <Key size={14} />
+                Change Password
+              </button>
+
+              <button
                 onClick={logout}
                 className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2"
-                >
+              >
                 <LogOut size={14} />
                 Logout
-                </button>
-
+              </button>
             </div>
-        )}
-
+          )}
         </div>
+      </div>
     </div>
-    </div>
-);
+  );
 }
 
 export default Navbar;

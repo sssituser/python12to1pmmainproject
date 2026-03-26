@@ -1,14 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClock,
-  faUser,
-  faCircle,
-  faFlag,
-  faArrowRight,
-  faCamera,
+    faCamera,
+    faClock
 } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -388,6 +384,12 @@ const WeeklyExam = () => {
           }
         }
       };
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // Face Detection using native Shape Detection API if available
       if (window.FaceDetector) {

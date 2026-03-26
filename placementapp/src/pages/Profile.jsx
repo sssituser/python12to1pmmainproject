@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-export default function ProfileCard() {
+export default function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [ats, setAts] = useState(null);
   const [jobDesc, setJobDesc] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,13 +29,30 @@ export default function ProfileCard() {
 
   // 🔄 Fetch
   useEffect(() => {
-    axios.get("http://localhost:8000/api/profile/")
+    const token = localStorage.getItem("access");
+    axios.get("http://127.0.0.1:8000/api/profile/", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => {
         setFormData({
-          ...res.data,
+          name: res.data.name || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+          state: res.data.state || "",
+          cgpa: res.data.cgpa || "",
+          github: res.data.github || "",
+          linkedin: res.data.linkedin || "",
           resume: null,
-          resumeUrl: res.data.resume
+          resumeUrl: res.data.resume || "",
+          skills: Array.isArray(res.data.skills) ? res.data.skills : [],
+          projects: Array.isArray(res.data.projects) ? res.data.projects : [],
+          education: Array.isArray(res.data.education) ? res.data.education : []
         });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching profile:", err);
+        setLoading(false);
       });
   }, []);
 
@@ -46,27 +65,31 @@ export default function ProfileCard() {
 
   // ➕ Add
   const addSkill = () => {
-    if (!skill) return;
-    setFormData({ ...formData, skills: [...formData.skills, skill] });
+    if (!skill.trim()) return;
+    const currentSkills = Array.isArray(formData.skills) ? formData.skills : [];
+    setFormData({ ...formData, skills: [...currentSkills, skill] });
     setSkill("");
   };
 
   const addProject = () => {
-    if (!project.title) return;
-    setFormData({ ...formData, projects: [...formData.projects, project] });
+    if (!project.title.trim()) return;
+    const currentProjects = Array.isArray(formData.projects) ? formData.projects : [];
+    setFormData({ ...formData, projects: [...currentProjects, project] });
     setProject({ title: "", desc: "", link: "" });
   };
 
   const addEdu = () => {
-    if (!edu.college) return;
-    setFormData({ ...formData, education: [...formData.education, edu] });
+    if (!edu.college.trim()) return;
+    const currentEducation = Array.isArray(formData.education) ? formData.education : [];
+    setFormData({ ...formData, education: [...currentEducation, edu] });
     setEdu({ college: "", degree: "", year: "" });
   };
 
   const removeItem = (type, i) => {
+    const currentArray = Array.isArray(formData[type]) ? formData[type] : [];
     setFormData({
       ...formData,
-      [type]: formData[type].filter((_, idx) => idx !== i)
+      [type]: currentArray.filter((_, idx) => idx !== i)
     });
   };
 
@@ -75,11 +98,14 @@ export default function ProfileCard() {
     const jd = jobDesc.toLowerCase();
     let score = 50;
 
-    formData.skills.forEach(s => {
+    const skills = Array.isArray(formData.skills) ? formData.skills : [];
+    const projects = Array.isArray(formData.projects) ? formData.projects : [];
+
+    skills.forEach(s => {
       if (jd.includes(s.toLowerCase())) score += 5;
     });
 
-    if (formData.projects.length) score += 10;
+    if (projects.length) score += 10;
     if (formData.github) score += 10;
     if (formData.linkedin) score += 5;
 
@@ -88,190 +114,312 @@ export default function ProfileCard() {
 
   // ✅ Submit
   const handleSubmit = async () => {
+    const token = localStorage.getItem("access");
     const data = new FormData();
 
     Object.keys(formData).forEach(key => {
       if (key === "resume" && formData.resume) {
         data.append("resume", formData.resume);
-      } else {
+      } else if (key !== "resumeUrl") {
         data.append(key, JSON.stringify(formData[key]));
       }
     });
 
-    await axios.put("http://localhost:8000/api/profile/update/", data);
-    alert("Profile Saved ✅");
-    setEditMode(false);
+    try {
+      await axios.put("http://127.0.0.1:8000/api/profile/update/", data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Profile Saved ✅");
+      setEditMode(false);
+    } catch (err) {
+      toast.error("Failed to save profile");
+      console.error(err);
+    }
   };
 
+  if (loading) return <div className="p-8 text-center">Loading profile...</div>;
+
   return (
-    <div className="min-h-screen bg-light d-flex justify-content-center p-4">
+    <div className="min-h-screen bg-white">
 
-      <div className="card shadow-lg w-100" style={{ maxWidth: "1000px", borderRadius: "20px" }}>
-        <div className="card-body p-4">
+      {/* PROFILE CARD */}
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
 
-          {/* HEADER */}
-          <div className="d-flex justify-content-between align-items-center mb-4">
+        {/* HEADER */}
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
             <div>
-              <h3 className="fw-bold">{formData.name || "Your Name"}</h3>
-              <p className="text-muted mb-0">{formData.email}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{formData.name || "Your Name"}</h2>
+              <p className="text-gray-600 text-sm mt-1">{formData.email}</p>
             </div>
 
             <button
-              className="btn btn-primary"
               onClick={() => setEditMode(!editMode)}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
             >
-              {editMode ? "View" : "Edit"}
+              {editMode ? "Cancel" : "Edit"}
             </button>
           </div>
+        </div>
 
-          {/* BASIC */}
-          <div className="row g-3 mb-4">
-            {["name", "email", "phone", "state", "cgpa"].map(field => (
-              <div className="col-md-4" key={field}>
+        {/* CONTENT */}
+        <div className="p-6 space-y-6">
+
+          {/* BASIC INFO */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {["name", "email", "phone", "state"].map(field => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                    {field}
+                  </label>
+                  {editMode ? (
+                    <input
+                      name={field}
+                      value={formData[field]}
+                      onChange={handleChange}
+                      placeholder={field}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-gray-700">{formData[field] || "-"}</p>
+                  )}
+                </div>
+              ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CGPA</label>
                 {editMode ? (
                   <input
-                    name={field}
-                    value={formData[field]}
+                    name="cgpa"
+                    value={formData.cgpa}
                     onChange={handleChange}
-                    placeholder={field}
-                    className="form-control"
+                    placeholder="CGPA"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 ) : (
-                  <div><strong>{field}:</strong> {formData[field]}</div>
+                  <p className="text-gray-700">{formData.cgpa || "-"}</p>
                 )}
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* SOCIAL */}
-          <div className="mb-4">
-            <h5>Social Links</h5>
-            {editMode ? (
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <input name="github" value={formData.github} onChange={handleChange} className="form-control" placeholder="GitHub" />
-                </div>
-                <div className="col-md-6">
-                  <input name="linkedin" value={formData.linkedin} onChange={handleChange} className="form-control" placeholder="LinkedIn" />
-                </div>
+          {/* SOCIAL LINKS */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub</label>
+                {editMode ? (
+                  <input
+                    name="github"
+                    value={formData.github}
+                    onChange={handleChange}
+                    placeholder="GitHub Profile URL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <a href={formData.github} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                    {formData.github || "-"}
+                  </a>
+                )}
               </div>
-            ) : (
-              <>
-                <p>{formData.github}</p>
-                <p>{formData.linkedin}</p>
-              </>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                {editMode ? (
+                  <input
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleChange}
+                    placeholder="LinkedIn Profile URL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <a href={formData.linkedin} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                    {formData.linkedin || "-"}
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* SKILLS */}
-          <div className="mb-4">
-            <h5>Skills</h5>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills</h3>
 
             {editMode && (
-              <div className="d-flex gap-2 mb-2">
-                <input value={skill} onChange={(e) => setSkill(e.target.value)} className="form-control" />
-                <button onClick={addSkill} className="btn btn-primary">Add</button>
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  placeholder="Add a skill"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <button
+                  onClick={addSkill}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                >
+                  Add
+                </button>
               </div>
             )}
 
-            {formData.skills.map((s, i) => (
-              <span key={i} className="badge bg-primary me-2 mb-2">
-                {s}
-                {editMode && (
-                  <span onClick={() => removeItem("skills", i)} style={{ cursor: "pointer", marginLeft: "5px" }}> ✕</span>
-                )}
-              </span>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
+                formData.skills.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {s}
+                    {editMode && (
+                      <button
+                        onClick={() => removeItem("skills", i)}
+                        className="ml-1 font-bold hover:text-red-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No skills added</p>
+              )}
+            </div>
           </div>
 
           {/* PROJECTS */}
-          <div className="mb-4">
-            <h5>Projects</h5>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Projects</h3>
 
             {editMode && (
-              <>
-                <input placeholder="Title" className="form-control mb-2"
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  placeholder="Project Title"
                   value={project.title}
                   onChange={(e) => setProject({ ...project, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
-                <input placeholder="Description" className="form-control mb-2"
+                <textarea
+                  placeholder="Description"
                   value={project.desc}
                   onChange={(e) => setProject({ ...project, desc: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                  rows="3"
                 />
-                <button onClick={addProject} className="btn btn-success mb-2">
+                <button
+                  onClick={addProject}
+                  className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                >
                   Add Project
                 </button>
-              </>
+              </div>
             )}
 
-            {formData.projects.map((p, i) => (
-              <div key={i} className="border p-2 rounded mb-2">
-                <b>{p.title}</b>
-                <p>{p.desc}</p>
-                {editMode && (
-                  <button onClick={() => removeItem("projects", i)} className="btn btn-sm btn-danger">
-                    Delete
-                  </button>
-                )}
-              </div>
-            ))}
+            <div className="space-y-3">
+              {(Array.isArray(formData.projects) && formData.projects.length > 0) ? (
+                formData.projects.map((p, i) => (
+                  <div key={i} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900">{p.title}</h4>
+                      {editMode && (
+                        <button
+                          onClick={() => removeItem("projects", i)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-gray-700 text-sm">{p.desc}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No projects added</p>
+              )}
+            </div>
           </div>
 
           {/* EDUCATION */}
-          <div className="mb-4">
-            <h5>Academic Background</h5>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Education</h3>
 
             {editMode && (
-              <>
-                <input placeholder="College" className="form-control mb-2"
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  placeholder="College/University"
                   value={edu.college}
                   onChange={(e) => setEdu({ ...edu, college: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
-                <input placeholder="Degree" className="form-control mb-2"
+                <input
+                  placeholder="Degree"
                   value={edu.degree}
                   onChange={(e) => setEdu({ ...edu, degree: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
-                <button onClick={addEdu} className="btn btn-purple mb-2">
+                <button
+                  onClick={addEdu}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
+                >
                   Add Education
                 </button>
-              </>
+              </div>
             )}
 
-            {formData.education.map((e, i) => (
-              <div key={i}>
-                {e.college} - {e.degree}
-              </div>
-            ))}
+            <div className="space-y-2">
+              {(Array.isArray(formData.education) && formData.education.length > 0) ? (
+                formData.education.map((e, i) => (
+                  <div key={i} className="p-3 bg-gray-50 rounded-lg text-gray-700">
+                    <span className="font-semibold">{e.college}</span> - {e.degree}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No education added</p>
+              )}
+            </div>
           </div>
 
-          {/* ATS */}
-          <div className="mb-4">
-            <h5>ATS Checker</h5>
-
+          {/* ATS CHECKER */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">ATS Score Checker</h3>
             <textarea
-              className="form-control mb-2"
-              placeholder="Paste Job Description"
+              placeholder="Paste Job Description here"
               value={jobDesc}
               onChange={(e) => setJobDesc(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              rows="4"
             />
 
-            <button onClick={checkATS} className="btn btn-warning">
-              Check ATS
+            <button
+              onClick={checkATS}
+              className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition"
+            >
+              Check ATS Score
             </button>
 
-            {ats && <p className="mt-2">Score: {ats}%</p>}
+            {ats && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-lg font-semibold text-gray-900">
+                  ATS Score: <span className={ats >= 70 ? "text-green-600" : ats >= 50 ? "text-yellow-600" : "text-red-600"}>
+                    {ats}%
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* SAVE */}
-          {editMode && (
-            <div className="text-end">
-              <button onClick={handleSubmit} className="btn btn-success px-4">
-                Save Profile
-              </button>
-            </div>
-          )}
-
         </div>
+
+        {/* SAVE BUTTON */}
+        {editMode && (
+          <div className="border-t border-gray-200 p-6 bg-gray-50">
+            <button
+              onClick={handleSubmit}
+              className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+            >
+              Save Profile
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

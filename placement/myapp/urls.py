@@ -10,6 +10,9 @@ from .views.exam_views import *
 from .views.playground_views import *
 from .views.job_views import JobViewSet, AppliedJobViewSet
 from . import api_views
+from .views.stats_views import *
+from .views.otp_views import *
+
 
 
 # ROUTER
@@ -23,6 +26,11 @@ urlpatterns = [
     # ================= AUTH =================
     path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("reset-password/", reset_password),
+    path("send_otp/", Send_OTP.as_view()),
+    path("verify_register/", Verify_OTP_Register.as_view()),
+    
+
 
     # ================= PROFILE =================
     path('profile/', profile_view, name='profile'),
@@ -72,6 +80,8 @@ urlpatterns = [
     
     # DASHBOARD & STATS
     path('dashboard-stats/', api_views.dashboard_stats_api),
+    path('student-stats/', student_stats),
+    path('student/<int:id>/', student_detail),
     path('students/', api_views.student_stats_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
 ]

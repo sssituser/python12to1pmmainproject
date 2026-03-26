@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClock,
-  faUser,
-  faCircle,
-  faFlag,
-  faArrowRight,
   faCamera,
+  faClock
 } from "@fortawesome/free-solid-svg-icons";
-import * as faceapi from "@vladmandic/face-api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -25,6 +20,7 @@ const PythonExam = () => {
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [loadError, setLoadError] = useState(null);
   // Custom Passing Rules from Faculty
   const [passingRule, setPassingRule] = useState("percentage"); 
   const [passingValue, setPassingValue] = useState(50); // Default 50% for daily
@@ -105,9 +101,14 @@ const PythonExam = () => {
           setTimeLeft(45 * 60);
           setPassingRule("percentage");
           setPassingValue(50);
+          setLoadError(null);
+        } else {
+          setQuestions([]);
+          setLoadError("No exam questions are available right now.");
         }
       } catch (err) {
         console.error("Failed to fetch practice questions:", err);
+        setLoadError("Failed to load exam questions. Please try again.");
       } finally {
         setIsLoadingQuestions(false);
       }
@@ -389,6 +390,11 @@ useEffect(() => {
     setCurrentQuestion(0);
     // TimeLeft is already set by fetchQuestionsFromBackend based on examDuration
     setExamSubmitted(false);
+    if (questions.length === 0) {
+      setLoadError("Cannot start exam because no questions are loaded.");
+      return;
+    }
+
     examSubmittedRef.current = false;
     
     // Clear any potential cached state
@@ -552,6 +558,11 @@ useEffect(() => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
 
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+          {loadError && (
+            <div className="mb-4 text-red-600 bg-red-100 p-3 rounded">
+              {loadError}
+            </div>
+          )}
 
           <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4" />
 
@@ -580,6 +591,97 @@ useEffect(() => {
       </div>
     );
   }
+
+  const questionData = questions[currentQuestion] || {};
+  const questionOptions = questionData.options || [];
+
+  const questionPanel = questions.length === 0 ? (
+    <div className="col-span-4 bg-white p-6 rounded shadow text-center text-red-600">
+      Unable to display exam questions. Please refresh and try again.
+    </div>
+  ) : (
+    <div className="grid grid-cols-4 gap-4">
+      <div className="col-span-3 bg-white p-6 rounded shadow">
+        <h3 className="font-semibold mb-4">
+          Q{currentQuestion + 1}: {questionData.question || "Question data unavailable"}
+        </h3>
+        {questionOptions.map((option, index) => (
+          <label key={index} className="block border p-3 rounded mb-3 cursor-pointer">
+            <input
+              type="radio"
+              name={`q-${currentQuestion}`}
+              checked={answers[currentQuestion] === index}
+              onChange={() => handleAnswerSelect(currentQuestion, index)}
+              className="mr-2"
+            />
+            {option}
+          </label>
+        ))}
+
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={() => toggleMarkForReview(currentQuestion)}
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+          >
+            Mark for Review
+          </button>
+
+          <div className="flex gap-2">
+            {currentQuestion > 0 && (
+              <button
+                onClick={previousQuestion}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Previous
+              </button>
+            )}
+            {currentQuestion < questions.length - 1 ? (
+              <button
+                onClick={nextQuestion}
+                className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSubmitExam("Manual submission")}
+                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+              >
+                Submit Exam
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded shadow">
+        <h4 className="font-semibold mb-3">Questions</h4>
+        <div className="grid grid-cols-5 gap-2">
+          {questions.map((_, index) => {
+            let buttonClass = "p-2 rounded text-sm font-semibold ";
+            if (markedForReview[index]) {
+              buttonClass += "bg-violet-500 text-white hover:bg-violet-600";
+            } else if (answers[index] !== null) {
+              buttonClass += "bg-green-500 text-white hover:bg-green-600";
+            } else if (visitedQuestions[index]) {
+              buttonClass += "bg-red-500 text-white hover:bg-red-600";
+            } else {
+              buttonClass += "bg-gray-200 text-gray-700 hover:bg-gray-300";
+            }
+            return (
+              <button
+                key={index}
+                onClick={() => goToQuestion(index)}
+                className={buttonClass}
+              >
+                {index + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
@@ -627,111 +729,7 @@ useEffect(() => {
 
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-
-          <div className="col-span-3 bg-white p-6 rounded shadow">
-
-            <h3 className="font-semibold mb-4">
-              Q{currentQuestion + 1}: {questions[currentQuestion].question}
-            </h3>
-
-            {questions[currentQuestion].options.map((option, index) => (
-
-              <label key={index} className="block border p-3 rounded mb-3 cursor-pointer">
-
-                <input
-                  type="radio"
-                  name={`q-${currentQuestion}`}
-                  checked={answers[currentQuestion] === index}
-                  onChange={() => handleAnswerSelect(currentQuestion, index)}
-                  className="mr-2"
-                />
-
-                {option}
-
-              </label>
-
-            ))}
-
-            <div className="flex justify-between mt-6">
-
-              <button
-                onClick={() => toggleMarkForReview(currentQuestion)}
-                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-              >
-                Mark for Review
-              </button>
-
-              <div className="flex gap-2">
-                {currentQuestion > 0 && (
-                  <button
-                    onClick={previousQuestion}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Previous
-                  </button>
-                )}
-
-                {currentQuestion < questions.length - 1 ? (
-                  <button
-                    onClick={nextQuestion}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-                  >
-                    Submit Exam
-                  </button>
-                )}
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="bg-white p-4 rounded shadow">
-
-            <h4 className="font-semibold mb-3">
-              Questions
-            </h4>
-
-            <div className="grid grid-cols-5 gap-2">
-
-              {questions.map((_, index) => {
-                // Determine button color based on state
-                let buttonClass = "p-2 rounded text-sm font-semibold ";
-
-                if (markedForReview[index]) {
-                  buttonClass += "bg-violet-500 text-white hover:bg-violet-600";
-                } else if (answers[index] !== null) {
-                  buttonClass += "bg-green-500 text-white hover:bg-green-600";
-                } else if (visitedQuestions[index]) {
-                  buttonClass += "bg-red-500 text-white hover:bg-red-600";
-                } else {
-                  buttonClass += "bg-gray-200 text-gray-700 hover:bg-gray-300";
-                }
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => goToQuestion(index)}
-                    className={buttonClass}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
-
-            </div>
-
-          </div>
-
-        </div>
-
+        {questionPanel}
       </div>
 
     </div>

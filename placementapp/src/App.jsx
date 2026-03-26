@@ -1,46 +1,51 @@
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 /* 🔹 STUDENT */
 import StudentLayout from "./Layout/Dashboard";
-import Profile from "./pages/Profile";
-import Jobs from "./pages/Jobs";
 import AllJobs from "./pages/Alljobs";
-import JobDetails from "./pages/jobDetails";
 import AppliedJobs from "./pages/AppliedJobs";
-import ExamReports from "./pages/ExamReports";
+import ChangePassword from "./pages/ChangePassword";
+import Course from "./pages/Course";
 import DailyExamReports from "./pages/DailyExamReports";
-import WeeklyExamReports from "./pages/WeeklyExamReports";
-import MonthlyExamReports from "./pages/MonthlyExamReports";
+import DetailedResults from "./pages/DetailedResults";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
 import ExamReportDetail from "./pages/ExamReportDetail";
-import PythonExam from "./pages/PythonExam";
-import WeeklyExam from "./pages/WeeklyExam";
+import ExamReports from "./pages/ExamReports";
+import JobDetails from "./pages/jobDetails";
+import Jobs from "./pages/Jobs";
+import LeaveRequest from "./pages/Leaverequest";
+import Logout from "./pages/Logout";
 import MonthlyExam from "./pages/MonthlyExam";
-import ExamFailed from "./pages/ExamFailed";
+import MonthlyExamReports from "./pages/MonthlyExamReports";
 import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
-import DetailedResults from "./pages/DetailedResults";
-import LeaveRequest from "./pages/Leaverequest";
-import Course from "./pages/Course";
+import Profile from "./pages/Profile";
+import PythonExam from "./pages/PythonExam";
+import Register from "./pages/Register";
+import Settings from "./pages/Settings";
 import TopicVideo from "./pages/TopicVideo";
 import VideoPlayer from "./pages/VideoPlayer";
-import Logout from "./pages/Logout";
+import WeeklyExam from "./pages/WeeklyExam";
+import WeeklyExamReports from "./pages/WeeklyExamReports";
 
 /* 🔹 FACULTY */
-import FacultyLayout from "./faculty/FacultyLayout";
-import FacultyDashboard from "./faculty/Dashboard";
-import FacultyCourse from "./faculty/Course";
-import Stats from "./faculty/Stats";
 import Applications from "./faculty/Application";
-import Leaves from "./faculty/LeaveRequest";
+import FacultyCourse from "./faculty/Course";
+import FacultyDashboard from "./faculty/Dashboard";
 import ExamManager from "./faculty/ExamManager";
+import FacultyLayout from "./faculty/FacultyLayout";
+import Leaves from "./faculty/LeaveRequest";
+import FacultyLogin from "./faculty/login";
+import Stats from "./faculty/Stats";
 
 /* 🔹 AUTH */
 import Login from "./pages/Login";
+
+
 
 function App() {
 
@@ -76,21 +81,40 @@ function App() {
     }
   }, [location]);
 
+  
   const token = localStorage.getItem("access");
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  const isStudent = user?.role === "student";
-  const isFaculty = user?.role === "faculty";
+let user = null;
+
+try {
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser && storedUser !== "undefined") {
+    user = JSON.parse(storedUser);
+  } else {
+    user = null;
+  }
+} catch (err) {
+  console.error("🔥 Invalid user JSON → FIXING...");
+  localStorage.removeItem("user");
+  user = null;
+}
+
+const isStudent = user?.role === "student";
+const isFaculty = user?.role === "faculty";
 
 
   return (
     <>
+    <div className="min-h-screen bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]">
       <ToastContainer position="top-right" autoClose={2000} />
 
       <Routes>
 
         {/* 🔐 AUTH */}
         <Route path="/" element={<Login />} />
+        <Route path="/faculty/login" element={<FacultyLogin />} />
+        <Route path="/register" element={<Register />} />
 
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
@@ -114,6 +138,8 @@ function App() {
         >
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="change-password" element={<ChangePassword />} />
 
           {/* Courses */}
           <Route path="course" element={<Course />} />
@@ -167,6 +193,7 @@ function App() {
         </Route>
 
       </Routes>
+      </div>
     </>
   );
 }

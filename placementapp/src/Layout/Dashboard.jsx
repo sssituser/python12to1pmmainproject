@@ -1,35 +1,30 @@
 import { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
 import { Outlet } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
 
 function Dashboard() {
-
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
+    <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
 
-    <div className="flex h-screen">
-
+      {/* ✅ SIDEBAR */}
       <Sidebar sidebarOpen={sidebarOpen} />
 
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 relative">
 
-        <Navbar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        {/* ✅ NAVBAR */}
+        <Navbar toggleSidebar={() => setSidebarOpen(prev => !prev)} />
 
-        <div className="p-6 bg-gray-100 flex-1 overflow-y-auto">
+        {/* ✅ MAIN CONTENT */}
+        <div className="p-6 flex-1 overflow-y-auto relative z-10">
           <Outlet />
         </div>
 
       </div>
-
     </div>
-
   );
-
 }
 
 export default Dashboard;

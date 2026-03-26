@@ -38,7 +38,9 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+AUTH_USER_MODEL = 'myapp.User'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Application definition
 
 INSTALLED_APPS = [
@@ -56,7 +58,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -99,6 +100,22 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+
+# ================== EMAIL / SMTP CONFIGURATION ==================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'sssitprojectteam3@gmail.com'  # Your Gmail address
+EMAIL_HOST_PASSWORD = 'abcd ycfd cqcl vbcl'  # Use Gmail App Password (16 chars)
+DEFAULT_FROM_EMAIL = 'sssitprojectteam3@gmail.com'
+SERVER_EMAIL = 'sssitprojectteam3@gmail.com'
+
+# Email configuration constants
+ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
+PLATFORM_NAME = 'SSSIT Placement Portal'
+PLATFORM_URL = 'http://localhost:5173'
+
 
 
 # Password validation
