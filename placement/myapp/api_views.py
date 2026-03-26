@@ -795,6 +795,31 @@ def exam_settings_api(request):
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
 
+<<<<<<< HEAD
+from rest_framework.decorators import  permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+from .models import User, Job, AppliedJob
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    total_students = User.objects.count()
+
+    placed_students = AppliedJob.objects.values('user').distinct().count()
+
+    active_jobs = Job.objects.count()
+
+    pending_reviews = AppliedJob.objects.count()
+
+    return Response({
+        "total_students": total_students,
+        "placed_students": placed_students,
+        "active_jobs": active_jobs,
+        "pending_reviews": pending_reviews
+    })
+=======
 # ---------------- DASHBOARD STATS (FACULTY) ----------------
 @api_view(['GET'])
 def dashboard_stats_api(request):
@@ -843,3 +868,4 @@ def student_stats_api(request):
         return Response(data)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+>>>>>>> 7adaa783bfb3bd2b680825fb18b98e355a909e6f
