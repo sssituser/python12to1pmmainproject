@@ -788,3 +788,27 @@ def exam_settings_api(request):
             
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
+
+from rest_framework.decorators import  permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+from .models import User, Job, AppliedJob
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    total_students = User.objects.count()
+
+    placed_students = AppliedJob.objects.values('user').distinct().count()
+
+    active_jobs = Job.objects.count()
+
+    pending_reviews = AppliedJob.objects.count()
+
+    return Response({
+        "total_students": total_students,
+        "placed_students": placed_students,
+        "active_jobs": active_jobs,
+        "pending_reviews": pending_reviews
+    })

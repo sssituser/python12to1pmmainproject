@@ -8,7 +8,7 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
-from .views.job_views import JobViewSet, AppliedJobViewSet
+from .views.job_views import JobViewSet, AppliedJobViewSet,AdminJobViewSet
 from . import api_views
 
 
@@ -16,6 +16,7 @@ from . import api_views
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='jobs')
 router.register(r'applied-jobs', AppliedJobViewSet)
+router.register(r'admin/jobs', AdminJobViewSet, basename='admin-jobs')
 
 
 urlpatterns = [
@@ -56,6 +57,7 @@ urlpatterns = [
 
     # ================= JOB ROUTER =================
     path('', include(router.urls)),
+    path('dashboard-stats/', api_views.dashboard_stats),
 
     # ================= EXAM REPORTS =================
     path('all-exam-results/', api_views.exam_reports_api),

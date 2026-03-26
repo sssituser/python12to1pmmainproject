@@ -39,6 +39,8 @@ import Stats from "./faculty/Stats";
 import Applications from "./faculty/Application";
 import Leaves from "./faculty/LeaveRequest";
 import ExamManager from "./faculty/ExamManager";
+import FacultyJobs from "./faculty/Jobs";
+
 
 /* 🔹 AUTH */
 import Login from "./pages/Login";
@@ -158,7 +160,8 @@ function App() {
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
           <Route path="stats" element={<Stats />} />
-          <Route path="jobs" element={<Jobs />} />
+          {/* <Route path="jobs" element={<Jobs />} /> */}
+          <Route path="jobs" element={<FacultyJobs />} />
           <Route path="exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
           <Route path="leaves" element={<Leaves />} />
