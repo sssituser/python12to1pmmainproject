@@ -3,8 +3,28 @@
         "maxQuestions": 2,
         "questions": [
             {
+                "type": "mcq",
+                "question": "gehgwrtg4t2ggwwfewfwe",
+                "options": [
+                    "hjhjsdh",
+                    "jhhjhjh",
+                    "ihk",
+                    "khghgk"
+                ],
+                "answer": "hjhjsdh",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1774521593385
+            },
+            {
                 "type": "coding",
-                "question": "Write a program to take two integers as input and print their sum.",
+                "question": "a = int(input())\nb = int(input())\nprint(a + b)",
                 "options": [
                     "",
                     "",
@@ -15,35 +35,15 @@
                 "language": "python",
                 "testCases": [
                     {
-                        "input": "5 10",
-                        "output": "15"
-                    }
-                ],
-                "marks": 2,
-                "id": 1774511677680
-            },
-            {
-                "type": "mcq",
-                "question": "asjhfiyafhljhvoua",
-                "options": [
-                    "SLHVVHDLV;KAD;JPIAD",
-                    ";AS,DJVPJADVJ;",
-                    "KSJVOUCJ;KAM",
-                    ";KSDJVKJ"
-                ],
-                "answer": "SLHVVHDLV;KAD;JPIAD",
-                "language": "python",
-                "testCases": [
-                    {
                         "input": "",
                         "output": ""
                     }
                 ],
                 "marks": 2,
-                "id": 1774513193839
+                "id": 1774523579829
             }
         ],
-        "passingRule": "correct_answers",
+        "passingRule": "percentage",
         "passingValue": 1,
         "duration": 1
     },
