@@ -1,6 +1,6 @@
 {
     "Weekly": {
-        "maxQuestions": 1,
+        "maxQuestions": 2,
         "questions": [
             {
                 "type": "mcq",
@@ -21,11 +21,32 @@
                 ],
                 "marks": 2,
                 "id": 1774548809038
+            },
+            {
+                "type": "mcq",
+                "question": "print the hello World",
+                "options": [
+                    "hello",
+                    "world",
+                    "HW",
+                    "Hello World"
+                ],
+                "answer": "Hello World",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "show_compiler": true,
+                "id": 1774607214312
             }
         ],
         "passingRule": "percentage",
         "passingValue": 1,
-        "duration": 1
+        "duration": 10
     },
     "Monthly": {
         "maxQuestions": 2,
@@ -57,6 +78,6 @@
         ],
         "passingRule": "percentage",
         "passingValue": 1,
-        "duration": 1
+        "duration": 13
     }
 }
