@@ -21,27 +21,6 @@
                 ],
                 "marks": 2,
                 "id": 1774548809038
-            },
-            {
-                "type": "mcq",
-                "question": "print the hello World",
-                "options": [
-                    "hello",
-                    "world",
-                    "HW",
-                    "Hello World"
-                ],
-                "answer": "Hello World",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
-                "marks": 2,
-                "show_compiler": true,
-                "id": 1774607214312
             }
         ],
         "passingRule": "percentage",
