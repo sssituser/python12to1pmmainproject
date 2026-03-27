@@ -1,12 +1,31 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User, Job
-from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
-from datetime import datetime
 import json
+import os
+
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+from .models import (
+    AppliedJob,
+    CodeSnippet,
+    CodeTemplate,
+    ExamAttempt,
+    ExecutionSession,
+    Job,
+    LeaveRequest,
+    PythonQuestion,
+    User,
+)
+from .serializers import (
+    CodeSnippetSerializer,
+    CodeTemplateSerializer,
+    ExamAttemptSerializer,
+    LeaveRequestSerializer,
+    PythonQuestionSerializer,
+    UserSerializer,
+)
 
 # ==================== LEAVE REQUEST API ====================
 
@@ -737,8 +756,6 @@ def playground_questions_api(request):
 
 # ==================== EXAM MANAGER CUSTOM SETTINGS ====================
 
-import os
-
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_FILE = os.path.join(_BASE_DIR, 'exam_settings.json')
 
@@ -804,12 +821,6 @@ def exam_settings_api(request):
             json.dump(existing_data, f, indent=4)
             
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
-
-from rest_framework.decorators import  permission_classes
-from rest_framework.permissions import IsAuthenticated
-
-from .models import User, Job, AppliedJob
-
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
