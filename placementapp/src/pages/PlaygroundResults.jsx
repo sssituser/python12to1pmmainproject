@@ -32,7 +32,7 @@ function PlaygroundResults() {
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/user-combined-results/?username=${targetUsername}`);
+        const response = await fetch(`/api/user-combined-results/?username=${targetUsername}`);
         const json = await response.json();
 
         if (json.success) {

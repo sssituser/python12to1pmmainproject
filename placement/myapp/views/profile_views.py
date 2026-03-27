@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+import json
 
 from ..models import StudentProfile, Skill, Project
 from ..serializers import StudentProfileSerializer
@@ -37,9 +38,29 @@ def update_profile(request):
     skills_data = request.data.get("skills", [])
     projects_data = request.data.get("projects", [])
 
+    # Parse JSON strings if they are strings
+    if isinstance(skills_data, str):
+        try:
+            skills_data = json.loads(skills_data)
+        except:
+            skills_data = []
+    if isinstance(projects_data, str):
+        try:
+            projects_data = json.loads(projects_data)
+        except:
+            projects_data = []
+
     data = request.data.copy()
     data.pop("skills", None)
     data.pop("projects", None)
+
+    # Parse other JSON string fields
+    for key in data:
+        if isinstance(data[key], str) and data[key].startswith(('{', '[')):
+            try:
+                data[key] = json.loads(data[key])
+            except:
+                pass
 
     serializer = StudentProfileSerializer(profile, data=data, partial=True)
 

@@ -1,5 +1,5 @@
+import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Stars, OrbitControls } from "@react-three/drei";
 import { useRef } from "react";
 import * as THREE from "three";
 
@@ -48,13 +48,15 @@ function Earth() {
 // ⚡ GLOW ATMOSPHERE (ANIMATED)
 function Atmosphere() {
   const ref = useRef();
+  const timeRef = useRef(0);
 
-  useFrame(({ clock }) => {
+  useFrame((state, delta) => {
     if (!ref.current) return;
 
+    timeRef.current += delta;
+
     // pulse glow
-    const t = clock.getElapsedTime();
-    ref.current.material.opacity = 0.05 + Math.sin(t * 2) * 0.02;
+    ref.current.material.opacity = 0.05 + Math.sin(timeRef.current * 2) * 0.02;
   });
 
   return (
@@ -83,12 +85,25 @@ function Background() {
 
 // 🌍 MAIN COMPONENT
 export default function Globe() {
+  const handleContextLost = (event) => {
+    console.warn("WebGL context lost, attempting recovery...");
+    event.preventDefault();
+  };
+
+  const handleContextRestored = () => {
+    console.log("WebGL context restored");
+  };
+
   return (
     <div className="absolute inset-0">
-
       <Canvas
         camera={{ position: [0, 0, 7] }}
         dpr={[1, 1.5]}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', handleContextLost);
+          gl.domElement.addEventListener('webglcontextrestored', handleContextRestored);
+        }}
+        onError={(error) => console.error("Three.js error:", error)}
       >
         {/* 🌌 DARK SPACE */}
         <Background />

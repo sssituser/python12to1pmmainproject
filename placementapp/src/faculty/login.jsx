@@ -38,12 +38,24 @@ function FacultyLogin() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        form
+        form,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
+
+      if (!res.data.access) {
+        throw new Error("Login failed - no access token");
+      }
 
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
-      localStorage.setItem("user", JSON.stringify({ role: "faculty", username: form.username }));
+      localStorage.setItem("user", JSON.stringify({
+        username: res.data.user?.username || form.username,
+        role: res.data.user?.role || "faculty",
+      }));
 
       toast.success("Welcome Faculty 🎓");
 

@@ -1,5 +1,6 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User, Job
@@ -63,6 +64,7 @@ def leave_request_detail_api(request, pk):
                 'message': 'Leave request deleted successfully'
             })
     except Exception as e:
+        
         return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== PLAYGROUND API ====================
@@ -268,6 +270,7 @@ def execute_code_api(request):
 # ==================== REPORTS API ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def exam_reports_api(request):
     """
     GET: Get all exam reports for a user or all users (daily reports)
@@ -307,6 +310,7 @@ def exam_reports_api(request):
     })
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def exam_report_detail_api(request, pk):
     """
     GET: Get detailed exam report
@@ -341,7 +345,9 @@ def exam_report_detail_api(request, pk):
         }
     })
 
+
 @api_view(['GET','POST'])
+@permission_classes([AllowAny])
 def save_exam_report_api(request):
     """
     POST: Save new exam report.
@@ -483,6 +489,7 @@ def login_api(request):
 # ==================== LEADERBOARD API ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def leaderboard_api(request):
     """
     GET: Get leaderboard - ranked by score (highest first), then by time_taken (fastest first)
@@ -527,6 +534,7 @@ def leaderboard_api(request):
 # ==================== WEEKLY EXAM REPORTS API ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def weekly_exam_reports_api(request):
     """
     GET: Get exam reports from the current week
@@ -576,6 +584,7 @@ def weekly_exam_reports_api(request):
 # ==================== MONTHLY EXAM REPORTS API ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def monthly_exam_reports_api(request):
     """
     GET: Get exam reports from the current month
@@ -621,6 +630,7 @@ def monthly_exam_reports_api(request):
     })
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def user_combined_results_api(request):
     """
     GET: Get all exam results for a specific user across all categories
@@ -667,6 +677,7 @@ def user_combined_results_api(request):
 # ==================== PLAYGROUND STATIC QUESTIONS ====================
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def playground_questions_api(request):
     import random
     
@@ -738,6 +749,7 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_FILE = os.path.join(_BASE_DIR, 'exam_settings.json')
 
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 def exam_settings_api(request):
     """
     GET: Retrieve custom exam settings and questions for a category (e.g. ?category=Weekly)
@@ -806,45 +818,25 @@ from .models import User, Job, AppliedJob
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def dashboard_stats(request):
-    total_students = User.objects.count()
-
-    placed_students = AppliedJob.objects.values('user').distinct().count()
-
-    active_jobs = Job.objects.count()
-
-    pending_reviews = AppliedJob.objects.count()
-
-    return Response({
-        "total_students": total_students,
-        "placed_students": placed_students,
-        "active_jobs": active_jobs,
-        "pending_reviews": pending_reviews
-    })
-
-
-
-# ---------------- DASHBOARD STATS (FACULTY) ----------------
-@api_view(['GET'])
+@permission_classes([AllowAny])
 def dashboard_stats_api(request):
+    """
+    Consolidated statistics for the faculty dashboard.
+    """
     try:
         total_students = User.objects.filter(is_staff=False).count()
-        # Mock some data if specific status field doesn't exist yet
-        active_jobs = Job.objects.all().count()
+        placed_students = AppliedJob.objects.values('user').distinct().count()
+        active_jobs = Job.objects.count()
         pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
         
-        # Simple count of unique students who have attempts
-        successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
-
         return Response({
             "total_students": total_students,
-            "placed_students": 12, # Static/Mock or from some model
+            "placed_students": placed_students,
             "active_jobs": active_jobs,
             "pending_reviews": pending_leaves
         })
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'success': False, 'message': str(e)}, status=500)
 
 # ---------------- STUDENT STATS (FACULTY) ----------------
 @api_view(['GET'])

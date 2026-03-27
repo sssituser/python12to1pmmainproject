@@ -27,8 +27,13 @@ router.register(r'courses', CourseViewSet, basename='courses')
 urlpatterns = [
 
     # ================= AUTH =================
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # Custom login API (returns access/refresh + user payload)
+    path('faculty/login/', login, name='api_login'),
+    path('login/', login, name='api_login'),
+    path('register/', register, name='api_register'),
+    # JWT endpoints (if raw token endpoints are needed)
+    path('jwt/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("reset-password/", reset_password),
     path("send_otp/", Send_OTP.as_view()),
     path("verify_register/", Verify_OTP_Register.as_view()),

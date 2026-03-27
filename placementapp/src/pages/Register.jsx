@@ -1,7 +1,7 @@
-import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
   const navigate = useNavigate();
@@ -33,17 +33,27 @@ function Register() {
   };
 
   const handleRegister = async () => {
+    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+      toast.error("All fields are required");
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/register/", form);
+      const { confirmPassword, ...registerData } = form; // Exclude confirmPassword
+      await axios.post("http://127.0.0.1:8000/api/register/", registerData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       toast.success("Account created 🎉");
       navigate("/");
-    } catch {
-      toast.error("Registration failed");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Registration failed");
     }
   };
 

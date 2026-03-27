@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClock,
-  faUser,
-  faCircle,
-  faFlag,
-  faArrowRight,
   faCamera,
+  faFlag
 } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import * as faceapi from "@vladmandic/face-api";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -60,6 +55,54 @@ const MonthlyExam = () => {
     }
   };
 
+  // Webcam functions - moved outside security monitoring scope
+  const startWebcam = async () => {
+    if (webcamStatus === 'active' || webcamStatus === 'loading') return;
+    
+    try {
+      setWebcamStatus('loading');
+      setWebcamActive(false);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        },
+        audio: false 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setWebcamActive(true);
+      setWebcamStatus('active');
+
+      globalStreamsToClean.push(stream);
+    } catch (err) {
+      console.error("Webcam access denied:", err);
+      setWebcamActive(false);
+      setWebcamStatus('error');
+    }
+  };
+
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setWebcamActive(false);
+      setWebcamStatus('idle');
+    }
+    // Clean all potentially leaked streams
+    globalStreamsToClean.forEach(stream => {
+      try {
+        stream.getTracks().forEach(track => track.stop());
+      } catch (e) {}
+    });
+    globalStreamsToClean = [];
+  };
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [markedForReview, setMarkedForReview] = useState([]);
@@ -71,6 +114,7 @@ const MonthlyExam = () => {
   const [examSubmitted, setExamSubmitted] = useState(false);
   const examSubmittedRef = useRef(false);
   const [webcamActive, setWebcamActive] = useState(false);
+  const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
 
@@ -93,11 +137,11 @@ const MonthlyExam = () => {
         setIsLoadingQuestions(true);
 
         // Fetch custom exam settings loaded manually by Faculty
-        const customRes = await fetch("http://127.0.0.1:8000/api/admin/exam-settings/?category=Monthly");
+        const customRes = await fetch("/api/admin/exam-settings/?category=Monthly");
         const customJson = await customRes.json();
 
         // 1. Prioritize Custom Questions from Exam Manager
-        if (customJson.success && customJson.data && customJson.data.questions && customJson.data.questions.length > 0) {
+        if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
           
           // Helper for Fisher-Yates shuffle
           const shuffleArray = (array) => {
@@ -148,6 +192,11 @@ const MonthlyExam = () => {
     };
     
     fetchQuestionsFromBackend();
+    
+    // Auto-start webcam for preparation/preview screen
+    if (!webcamActive) {
+      startWebcam();
+    }
   }, []);
 
   // Control global browser back button for pre-exam screen
@@ -296,7 +345,7 @@ useEffect(() => {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
     const detectFaces = async () => {
       if (!video.videoWidth || !video.videoHeight) return;
@@ -314,8 +363,8 @@ useEffect(() => {
       }
       brightness = brightness / (tData.length / 4);
       const variation = max - min;
-      const isDark = brightness < 40;
-      const isFlat = variation < 30;
+      const isDark = brightness < 20;
+      const isFlat = variation < 15;
       const checkViolations = (faces) => {
         const noFace = !faces || faces.length === 0;
         const multipleFaces = faces && faces.length > 1;
@@ -445,64 +494,7 @@ useEffect(() => {
   }, [examStarted, examSubmitted]);
 
   // WEBCAM FUNCTIONS
-  const startWebcam = async () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 }, 
-          height: { ideal: 480 } 
-        },
-        audio: false // Disable audio capture permanently
-      });
-      
-      globalStreamsToClean.push(stream);
-      
-      // Stop stream immediately if the exam was already submitted or window unmounted
-      if (examSubmittedRef.current || !videoRef.current) {
-        stopWebcam();
-        return;
-      }
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setWebcamActive(true);
-        startFaceDetection();
-      }
-    } catch (err) {
-      console.error("Error accessing webcam:", err);
-      alert("Unable to access webcam. Please ensure camera permissions are granted.");
-    }
-  };
-
-  const stopWebcam = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    globalStreamsToClean.forEach(s => {
-      s.getTracks().forEach(track => track.stop());
-    });
-    globalStreamsToClean = []; // reset
-    setWebcamActive(false);
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    if (faceDetectionIntervalRef.current) {
-      clearInterval(faceDetectionIntervalRef.current);
-      faceDetectionIntervalRef.current = null;
-    }
-    if (cleanTimeoutRef.current) {
-      clearTimeout(cleanTimeoutRef.current);
-      cleanTimeoutRef.current = null;
-    }
-    violationStartTimeRef.current = null;
-  };
 
   const startFaceDetection = () => {
     faceDetectionIntervalRef.current = setInterval(() => {
@@ -513,7 +505,7 @@ useEffect(() => {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -590,10 +582,11 @@ useEffect(() => {
     }, 500);
   };
 
-  // CODE EXECUTION STATE
-  const [executing, setExecuting] = useState(false);
-  const [output, setOutput] = useState("");
-  const [executionResult, setExecutionResult] = useState(null);
+  const handleAnswerSelect = (qIndex, optionIndex) => {
+    const newAnswers = [...answers];
+    newAnswers[qIndex] = optionIndex;
+    setAnswers(newAnswers);
+  };
 
   const startExam = async () => {
     // Reset all exam state for fresh start
@@ -605,8 +598,6 @@ useEffect(() => {
     setTimeLeft(examDuration * 60);
     setExamSubmitted(false);
     examSubmittedRef.current = false;
-    setOutput("");
-    setExecutionResult(null);
     
     // Clear any potential cached state
     try {
@@ -625,70 +616,6 @@ useEffect(() => {
     startWebcam(); // Start webcam when exam begins
   };
 
-  const handleAnswerSelect = (qIndex, optionIndex) => {
-    const newAnswers = [...answers];
-    newAnswers[qIndex] = optionIndex;
-    setAnswers(newAnswers);
-  };
-
-  const handleCodeChange = (qIndex, code) => {
-    const newAnswers = [...answers];
-    newAnswers[qIndex] = code;
-    setAnswers(newAnswers);
-  };
-
-  const runCode = async () => {
-    const q = questions[currentQuestion];
-    const code = answers[currentQuestion] || "";
-    if (!code.trim()) return alert("Please write some code before running!");
-
-    setExecuting(true);
-    setOutput("Running code...");
-    try {
-       const res = await fetch("http://127.0.0.1:8000/api/execute-code-api/", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-            code: code,
-            language: q.language || 'python',
-            test_cases: q.testCases || []
-         })
-       });
-       const data = await res.json();
-       if (data.success) {
-          let out = data.data.output || data.data.error || "";
-          
-          if (data.data.test_results && data.data.test_results.length > 0) {
-             const passedCount = data.data.test_results.filter(r => r.passed).length;
-             const totalCount = data.data.test_results.length;
-             
-             let testDetails = `[Verification Summary: ${passedCount}/${totalCount} Passed]\n\n`;
-             
-             data.data.test_results.forEach((res, idx) => {
-                testDetails += `Case ${idx + 1}:\n`;
-                testDetails += `-> Provided Input  : ${res.input || '(None)'}\n`;
-                testDetails += `-> Expected Result : ${res.expected || '(None)'}\n`;
-                testDetails += `-> Actual Output   : ${res.actual || (res.error ? 'Error: ' + res.error : '(No Output)')}\n`;
-                testDetails += `-> Status          : ${res.passed ? '✅ SUCCESS' : '❌ FAILED'}\n`;
-                testDetails += `-------------------\n`;
-             });
-             
-             out = testDetails + (out.trim() ? "\nDefault Output:\n" + out : "");
-          } else if (!out) {
-             out = "Code executed successfully (no test cases defined).";
-          }
-          
-          setOutput(out);
-          setExecutionResult(data.data);
-        } else {
-          setOutput("Runtime Error: " + data.error);
-       }
-    } catch (err) {
-       setOutput("Error: Could not connect to execution server.");
-    } finally {
-       setExecuting(false);
-    }
-  };
 
   const toggleMarkForReview = (index) => {
     const updated = [...markedForReview];
@@ -701,9 +628,6 @@ useEffect(() => {
     visited[index] = true;
     setVisitedQuestions(visited);
     setCurrentQuestion(index);
-    // Reset output when switching questions
-    setOutput("");
-    setExecutionResult(null);
   };
 
   const nextQuestion = () => {
@@ -746,17 +670,9 @@ useEffect(() => {
       const qMarks = parseInt(q.marks) || 2;
       maxPossibleMarks += qMarks;
 
-      if (q.type === 'mcq') {
-        if (ans === q.correct) {
-          correctCount++;
-          earnedMarks += qMarks;
-        }
-      } else if (q.type === 'coding') {
-        // Simple heuristic for coding
-        if (ans && ans.length > 20) {
-           correctCount++;
-           earnedMarks += qMarks;
-        }
+      if (ans === q.correct) {
+        correctCount++;
+        earnedMarks += qMarks;
       }
     });
 
@@ -818,7 +734,7 @@ useEffect(() => {
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+      const res = await fetch("/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -841,6 +757,19 @@ useEffect(() => {
 
     sessionStorage.removeItem('monthlyExamState');
 
+    // Exit full screen mode
+    if (document.fullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+    }
+
     navigate("/dashboard/playground-results",{replace:true});
   };
 
@@ -852,37 +781,85 @@ useEffect(() => {
 
   if (!examStarted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-          <FontAwesomeIcon icon={faCamera} className="text-4xl text-indigo-600 mb-4"/>
-          <h2 className="text-2xl font-bold mb-2">
-            Monthly Exam
-          </h2>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 max-w-lg w-full text-center border border-white">
+          
+          <div className="relative w-64 h-48 mx-auto mb-8 rounded-[2rem] overflow-hidden bg-gray-900 shadow-xl ring-4 ring-white border-4 border-white">
+             {webcamActive ? (
+                <video
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ transform: 'scaleX(-1)' }}
+                  className="w-full h-full object-cover"
+                  ref={(el) => {
+                    if (el && videoRef.current && el !== videoRef.current) {
+                      el.srcObject = videoRef.current.srcObject;
+                    } else if (el && !videoRef.current) {
+                      // fallback if startWebcam was too slow
+                      navigator.mediaDevices.getUserMedia({ video: true }).then(s => el.srcObject = s);
+                    }
+                  }}
+                />
+             ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                   <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activating Camera...</p>
+                </div>
+             )}
+             <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                <div className="flex items-center gap-1.5">
+                   <div className={`w-1.5 h-1.5 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                   <span className="text-[8px] font-black text-white uppercase tracking-[0.2em]">Preview</span>
+                </div>
+             </div>
+          </div>
 
-          <p className="text-gray-600 mb-6">
-            {!isLoadingQuestions && questions.length === 0 
-              ? <span className="text-red-600 font-semibold">No questions uploaded yet.</span>
-              : `${questions.length || 0} Questions • ${examDuration} Minutes`}
-          </p>
+          <div className="mb-8">
+            <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+              Monthly Assessment
+            </h2>
+            <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full mb-4"></div>
+            <p className="text-gray-500 font-medium leading-relaxed px-4">
+              {!isLoadingQuestions && questions.length === 0 
+                ? <span className="text-red-500 font-bold">No questions uploaded yet for this month.</span>
+                : `${questions.length || 0} Questions • ${examDuration} Minutes`}
+              <br/>
+              <span className="text-[10px] uppercase font-black tracking-widest text-indigo-600 mt-2 inline-block">Secure Proctored Mode</span>
+            </p>
+          </div>
+
           <button
             onClick={startExam}
-            disabled={isLoadingQuestions || (!isLoadingQuestions && questions.length === 0)}
-            className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
-              isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
-            }`}
+            disabled={isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) || !webcamActive}
+            className={`w-full py-4 rounded-2xl text-white font-black uppercase tracking-[0.2em] transition-all shadow-lg ${(isLoadingQuestions || (!isLoadingQuestions && questions.length === 0) || !webcamActive)
+              ? 'bg-gray-300 cursor-not-allowed shadow-none'
+              : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 shadow-indigo-100'
+              }`}
           >
-            {isLoadingQuestions ? 'Fetching Assessment Paper...' : 'Start Exam'}
+            {isLoadingQuestions ? 'Preparing Questions...' 
+            : !webcamActive ? 'Waiting for Camera...'
+            : 'Start Assessment'}
           </button>
-          
+
           <button
             onClick={() => navigate("/dashboard/playground")}
-            className="block mt-4 text-sm text-gray-500 hover:text-indigo-600 mx-auto"
+            className="block mt-6 text-[10px] font-black text-gray-400 hover:text-indigo-600 uppercase tracking-widest mx-auto transition-colors"
           >
             Back to Playground
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center">
+         <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pre-loading Assessment...</p>
+         </div>
       </div>
     );
   }
@@ -922,225 +899,176 @@ useEffect(() => {
       </div>
 
       <div className="max-w-6xl mx-auto">
-        {/* COMPACT STICKY HEADER */}
-        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-             <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
-                <FontAwesomeIcon icon={faClock} className="text-blue-500 text-xs" />
-                <span className="font-black text-blue-700 tabular-nums text-base">{formatTime(timeLeft)}</span>
-             </div>
-          </div>
-        </div>
+        <div className="grid grid-cols-4 gap-6 items-start">
+          {/* Main Assessment Area */}
+          <div className="col-span-3 space-y-6">
+            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden flex flex-col min-h-[440px]">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10"></div>
+                
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-blue-600 text-white h-6 w-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md shadow-blue-200">
+                      {currentQuestion + 1}
+                    </span>
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1">
+                      Monthly Assessment
+                    </span>
+                  </div>
+                  <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
+                    <span className="text-[10px] font-black text-gray-800">{currentQ.marks || 2}</span>
+                  </div>
+                </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-3 space-y-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${currentQ.type === 'coding' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {currentQ.type === 'coding' ? `Coding Assessment (${currentQ.language})` : 'Multiple Choice Question'}
-                 </span>
-                 <span className="text-sm font-bold text-gray-400">
-                    Worth {currentQ.marks || 2} Marks
-                 </span>
-              </div>
+                <div className="flex-1">
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
+                      {currentQ.question}
+                    </h3>
+                    <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
+                  </div>
 
-              <h3 className="text-xl font-bold text-gray-800 mb-8 whitespace-pre-wrap leading-relaxed">
-                {currentQ.question}
-              </h3>
-
-              {currentQ.type === 'coding' ? (
-                <div className="space-y-4">
-                   <div className="relative group">
-                      <div className="absolute top-4 right-4 z-10 opacity-30 group-hover:opacity-100 transition-opacity">
-                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white/10 px-2 py-1 rounded">{currentQ.language} Editor</span>
-                      </div>
-                      <textarea
-                        value={answers[currentQuestion] || ""}
-                        onChange={(e) => handleCodeChange(currentQuestion, e.target.value)}
-                        placeholder={`Write your ${currentQ.language} code here...`}
-                        className="w-full h-80 p-6 bg-[#1e1e1e] text-blue-100 font-mono text-sm rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-inner"
-                        spellCheck="false"
-                      />
-                   </div>
-
-                   <div className="flex items-center gap-4">
-                      <button
-                        onClick={runCode}
-                        disabled={executing}
-                        className="bg-gray-800 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all active:scale-95 disabled:opacity-50"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {currentQ.options.map((option, index) => (
+                      <label 
+                        key={index} 
+                        className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
+                          answers[currentQuestion] === index 
+                          ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
+                          : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
+                        }`}
                       >
-                         <FontAwesomeIcon icon={faArrowRight} spin={executing} />
-                         {executing ? 'Executing...' : 'Run & Test'}
-                      </button>
-                      <div className="flex-1 bg-gray-100 h-px"></div>
-                   </div>
-
-                   {output && (
-                     <div className="bg-gray-900 rounded-2xl p-6 overflow-hidden">
-                        <div className="flex items-center justify-between mb-4">
-                           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Execution Output</span>
-                           <button onClick={() => setOutput("")} className="text-gray-500 hover:text-white text-xs">Clear</button>
+                        <div className="flex flex-row items-center w-full gap-3">
+                          <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                             answers[currentQuestion] === index 
+                             ? 'border-white bg-white/25' 
+                             : 'border-gray-200 group-hover:border-blue-300'
+                          }`}>
+                             {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                          </div>
+                          <input
+                            type="radio"
+                            name={`q-${currentQuestion}`}
+                            checked={answers[currentQuestion] === index}
+                            onChange={() => handleAnswerSelect(currentQuestion, index)}
+                            className="hidden"
+                          />
+                          <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                             {option}
+                          </span>
                         </div>
-                        <pre className="text-green-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap">
-                           {output}
-                        </pre>
-                     </div>
-                   )}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid gap-3">
-                  {currentQ.options.map((option, index) => (
-                    <label 
-                      key={index} 
-                      className={`flex items-center p-3 rounded-xl border-2 transition-all cursor-pointer group ${
-                        answers[currentQuestion] === index 
-                        ? 'bg-blue-50 border-blue-500 shadow-sm' 
-                        : 'bg-white border-gray-100 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center transition-all ${
-                         answers[currentQuestion] === index ? 'border-blue-500 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]' : 'border-gray-200'
-                      }`}>
-                         {answers[currentQuestion] === index && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                      </div>
-                      <input
-                        type="radio"
-                        name={`q-${currentQuestion}`}
-                        checked={answers[currentQuestion] === index}
-                        onChange={() => handleAnswerSelect(currentQuestion, index)}
-                        className="hidden"
-                      />
-                      <span className={`text-sm font-semibold tracking-tight ${answers[currentQuestion] === index ? 'text-blue-900' : 'text-gray-600'}`}>
-                         {option}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <button
-                onClick={() => toggleMarkForReview(currentQuestion)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all ${
-                  markedForReview[currentQuestion] 
-                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <FontAwesomeIcon icon={faFlag} className={markedForReview[currentQuestion] ? 'text-amber-500' : 'text-gray-400'} />
-                {markedForReview[currentQuestion] ? 'Flagged for Review' : 'Mark for Review'}
-              </button>
-              
-              <div className="flex gap-3">
-                {currentQuestion > 0 && (
+                <div className="mt-10 pt-6 border-t border-gray-50 flex justify-between items-center">
                   <button
-                    onClick={previousQuestion}
-                    className="bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                    onClick={() => toggleMarkForReview(currentQuestion)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                      markedForReview[currentQuestion] 
+                      ? 'bg-amber-100 text-amber-600' 
+                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                    }`}
                   >
-                    Previous
+                    <FontAwesomeIcon icon={faFlag} className="text-[10px]" />
+                    {markedForReview[currentQuestion] ? 'Flagged' : 'Mark Review'}
                   </button>
-                )}
-                {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95"
-                  >
-                    Submit Final Exam
-                  </button>
-                ) : (
-                  <button
-                    onClick={nextQuestion}
-                    className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 flex items-center gap-2"
-                  >
-                    Next Question
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100">
-              <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-                 <FontAwesomeIcon icon={faUser} className="text-blue-500" />
-                 Question Navigator
-              </h4>
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-4 gap-2">
-                {questions.map((_, index) => {
-                  let statusColor = "bg-gray-100 text-gray-400";
-                  let borderColor = "border-transparent";
                   
-                  if (currentQuestion === index) {
-                    borderColor = "border-blue-500 ring-4 ring-blue-50";
-                  }
-
-                  if (markedForReview[index]) {
-                    statusColor = "bg-amber-500 text-white";
-                  } else if (answers[index] !== null) {
-                    statusColor = "bg-blue-600 text-white shadow-md";
-                  } else if (visitedQuestions[index]) {
-                    statusColor = "bg-red-50 text-red-400";
-                  }
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => goToQuestion(index)}
-                      className={`h-10 w-full rounded-lg text-xs font-black transition-all border-2 ${statusColor} ${borderColor}`}
-                    >
-                      {index + 1}
-                    </button>
-                  );
-                })}
+                  <div className="flex gap-2">
+                     {currentQuestion > 0 && (
+                       <button 
+                         onClick={previousQuestion} 
+                         className="h-11 px-4 rounded-xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 transition-all flex items-center justify-center text-sm"
+                       >
+                         ←
+                       </button>
+                     )}
+                     {currentQuestion < questions.length - 1 ? (
+                       <button 
+                        onClick={nextQuestion} 
+                        className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
+                       >
+                         Next Question
+                       </button>
+                     ) : (
+                       <button 
+                        onClick={() => handleSubmitExam("Manual submission")} 
+                        className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
+                       >
+                         Finish Exam
+                       </button>
+                     )}
+                  </div>
+                </div>
               </div>
-              
-              <div className="mt-8 pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Answered</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Flagged</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-100"></div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Skipped</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-gray-100"></div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Pending</span>
-                 </div>
+            </div>
+
+
+            {/* Right Section: Progress Tracker & Stats */}
+            <div className="col-span-1 flex flex-col gap-4 sticky top-24">
+              <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 flex flex-col gap-6">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
+                    <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
+                      {Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100)}%
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    {questions.map((_, index) => {
+                      let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
+                      if (currentQuestion === index) {
+                        statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
+                      } else if (markedForReview[index]) {
+                        statusColor = "bg-amber-500 text-white border-amber-500 shadow-sm";
+                      } else if (answers[index] !== null && answers[index] !== undefined && answers[index] !== "") {
+                        statusColor = "bg-green-500 text-white border-green-500 shadow-sm";
+                      }
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => goToQuestion(index)}
+                          className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95 flex items-center justify-center`}
+                        >
+                          {index + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="space-y-3 border-t border-gray-50 pt-5">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
+                       </div>
+                       <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Marked</span>
+                       </div>
+                       <span className="text-xs font-black text-gray-800">{markedForReview.filter(f => f).length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-2 h-2 rounded-lg border-2 border-blue-600"></div>
+                          <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Active</span>
+                       </div>
+                       <span className="text-xs font-black text-blue-600">{currentQuestion + 1}</span>
+                    </div>
+                </div>
+
+
               </div>
             </div>
           </div>
         </div>
-      </div>
-      {/* PROCTORING WARNING MODAL */}
-      {showWarningModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border border-amber-100 animate-in fade-in zoom-in duration-300">
-            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FontAwesomeIcon icon={faFlag} className="text-amber-500 text-2xl" />
-            </div>
-            <h3 className="text-xl font-black text-gray-800 mb-2 uppercase tracking-tight">Security Warning {warningCount}/3</h3>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              Violation: <span className="font-bold text-amber-600">{warningMessage}</span>.
-              <br/><br/>
-              Your exam will be automatically submitted after 3 warnings. Please strictly follow exam rules.
-            </p>
-            <button
-              onClick={handleCloseWarningModal}
-              className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-100 active:scale-95"
-            >
-              I Understand & Resume
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* PROCTORING WARNING MODAL */}
       {showWarningModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

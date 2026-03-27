@@ -108,7 +108,7 @@ function Playground() {
             </div>
 
             <button
-              onClick={() => navigate("/dashboard/python-exam")}
+              onClick={() => navigate("/dashboard/daily-exam")}
               className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition"
             >
               Start Exam

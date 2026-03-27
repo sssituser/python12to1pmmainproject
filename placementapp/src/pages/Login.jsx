@@ -45,10 +45,18 @@ function Login() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        form
+        form,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
-
       console.log("LOGIN RESPONSE:", res.data);
+
+      if (!res.data.access) {
+        throw new Error("Login failed - no access token");
+      }
 
       // ✅ STORE TOKENS
       localStorage.setItem("access", res.data.access);
@@ -65,8 +73,13 @@ function Login() {
 
       toast.success("Login successful 🚀");
 
-      // ✅ REDIRECT
-      navigate("/dashboard");
+      // ✅ REDIRECT BASED ON ROLE
+      const userRole = res.data.user?.role || "student";
+      if (userRole === "faculty") {
+        navigate("/faculty/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
 
     } catch (err) {
       console.log(err);
