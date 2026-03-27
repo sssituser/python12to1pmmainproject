@@ -8,17 +8,20 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
-from .views.job_views import JobViewSet, AppliedJobViewSet
+from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
+from .views import course_views
+from .views.course_views import CourseViewSet
 from . import api_views
 from .views.stats_views import *
 from .views.otp_views import *
-
 
 
 # ROUTER
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='jobs')
 router.register(r'applied-jobs', AppliedJobViewSet)
+router.register(r'admin/jobs', AdminJobViewSet, basename='admin-jobs')
+router.register(r'courses', CourseViewSet, basename='courses')
 
 
 urlpatterns = [
@@ -65,6 +68,7 @@ urlpatterns = [
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),
+    path('execute-code-api/', api_views.execute_code_api),
 
     # ================= JOB ROUTER =================
     path('', include(router.urls)),
@@ -84,4 +88,13 @@ urlpatterns = [
     path('student/<int:id>/', student_detail),
     path('students/', api_views.student_stats_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
+
+    # ================= COURSE SYSTEM =================
+    path('student/courses/', course_views.student_courses),
+    path('faculty/courses/', course_views.faculty_courses),
+    path('course/create/', course_views.create_course),
+    path('course/<int:course_id>/', course_views.get_course_details),
+    path('course/<str:course_name>/topics/', course_views.get_course_topics),
+
 ]
+

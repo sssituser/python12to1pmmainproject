@@ -7,40 +7,51 @@ function AllJobs() {
 
   const [jobsData, setJobsData] = useState([]);
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [perPage] = useState(10);
   const [search, setSearch] = useState("");
 
   // ==============================
   // APPLY JOB
   // ==============================
-  function applyJob(jobId) {
+  async function applyJob(jobId) {
     const token = localStorage.getItem("access");
 
-    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ job: jobId }),
-    })
-      .then((res) =>
-        res.json().then((data) => ({ status: res.status, data }))
-      )
-      .then(({ status }) => {
-        if (status === 201) {
-          alert("Applied Successfully ✅");
+    // 🔐 Block if not logged in
+    if (!token) {
+      alert("Please login first 🔐");
+      return;
+    }
 
-          setJobsData((prev) =>
-            prev.map((job) =>
-              job.id === jobId ? { ...job, status: "Applied" } : job
-            )
-          );
-        } else {
-          alert("Already Applied ⚠️");
+    try {
+      const res = await fetch(
+        "http://127.0.0.1:8000/api/applied-jobs/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ job: jobId }),
         }
-      })
-      .catch(() => alert("Error ❌"));
+      );
+
+      const data = await res.json();
+
+      if (res.status === 201) {
+        alert("Applied Successfully ✅");
+
+        setJobsData((prev) =>
+          prev.map((job) =>
+            job.id === jobId ? { ...job, status: "Applied" } : job
+          )
+        );
+      } else {
+        alert(data?.detail || data?.error || "Already Applied ⚠️");
+      }
+    } catch (err) {
+      console.log(err);
+      alert("Error ❌");
+    }
   }
 
   // ==============================
@@ -51,25 +62,42 @@ function AllJobs() {
 
     async function fetchData() {
       try {
-        const jobsRes = await fetch(
-          "http://127.0.0.1:8000/api/jobs/",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
+        // ✅ PUBLIC JOBS
+        const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
         const jobs = await jobsRes.json();
 
-        const appliedRes = await fetch(
-          "http://127.0.0.1:8000/api/applied-jobs/",
-          {
-            headers: { Authorization: `Bearer ${token}` },
+        let appliedIds = [];
+
+        // 🔐 Fetch applied jobs only if logged in
+        if (token) {
+          try {
+            const appliedRes = await fetch(
+              "http://127.0.0.1:8000/api/applied-jobs/",
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (appliedRes.ok) {
+              const appliedJobs = await appliedRes.json();
+
+              // ✅ Safe handling
+              if (Array.isArray(appliedJobs)) {
+                appliedIds = appliedJobs.map((a) =>
+                  typeof a.job === "object" ? a.job.id : a.job
+                );
+              }
+            } else {
+              console.log("Unauthorized → skipping applied jobs");
+            }
+          } catch (err) {
+            console.log("Applied jobs error:", err);
           }
-        );
+        }
 
-        const appliedJobs = await appliedRes.json();
-        const appliedIds = appliedJobs.map((a) => a.job);
-
+        // ✅ Always update jobs
         const updated = jobs.map((j) => ({
           ...j,
           status: appliedIds.includes(j.id) ? "Applied" : j.status,
@@ -77,7 +105,7 @@ function AllJobs() {
 
         setJobsData(updated);
       } catch (err) {
-        console.log(err);
+        console.log("Jobs fetch error:", err);
       }
     }
 
@@ -201,7 +229,7 @@ function AllJobs() {
         </span>
 
         <button
-          disabled={page === totalPages}
+          disabled={page === totalPages || totalPages === 0}
           onClick={() => setPage(page + 1)}
         >
           <FaArrowRight />

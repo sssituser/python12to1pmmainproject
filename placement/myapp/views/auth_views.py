@@ -39,9 +39,9 @@ def get_browser_info(request):
     return user_agent[:100] if len(user_agent) > 100 else user_agent
 
 
-# 🔐 LOGIN
+#  LOGIN
 @api_view(['POST'])
-def login_view(request):
+def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
 
@@ -86,7 +86,7 @@ def login_view(request):
     return Response({"detail": "Invalid credentials"}, status=400)
 
 
-# 📲 SEND OTP
+#  SEND OTP
 @api_view(['POST'])
 def send_otp(request):
     username = request.data.get("username")
@@ -101,7 +101,7 @@ def send_otp(request):
     return Response({"message": "OTP sent"})
 
 
-# ✅ VERIFY OTP
+#  VERIFY OTP
 @api_view(['POST'])
 def verify_otp(request):
     username = request.data.get("username")
@@ -117,7 +117,7 @@ def verify_otp(request):
     return Response({"error": "Invalid OTP"}, status=400)
 
 
-# 🔁 RESET PASSWORD
+#  RESET PASSWORD
 @api_view(['POST'])
 def reset_password(request):
     username = request.data.get("username")

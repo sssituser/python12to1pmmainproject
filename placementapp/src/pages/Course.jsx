@@ -24,7 +24,8 @@ import {
   FaAws,
   FaGoogle,
   FaApple,
-  FaAndroid
+  FaAndroid,
+  FaPlay
 } from "react-icons/fa";
 
 function CoursesPage() {
@@ -285,9 +286,13 @@ function CoursesPage() {
     navigate('/dashboard/course');
   };
 
-  // Handle Watch Click
+  // Handle Watch Click intercepting specific customized config properties dynamically identically bridging faculty configurations safely over!
   const handleWatchClick = (courseTitle, topic) => {
-    // Navigate to video player with course and topic
+    if (selectedCourse?.customVideos && selectedCourse.customVideos[topic]) {
+      localStorage.setItem('currentCustomVideo', JSON.stringify(selectedCourse.customVideos[topic]));
+    } else {
+      localStorage.removeItem('currentCustomVideo');
+    }
     navigate(`/video/${encodeURIComponent(courseTitle)}/${encodeURIComponent(topic)}`);
   };
 
@@ -315,12 +320,13 @@ function CoursesPage() {
         <div className="space-y-4">
           {selectedCourse.topics.map((topic, index) => (
             <div key={index} className="flex justify-between items-center">
-              <p className="text-lg font-medium">{topic}</p>
+              <p className="text-lg font-medium text-gray-800">{topic}</p>
               <button
                 onClick={() => handleWatchClick(selectedCourse.title, topic)}
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+                className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                title="Watch Video"
               >
-                Watch
+                <FaPlay className="text-xl" />
               </button>
             </div>
           ))}

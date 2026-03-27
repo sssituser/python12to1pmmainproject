@@ -1,9 +1,57 @@
 {
     "Weekly": {
-        "maxQuestions": 1,
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "type": "coding",
+                "question": "Write a program to take two integers as input and print their sum.",
+                "options": [
+                    "",
+                    "",
+                    "",
+                    ""
+                ],
+                "answer": "",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "5 10",
+                        "output": "15"
+                    }
+                ],
+                "marks": 2,
+                "id": 1774511677680
+            },
+            {
+                "type": "mcq",
+                "question": "asjhfiyafhljhvoua",
+                "options": [
+                    "SLHVVHDLV;KAD;JPIAD",
+                    ";AS,DJVPJADVJ;",
+                    "KSJVOUCJ;KAM",
+                    ";KSDJVKJ"
+                ],
+                "answer": "SLHVVHDLV;KAD;JPIAD",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1774513193839
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 1,
+        "duration": 1
+    },
+    "Monthly": {
+        "maxQuestions": 50,
         "questions": [],
         "passingRule": "percentage",
         "passingValue": 50,
-        "duration": 1
+        "duration": 45
     }
 }

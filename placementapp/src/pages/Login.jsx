@@ -16,11 +16,13 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ AUTO REDIRECT IF LOGGED IN
+  // ✅ AUTO REDIRECT IF ALREADY LOGGED IN
   useEffect(() => {
     const token = localStorage.getItem("access");
-    if (token) navigate("/dashboard", { replace: true });
-  }, []);
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setForm((prev) => ({
@@ -29,6 +31,9 @@ function Login() {
     }));
   };
 
+  // ==============================
+  // LOGIN FUNCTION (FIXED)
+  // ==============================
   const handleLogin = async () => {
     if (!form.username || !form.password) {
       toast.error("Fill all fields");
@@ -43,15 +48,28 @@ function Login() {
         form
       );
 
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // ✅ STORE TOKENS
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
-      localStorage.setItem("user", JSON.stringify({ role: "student", username: form.username }));
 
-      toast.success("Welcome ");
+      // ✅ STORE USER INFO
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          username: res.data.user?.username || form.username,
+          role: res.data.user?.role || "student",
+        })
+      );
 
+      toast.success("Login successful 🚀");
+
+      // ✅ REDIRECT
       navigate("/dashboard");
 
     } catch (err) {
+      console.log(err);
       toast.error(
         err?.response?.data?.detail || "Invalid credentials"
       );
@@ -64,18 +82,15 @@ function Login() {
     <div className="min-h-screen flex bg-black text-white overflow-hidden">
       <Toaster />
 
-      {/* 🌌 LEFT SIDE (VISUAL) */}
+      {/* LEFT SIDE */}
       <div className="w-1/2 hidden md:flex items-center justify-center relative">
 
-        {/* 🌍 Globe */}
         <div className="absolute inset-0 opacity-70 pointer-events-none">
           <Globe />
         </div>
 
-        {/* 🌫 Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
 
-        {/* ✨ TEXT */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -94,7 +109,7 @@ function Login() {
         </motion.div>
       </div>
 
-      {/* 🔐 RIGHT SIDE (FORM) */}
+      {/* RIGHT SIDE */}
       <div className="flex-1 flex items-center justify-center px-6">
 
         <motion.div

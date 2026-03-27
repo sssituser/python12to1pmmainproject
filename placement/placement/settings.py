@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -65,6 +66,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Global Exception Handling Middleware
+    'myapp.middleware.ExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'placement.urls'
@@ -144,6 +147,9 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 SIMPLE_JWT = {
@@ -193,4 +199,22 @@ TEMPLATES = [
         },
     },
 ]
+
+
+# Email
+# Fill these values directly if you want the leave-request backend to use SMTP
+# without setting PowerShell environment variables each time.
+GMAIL_SMTP_EMAIL = 'harshavardhan46724@gmail.com'
+GMAIL_SMTP_APP_PASSWORD = ''
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', GMAIL_SMTP_EMAIL)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', GMAIL_SMTP_APP_PASSWORD)
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+LEAVE_EMAIL_ENABLED = os.environ.get('LEAVE_EMAIL_ENABLED', 'True').lower() == 'true'
 

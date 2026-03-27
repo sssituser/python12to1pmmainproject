@@ -77,15 +77,24 @@ class Job(models.Model):
 
     company = models.CharField(max_length=200)
     job_title = models.CharField(max_length=200)
-    primary_skills = models.TextField()
+    primary_skills = models.TextField(blank=True)
+
+    location = models.CharField(max_length=200, blank=True)
     deadline = models.DateField()
-    location = models.CharField(max_length=200)
-    status = models.CharField(max_length=50)
+
+    status = models.CharField(max_length=50, default="Open")
+
+    # 🔥 ADD THESE BELOW
+    job_type = models.CharField(max_length=50, blank=True)
+    experience = models.CharField(max_length=50, blank=True)
+    salary = models.CharField(max_length=50, blank=True)
+    eligibility = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True, null=True)
+    responsibilities = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.job_title
-
 
 class AppliedJob(models.Model):
     user = models.ForeignKey('myapp.User', on_delete=models.CASCADE)
@@ -121,13 +130,22 @@ class LeaveRequest(models.Model):
     leave_type = models.CharField(
         max_length=20,
         choices=[
-            ('Medical', 'Medical'),
-            ('Personal', 'Personal'),
-            ('Academic', 'Academic'),
-            ('Family', 'Family'),
-            ('Other', 'Other')
+            ('CL', 'Casual Leave'),
+            ('SL', 'Sick Leave / Medical Leave'),
+            ('EL', 'Earned Leave / Privilege Leave'),
+            ('PTO', 'Paid Time Off'),
+            ('ML', 'Maternity Leave'),
+            ('PL', 'Paternity Leave'),
+            ('BL', 'Bereavement Leave'),
+            ('CO', 'Compensatory Off'),
+            ('PH', 'Public Holidays'),
+            ('LWP', 'Loss of Pay / Leave Without Pay'),
+            ('WFH', 'Work From Home / Remote Leave'),
+            ('SAB', 'Sabbatical Leave'),
+            ('MRL', 'Marriage Leave'),
+            ('STL', 'Study / Examination Leave'),
         ],
-        default='Medical'
+        default='SL'
     )
 
     status = models.CharField(max_length=20, default="Pending")
@@ -136,6 +154,22 @@ class LeaveRequest(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.status}"
+
+
+class EmailConfiguration(models.Model):
+    provider_name = models.CharField(max_length=100, default='Gmail SMTP')
+    email_host = models.CharField(max_length=255, default='smtp.gmail.com')
+    email_port = models.PositiveIntegerField(default=587)
+    email_host_user = models.EmailField()
+    email_host_password = models.CharField(max_length=255)
+    email_use_tls = models.BooleanField(default=True)
+    email_use_ssl = models.BooleanField(default=False)
+    default_from_email = models.EmailField(blank=True)
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.provider_name} - {self.email_host_user}"
 
 
 # ===============================
@@ -364,3 +398,67 @@ class OTP(models.Model):
     username = models.CharField(max_length=100)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
+# ===============================
+# COURSE SYSTEM
+# ===============================
+class Course(models.Model):
+    LEVEL_CHOICES = [
+        ('Beginner', 'Beginner'),
+        ('Intermediate', 'Intermediate'),
+        ('Advanced', 'Advanced'),
+    ]
+
+    title = models.CharField(max_length=200)
+    level = models.CharField(max_length=50, choices=LEVEL_CHOICES)
+    duration = models.CharField(max_length=50)  # e.g., "3 hrs"
+    progress = models.IntegerField(default=0)  # Default progress percentage
+    locked = models.BooleanField(default=False)
+    topics = models.JSONField(default=list)  # Store topics as JSON array
+    custom_videos = models.JSONField(default=dict, blank=True)  # Store custom videos
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['created_at']
+
+
+class CourseTopic(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='topic_records')
+    topic_text = models.CharField(max_length=200)
+    order = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.course.title} - {self.topic_text}"
+
+    class Meta:
+        ordering = ['order']
+
+
+class CourseEnrollment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    is_locked = models.BooleanField(default=False)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.title}"
+
+    class Meta:
+        unique_together = ('user', 'course')
+
+
+class StudentTopicProgress(models.Model):
+    enrollment = models.ForeignKey(CourseEnrollment, on_delete=models.CASCADE, related_name='topic_progress')
+    topic = models.ForeignKey(CourseTopic, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.enrollment.user.username} - {self.topic.topic_text} - {'Completed' if self.is_completed else 'In Progress'}"
+
+    class Meta:
+        unique_together = ('enrollment', 'topic')
+

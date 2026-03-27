@@ -1,10 +1,88 @@
+from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.core.mail import get_connection, EmailMessage
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from myapp.models import LeaveRequest
+from myapp.models import EmailConfiguration, LeaveRequest
 from myapp.serializers import LeaveRequestSerializer
 from myapp.email_utils import send_leave_request_email
+
+
+def _leave_details_text(leave):
+    details = [
+        f"Name: {leave.name}",
+        f"Email: {leave.email or 'Not provided'}",
+        f"Student ID: {leave.student_id}",
+        f"Phone: {leave.phone or 'Not provided'}",
+        f"Leave Type: {leave.leave_type}",
+        f"Start Date: {leave.start_date}",
+        f"End Date: {leave.end_date}",
+        f"Reason: {leave.reason}",
+        f"Status: {leave.status}",
+        f"Approved By: {leave.approved_by or 'Pending'}",
+    ]
+    return "\n".join(details)
+
+
+def _send_leave_email(leave, subject, intro_message):
+    recipient = (leave.email or "").strip()
+    email_enabled = getattr(settings, "LEAVE_EMAIL_ENABLED", True)
+
+    if not email_enabled:
+        return {"sent": False, "reason": "Leave email notifications are disabled in settings."}
+
+    if not recipient:
+        return {"sent": False, "reason": "Recipient email is empty."}
+
+    body = (
+        f"Hello {leave.name},\n\n"
+        f"{intro_message}\n\n"
+        f"Leave Request Details:\n"
+        f"{_leave_details_text(leave)}\n\n"
+        f"Thanks\n"
+        f"From - SSSIT"
+    )
+
+    try:
+        email_config = EmailConfiguration.objects.filter(is_active=True).order_by('-updated_at').first()
+
+        if email_config:
+            sender = email_config.default_from_email or email_config.email_host_user
+            connection = get_connection(
+                backend='django.core.mail.backends.smtp.EmailBackend',
+                host=email_config.email_host,
+                port=email_config.email_port,
+                username=email_config.email_host_user,
+                password=email_config.email_host_password,
+                use_tls=email_config.email_use_tls,
+                use_ssl=email_config.email_use_ssl,
+                timeout=getattr(settings, "EMAIL_TIMEOUT", 30),
+            )
+        else:
+            sender = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+            if not sender:
+                print(f"Email skipped for leave {leave.id}: sender email is not configured.")
+                return {"sent": False, "reason": "Sender email is not configured."}
+            connection = get_connection(timeout=getattr(settings, "EMAIL_TIMEOUT", 30))
+
+        message = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=sender,
+            to=[recipient],
+            connection=connection,
+        )
+        sent_count = message.send(fail_silently=False)
+        print(
+            f"Leave email status for leave {leave.id}: sent={bool(sent_count)}, "
+            f"subject='{subject}', to='{recipient}', from='{sender}'"
+        )
+        return {"sent": bool(sent_count), "reason": "Email sent successfully." if sent_count else "No email was sent."}
+    except Exception as exc:
+        print(f"Email sending failed for leave {leave.id}: {exc}")
+        return {"sent": False, "reason": str(exc)}
 
 # -----------------------------------------------------------
 # LEAVE REQUEST FRONTEND PAGE
@@ -39,16 +117,25 @@ def leave_request_page(request):
 <form id="leaveForm">
 <h3>Submit Leave</h3>
 <input name="name" placeholder="Name" required>
-<input name="email" placeholder="Email">
+<input name="email" placeholder="Email" type="email" required>
 <input name="student_id" placeholder="Student ID">
 <input type="date" name="start_date" required>
 <input type="date" name="end_date" required>
 <select name="leave_type">
-    <option value="Medical">Medical</option>
-    <option value="Personal">Personal</option>
-    <option value="Academic">Academic</option>
-    <option value="Family">Family</option>
-    <option value="Other">Other</option>
+    <option value="SL">Sick Leave / Medical Leave</option>
+    <option value="CL">Casual Leave</option>
+    <option value="EL">Earned Leave / Privilege Leave</option>
+    <option value="PTO">Paid Time Off</option>
+    <option value="ML">Maternity Leave</option>
+    <option value="PL">Paternity Leave</option>
+    <option value="BL">Bereavement Leave</option>
+    <option value="CO">Compensatory Off</option>
+    <option value="PH">Public Holidays</option>
+    <option value="LWP">Loss of Pay / Leave Without Pay</option>
+    <option value="WFH">Work From Home / Remote Leave</option>
+    <option value="SAB">Sabbatical Leave</option>
+    <option value="MRL">Marriage Leave</option>
+    <option value="STL">Study / Examination Leave</option>
 </select>
 <textarea name="reason" placeholder="Reason"></textarea>
 <button class="submit" type="submit">Submit</button>
@@ -170,6 +257,12 @@ def create_leave_request(request):
     print("Content type:", request.content_type)
     
     try:
+        if not request.data.get("email"):
+            return Response({
+                "success": False,
+                "errors": {"email": ["Email is required to send leave notifications."]}
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = LeaveRequestSerializer(data=request.data)
         print("Serializer created:", serializer)
 
@@ -178,6 +271,7 @@ def create_leave_request(request):
             print("Validated data:", serializer.validated_data)
             leave = serializer.save()
             print("Leave saved:", leave)
+
 
             # Send leave request email to the student (non-blocking).
             try:
@@ -194,6 +288,16 @@ def create_leave_request(request):
             except Exception as email_exc:
                 print(f"Leave request email sending error: {email_exc}")
 
+
+            email_result = _send_leave_email(
+                leave,
+                subject="Leave Request Submitted Successfully",
+                intro_message=(
+                    "You have submitted your leave request successfully and the status is still pending. "
+                    "We will update you soon."
+                ),
+            )
+            print(f"Leave submission email result for leave {leave.id}: {email_result}")
             return Response({
                 "success": True,
                 "message": "Leave request created successfully",
@@ -250,7 +354,6 @@ def approve_leave_request(request, pk):
         leave.status = "Approved"
         leave.approved_by = request.data.get("approved_by", "System")
         leave.save()
-
         # Send leave approval email to the student (non-blocking).
         try:
             if leave.email:
@@ -265,6 +368,12 @@ def approve_leave_request(request, pk):
                 )
         except Exception as email_exc:
             print(f"Leave approval email sending error: {email_exc}")
+        email_result = _send_leave_email(
+            leave,
+            subject="Your leave got approved",
+            intro_message="Your leave got approved.",
+        )
+        print(f"Leave approval email result for leave {leave.id}: {email_result}")
         
         return Response({
             "success": True,
@@ -305,7 +414,12 @@ def reject_leave_request(request, pk):
                 )
         except Exception as email_exc:
             print(f"Leave rejection email sending error: {email_exc}")
-        
+        email_result = _send_leave_email(
+            leave,
+            subject="Your leave got rejected",
+            intro_message="Your leave got rejected.",
+        )
+        print(f"Leave rejection email result for leave {leave.id}: {email_result}")
         return Response({
             "success": True,
             "message": "Leave rejected successfully",

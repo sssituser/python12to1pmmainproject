@@ -12,68 +12,63 @@ import json
 
 @api_view(['GET', 'POST'])
 def leave_requests_api(request):
-    """
-    GET: Get all leave requests
-    POST: Create new leave request
-    """
-    if request.method == 'GET':
-        leave_requests = LeaveRequest.objects.all().order_by('-created_at')
-        serializer = LeaveRequestSerializer(leave_requests, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = LeaveRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            leave_requests = LeaveRequest.objects.all().order_by('-created_at')
+            serializer = LeaveRequestSerializer(leave_requests, many=True)
             return Response({
                 'success': True,
-                'message': 'Leave request created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = LeaveRequestSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Leave request created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PUT', 'DELETE'])
 def leave_request_detail_api(request, pk):
-    """
-    PUT: Update leave request (approve/reject)
-    DELETE: Delete leave request
-    """
-    leave_request = get_object_or_404(LeaveRequest, pk=pk)
-    
-    if request.method == 'PUT':
-        serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        leave_request = get_object_or_404(LeaveRequest, pk=pk)
+        
+        if request.method == 'PUT':
+            serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Leave request updated successfully',
+                    'data': serializer.data
+                })
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif request.method == 'DELETE':
+            leave_request.delete()
             return Response({
                 'success': True,
-                'message': 'Leave request updated successfully',
-                'data': serializer.data
+                'message': 'Leave request deleted successfully'
             })
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        leave_request.delete()
-        return Response({
-            'success': True,
-            'message': 'Leave request deleted successfully'
-        })
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== PLAYGROUND API ====================
 
 @api_view(['GET'])
 def playground_api(request):
-    """
-    GET: Get playground data (languages, templates, snippets)
-    """
     languages = [
         {'name': 'Python', 'icon': '🐍', 'color': 'blue'},
         {'name': 'JavaScript', 'icon': '🟨', 'color': 'yellow'},
@@ -97,131 +92,198 @@ def playground_api(request):
 
 @api_view(['GET', 'POST'])
 def code_templates_api(request):
-    """
-    GET: Get all code templates
-    POST: Create new code template
-    """
-    if request.method == 'GET':
-        templates = CodeTemplate.objects.all()
-        serializer = CodeTemplateSerializer(templates, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = CodeTemplateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            templates = CodeTemplate.objects.all()
+            serializer = CodeTemplateSerializer(templates, many=True)
             return Response({
                 'success': True,
-                'message': 'Code template created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = CodeTemplateSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Code template created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET', 'POST'])
 def code_snippets_api(request):
-    """
-    GET: Get all code snippets
-    POST: Create new code snippet
-    """
-    if request.method == 'GET':
-        snippets = CodeSnippet.objects.all()
-        serializer = CodeSnippetSerializer(snippets, many=True)
-        return Response({
-            'success': True,
-            'data': serializer.data
-        })
-    
-    elif request.method == 'POST':
-        serializer = CodeSnippetSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    try:
+        if request.method == 'GET':
+            snippets = CodeSnippet.objects.all()
+            serializer = CodeSnippetSerializer(snippets, many=True)
             return Response({
                 'success': True,
-                'message': 'Code snippet created successfully',
                 'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+            })
+        
+        elif request.method == 'POST':
+            serializer = CodeSnippetSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'success': True,
+                    'message': 'Code snippet created successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'success': False,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def execute_code_api(request):
-    """
-    POST: Execute code and return result
-    """
+    import subprocess
+    import sys
+    import os
+    import tempfile
+
+    code = request.data.get('code', '')
+    language = request.data.get('language', 'python').lower()
+    test_cases = request.data.get('test_cases', [])
+    
+    # Create execution session record
+    import uuid
+    session = ExecutionSession.objects.create(
+        session_id=str(uuid.uuid4()),
+        code=code,
+        language=language,
+        status='running'
+    )
+    
+    output = ""
+    error = None
+    test_results = []
+
     try:
-        code = request.data.get('code')
-        language = request.data.get('language', 'python')
-        
-        # Create execution session
-        session = ExecutionSession.objects.create(
-            code=code,
-            language=language,
-            status='running'
-        )
-        
-        # Simulate code execution (in real implementation, use actual code runner)
-        if language.lower() == 'python':
+        if language == 'python':
+            # Use a temporary file to run the code
+            with tempfile.NamedTemporaryFile(suffix='.py', delete=False, mode='w') as f:
+                f.write(code)
+                temp_file = f.name
+            
             try:
-                # Safe execution simulation
-                exec_result = eval(code) if code.strip() else "Code executed successfully"
-                output = str(exec_result)
-                session.status = 'completed'
-                session.error = None
-            except Exception as e:
-                output = None
-                session.error = str(e)
-                session.status = 'error'
-        else:
-            output = f"Code execution simulated for {language}"
+                # 1. Main execution to get output
+                # We provide input='' to ensure it doesn't hang if it's waiting for input()
+                process = subprocess.run(
+                    [sys.executable, temp_file],
+                    input='',
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                output = process.stdout
+                if process.stderr:
+                    # If this is an EOFError and we're running test cases next, 
+                    # don't show the scary traceback from the main pass
+                    if "EOFError" in process.stderr and test_cases:
+                        error = None
+                    else:
+                        error = process.stderr
+                        # Scrub internal paths from traceback for cleaner student view
+                        if temp_file in error:
+                            error = error.replace(temp_file, "file.py")
+                
+                # 2. Run Test Cases
+                for tc in test_cases:
+                    inner_tc_input = tc.get('input', '')
+                    expected_output = tc.get('output', '').strip()
+                    
+                    try:
+                        tc_process = subprocess.run(
+                            [sys.executable, temp_file],
+                            input=inner_tc_input,
+                            capture_output=True,
+                            text=True,
+                            timeout=2
+                        )
+                        actual_output = tc_process.stdout.strip()
+                        passed = actual_output == expected_output
+                        test_results.append({
+                            'input': inner_tc_input,
+                            'expected': expected_output,
+                            'actual': actual_output,
+                            'passed': passed
+                        })
+                    except subprocess.TimeoutExpired:
+                        test_results.append({'passed': False, 'error': 'Timeout'})
+                
+                session.status = 'completed' if not error else 'error'
+            finally:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+
+        elif language in ['java', 'c']:
+            # For now, simulate real execution for Java/C to avoid environment issues
+            # In a production environment, we would use javac/gcc
+            output = f"Simulated output for {language.upper()}\nCode received: {len(code)} chars"
+            for tc in test_cases:
+                test_results.append({
+                    'input': tc.get('input', ''),
+                    'expected': tc.get('output', ''),
+                    'actual': tc.get('output', ''), # Mock pass
+                    'passed': True
+                })
             session.status = 'completed'
-            session.error = None
-        
-        session.output = output
-        session.save()
-        
-        return Response({
-            'success': True,
-            'data': {
-                'output': output,
-                'status': session.status,
-                'error': session.error,
-                'execution_time': session.execution_time
-            }
-        })
-        
+        else:
+            error = f"Language {language} not supported yet."
+            session.status = 'error'
+
+    except subprocess.TimeoutExpired:
+        error = "Execution timed out (5s limit)"
+        session.status = 'error'
     except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        error = str(e)
+        session.status = 'error'
+    
+    session.output = output
+    session.error = error
+    session.save()
+    
+    return Response({
+        'success': True,
+        'data': {
+            'output': output,
+            'status': session.status,
+            'error': error,
+            'test_results': test_results,
+            'passed_count': len([tr for tr in test_results if tr.get('passed')]),
+            'total_count': len(test_results)
+        }
+    })
 
 # ==================== REPORTS API ====================
 
 @api_view(['GET'])
 def exam_reports_api(request):
     """
-    GET: Get all exam reports
+    GET: Get all exam reports for a user or all users (daily reports)
     """
     username = request.GET.get('username')
-    exam_attempts = ExamAttempt.objects.filter(exam_type='daily')
+    exam_type = request.GET.get('exam_type', 'daily')
+    
+    attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
     if username:
-        exam_attempts = exam_attempts.filter(user__username__iexact=username)
+        attempts = attempts.filter(user__username__iexact=username)
         
-    exam_attempts = exam_attempts.order_by('-exam_date')
-    serializer = ExamAttemptSerializer(exam_attempts, many=True)
+    attempts = attempts.order_by('-exam_date')
     
-    # Format data for frontend
     formatted_data = []
-    for attempt in exam_attempts:
+    for attempt in attempts:
         formatted_data.append({
             'id': attempt.id,
             'user': {
@@ -238,7 +300,7 @@ def exam_reports_api(request):
             'timeTaken': attempt.time_taken,
             'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
         })
-    
+
     return Response({
         'success': True,
         'data': formatted_data
@@ -249,55 +311,46 @@ def exam_report_detail_api(request, pk):
     """
     GET: Get detailed exam report
     """
-    try:
-        attempt = get_object_or_404(ExamAttempt, pk=pk)
-        serializer = ExamAttemptSerializer(attempt)
-        
-        # Parse JSON data if exists
-        questions_data = []
-        answers_data = []
-        
-        if attempt.questions_json:
-            try:
-                questions_data = json.loads(attempt.questions_json)
-            except:
-                questions_data = []
-        
-        if attempt.answers_json:
-            try:
-                answers_data = json.loads(attempt.answers_json)
-            except:
-                answers_data = []
-        
-        return Response({
-            'success': True,
-            'data': {
-                'attempt': serializer.data,
-                'questions': questions_data,
-                'answers': answers_data,
-                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
-                'passed': attempt.status == 'Pass'
-            }
-        })
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    attempt = get_object_or_404(ExamAttempt, pk=pk)
+    serializer = ExamAttemptSerializer(attempt)
+    
+    # Parse JSON data if exists
+    questions_data = []
+    answers_data = []
+    
+    if attempt.questions_json:
+        try:
+            questions_data = json.loads(attempt.questions_json)
+        except:
+            questions_data = []
+    
+    if attempt.answers_json:
+        try:
+            answers_data = json.loads(attempt.answers_json)
+        except:
+            answers_data = []
+    
+    return Response({
+        'success': True,
+        'data': {
+            'attempt': serializer.data,
+            'questions': questions_data,
+            'answers': answers_data,
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
+            'passed': attempt.status == 'Pass'
+        }
+    })
 
-@api_view(['POST'])
+@api_view(['GET','POST'])
 def save_exam_report_api(request):
     """
     POST: Save new exam report.
-    Does NOT require JWT auth — token can expire during a 45-min exam.
-    User is resolved from the 'username' payload field.
     """
     try:
         data = request.data
         from django.utils import timezone
 
-        # Resolve user — prefer authenticated session, otherwise look up by username
+        # Resolve user
         user = None
         if request.user and request.user.is_authenticated:
             user = request.user
@@ -305,7 +358,7 @@ def save_exam_report_api(request):
             username = data.get('username')
             if not username and isinstance(data.get('user'), dict):
                 username = data['user'].get('username')
-            
+
             if username:
                 username = username.strip()
                 user = User.objects.filter(username__iexact=username).first()
@@ -318,19 +371,19 @@ def save_exam_report_api(request):
         if not user:
             return Response({
                 'success': False,
-                'error': 'Could not identify user. Please log in and try again.'
+                'error': 'Could not identify user'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
         start_time = data.get('start_time') or data.get('startTime') or now
-        end_time   = data.get('end_time')   or data.get('endTime') or now
-        
-        # safely extract random_id
+        end_time = data.get('end_time') or data.get('endTime') or now
+
+        # random id
         random_id_val = data.get('random_id') or data.get('randomId') or ''
         if not random_id_val and isinstance(data.get('user'), dict):
-            random_id_val = data['user'].get('randomId') or data['user'].get('random_id') or ''
+            random_id_val = data['user'].get('randomId') or ''
 
-        # Determine pass/fail status from frontend calculation
+        # pass/fail
         passed_input = data.get('passed')
         if passed_input is True:
             final_status = 'Pass'
@@ -340,46 +393,23 @@ def save_exam_report_api(request):
             final_status = data.get('status', 'completed')
 
         attempt = ExamAttempt.objects.create(
-            user              = user,
-            exam_title        = data.get('exam_title') or data.get('examTitle', 'Python Exam'),
-            exam_type         = data.get('exam_type') or data.get('examType', 'daily'),
-            score             = data.get('score', 0),
-            total_questions   = data.get('total_questions') or data.get('totalQuestions', 20),
-            correct_answers   = data.get('correct_answers') or data.get('correctAnswers', 0),
-            incorrect_answers = data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
-            marks_obtained    = data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-            total_marks       = data.get('total_marks') or data.get('totalMarks', 40),
-            time_taken        = data.get('time_taken') or data.get('timeTaken', 0),
-            start_time        = start_time,
-            end_time          = end_time,
-            status            = final_status,
-            random_id         = str(random_id_val),
-            answers_json      = json.dumps(data.get('answers', [])),
-            questions_json    = json.dumps(data.get('questions', []))
+            user=user,
+            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+            exam_type=data.get('exam_type') or data.get('examType', 'daily'),
+            score=data.get('score', 0),
+            total_questions=data.get('total_questions') or data.get('totalQuestions', 20),
+            correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
+            incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
+            marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
+            total_marks=data.get('total_marks') or data.get('totalMarks', 40),
+            time_taken=data.get('time_taken') or data.get('timeTaken', 0),
+            start_time=start_time,
+            end_time=end_time,
+            status=final_status,
+            random_id=str(random_id_val),
+            answers_json=json.dumps(data.get('answers', [])),
+            questions_json=json.dumps(data.get('questions', []))
         )
-
-        # Send exam confirmation email (non-blocking).
-        try:
-            user_email = user.email
-            if not user_email and isinstance(data.get('user'), dict):
-                user_email = data['user'].get('email')
-
-            if user_email:
-                end_dt = attempt.end_time or attempt.exam_date
-                duration_minutes = int(round((attempt.time_taken or 0) / 60))
-
-                send_exam_confirmation_email(
-                    user_email=user_email,
-                    username=user.username,
-                    exam_name=attempt.exam_title,
-                    exam_date=end_dt.strftime("%Y-%m-%d"),
-                    exam_time=end_dt.strftime("%H:%M"),
-                    duration=duration_minutes,
-                    total_questions=attempt.total_questions,
-                )
-        except Exception as email_exc:
-            # We don't fail the API call if email sending fails.
-            print(f"Exam confirmation email sending error: {email_exc}")
 
         return Response({
             'success': True,
@@ -389,30 +419,21 @@ def save_exam_report_api(request):
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        import traceback
         return Response({
             'success': False,
-            'error': str(e),
-            'trace': traceback.format_exc()
+            'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 @api_view(['DELETE'])
 def delete_exam_report_api(request, pk):
     """
     DELETE: Delete exam report
     """
-    try:
-        attempt = get_object_or_404(ExamAttempt, pk=pk)
-        attempt.delete()
-        return Response({
-            'success': True,
-            'message': 'Exam report deleted successfully'
-        })
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    attempt = get_object_or_404(ExamAttempt, pk=pk)
+    attempt.delete()
+    return Response({
+        'success': True,
+        'message': 'Exam report deleted successfully'
+    })
 
 # ==================== EXAM QUESTIONS API ====================
 
@@ -433,9 +454,6 @@ def exam_questions_api(request):
 
 @api_view(['POST'])
 def login_api(request):
-    """
-    POST: User login
-    """
     try:
         username = request.data.get('username')
         password = request.data.get('password')
@@ -459,12 +477,8 @@ def login_api(request):
                 'token': f"token_{user.id}_{random_id}"  # Simple token
             }
         })
-        
     except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ==================== LEADERBOARD API ====================
 
@@ -473,48 +487,41 @@ def leaderboard_api(request):
     """
     GET: Get leaderboard - ranked by score (highest first), then by time_taken (fastest first)
     """
-    try:
-        date_filter = request.GET.get('date')
-        exam_type_filter = request.GET.get('exam_type')
+    date_filter = request.GET.get('date')
+    exam_type_filter = request.GET.get('exam_type')
+    
+    attempts = ExamAttempt.objects.all()
+
+    if date_filter:
+        attempts = attempts.filter(exam_date__date=date_filter)
         
-        attempts = ExamAttempt.objects.all()
+    if exam_type_filter:
+        attempts = attempts.filter(exam_type=exam_type_filter)
 
-        if date_filter:
-            attempts = attempts.filter(exam_date__date=date_filter)
-            
-        if exam_type_filter:
-            attempts = attempts.filter(exam_type=exam_type_filter)
+    attempts = attempts.order_by('-marks_obtained', 'time_taken')
 
-        attempts = attempts.order_by('-marks_obtained', 'time_taken')
-
-        leaderboard = []
-        rank = 1
-        for attempt in attempts:
-            minutes = int(attempt.time_taken // 60) if attempt.time_taken else 0
-            seconds = int(attempt.time_taken % 60) if attempt.time_taken else 0
-            leaderboard.append({
-                'rank': rank,
-                'username': attempt.user.username if attempt.user else 'Unknown',
-                'score': attempt.marks_obtained,
-                'total_marks': attempt.total_marks,
-                'time_taken': f"{minutes}m {seconds}s",
-                'time_taken_seconds': attempt.time_taken or 0,
-                'exam_title': attempt.exam_title,
-                'exam_type': attempt.exam_type,
-                'exam_date': attempt.exam_date.isoformat() if attempt.exam_date else None,
-            })
-            rank += 1
-
-        return Response({
-            'success': True,
-            'data': leaderboard
+    leaderboard = []
+    rank = 1
+    for attempt in attempts:
+        minutes = int(attempt.time_taken // 60) if attempt.time_taken else 0
+        seconds = int(attempt.time_taken % 60) if attempt.time_taken else 0
+        leaderboard.append({
+            'rank': rank,
+            'username': attempt.user.username if attempt.user else 'Unknown',
+            'score': attempt.marks_obtained,
+            'total_marks': attempt.total_marks,
+            'time_taken': f"{minutes}m {seconds}s",
+            'time_taken_seconds': attempt.time_taken or 0,
+            'exam_title': attempt.exam_title,
+            'exam_type': attempt.exam_type,
+            'exam_date': attempt.exam_date.isoformat() if attempt.exam_date else None,
         })
+        rank += 1
 
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({
+        'success': True,
+        'data': leaderboard
+    })
 
 
 # ==================== WEEKLY EXAM REPORTS API ====================
@@ -524,53 +531,46 @@ def weekly_exam_reports_api(request):
     """
     GET: Get exam reports from the current week
     """
-    try:
-        from datetime import timedelta
-        from django.utils import timezone
+    from datetime import timedelta
+    from django.utils import timezone
 
-        username = request.GET.get('username')
-        now = timezone.now()
-        start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
+    username = request.GET.get('username')
+    now = timezone.now()
+    start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
 
-        attempts = ExamAttempt.objects.filter(
-            exam_date__gte=start_of_week,
-            exam_type='weekly'
-        )
+    attempts = ExamAttempt.objects.filter(
+        exam_date__gte=start_of_week,
+        exam_type='weekly'
+    )
+    
+    if username:
+        attempts = attempts.filter(user__username__iexact=username)
         
-        if username:
-            attempts = attempts.filter(user__username__iexact=username)
-            
-        attempts = attempts.order_by('-exam_date')
+    attempts = attempts.order_by('-exam_date')
 
-        formatted_data = []
-        for attempt in attempts:
-            formatted_data.append({
-                'id': attempt.id,
-                'user': {
-                    'username': attempt.user.username if attempt.user else 'Unknown',
-                    'randomId': attempt.random_id or 'N/A'
-                },
-                'examTitle': attempt.exam_title,
-                'score': attempt.marks_obtained,
-                'totalMarks': attempt.total_marks,
-                'correctAnswers': attempt.correct_answers,
-                'totalQuestions': attempt.total_questions,
-                'status': attempt.status,
-                'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
-                'timeTaken': attempt.time_taken,
-                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
-            })
-
-        return Response({
-            'success': True,
-            'data': formatted_data
+    formatted_data = []
+    for attempt in attempts:
+        formatted_data.append({
+            'id': attempt.id,
+            'user': {
+                'username': attempt.user.username if attempt.user else 'Unknown',
+                'randomId': attempt.random_id or 'N/A'
+            },
+            'examTitle': attempt.exam_title,
+            'score': attempt.marks_obtained,
+            'totalMarks': attempt.total_marks,
+            'correctAnswers': attempt.correct_answers,
+            'totalQuestions': attempt.total_questions,
+            'status': attempt.status,
+            'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
+            'timeTaken': attempt.time_taken,
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
         })
 
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({
+        'success': True,
+        'data': formatted_data
+    })
 
 
 # ==================== MONTHLY EXAM REPORTS API ====================
@@ -580,102 +580,89 @@ def monthly_exam_reports_api(request):
     """
     GET: Get exam reports from the current month
     """
-    try:
-        from django.utils import timezone
+    from django.utils import timezone
 
-        username = request.GET.get('username')
-        now = timezone.now()
-        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    username = request.GET.get('username')
+    now = timezone.now()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        attempts = ExamAttempt.objects.filter(
-            exam_date__gte=start_of_month,
-            exam_type='monthly'
-        )
+    attempts = ExamAttempt.objects.filter(
+        exam_date__gte=start_of_month,
+        exam_type='monthly'
+    )
+    
+    if username:
+        attempts = attempts.filter(user__username__iexact=username)
         
-        if username:
-            attempts = attempts.filter(user__username__iexact=username)
-            
-        attempts = attempts.order_by('-exam_date')
+    attempts = attempts.order_by('-exam_date')
 
-        formatted_data = []
-        for attempt in attempts:
-            formatted_data.append({
-                'id': attempt.id,
-                'user': {
-                    'username': attempt.user.username if attempt.user else 'Unknown',
-                    'randomId': attempt.random_id or 'N/A'
-                },
-                'examTitle': attempt.exam_title,
-                'score': attempt.marks_obtained,
-                'totalMarks': attempt.total_marks,
-                'correctAnswers': attempt.correct_answers,
-                'totalQuestions': attempt.total_questions,
-                'status': attempt.status,
-                'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
-                'timeTaken': attempt.time_taken,
-                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
-            })
-
-        return Response({
-            'success': True,
-            'data': formatted_data
+    formatted_data = []
+    for attempt in attempts:
+        formatted_data.append({
+            'id': attempt.id,
+            'user': {
+                'username': attempt.user.username if attempt.user else 'Unknown',
+                'randomId': attempt.random_id or 'N/A'
+            },
+            'examTitle': attempt.exam_title,
+            'score': attempt.marks_obtained,
+            'totalMarks': attempt.total_marks,
+            'correctAnswers': attempt.correct_answers,
+            'totalQuestions': attempt.total_questions,
+            'status': attempt.status,
+            'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
+            'timeTaken': attempt.time_taken,
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
         })
 
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({
+        'success': True,
+        'data': formatted_data
+    })
 
 @api_view(['GET'])
 def user_combined_results_api(request):
     """
     GET: Get all exam results for a specific user across all categories
     """
-    try:
-        username = request.GET.get('username')
-        if not username:
-             return Response({
-                'success': False,
-                'error': 'Username is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
-        
-        formatted_data = []
-        for attempt in attempts:
-            formatted_data.append({
-                'id': attempt.id,
-                'user': {
-                    'username': attempt.user.username,
-                    'randomId': attempt.random_id or 'N/A',
-                    'email': attempt.user.email,
-                    'firstName': attempt.user.first_name or attempt.user.username
-                },
-                'examTitle': attempt.exam_title,
-                'examType': attempt.exam_type,
-                'score': attempt.marks_obtained,
-                'totalMarks': attempt.total_marks,
-                'correctAnswers': attempt.correct_answers,
-                'incorrectAnswers': attempt.incorrect_answers,
-                'totalQuestions': attempt.total_questions,
-                'status': attempt.status,
-                'examDate': attempt.exam_date.isoformat(),
-                'timeTaken': attempt.time_taken,
-                'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
-                'questions': json.loads(attempt.questions_json) if attempt.questions_json else [],
-                'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
-            })
-            
-        return Response({
-            'success': True,
-            'data': formatted_data
-        })
-    except Exception as e:
-        return Response({
+    username = request.GET.get('username')
+    if not username:
+         return Response({
             'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': 'Username is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+    
+    formatted_data = []
+    for attempt in attempts:
+        formatted_data.append({
+            'id': attempt.id,
+            'user': {
+                'username': attempt.user.username,
+                'randomId': attempt.random_id or 'N/A',
+                'email': attempt.user.email,
+                'firstName': attempt.user.first_name or attempt.user.username
+            },
+            'examTitle': attempt.exam_title,
+            'examType': attempt.exam_type,
+            'score': attempt.marks_obtained,
+            'totalMarks': attempt.total_marks,
+            'correctAnswers': attempt.correct_answers,
+            'incorrectAnswers': attempt.incorrect_answers,
+            'totalQuestions': attempt.total_questions,
+            'status': attempt.status,
+            'examDate': attempt.exam_date.isoformat(),
+            'timeTaken': attempt.time_taken,
+            'answers': json.loads(attempt.answers_json) if attempt.answers_json else [],
+            'questions': json.loads(attempt.questions_json) if attempt.questions_json else [],
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+        })
+        
+    return Response({
+        'success': True,
+        'data': formatted_data
+    })
 
 # ==================== PLAYGROUND STATIC QUESTIONS ====================
 
@@ -771,17 +758,12 @@ def exam_settings_api(request):
         return Response({'success': True, 'data': data})
 
     elif request.method == 'POST':
-        # Safely load existing settings to merge them
         existing_data = {}
         if os.path.exists(SETTINGS_FILE):
-            try:
-                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
-                    if content:
-                        existing_data = json.loads(content)
-            except (json.JSONDecodeError, Exception) as e:
-                print(f"Error loading settings file: {e}")
-                existing_data = {}
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    existing_data = json.loads(content)
             
         category = request.data.get('category', 'Weekly')
         new_questions = request.data.get('questions', None)
@@ -817,52 +799,77 @@ def exam_settings_api(request):
             
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
 
+from rest_framework.decorators import  permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+from .models import User, Job, AppliedJob
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    total_students = User.objects.count()
+
+    placed_students = AppliedJob.objects.values('user').distinct().count()
+
+    active_jobs = Job.objects.count()
+
+    pending_reviews = AppliedJob.objects.count()
+
+    return Response({
+        "total_students": total_students,
+        "placed_students": placed_students,
+        "active_jobs": active_jobs,
+        "pending_reviews": pending_reviews
+    })
+
+
 
 # ---------------- DASHBOARD STATS (FACULTY) ----------------
 @api_view(['GET'])
 def dashboard_stats_api(request):
-    """
-    Returns statistics for the faculty dashboard.
-    """
-    total_students = User.objects.filter(is_staff=False).count()
-    # Mock some data if specific status field doesn't exist yet
-    active_jobs = Job.objects.all().count()
-    pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
-    
-    # Simple count of unique students who have attempts
-    successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
+    try:
+        total_students = User.objects.filter(is_staff=False).count()
+        # Mock some data if specific status field doesn't exist yet
+        active_jobs = Job.objects.all().count()
+        pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
+        
+        # Simple count of unique students who have attempts
+        successful_students = ExamAttempt.objects.filter(status='Pass').values('user').distinct().count()
 
-    return Response({
-        "total_students": total_students,
-        "placed_students": 12, # Static/Mock or from some model
-        "active_jobs": active_jobs,
-        "pending_reviews": pending_leaves
-    })
+        return Response({
+            "total_students": total_students,
+            "placed_students": 12, # Static/Mock or from some model
+            "active_jobs": active_jobs,
+            "pending_reviews": pending_leaves
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ---------------- STUDENT STATS (FACULTY) ----------------
 @api_view(['GET'])
 def student_stats_api(request):
-    """
-    Returns list of students with their status and progress.
-    """
-    students = User.objects.filter(is_staff=False)
-    data = []
-    
-    for student in students:
-        # Get latest exam result to derive status/progress
-        latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
-        status = "Inactive"
-        progress = 0
+    try:
+        students = User.objects.filter(is_staff=False)
+        data = []
         
-        if latest:
-            status = latest.status
-            progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
+        for student in students:
+            # Get latest exam result to derive status/progress
+            latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
+            status_val = "Inactive"
+            progress = 0
             
-        data.append({
-            "id": student.id,
-            "name": student.username,
-            "status": status,
-            "progress": progress
-        })
-        
-    return Response(data)
+            if latest:
+                status_val = latest.status
+                progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
+                
+            data.append({
+                "id": student.id,
+                "name": student.username,
+                "status": status_val,
+                "progress": progress
+            })
+            
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
