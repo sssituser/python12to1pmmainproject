@@ -1,11 +1,11 @@
 import os
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'placement.settings'
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'placement.settings')
 django.setup()
 
 from myapp.models import ExamAttempt
-attempts = ExamAttempt.objects.all().order_by('-id')[:10]
-print(f"Total exams: {ExamAttempt.objects.count()}")
-for a in attempts:
-    uname = a.user.username if a.user else 'NULL'
-    print(f"  ID:{a.id}  User:{uname}  Title:{a.exam_title}  Score:{a.marks_obtained}/{a.total_marks}")
+print(f"Total attempts: {ExamAttempt.objects.count()}")
+print("Exam Types and Counts:")
+for at in ExamAttempt.objects.values('exam_type').distinct():
+    count = ExamAttempt.objects.filter(exam_type=at['exam_type']).count()
+    print(f"- {at['exam_type']}: {count}")
