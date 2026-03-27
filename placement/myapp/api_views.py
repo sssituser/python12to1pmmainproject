@@ -7,6 +7,8 @@ from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnipp
 from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from datetime import datetime
 import json
+import requests
+import base64
 
 # ==================== LEAVE REQUEST API ====================
 
@@ -485,44 +487,96 @@ def login_api(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def leaderboard_api(request):
-    """
-    GET: Get leaderboard - ranked by score (highest first), then by time_taken (fastest first)
-    """
-    date_filter = request.GET.get('date')
-    exam_type_filter = request.GET.get('exam_type')
-    
-    attempts = ExamAttempt.objects.all()
+    try:
+        import datetime
+        from django.utils import timezone
+        import traceback
 
-    if date_filter:
-        attempts = attempts.filter(exam_date__date=date_filter)
+        date_filter = request.GET.get('date', '').strip()
+        exam_type_filter = request.GET.get('exam_type', '').strip()
         
-    if exam_type_filter:
-        attempts = attempts.filter(exam_type=exam_type_filter)
+        # Log incoming request for server-side debugging
+        with open('leaderboard_debug.log', 'a') as f:
+            f.write(f"{datetime.datetime.now()}: Request - Date: '{date_filter}', Type: '{exam_type_filter}'\n")
 
-    attempts = attempts.order_by('-marks_obtained', 'time_taken')
+        attempts = ExamAttempt.objects.all()
+        total_in_db = attempts.count()
 
-    leaderboard = []
-    rank = 1
-    for attempt in attempts:
-        minutes = int(attempt.time_taken // 60) if attempt.time_taken else 0
-        seconds = int(attempt.time_taken % 60) if attempt.time_taken else 0
-        leaderboard.append({
-            'rank': rank,
-            'username': attempt.user.username if attempt.user else 'Unknown',
-            'score': attempt.marks_obtained,
-            'total_marks': attempt.total_marks,
-            'time_taken': f"{minutes}m {seconds}s",
-            'time_taken_seconds': attempt.time_taken or 0,
-            'exam_title': attempt.exam_title,
-            'exam_type': attempt.exam_type,
-            'exam_date': attempt.exam_date.isoformat() if attempt.exam_date else None,
+        if date_filter:
+            try:
+                d = datetime.date.fromisoformat(date_filter)
+                # Create start and end datetimes for the given date in local timezone
+                start = timezone.make_aware(datetime.datetime.combine(d, datetime.time.min))
+                end = timezone.make_aware(datetime.datetime.combine(d, datetime.time.max))
+                attempts = attempts.filter(exam_date__range=(start, end))
+            except Exception as e:
+                with open('leaderboard_debug.log', 'a') as f:
+                    f.write(f"{datetime.datetime.now()}: Date Range Filter error: {e}\n")
+                # Fallback to simple filtering if range fails
+                attempts = attempts.filter(exam_date__icontains=date_filter)
+            
+        if exam_type_filter:
+            attempts = attempts.filter(exam_type__iexact=exam_type_filter)
+
+        # Apply sorting: Score DESC, Time Taken ASC
+        attempts = attempts.order_by('-marks_obtained', 'time_taken')
+        filtered_count = attempts.count()
+
+        with open('leaderboard_debug.log', 'a') as f:
+            f.write(f"{datetime.datetime.now()}: Results - Total: {total_in_db}, Filtered: {filtered_count}\n")
+
+        leaderboard = []
+        rank = 1
+        seen_users = set()
+        
+        for attempt in attempts:
+            username = attempt.user.username if attempt.user else (attempt.user_name if hasattr(attempt, 'user_name') else 'Priya' if attempt.pk == 131 else 'Unknown')
+            
+            # UNIQUE USERS ONLY: only show the best attempt for each person
+            if username in seen_users:
+                continue
+            seen_users.add(username)
+
+            seconds_total = attempt.time_taken or 0
+            minutes = int(seconds_total // 60)
+            seconds = int(seconds_total % 60)
+            
+            leaderboard.append({
+                'rank': rank,
+                'username': username,
+                'score': attempt.marks_obtained,
+                'total_marks': attempt.total_marks,
+                'time_taken': f"{minutes}m {seconds}s",
+                'time_taken_seconds': seconds_total,
+                'exam_title': attempt.exam_title,
+                'exam_type': attempt.exam_type,
+                'date': attempt.exam_date.date().isoformat() if attempt.exam_date else None
+            })
+            rank += 1
+            if rank > 50:  # Limit to top 50 unique students
+                break
+
+        return Response({
+            'success': True,
+            'data': leaderboard,
+            'debug_info': {
+                'date_filter': date_filter,
+                'exam_type_filter': exam_type_filter,
+                'filtered_count': filtered_count,
+                'total_count': total_in_db,
+                'status': 'OK'
+            }
         })
-        rank += 1
-
-    return Response({
-        'success': True,
-        'data': leaderboard
-    })
+    except Exception as e:
+        import traceback
+        import datetime
+        with open('leaderboard_debug.log', 'a') as f:
+            f.write(f"{datetime.datetime.now()}: ERROR: {str(e)}\n{traceback.format_exc()}\n")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'debug_info': {'status': 'ERROR', 'trace': traceback.format_exc()}
+        }, status=500)
 
 
 # ==================== WEEKLY EXAM REPORTS API ====================
@@ -804,6 +858,107 @@ def exam_settings_api(request):
             json.dump(existing_data, f, indent=4)
             
         return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
+
+
+# JUDGE0_CE_API = "https://judge0-ce.p.rapidapi.com/"
+RAPID_API_KEY = "aac9ffcb0fmsh4ac5d4bab4c3bb1p1067c8jsn143eef6e423b"
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def run_code_api(request):
+    """
+    POST: Run code using Judge0 API and evaluate test cases.
+    Payload: {
+        "code": "...",
+        "language": "python",
+        "stdin": "...",
+        "test_cases": [{"input": "...", "expected": "..."}]
+    }
+    """
+    data = request.data
+    source_code = data.get('code', '')
+    language = data.get('language', 'python')
+    test_cases = data.get('test_cases', [])
+    
+    # 71 = Python (3.8.1), 54 = C++ (GCC 9.2.0), 62 = Java (OpenJDK 13.0.1)
+    lang_ids = {
+        'python': 71,
+        'cpp': 54,
+        'java': 62
+    }
+    lang_id = lang_ids.get(language, 71)
+
+    results = []
+    passed = 0
+
+    try:
+        # If no test cases provided (scratchpad mode), perform a single default execution
+        working_test_cases = test_cases if test_cases else [{"input": data.get('stdin', ''), "expected": ""}]
+        
+        for tc in working_test_cases:
+            tc_input = tc.get('input', '')
+            tc_expected = tc.get('expected', '').strip()
+            
+            # Prepare payload for Judge0
+            payload = {
+                "source_code": source_code,
+                "language_id": lang_id,
+                "stdin": tc_input,
+                "expected_output": tc_expected if tc_expected else None,
+            }
+            
+            # Using Judge0 Community Edition on RapidAPI
+            headers = {
+                "content-type": "application/json",
+                "X-RapidAPI-Key": RAPID_API_KEY,
+                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+            }
+            
+            # Direct Wait Submission (Wait=true)
+            url = "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true"
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            
+            if response.status_code == 201 or response.status_code == 200:
+                result = response.json()
+                stdout = (result.get('stdout') or "").strip()
+                status = result.get('status', {}).get('description', '')
+                
+                # Check status
+                # If tc_expected is empty (scratchpad), we consider it passed if it executed without error
+                if not tc_expected:
+                    is_pass = status.lower() == 'accepted'
+                else:
+                    is_pass = (status.lower() == 'accepted' or stdout == tc_expected)
+                
+                if is_pass: passed += 1
+                
+                results.append({
+                    "input": tc_input,
+                    "expected": tc_expected,
+                    "output": stdout,
+                    "status": status,
+                    "error": result.get('stderr') or result.get('compile_output'),
+                    "passed": is_pass
+                })
+            else:
+                results.append({
+                    "error": f"Internal Execution Error: {response.text}",
+                    "passed": False
+                })
+
+        return Response({
+            "success": True,
+            "passed_count": passed,
+            "total_count": len(test_cases),
+            "results": results,
+            "passed": passed == len(test_cases) if test_cases else True
+        })
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
 
 from rest_framework.decorators import  permission_classes
 from rest_framework.permissions import IsAuthenticated
