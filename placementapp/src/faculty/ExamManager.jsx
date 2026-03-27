@@ -159,6 +159,8 @@ function ExamManager() {
       options: ["", "", "", ""],
       answer: "",
       marks: 2,
+      language: "python",
+      testCases: [{ input: "", output: "" }],
     });
   };
 

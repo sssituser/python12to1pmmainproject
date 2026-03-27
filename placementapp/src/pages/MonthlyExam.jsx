@@ -11,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import * as faceapi from "@vladmandic/face-api";
+import Editor from "@monaco-editor/react";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -130,6 +131,13 @@ const MonthlyExam = () => {
   const [passingRule, setPassingRule] = useState("percentage"); 
   const [passingValue, setPassingValue] = useState(35); // Default 35% for Monthly
 
+  // --- COMPILER STATES ---
+  const [codeAnswers, setCodeAnswers] = useState({}); // { questionId: { code: string, language: string } }
+  const [executing, setExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
+  const [showConsole, setShowConsole] = useState(false);
+
   // Fetch 50 randomized questions from backend pool
   useEffect(() => {
     const fetchQuestionsFromBackend = async () => {
@@ -177,10 +185,13 @@ const MonthlyExam = () => {
           const mappedQuestions = monthlyQuestions.map((q, idx) => ({
              ...q, 
              id: idx + 1,
-             marks: parseInt(q.marks) || 2,
+             marks: parseInt(q.marks) || 10,
              question: q.question,
-             options: q.options,
-             correct: q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0
+             options: q.options || [],
+             type: q.question_type || 'mcq',
+             starter_code: q.starter_code || '',
+             test_cases: q.test_cases || [],
+             correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
           }));
           
           setQuestions(mappedQuestions);
@@ -587,6 +598,91 @@ useEffect(() => {
     }, 500);
   };
 
+  // --- COMPILER HANDLERS ---
+  const handleRunCode = async (isSubmit = false) => {
+    const q = questions[currentQuestion];
+    if (!q || q.type !== 'code') return;
+
+    const code = codeAnswers[q.id]?.code || q.starter_code || "";
+    const lang = codeAnswers[q.id]?.language || selectedLanguage;
+
+    setExecuting(true);
+    setShowConsole(true);
+    setExecutionResult(null);
+
+    try {
+      const res = await fetch("/api/run-code/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          language: lang,
+          test_cases: q.test_cases || []
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setExecutionResult(data);
+        if (data.results && data.results.length > 0 && data.results[0].error) {
+           setOutput(data.results[0].error);
+        } else if (data.results && data.results.length > 0) {
+           setOutput(data.results[0].output || "(No output)");
+        }
+      } else {
+        const errMsg = data.error || "Execution failed";
+        setExecutionResult({ error: errMsg });
+        setOutput("Error: " + errMsg);
+      }
+    } catch (err) {
+      setExecutionResult({ error: "Failed to connect to execution engine" });
+      setOutput("Error: Failed to connect to execution engine");
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const onCodeChange = (val) => {
+    const q = questions[currentQuestion];
+    setCodeAnswers(prev => ({
+      ...prev,
+      [q.id]: {
+        ...prev[q.id],
+        code: val,
+        language: selectedLanguage
+      }
+    }));
+  };
+
+  // Cheating Prevention: Tab Switching
+  useEffect(() => {
+    if (!examStarted || examSubmitted) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        triggerWarning("Warning: Navigation away from the exam tab detected. This event has been logged.");
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [examStarted, examSubmitted]);
+
+  // Prevent Cheating: Context Menu, Copy, Paste
+  useEffect(() => {
+    if (!examStarted || examSubmitted) return;
+    const preventAction = (e) => {
+      e.preventDefault();
+      triggerWarning("Warning: Copying, pasting, and right-clicking are strictly prohibited during the exam.");
+    };
+    document.addEventListener("contextmenu", preventAction);
+    document.addEventListener("copy", preventAction);
+    document.addEventListener("paste", preventAction);
+    return () => {
+      document.removeEventListener("contextmenu", preventAction);
+      document.removeEventListener("copy", preventAction);
+      document.removeEventListener("paste", preventAction);
+    };
+  }, [examStarted, examSubmitted]);
+
   const handleAnswerSelect = (qIndex, optionIndex) => {
     const newAnswers = [...answers];
     newAnswers[qIndex] = optionIndex;
@@ -858,6 +954,32 @@ useEffect(() => {
     );
   }
 
+  if (examSubmitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 max-w-lg w-full text-center border border-white">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+               <span className="text-white text-2xl">✓</span>
+            </div>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Assessment Submitted</h2>
+          <p className="text-gray-500 font-medium leading-relaxed mb-8">
+            Your Monthly assessment has been securely synchronized with the proctoring server.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/dashboard/playground-results")}
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
+            >
+              View Detailed Results
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!questions || questions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center">
@@ -904,6 +1026,19 @@ useEffect(() => {
       </div>
 
       <div className="max-w-6xl mx-auto">
+        {/* COMPACT STICKY HEADER matching DailyExam */}
+        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
+          <div className="flex items-center gap-4">
+             <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
+                <FontAwesomeIcon icon={faClock} className="text-blue-500 text-xs" />
+                <span className="font-black text-blue-700 tabular-nums text-base font-black">{formatTime(timeLeft)}</span>
+             </div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+             <span className="text-blue-600">Monthly</span> Assessment
+          </div>
+        </div>
+
         <div className="grid grid-cols-4 gap-6 items-start">
           {/* Main Assessment Area */}
           <div className="col-span-3 space-y-6">
@@ -930,41 +1065,166 @@ useEffect(() => {
                     <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
                       {currentQ.question}
                     </h3>
-                    <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
+                    <div className="h-0.5 w-8 bg-blue-600/40 rounded-full mb-6"></div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {currentQ.options.map((option, index) => (
-                      <label 
-                        key={index} 
-                        className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
-                          answers[currentQuestion] === index 
-                          ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
-                          : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
-                        }`}
-                      >
-                        <div className="flex flex-row items-center w-full gap-3">
-                          <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                             answers[currentQuestion] === index 
-                             ? 'border-white bg-white/25' 
-                             : 'border-gray-200 group-hover:border-blue-300'
-                          }`}>
-                             {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                          </div>
-                          <input
-                            type="radio"
-                            name={`q-${currentQuestion}`}
-                            checked={answers[currentQuestion] === index}
-                            onChange={() => handleAnswerSelect(currentQuestion, index)}
-                            className="hidden"
-                          />
-                          <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
-                             {option}
-                          </span>
+                  {currentQ.type === 'code' && (
+                    <div className="space-y-4 mb-8">
+                      {/* Compiler UI Displayed for Code Questions */}
+                      <div className="flex items-center justify-between mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100/50">
+                        <div className="flex items-center gap-3">
+                           <div className="flex flex-col">
+                              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Language</span>
+                              <select 
+                                value={codeAnswers[currentQ.id]?.language || selectedLanguage}
+                                onChange={(e) => {
+                                  setSelectedLanguage(e.target.value);
+                                  setCodeAnswers(prev => ({
+                                    ...prev,
+                                    [currentQ.id]: {
+                                      ...prev[currentQ.id],
+                                      language: e.target.value
+                                    }
+                                  }));
+                                }}
+                                className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-indigo-600 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
+                              >
+                                <option value="python">Python 3</option>
+                                <option value="cpp">C++ (GCC 9.2)</option>
+                                <option value="java">Java 13</option>
+                              </select>
+                           </div>
                         </div>
-                      </label>
-                    ))}
-                  </div>
+                        <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleRunCode(false)}
+                              disabled={executing}
+                              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                            >
+                                <FontAwesomeIcon icon={faPlay} className={`text-[10px] ${executing ? 'animate-spin' : ''}`} />
+                                {executing ? 'Executing...' : 'Run Code'}
+                            </button>
+                        </div>
+                      </div>
+
+                      <div className="rounded-3xl overflow-hidden border-2 border-gray-100 shadow-xl h-[400px] bg-white ring-8 ring-gray-50">
+                        <Editor
+                          height="100%"
+                          language={ (codeAnswers[currentQ.id]?.language || selectedLanguage) === 'cpp' ? 'cpp' : (codeAnswers[currentQ.id]?.language || selectedLanguage) }
+                          value={codeAnswers[currentQ.id]?.code || currentQ.starter_code || ""}
+                          theme="vs-light"
+                          onChange={onCodeChange}
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            scrollBeyondLastLine: false,
+                            padding: { top: 20 },
+                            domReadOnly: false,
+                            readOnly: false,
+                            contextmenu: false,
+                            copy: false,
+                            paste: false,
+                            suggestOnTriggerCharacters: true,
+                            quickSuggestions: true
+                          }}
+                        />
+                      </div>
+
+                      {showConsole && (
+                        <div className="mt-6 bg-gray-900 rounded-3xl p-6 font-mono text-xs overflow-y-auto max-h-[250px] border border-gray-800 shadow-2xl relative">
+                          <div className="sticky top-0 bg-gray-900/90 backdrop-blur-sm flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                            <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+                               <span className="text-gray-400 uppercase text-[9px] font-black tracking-widest">Execution Result</span>
+                            </div>
+                            <button onClick={() => setShowConsole(false)} className="text-gray-500 hover:text-white transition-colors">
+                              <FontAwesomeIcon icon={faTimes} className="text-[10px]" />
+                            </button>
+                          </div>
+                          
+                          {executionResult ? (
+                            <div className="space-y-4">
+                               {executionResult.error && (
+                                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400">
+                                    <span className="font-black uppercase text-[9px] block mb-1">Runtime/Compile Error</span>
+                                    {executionResult.error}
+                                 </div>
+                               )}
+                               
+                               <div className="grid grid-cols-1 gap-3">
+                                 {executionResult.results?.map((res, i) => (
+                                   <div key={i} className={`p-4 rounded-2xl border transition-all ${res.passed ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                                      <div className="flex items-center justify-between mb-2">
+                                         <span className={`text-[10px] font-black uppercase tracking-widest ${res.passed ? 'text-green-500' : 'text-red-500'}`}>
+                                            Test Case {i+1}
+                                         </span>
+                                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${res.passed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                                            {res.passed ? 'Passed' : 'Failed'}
+                                         </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                         <div>
+                                            <span className="text-[8px] text-gray-500 uppercase block mb-1">Input</span>
+                                            <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-300 overflow-x-auto">{res.input || 'None'}</pre>
+                                         </div>
+                                         <div>
+                                            <span className="text-[8px] text-gray-500 uppercase block mb-1">Expected Output</span>
+                                            <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-400 overflow-x-auto">{res.expected}</pre>
+                                         </div>
+                                      </div>
+                                      <div className="mt-3">
+                                         <span className="text-[8px] text-gray-500 uppercase block mb-1">Your Output</span>
+                                         <pre className="bg-gray-950 p-3 rounded-xl text-white overflow-x-auto border border-gray-800">{res.output || 'No Output'}</pre>
+                                      </div>
+                                   </div>
+                                 ))}
+                               </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-gray-500 uppercase text-[9px] font-black tracking-widest">Processing through Judge0...</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {currentQ.options && currentQ.options.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {currentQ.options.map((option, index) => (
+                        <label 
+                          key={index} 
+                          className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
+                            answers[currentQuestion] === index 
+                            ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
+                            : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
+                          }`}
+                        >
+                          <div className="flex flex-row items-center w-full gap-3">
+                            <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                               answers[currentQuestion] === index 
+                               ? 'border-white bg-white/25' 
+                               : 'border-gray-200 group-hover:border-blue-300'
+                            }`}>
+                               {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <input
+                              type="radio"
+                              name={`q-${currentQuestion}`}
+                              checked={answers[currentQuestion] === index}
+                              onChange={() => handleAnswerSelect(currentQuestion, index)}
+                              className="hidden"
+                            />
+                            <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                               {option}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-gray-50 flex justify-between items-center">
