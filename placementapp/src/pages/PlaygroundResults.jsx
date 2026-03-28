@@ -100,7 +100,7 @@ function PlaygroundResults() {
   const handleDownload = (result) => {
 
     if (!result) {
-      alert("No result available");
+      console.error("No result available");
       return;
     }
 

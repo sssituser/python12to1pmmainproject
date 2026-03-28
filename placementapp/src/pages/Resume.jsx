@@ -15,9 +15,9 @@ export default function Resume() {
     if (resume) {
       const url = URL.createObjectURL(resume);
       setResumeURL(url);
-      alert("Resume Uploaded Successfully");
+      console.log("Resume Uploaded Successfully");
     } else {
-      alert("Please select a file");
+      console.error("Please select a file");
     }
   }
 

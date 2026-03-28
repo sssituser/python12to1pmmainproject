@@ -51,18 +51,18 @@ function applyJob(jobId){
     console.log("DATA:", data);
 
     if(status === 201){
-      alert("Job Applied Successfully ✅");
+      console.log("Job Applied Successfully ✅");
       setApplied(true);   // ✅ disable button
     } 
     else {
-      alert("Already applied ⚠️");
+      console.log("Already applied ⚠️");
       setApplied(true);   // ✅ still disable
     }
 
   })
   .catch(err => {
     console.log(err);
-    alert("Server error ❌");
+    console.error("Server error ❌");
   });
 }
 

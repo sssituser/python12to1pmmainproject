@@ -48,7 +48,7 @@ function DetailedResults() {
 
   const handleDownload = () => {
     if (!result) {
-      alert("No result data available for download.");
+      console.error("No result data available for download.");
       return;
     }
 

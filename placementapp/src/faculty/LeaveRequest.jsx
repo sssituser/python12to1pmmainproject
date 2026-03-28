@@ -130,13 +130,11 @@ function Leaves() {
         const errorData = await res.text();
         console.error("Failed to approve leave request. Status:", res.status);
         console.error("Error response:", errorData);
-        alert(`Failed to approve leave request: ${res.status} ${errorData}`);
       }
     } catch (error) {
       // Revert optimistic update on error
       setLeaves(originalLeaves);
       console.error("Error approving leave:", error);
-      alert(`Error approving leave request: ${error.message || error}`);
     }
   };
 
@@ -199,13 +197,11 @@ function Leaves() {
         const errorData = await res.text();
         console.error("Failed to reject leave request. Status:", res.status);
         console.error("Error response:", errorData);
-        alert(`Failed to reject leave request: ${res.status} ${errorData}`);
       }
     } catch (error) {
       // Revert optimistic update on error
       setLeaves(originalLeaves);
       console.error("Error rejecting leave:", error);
-      alert(`Error rejecting leave request: ${error.message || error}`);
     }
   };
 

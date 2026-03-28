@@ -52,7 +52,7 @@ function createJob(e) {
   const token = localStorage.getItem("access");
 
   if (!token) {
-    alert("Please login again ❌");
+    console.error("Please login again ❌");
     return;
   }
 
@@ -94,7 +94,7 @@ fetch(url, {
       console.log("RESPONSE:", data);
 
       if (res.status === 200 || res.status === 201) {
-        alert(form.id ? "Job Updated ✅" : "Job Posted ✅");
+        console.log(form.id ? "Job Updated ✅" : "Job Posted ✅");
         setShowForm(false);
 
         setForm({
@@ -113,12 +113,12 @@ fetch(url, {
 
         fetchJobs();
       } else {
-        alert("Error ❌ Check console");
+        console.error("Error ❌ Check console");
       }
     })
     .catch(err => {
       console.log("ERROR:", err);
-      alert("Server error ❌");
+      console.error("Server error ❌");
     });
 }
 
