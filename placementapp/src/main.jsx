@@ -18,18 +18,16 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 // ✅ GOOGLE OAUTH
-import { GoogleOAuthProvider } from "@react-oauth/google"
+//import { GoogleOAuthProvider } from "@react-oauth/google"
 
 // 🔥 ADD YOUR CLIENT ID HERE
-const GOOGLE_CLIENT_ID = "593269339291-kleojkcokfijos790jnpsqujd1gk8jkd.apps.googleusercontent.com";
+//const GOOGLE_CLIENT_ID = "593269339291-kleojkcokfijos790jnpsqujd1gk8jkd.apps.googleusercontent.com";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </GoogleOAuthProvider>
     </StrictMode>
   
 );
