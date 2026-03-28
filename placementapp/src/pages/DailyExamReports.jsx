@@ -10,11 +10,12 @@ function DailyExamReports() {
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
-  // ✅ FETCH DATA FROM BACKEND
+  //  FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
   const fetchReports = async () => {
     try {
+      // Always fetch without auth so expired tokens don't block the page
       const res = await axios.get("http://127.0.0.1:8000/api/all-exam-results/");
-      
+
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {
         examList = res.data.data;
@@ -22,23 +23,22 @@ function DailyExamReports() {
         examList = res.data;
       }
 
-      // Filter by logged-in user
+      // Filter by logged-in username from localStorage (case-insensitive)
       let currentUsername = null;
       try {
         const userStr = localStorage.getItem("user");
         if (userStr && userStr !== "undefined") {
           const parsedUser = JSON.parse(userStr);
-          currentUsername = parsedUser?.username || null;
+          currentUsername = parsedUser?.username?.toLowerCase() || null;
         }
       } catch (e) {
         console.error("User parse error:", e);
       }
 
       if (currentUsername) {
-        const filtered = examList.filter(
-          (e) => e.user?.username?.toLowerCase() === currentUsername.toLowerCase()
+        examList = examList.filter(
+          (e) => e.user?.username?.toLowerCase() === currentUsername
         );
-        examList = filtered; // Show only this user's exams, empty if none
       }
 
       setExams(examList);
@@ -53,7 +53,7 @@ function DailyExamReports() {
     fetchReports();
   }, []);
 
-  // ✅ ANIMATION AFTER DATA LOAD
+  // ANIMATION AFTER DATA LOAD
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
@@ -77,7 +77,7 @@ function DailyExamReports() {
 
   }, [exams]);
 
-  // ✅ COLOR LOGIC
+  // COLOR LOGIC
   const getColor = (percentage) => {
     if (percentage >= 80) return "#198754";
     if (percentage >= 60) return "#ffc107";

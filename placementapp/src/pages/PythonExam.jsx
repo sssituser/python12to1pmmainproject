@@ -65,8 +65,8 @@ const PythonExam = () => {
   // WEBCAM FUNCTIONS
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 320 },
           height: { ideal: 240 }
         } 
@@ -234,9 +234,11 @@ const PythonExam = () => {
       examTitle: "Python Programming Assessment"
     };
 
+    const now = new Date().toISOString();
     const payload = {
       username: user.username || "Unknown",
       exam_title: "Python Programming Assessment",
+      exam_type: "daily",
       score: correctCount * 2,
       total_questions: 20,
       correct_answers: correctCount,
@@ -244,20 +246,31 @@ const PythonExam = () => {
       marks_obtained: correctCount * 2,
       total_marks: 40,
       time_taken: 2700 - timeLeft,
+      start_time: now,
+      end_time: now,
       status: "completed",
-      random_id: randomId,
+      random_id: String(randomId),
       answers: answers,
       questions: questions
     };
 
     try {
-      await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
+      // No auth header — token expires during a 45-min exam.
+      // Backend uses 'username' field in the payload to identify the user.
+      const res = await fetch("http://127.0.0.1:8000/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error("Save exam report failed:", res.status, errData);
+      } else {
+        const saved = await res.json().catch(() => ({}));
+        console.log("✅ Exam saved for user:", saved.saved_username);
+      }
     } catch (err) {
-      console.error("Failed to sync exam gracefully:", err);
+      console.error("Failed to sync exam to backend:", err);
     }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
@@ -267,7 +280,7 @@ const PythonExam = () => {
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
 
-    navigate("/dashboard/playground-results");
+    navigate("/dashboard/playground-results",{replace:true});
   };
 
   const formatTime = (seconds) => {

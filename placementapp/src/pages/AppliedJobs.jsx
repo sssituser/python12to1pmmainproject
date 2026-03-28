@@ -1,75 +1,111 @@
 import React, { useEffect, useState } from "react";
 
 function AppliedJobs() {
-
   const [jobs, setJobs] = useState([]);
-  const getStatus = (date) => {
-  const days = (new Date() - new Date(date)) / (1000 * 60 * 60 * 24);
-
-  if (days < 2) return "Applied";
-  if (days < 5) return "Under Review";
-  return "Shortlisted";
-};
-const [appliedIds, setAppliedIds] = useState([]);
-
-useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/applied-jobs/")
-    .then(res => res.json())
-    .then(data => {
-      setAppliedIds(data.map(j => j.job.id));
-    });
-}, []);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/applied-jobs/")
-      .then(res => res.json())
-      .then(data => setJobs(data))
-      .catch(err => console.log(err));
+    const token = localStorage.getItem("access");
+
+    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("DATA:", data);
+        setJobs(Array.isArray(data) ? data : data.results || []);
+      })
+      .catch((err) => console.log(err));
   }, []);
+
+  const filteredJobs = jobs.filter((j) =>
+    j.job_details?.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    j.job_details?.company?.toLowerCase().includes(search.toLowerCase()) ||
+    j.username?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="container mt-4">
+      <div className="card shadow-lg p-4 border-0">
+        <h3 className="fw-bold mb-3">📄 Applied Jobs</h3>
 
-      <h4 className="mb-3">Applied Jobs</h4>
+        <p className="text-muted">
+          Total Applications: {filteredJobs.length}
+        </p>
 
-      {jobs.length === 0 ? (
-        <p>No jobs applied yet</p>
-      ) : (
+        <input
+          type="text"
+          placeholder="🔍 Search by job, company, user"
+          className="form-control mb-4 shadow-sm"
+          style={{ borderRadius: "10px" }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-        <div className="row">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle">
+            <thead className="table-dark">
+              <tr>
+                <th>Job</th>
+                <th>Company</th>
+                <th>Student</th>
+                <th>Applied Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
 
-          {jobs.map((j) => (
+            <tbody>
+              {filteredJobs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center text-muted py-4">
+                    No Applied Jobs 😕
+                  </td>
+                </tr>
+              ) : (
+                filteredJobs.map((j) => {
+                  const days =
+                    (new Date() - new Date(j.applied_date)) /
+                    (1000 * 60 * 60 * 24);
 
-            <div key={j.id} className="col-md-6 mb-3">
+                  let status = "Applied";
+                  if (days >= 2 && days < 5) status = "Under Review";
+                  if (days >= 5) status = "Shortlisted";
 
-              <div className="card shadow-sm p-3">
+                  return (
+                    <tr key={j.id}>
+                      <td className="fw-semibold">
+                        {j.job_details?.job_title}
+                      </td>
 
-                <h5>{j.job.company}</h5>
+                      <td>
+                        <span className="badge bg-primary px-3 py-2">
+                          {j.job_details?.company}
+                        </span>
+                      </td>
 
-                <p className="mb-1"><b>Role:</b> {j.job.job_title}</p>
+                      <td className="text-success fw-bold">
+                        👤 {j.username}
+                      </td>
 
-                <p className="mb-1"><b>Skills:</b> {j.job.primary_skills}</p>
+                      <td className="text-muted">
+                        {new Date(j.applied_date).toLocaleDateString()}
+                      </td>
 
-                <p className="mb-1"><b>Location:</b> {j.job.location}</p>
-
-                <p className="mb-1">
-                  <b>Applied On:</b>{" "}
-                  {new Date(j.applied_date).toLocaleDateString()}
-                </p>
-
-                <span className="badge bg-warning mt-2">
-                  Applied
-                </span>
-
-              </div>
-
-            </div>
-
-          ))}
-
+                      <td>
+                        <span className="badge bg-warning">
+                          {status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
-
+      </div>
     </div>
   );
 }

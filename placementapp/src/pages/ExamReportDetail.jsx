@@ -111,8 +111,13 @@ function ExamReportDetail() {
             const options = q.options || {};
 
             // Get display text for user answer and correct answer
-            const userAnswerText = userAnswer ? `${userAnswer}. ${options[userAnswer] || userAnswer}` : "Not answered";
-            const correctAnswerText = correctKey ? `${correctKey}. ${options[correctKey] || correctKey}` : "N/A";
+            const getLetter = (idx) => isNaN(idx) ? idx : ["A","B","C","D"][parseInt(idx)] || idx;
+            const userAnswerText = (userAnswer !== null && userAnswer !== undefined) 
+              ? `${getLetter(userAnswer)}. ${options[userAnswer] || userAnswer}` 
+              : "Not answered";
+            const correctAnswerText = (correctKey !== null && correctKey !== undefined) 
+              ? `${getLetter(correctKey)}. ${options[correctKey] || correctKey}` 
+              : "N/A";
 
             return (
               <div
@@ -144,8 +149,8 @@ function ExamReportDetail() {
                     {Object.entries(options).map(([key, value], optIdx) => {
                       // Handle both letter keys (A,B,C,D) and numeric keys (0,1,2,3)
                       const displayKey = isNaN(key) ? key : ["A","B","C","D"][parseInt(key)] || key;
-                      const isThisCorrect = key === correctKey || displayKey === correctKey;
-                      const isUserSelected = key === userAnswer || displayKey === userAnswer;
+                      const isThisCorrect = String(key) === String(correctKey) || displayKey === correctKey;
+                      const isUserSelected = String(key) === String(userAnswer) || displayKey === userAnswer;
                       const isWrongSelection = isUserSelected && !isThisCorrect;
 
                       let bg = "#f9fafb";

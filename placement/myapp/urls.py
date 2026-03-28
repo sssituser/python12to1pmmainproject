@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from myapp.views import *
 from myapp.views.job_views import JobViewSet
 
+
 # IMPORT VIEWS
 from myapp.views.auth_views import *
 from myapp.views.profile_views import *
@@ -14,11 +15,14 @@ from myapp.views.playground_views import *
 from myapp.views.exam_views import *
 from myapp.views import login_view
 from myapp.views.job_views import JobViewSet
+from .views import JobViewSet, AppliedJobViewSet
+from myapp import api_views  # exam reports, leaderboard, weekly, monthly APIs
 
 
 # ROUTER
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='jobs')
+router.register(r'applied-jobs', AppliedJobViewSet)
 
 
 
@@ -38,6 +42,21 @@ urlpatterns = [
     path('profile/update/', update_profile, name='update_profile'),
     path('profile/upload-resume/', upload_resume, name='upload_resume'),
 
+    # ================= LEAVE REQUEST =================
+    path('leave-requests/', get_all_leave_requests),
+    path('leave-requests/create/', create_leave_request),
+    # path('leave-requests/<int:request_id>/update/', update_leave_request),
+    path('leave-requests/<int:request_id>/delete/', delete_leave_request),
+    
+    
+    # ================= EXAMS =================
+    # path('exams/all/', AllExamListView.as_view()),
+    # path('exams/finished/', FinishedExamListView.as_view()),
+    # path('exams/upcoming/', UpcomingExamListView.as_view()),
+    # path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view()),
+    path('mcq/submit-answer/', submit_answer),
+    # path('mcq/submit-exam/', submit_mcq_exam),
+    # path('code/run/', run_code),
     # Playground
     path('questions/', get_questions, name='get-questions'),
     path('questions/create/', create_question, name='create-question'),
@@ -47,11 +66,13 @@ urlpatterns = [
     path('exam-sessions/submit-answer/', submit_answer, name='submit-answer'),
     path('exam-sessions/<int:session_id>/end/', end_exam_session, name='end-exam-session'),
     path('exam-sessions/webcam/', save_webcam_snapshot, name='save-webcam-snapshot'),
+    # path('exams/finished/', FinishedExamListView.as_view(), name='finished-exams'),
+    # path('exams/<int:pk>/attempt/', UpdateAttemptView.as_view(), name='update-attempt'),
     path('', include(router.urls)),
 
 
     # ---------------- PLAYGROUND ----------------
-    path('playgrounds/', get_playgrounds),
+    # path('playgrounds/', get_playgrounds),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),
@@ -66,6 +87,14 @@ urlpatterns = [
     path('leave-requests/<int:pk>/delete/', delete_leave_request),
     path('leave-requests/my-requests/', my_leave_requests),
 
+    # ---------------- AUTH ----------------
+    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # ---------------- PROFILE ----------------
+    path("profile/", profile_view),
+    path("profile/update/", update_profile),
+    path("upload-resume/", upload_resume),
+
     # ---------------- EXAM SYSTEM ----------------
     path('exam-questions/', get_questions),
     path('exam-questions/create/', create_question),
@@ -79,37 +108,47 @@ urlpatterns = [
     path('exam/sessions/', get_exam_sessions),
 
     # ================= PLAYGROUND =================
-    #path('playground/', playground_backend),
-    #path('playground/rest/', playground_rest_framework),
-    #path('playground/questions/', get_playground_questions),
-    #path('playground/questions/create/', create_playground_question),
-    #path('playground/sessions/', get_playground_sessions),
-    #path('playground/sessions/start/', start_playground_exam),
-    #path('playground/sessions/<int:session_id>/submit/', submit_playground_answer),
-    #path('playground/sessions/<int:session_id>/end/', end_playground_exam),
+    # path('playground/', playground_backend),
+    # path('playground/rest/', playground_rest_framework),
+    # path('playground/questions/', get_playground_questions),
+    # path('playground/questions/create/', create_playground_question),
+    # path('playground/sessions/', get_playground_sessions),
+    # path('playground/sessions/start/', start_playground_exam),
+    # path('playground/sessions/<int:session_id>/submit/', submit_playground_answer),
+    # path('playground/sessions/<int:session_id>/end/', end_playground_exam),
 
     # ================= CODE SNIPPETS =================
-    #path('code-snippets/', get_code_snippets),
-    #path('code-snippets/execute/', execute_code),
-    #path('code-snippets/<int:snippet_id>/update/', update_code_snippet),
-    #path('code-snippets/<int:snippet_id>/delete/', delete_code_snippet),
+    # path('code-snippets/', get_code_snippets),
+    # path('code-snippets/execute/', execute_code),
+    # path('code-snippets/<int:snippet_id>/update/', update_code_snippet),
+    # path('code-snippets/<int:snippet_id>/delete/', delete_code_snippet),
 
     # ================= TEMPLATES =================
-    #path('templates/', get_templates),
-    #path('templates/create/', create_template),
-    #path('templates/<int:template_id>/update/', update_template),
-    #path('templates/<int:template_id>/delete/', delete_template),
+    # path('templates/', get_templates),
+    # path('templates/create/', create_template),
+    # path('templates/<int:template_id>/update/', update_template),
+    # path('templates/<int:template_id>/delete/', delete_template),
 
     # ================= EXECUTION HISTORY =================
-    #path('execution-history/', get_execution_history),
-    #path('execution-history/<str:session_id>/delete/', delete_execution_session),
+    # path('execution-history/', get_execution_history),
+    # path('execution-history/<str:session_id>/delete/', delete_execution_session),
 
     # ================= JOB APIs =================
     path('api/', include(router.urls)),
 
     # ================= REACT =================
-    #path('react/', serve_react_app),
+    # path('react/', serve_react_app),
 
     # ---------------- JOB API ----------------
     path('', include(router.urls)),
+
+    # ================= EXAM REPORTS & LEADERBOARD =================
+    # NOTE: placement/urls.py includes myapp.urls under 'api/' prefix already.
+    # So 'all-exam-results/' here becomes 'api/all-exam-results/' — correct!
+    path('all-exam-results/',            api_views.exam_reports_api,          name='all-exam-results'),
+    path('save-exam-report/',            api_views.save_exam_report_api,      name='save-exam-report'),
+    path('exam-report-detail/<int:pk>/', api_views.exam_report_detail_api,    name='exam-report-detail'),
+    path('leaderboard/',                 api_views.leaderboard_api,           name='leaderboard'),
+    path('weekly-exam-results/',         api_views.weekly_exam_reports_api,   name='weekly-exam-results'),
+    path('monthly-exam-results/',        api_views.monthly_exam_reports_api,  name='monthly-exam-results'),
 ]

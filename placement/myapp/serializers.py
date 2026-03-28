@@ -119,33 +119,83 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.CharField(source="user.email", read_only=True)
-
-    skills = SkillSerializer(source="skill_set", many=True, read_only=True)
-    projects = ProjectSerializer(source="project_set", many=True, read_only=True)
+    skills = SkillSerializer(many=True,read_only=True)
+    projects = ProjectSerializer(many=True,read_only=True)
 
     class Meta:
         model = StudentProfile
         fields = "__all__"
 
+    def update(self, instance, validated_data):
+        skills_data = validated_data.pop('skills', [])
+        projects_data = validated_data.pop('projects', [])
+
+        # update profile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        #  CLEAR OLD SKILLS
+        instance.skills.all().delete()
+
+        for skill in skills_data:
+            Skill.objects.create(profile=instance, **skill)
+
+        #  CLEAR OLD PROJECTS
+        instance.projects.all().delete()
+
+        for project in projects_data:
+            Project.objects.create(profile=instance, **project)
+
+        return instance
 
 # ===============================
 # JOBS
 # ===============================
+from datetime import date
 
 class JobSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = Job
         fields = "__all__"
 
+    def get_status(self, obj):
+        request = self.context.get('request')
+
+        # ❌ if no user → just return Open/Closed
+        if not request or not request.user.is_authenticated:
+            return "Open"
+
+        user = request.user
+
+        # ✅ Check already applied
+        if AppliedJob.objects.filter(user=user, job=obj).exists():
+            return "Applied"
+
+        # ✅ Check deadline
+        if obj.deadline and obj.deadline < date.today():
+            return "Closed"
+
+        return "Open"
+from .models import AppliedJob
 
 class AppliedJobSerializer(serializers.ModelSerializer):
+
     job = JobSerializer()   
+
+
+    job_details = JobSerializer(source='job', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+
 
     class Meta:
         model = AppliedJob
-        fields = "__all__"
+        fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
 
 # ===============================

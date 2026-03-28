@@ -4,6 +4,9 @@ function ExamReports() {
   return (
 
     <div className="container mt-5">
+
+      <h2 className="text-center mb-4">Exam Reports</h2>
+
       <div className="row">
 
         <div className="col-md-3">

@@ -41,14 +41,17 @@ const handleLogin = async () => {
     let data = {};
     try {
       data = await response.json();
+      console.log("LOGIN RESPONSE:", data);
     } catch {
       data = {};
     }
 
     if (response.ok) {
+      console.log("LOGIN RESPONSE:", data);
 
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
+      console.log("Saved Token:", localStorage.getItem("access"));
 
       const randomId = Math.floor(1000 + Math.random() * 9000);
 
@@ -60,7 +63,9 @@ const handleLogin = async () => {
       localStorage.setItem("user", JSON.stringify(user));
 
       toast.success(`Welcome ${username}`);
-      navigate("/dashboard");
+      navigate("/dashboard",{replace:true});
+      window.location.reload();
+          
 
     } else {
 
