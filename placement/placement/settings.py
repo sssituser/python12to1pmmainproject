@@ -39,7 +39,14 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+<<<<<<< HEAD
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+=======
 AUTH_USER_MODEL = 'myapp.User'
+>>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Application definition

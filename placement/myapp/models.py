@@ -419,6 +419,9 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+<<<<<<< HEAD
+    
+=======
 
     class Meta:
         ordering = ['created_at']
@@ -462,3 +465,4 @@ class StudentTopicProgress(models.Model):
     class Meta:
         unique_together = ('enrollment', 'topic')
 
+>>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6

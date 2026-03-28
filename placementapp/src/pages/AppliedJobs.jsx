@@ -3,10 +3,110 @@ import React, { useEffect, useState } from "react";
 function AppliedJobs() {
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState("");
+<<<<<<< HEAD
+
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+=======
   const [loading, setLoading] = useState(true);
+>>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
 
-  const token = localStorage.getItem("access");
+    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("DATA:", data);
+        setJobs(Array.isArray(data) ? data : data.results || []);
+      })
+      .catch((err) => console.log(err));
+  }, []);
 
+<<<<<<< HEAD
+  const filteredJobs = jobs.filter((j) =>
+    j.job_details?.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    j.job_details?.company?.toLowerCase().includes(search.toLowerCase()) ||
+    j.username?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="container mt-4">
+      <div className="card shadow-lg p-4 border-0">
+        <h3 className="fw-bold mb-3">📄 Applied Jobs</h3>
+
+        <p className="text-muted">
+          Total Applications: {filteredJobs.length}
+        </p>
+
+        <input
+          type="text"
+          placeholder="🔍 Search by job, company, user"
+          className="form-control mb-4 shadow-sm"
+          style={{ borderRadius: "10px" }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="table-responsive">
+          <table className="table table-hover align-middle">
+            <thead className="table-dark">
+              <tr>
+                <th>Job</th>
+                <th>Company</th>
+                <th>Student</th>
+                <th>Applied Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredJobs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center text-muted py-4">
+                    No Applied Jobs 😕
+                  </td>
+                </tr>
+              ) : (
+                filteredJobs.map((j) => {
+                  const days =
+                    (new Date() - new Date(j.applied_date)) /
+                    (1000 * 60 * 60 * 24);
+
+                  let status = "Applied";
+                  if (days >= 2 && days < 5) status = "Under Review";
+                  if (days >= 5) status = "Shortlisted";
+
+                  return (
+                    <tr key={j.id}>
+                      <td className="fw-semibold">
+                        {j.job_details?.job_title}
+                      </td>
+
+                      <td>
+                        <span className="badge bg-primary px-3 py-2">
+                          {j.job_details?.company}
+                        </span>
+                      </td>
+
+                      <td className="text-success fw-bold">
+                        👤 {j.username}
+                      </td>
+
+                      <td className="text-muted">
+                        {new Date(j.applied_date).toLocaleDateString()}
+                      </td>
+
+                      <td>
+                        <span className="badge bg-warning">
+                          {status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+=======
   // ==============================
   // FETCH APPLIED JOBS
   // ==============================
@@ -159,6 +259,7 @@ function AppliedJobs() {
                     </td>
                   </tr>
                 ))
+>>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
               )}
             </tbody>
           </table>
