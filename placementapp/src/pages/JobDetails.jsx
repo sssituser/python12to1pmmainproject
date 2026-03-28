@@ -120,14 +120,14 @@ return (
 
         <h5 className="fw-bold mb-3">Responsibilities</h5>
 
-<<<<<<< HEAD
+
         <ul>
           <li>Develop scalable applications</li>
           <li>Collaborate with cross-functional teams.</li>
           <li>Write clean and maintainable code</li>
           <li>Participate in code reviews</li>
           <li>Improve performance and reliability</li>
-=======
+        </ul>
         <ul style={{ listStyleType: "disc", paddingLeft: "20px" }}>
           {job.responsibilities
               ? job.responsibilities
@@ -139,7 +139,6 @@ return (
               : <li>No responsibilities provided</li>
             }
           
->>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
         </ul>
 
       </div>
