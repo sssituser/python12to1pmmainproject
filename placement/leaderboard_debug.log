@@ -353,3 +353,17 @@ AttributeError: module 'datetime' has no attribute 'now'
 2026-03-27 17:51:03.398799: Results - Total: 4, Filtered: 4
 2026-03-27 17:51:03.418996: Request - Date: '', Type: ''
 2026-03-27 17:51:03.434285: Results - Total: 4, Filtered: 4
+2026-03-28 14:43:56.544036: Request - Date: '', Type: ''
+2026-03-28 14:43:56.610133: Results - Total: 5, Filtered: 5
+2026-03-28 14:43:56.639151: Request - Date: '', Type: ''
+2026-03-28 14:43:56.658088: Results - Total: 5, Filtered: 5
+2026-03-28 14:44:12.845865: Request - Date: '2026-03-28', Type: ''
+2026-03-28 14:44:12.863732: Results - Total: 5, Filtered: 0
+2026-03-28 14:44:20.699157: Request - Date: '2026-03-27', Type: ''
+2026-03-28 14:44:20.726999: Results - Total: 5, Filtered: 5
+2026-03-28 14:44:28.852831: Request - Date: '2026-03-27', Type: 'daily'
+2026-03-28 14:44:28.873587: Results - Total: 5, Filtered: 5
+2026-03-28 14:44:31.950336: Request - Date: '2026-03-27', Type: 'weekly'
+2026-03-28 14:44:31.979371: Results - Total: 5, Filtered: 0
+2026-03-28 14:44:36.538241: Request - Date: '2026-03-27', Type: 'daily'
+2026-03-28 14:44:36.551556: Results - Total: 5, Filtered: 5

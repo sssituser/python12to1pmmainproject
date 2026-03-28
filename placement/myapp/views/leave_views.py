@@ -11,6 +11,7 @@ from myapp.models import EmailConfiguration, LeaveRequest, User
 from myapp.serializers import LeaveRequestSerializer
 from myapp.email_utils import send_leave_request_email
 
+
 EMAIL_SIGNATURE = "Thanks\nFrom - SSSIT"
 
 
@@ -418,13 +419,17 @@ def create_leave_request(request):
                     )
             except Exception as email_exc:
                 print(f"Leave request email sending error: {email_exc}")
-            email_result = _send_leave_email(
-                leave,
+            email_result = _send_email_message(
                 subject="Leave Request Submitted Successfully",
-                intro_message=(
+                body=(
+                    f"Hi {leave.name},\n\n"
                     "You have submitted your leave request successfully and the status is still pending. "
-                    "We will update you soon."
+                    "We will update you soon.\n\n"
+                    f"{EMAIL_SIGNATURE}"
                 ),
+                recipients=[leave.email],
+                leave=leave,
+                notification_type="submission-immediate",
             )
             print(f"Leave submission email result for leave {leave.id}: {email_result}")
             email_result = _run_in_background(_send_leave_submission_notifications, leave)
@@ -500,10 +505,16 @@ def approve_leave_request(request, pk):
                 )
         except Exception as email_exc:
             print(f"Leave approval email sending error: {email_exc}")
-        email_result = _send_leave_email(
-            leave,
+        email_result = _send_email_message(
             subject="Your leave got approved",
-            intro_message="Your leave got approved.",
+            body=(
+                f"Hi {leave.name},\n\n"
+                "Your leave got approved.\n\n"
+                f"{EMAIL_SIGNATURE}"
+            ),
+            recipients=[leave.email],
+            leave=leave,
+            notification_type="approval-immediate",
         )
         print(f"Leave approval email result for leave {leave.id}: {email_result}")
         email_result = _run_in_background(_send_leave_status_notifications, leave, "Approved")
@@ -547,10 +558,16 @@ def reject_leave_request(request, pk):
                 )
         except Exception as email_exc:
             print(f"Leave rejection email sending error: {email_exc}")
-        email_result = _send_leave_email(
-            leave,
+        email_result = _send_email_message(
             subject="Your leave got rejected",
-            intro_message="Your leave got rejected.",
+            body=(
+                f"Hi {leave.name},\n\n"
+                "Your leave got rejected.\n\n"
+                f"{EMAIL_SIGNATURE}"
+            ),
+            recipients=[leave.email],
+            leave=leave,
+            notification_type="rejection-immediate",
         )
         print(f"Leave rejection email result for leave {leave.id}: {email_result}")
         email_result = _run_in_background(_send_leave_status_notifications, leave, "Rejected")

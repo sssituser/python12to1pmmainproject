@@ -109,10 +109,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'sssitprojectteam3@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'abcd ycfd cqcl vbcl'  # Use Gmail App Password (16 chars)
-DEFAULT_FROM_EMAIL = 'sssitprojectteam3@gmail.com'
-SERVER_EMAIL = 'sssitprojectteam3@gmail.com'
+EMAIL_HOST_USER = 'karthikreddybodapati@gmail.com'  # Your Gmail address
+EMAIL_HOST_PASSWORD = 'oxda ouau iwli zefd'  # Use Gmail App Password (16 chars)
+DEFAULT_FROM_EMAIL = 'karthikreddybodapati@gmail.com'
+SERVER_EMAIL = 'karthikreddybodapati@gmail.com'
 
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
@@ -204,15 +204,12 @@ TEMPLATES = [
 
 # Email
 # Fill these values directly if you want the leave-request backend to use SMTP
-# without setting PowerShell environment variables each time.
-GMAIL_SMTP_EMAIL = 'harshavardhan46724@gmail.com'
-GMAIL_SMTP_APP_PASSWORD = ''
-
+# without setting environment variables.
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', GMAIL_SMTP_EMAIL)
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', GMAIL_SMTP_APP_PASSWORD)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'karthikreddybodapati@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'oxda ouau iwli zefd')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
