@@ -170,36 +170,48 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     """
     Send leave request status email to user
     """
-    status_color = "#4CAF50" if status == "approved" else "#FF9800" if status == "pending" else "#F44336"
-    status_emoji = "✅" if status == "approved" else "⏳" if status == "pending" else "❌"
+    status_lower = status.lower()
+    status_color = "#4CAF50" if status_lower == "approved" else "#FF9800" if status_lower == "pending" else "#F44336"
+    status_emoji = "✅" if status_lower == "approved" else "⏳" if status_lower == "pending" else "❌"
     
-    subject = f"{status_emoji} Leave Request {status.upper()} - {leave_type}"
-    
+    # Customize message content based on status
+    if status_lower == "approved":
+        subject = f"✅ Leave Request Approved - {leave_type}"
+        main_message = f"Your leave request for {start_date} to {end_date} (Reason: {reason}) has been approved."
+        sub_message = "You are officially marked on leave for the mentioned period."
+        footer_sign = "Regards,"
+    elif status_lower == "pending":
+        subject = f"⏳ Leave Request Submitted - {leave_type}"
+        main_message = f"Your leave request for {start_date} to {end_date} (Reason: {reason}) has been submitted successfully."
+        sub_message = "Our faculty team will review your request and notify you once a decision is made."
+        footer_sign = "Thank you,"
+    else:  # rejected
+        subject = f"❌ Leave Request Rejected - {leave_type}"
+        main_message = f"We regret to inform you that your leave request for {start_date} to {end_date} (Reason: {reason}) has been rejected."
+        sub_message = "For further clarification, please contact your faculty coordinator."
+        footer_sign = "Thank you,"
+
     html_content = f"""
     <html>
         <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #333; text-align: center;">Leave Request Update {status_emoji}</h2>
+                <h2 style="color: {status_color}; text-align: center;">{subject}</h2>
                 
                 <p style="color: #666; font-size: 16px;">
-                    Hi <strong>{username}</strong>,
+                    Dear <strong>{username}</strong>,
                 </p>
                 
-                <p style="color: #666; font-size: 16px;">
-                    Your leave request has been <strong style="color: {status_color};">{status.upper()}</strong>.
+                <p style="color: #666; font-size: 16px; line-height: 1.6;">
+                    {main_message}
                 </p>
                 
-                <div style="background-color: #f9f9f9; padding: 20px; border-left: 4px solid {status_color}; margin: 20px 0; border-radius: 5px;">
-                    <h3 style="color: {status_color}; margin-top: 0;">Leave Details:</h3>
-                    <p style="margin: 8px 0; color: #555;"><strong>Leave Type:</strong> {leave_type}</p>
-                    <p style="margin: 8px 0; color: #555;"><strong>Start Date:</strong> {start_date}</p>
-                    <p style="margin: 8px 0; color: #555;"><strong>End Date:</strong> {end_date}</p>
-                    <p style="margin: 8px 0; color: #555;"><strong>Reason:</strong> {reason}</p>
-                    <p style="margin: 8px 0; color: {status_color};"><strong>Status:</strong> {status.upper()}</p>
-                </div>
+                <p style="color: #666; font-size: 16px; line-height: 1.6;">
+                    {sub_message}
+                </p>
                 
-                <p style="color: #666; font-size: 14px; margin-top: 20px;">
-                    Please check your dashboard for more details or contact HR if you have any questions.
+                <p style="color: #666; font-size: 16px; margin-top: 30px;">
+                    {footer_sign}<br>
+                    <strong>SSSIT Team</strong>
                 </p>
                 
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
@@ -213,23 +225,20 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     """
     
     text_content = f"""
-    Leave Request Update
+    {subject}
     
-    Hi {username},
+    Dear {username},
     
-    Your leave request has been {status.upper()}.
+    {main_message}
     
-    Leave Details:
-    Type: {leave_type}
-    Start Date: {start_date}
-    End Date: {end_date}
-    Reason: {reason}
-    Status: {status.upper()}
+    {sub_message}
     
-    Check your dashboard for more details.
+    {footer_sign}
+    SSSIT Team
     
     © 2024 SSSIT Placement Portal
     """
+
     
     try:
         msg = EmailMultiAlternatives(

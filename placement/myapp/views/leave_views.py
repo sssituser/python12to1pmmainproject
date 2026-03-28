@@ -55,37 +55,29 @@ def _clean_email_addresses(values):
 
 
 def _resolve_submitter_email(request, payload):
-    candidate_emails = [
-        payload.get("email"),
-    ]
+    # Check payload first - it's the most common case
+    payload_email = payload.get("email")
+    if payload_email:
+        return _normalize_email(payload_email)
 
+    # Check authenticated user next
     user = getattr(request, "user", None)
-    if user and getattr(user, "is_authenticated", False):
-        candidate_emails.append(getattr(user, "email", ""))
-        candidate_emails.append(
-            User.objects.filter(pk=user.pk).values_list("email", flat=True).first()
-        )
+    if user and getattr(user, "is_authenticated", False) and user.email:
+        return _normalize_email(user.email)
 
-    username = payload.get("username") or payload.get("name")
+    # Fallback to lookups only if absolutely necessary
     student_id = payload.get("student_id")
-
-    if username:
-        candidate_emails.append(
-            User.objects.filter(username__iexact=str(username).strip()).values_list("email", flat=True).first()
-        )
-
     if student_id:
-        candidate_emails.append(
-            LeaveRequest.objects.filter(student_id=str(student_id).strip())
-            .exclude(email__isnull=True)
-            .exclude(email="")
-            .order_by("-created_at")
-            .values_list("email", flat=True)
+        email = LeaveRequest.objects.filter(student_id=str(student_id).strip())\
+            .exclude(email__isnull=True)\
+            .exclude(email="")\
+            .order_by("-created_at")\
+            .values_list("email", flat=True)\
             .first()
-        )
+        if email:
+            return _normalize_email(email)
 
-    resolved = _clean_email_addresses(candidate_emails)
-    return resolved[0] if resolved else ""
+    return ""
 
 
 def _get_leave_email_connection():
@@ -178,39 +170,37 @@ def _run_in_background(task, *args, **kwargs):
 
 
 def _send_leave_submission_notifications(leave):
-    student_recipient = _clean_email_addresses([leave.email])
-
-    student_body = (
-        f"Hi {leave.name},\n\n"
-        "Your leave request was successfully submitted and wait for the response because your status is still in pending.\n\n"
-        f"{EMAIL_SIGNATURE}"
-    )
-
-    return {
-        "student_notification": _send_email_message(
-            subject="Leave Request Submitted Successfully",
-            body=student_body,
-            recipients=student_recipient,
-            leave=leave,
-            notification_type="submission-student",
-        ),
-    }
+    """Refactored to use centralized email utility"""
+    try:
+        return send_leave_request_email(
+            user_email=leave.email,
+            username=leave.name,
+            leave_type=leave.leave_type,
+            start_date=leave.start_date.strftime("%Y-%m-%d"),
+            end_date=leave.end_date.strftime("%Y-%m-%d"),
+            reason=leave.reason,
+            status="pending",
+        )
+    except Exception as e:
+        print(f"Background submission email error: {e}")
+        return False
 
 
 def _send_leave_status_notifications(leave, status_text):
-    recipients = _clean_email_addresses([leave.email])
-    status_message = {
-        "Approved": "We are pleased to inform you that your leave request has been approved.",
-        "Rejected": "We regret to inform you that your leave request has been declined.",
-    }.get(status_text, f"Your leave request status is now {status_text}.")
-    body = f"Hi {leave.name},\n\n{status_message}\n\n{EMAIL_SIGNATURE}"
-    return _send_email_message(
-        subject=f"Leave Request {status_text}",
-        body=body,
-        recipients=recipients,
-        leave=leave,
-        notification_type=f"status-{status_text.lower()}",
-    )
+    """Refactored to use centralized email utility"""
+    try:
+        return send_leave_request_email(
+            user_email=leave.email,
+            username=leave.name,
+            leave_type=leave.leave_type,
+            start_date=leave.start_date.strftime("%Y-%m-%d"),
+            end_date=leave.end_date.strftime("%Y-%m-%d"),
+            reason=leave.reason,
+            status=status_text.lower(),
+        )
+    except Exception as e:
+        print(f"Background status email error: {e}")
+        return False
 
 # -----------------------------------------------------------
 # LEAVE REQUEST FRONTEND PAGE
@@ -405,40 +395,12 @@ def create_leave_request(request):
             print("Validated data:", serializer.validated_data)
             leave = serializer.save()
             print("Leave saved:", leave)
-            # Send leave request email to the student (non-blocking).
-            try:
-                if leave.email:
-                    send_leave_request_email(
-                        user_email=leave.email,
-                        username=leave.name,
-                        leave_type=leave.leave_type,
-                        start_date=leave.start_date.strftime("%Y-%m-%d"),
-                        end_date=leave.end_date.strftime("%Y-%m-%d"),
-                        reason=leave.reason,
-                        status=(leave.status or "pending").strip().lower(),
-                    )
-            except Exception as email_exc:
-                print(f"Leave request email sending error: {email_exc}")
-            email_result = _send_email_message(
-                subject="Leave Request Submitted Successfully",
-                body=(
-                    f"Hi {leave.name},\n\n"
-                    "You have submitted your leave request successfully and the status is still pending. "
-                    "We will update you soon.\n\n"
-                    f"{EMAIL_SIGNATURE}"
-                ),
-                recipients=[leave.email],
-                leave=leave,
-                notification_type="submission-immediate",
-            )
-            print(f"Leave submission email result for leave {leave.id}: {email_result}")
-            email_result = _run_in_background(_send_leave_submission_notifications, leave)
-            print(f"Leave submission email queued for leave {leave.id}: {email_result}")
+            # Send leave submission email (background).
+            _run_in_background(_send_leave_submission_notifications, leave)
             return Response({
                 "success": True,
                 "message": "Leave request created successfully",
                 "data": LeaveRequestSerializer(leave).data,
-                "email_status": email_result,
             }, status=status.HTTP_201_CREATED)
         else:
             print("Serializer errors:", serializer.errors)
@@ -491,39 +453,12 @@ def approve_leave_request(request, pk):
         leave.status = "Approved"
         leave.approved_by = request.data.get("approved_by", "System")
         leave.save()
-        # Send leave approval email to the student (non-blocking).
-        try:
-            if leave.email:
-                send_leave_request_email(
-                    user_email=leave.email,
-                    username=leave.name,
-                    leave_type=leave.leave_type,
-                    start_date=leave.start_date.strftime("%Y-%m-%d"),
-                    end_date=leave.end_date.strftime("%Y-%m-%d"),
-                    reason=leave.reason,
-                    status="approved",
-                )
-        except Exception as email_exc:
-            print(f"Leave approval email sending error: {email_exc}")
-        email_result = _send_email_message(
-            subject="Your leave got approved",
-            body=(
-                f"Hi {leave.name},\n\n"
-                "Your leave got approved.\n\n"
-                f"{EMAIL_SIGNATURE}"
-            ),
-            recipients=[leave.email],
-            leave=leave,
-            notification_type="approval-immediate",
-        )
-        print(f"Leave approval email result for leave {leave.id}: {email_result}")
-        email_result = _run_in_background(_send_leave_status_notifications, leave, "Approved")
-        print(f"Leave approval email queued for leave {leave.id}: {email_result}")
+        # Send leave approval email (background).
+        _run_in_background(_send_leave_status_notifications, leave, "Approved")
         return Response({
             "success": True,
             "message": "Leave approved successfully",
             "data": LeaveRequestSerializer(leave).data,
-            "email_status": email_result,
         })
     except LeaveRequest.DoesNotExist:
         return Response({
@@ -544,39 +479,12 @@ def reject_leave_request(request, pk):
         leave.status = "Rejected"
         leave.approved_by = request.data.get("approved_by", "System")
         leave.save()
-        # Send leave rejection email to the student (non-blocking).
-        try:
-            if leave.email:
-                send_leave_request_email(
-                    user_email=leave.email,
-                    username=leave.name,
-                    leave_type=leave.leave_type,
-                    start_date=leave.start_date.strftime("%Y-%m-%d"),
-                    end_date=leave.end_date.strftime("%Y-%m-%d"),
-                    reason=leave.reason,
-                    status="rejected",
-                )
-        except Exception as email_exc:
-            print(f"Leave rejection email sending error: {email_exc}")
-        email_result = _send_email_message(
-            subject="Your leave got rejected",
-            body=(
-                f"Hi {leave.name},\n\n"
-                "Your leave got rejected.\n\n"
-                f"{EMAIL_SIGNATURE}"
-            ),
-            recipients=[leave.email],
-            leave=leave,
-            notification_type="rejection-immediate",
-        )
-        print(f"Leave rejection email result for leave {leave.id}: {email_result}")
-        email_result = _run_in_background(_send_leave_status_notifications, leave, "Rejected")
-        print(f"Leave rejection email queued for leave {leave.id}: {email_result}")
+        # Send leave rejection email (background).
+        _run_in_background(_send_leave_status_notifications, leave, "Rejected")
         return Response({
             "success": True,
             "message": "Leave rejected successfully",
             "data": LeaveRequestSerializer(leave).data,
-            "email_status": email_result,
         })
     except LeaveRequest.DoesNotExist:
         return Response({

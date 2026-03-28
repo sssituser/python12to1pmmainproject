@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faCalendarAlt, faUser, faFileAlt, faClock, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 
 class ErrorBoundary extends React.Component {
@@ -519,6 +520,9 @@ function NewLeaveRequest() {
     setLoading(true);
     setError("");
 
+    // Use a toast to show processing started
+    const submitToastId = toast.loading("Submitting your leave request...");
+
     try {
       const token = localStorage.getItem("access");
       if (!token) {
@@ -661,12 +665,13 @@ function NewLeaveRequest() {
         }
 
         if (response.ok) {
-          const data = await response.json();
-          console.log("Leave request submitted successfully:", data);
-          
-          // Notify other pages that a new leave request was submitted
-          localStorage.setItem('leaveRequestUpdated', Date.now().toString());
-          localStorage.setItem('leaveRequestAction', 'submitted');
+          // Show success toast immediately
+          toast.update(submitToastId, { 
+            render: "Leave request submitted successfully!", 
+            type: "success", 
+            isLoading: false,
+            autoClose: 2000
+          });
           
           // Clear form
           setName('');
@@ -674,37 +679,37 @@ function NewLeaveRequest() {
           setPhone('');
           setStudentId('');
           setLeaveType('SL');
-          setStartDate('');
-          setEndDate('');
+          setStartDate(getCurrentDate());
+          setEndDate(getCurrentDate());
           setReason('');
           
-          setError('Leave request submitted successfully!');
-          
-          // Navigate back after a short delay
+          // Navigate back quickly
           setTimeout(() => {
-            navigate('/leave-request');
-          }, 2000);
+            navigate('/dashboard/leave-request');
+          }, 1500);
           
         } else {
           const errorData = await response.json();
           console.error('Error submitting leave request:', errorData);
-          setError(errorData.message || 'Failed to submit leave request');
+          toast.update(submitToastId, { 
+            render: errorData.message || 'Failed to submit leave request', 
+            type: "error", 
+            isLoading: false,
+            autoClose: 3000
+          });
         }
       } catch (submitError) {
         console.error("Submit error:", submitError);
-        if (submitError.message && submitError.message.includes("401")) {
-          setError("Authentication failed during submission. Please log in again.");
-          localStorage.removeItem("access");
-          setTimeout(() => {
-            navigate('/');
-          }, 3000);
-        } else {
-          setError('An error occurred while submitting the leave request');
-        }
+        toast.update(submitToastId, { 
+          render: 'An error occurred while submitting the leave request', 
+          type: "error", 
+          isLoading: false,
+          autoClose: 3000
+        });
       }
     } catch (error) {
       console.error("General error:", error);
-      setError('An unexpected error occurred. Please try again.');
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
