@@ -8,7 +8,6 @@ def examleaderboard_view(request):
     date = request.GET.get("date")
     batch = request.GET.get("batch")
     exam_type = request.GET.get("examType")
-
     queryset = ExamAttempt.objects.all()
 
     # 🔥 FILTERS

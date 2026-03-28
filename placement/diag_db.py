@@ -1,29 +1,25 @@
 import os
-import sys
 import django
-
+from django.utils import timezone
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'placement.settings')
 django.setup()
 
-# Check if job_title column exists in MySQL
-from django.db import connection
+from myapp.models import ExamAttempt
+from datetime import date
 
-with connection.cursor() as cursor:
-    cursor.execute("DESCRIBE myapp_job;")
-    rows = cursor.fetchall()
-    print("=== myapp_job columns ===")
-    for row in rows:
-        print(row)
+today = date.today()
+print(f"Today is: {today}")
 
-print()
+count_all = ExamAttempt.objects.count()
+count_today = ExamAttempt.objects.filter(exam_date__date=today).count()
+count_daily = ExamAttempt.objects.filter(exam_type__iexact='daily').count()
+count_both = ExamAttempt.objects.filter(exam_date__date=today, exam_type__iexact='daily').count()
 
-# Check pending migrations
-from django.db.migrations.executor import MigrationExecutor
-executor = MigrationExecutor(connection)
-plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
-if plan:
-    print("=== Pending migrations ===")
-    for step in plan:
-        print(f"  - {step[0]}")
-else:
-    print("=== No pending migrations ===")
+print(f"All: {count_all}")
+print(f"Today: {count_today}")
+print(f"Daily: {count_daily}")
+print(f"Today + Daily: {count_both}")
+
+latest = ExamAttempt.objects.latest('pk') if ExamAttempt.objects.exists() else None
+if latest:
+    print(f"Latest: pk={latest.pk}, type={latest.exam_type}, date={latest.exam_date.date()}, score={latest.marks_obtained}")

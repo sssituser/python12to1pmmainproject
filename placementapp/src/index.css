@@ -286,5 +286,34 @@ a {
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-in-out;
+<<<<<<< HEAD
 
+=======
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: white;
+  outline: none;
+  transition: 0.2s;
+}
+
+.input:focus {
+  border-color: #22c55e;
+>>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
 }

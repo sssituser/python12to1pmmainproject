@@ -1,0 +1,62 @@
+{
+    "Weekly": {
+        "maxQuestions": 25,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "conda",
+                "options": [
+                    "condaf",
+                    "condaf",
+                    "condadd",
+                    "conda"
+                ],
+                "answer": "conda",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1774548809038
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 25,
+        "duration": 45
+    },
+    "Monthly": {
+        "maxQuestions": 25,
+        "questions": [
+            {
+                "id": 1001,
+                "question": "Which of the following is used to manage virtual environments in Python?",
+                "options": [
+                    "venv",
+                    "pip",
+                    "conda",
+                    "All of above"
+                ],
+                "answer": "All of above",
+                "marks": 2
+            },
+            {
+                "id": 1002,
+                "question": "What is the purpose of the 'with' statement in Python?",
+                "options": [
+                    "Exception handling",
+                    "Resource management",
+                    "Looping",
+                    "Function definition"
+                ],
+                "answer": "Resource management",
+                "marks": 2
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 15,
+        "duration": 45
+    }
+}

@@ -1,391 +1,426 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-import { DndContext, closestCenter } from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
-/* ---------- Sortable Item ---------- */
-
-const SortableItem = ({ id, children }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id });
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition
-      }}
-      {...attributes}
-      {...listeners}
-    >
-      {children}
-    </div>
-  );
-};
-
-function Profile() {
-  const [profile, setProfile] = useState({});
-  const [skills, setSkills] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [edit, setEdit] = useState(false);
-
+export default function Profile() {
+  const [editMode, setEditMode] = useState(false);
+  const [ats, setAts] = useState(null);
+  const [jobDesc, setJobDesc] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  const token = localStorage.getItem("access");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    state: "",
+    cgpa: "",
+    github: "",
+    linkedin: "",
+    resume: null,
+    resumeUrl: "",
+    skills: [],
+    projects: [],
+    education: []
+  });
 
-  /* ---------- FETCH ---------- */
+  const [skill, setSkill] = useState("");
+  const [project, setProject] = useState({ title: "", desc: "", link: "" });
+  const [edu, setEdu] = useState({ college: "", degree: "", year: "" });
 
+  // 🔄 Fetch
   useEffect(() => {
-    if (!token) {
-      window.location.href = "/";
-      return;
+    const token = localStorage.getItem("access");
+    axios.get("http://127.0.0.1:8000/api/profile/", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        setFormData({
+          name: res.data.name || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+          state: res.data.state || "",
+          cgpa: res.data.cgpa || "",
+          github: res.data.github || "",
+          linkedin: res.data.linkedin || "",
+          resume: null,
+          resumeUrl: res.data.resume || "",
+          skills: Array.isArray(res.data.skills) ? res.data.skills : [],
+          projects: Array.isArray(res.data.projects) ? res.data.projects : [],
+          education: Array.isArray(res.data.education) ? res.data.education : []
+        });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching profile:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // 📝 change
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleFile = (e) =>
+    setFormData({ ...formData, resume: e.target.files[0] });
+
+  // ➕ Add
+  const addSkill = () => {
+    if (!skill.trim()) return;
+    const currentSkills = Array.isArray(formData.skills) ? formData.skills : [];
+    setFormData({ ...formData, skills: [...currentSkills, skill] });
+    setSkill("");
+  };
+
+  const addProject = () => {
+    if (!project.title.trim()) return;
+    const currentProjects = Array.isArray(formData.projects) ? formData.projects : [];
+    setFormData({ ...formData, projects: [...currentProjects, project] });
+    setProject({ title: "", desc: "", link: "" });
+  };
+
+  const addEdu = () => {
+    if (!edu.college.trim()) return;
+    const currentEducation = Array.isArray(formData.education) ? formData.education : [];
+    setFormData({ ...formData, education: [...currentEducation, edu] });
+    setEdu({ college: "", degree: "", year: "" });
+  };
+
+  const removeItem = (type, i) => {
+    const currentArray = Array.isArray(formData[type]) ? formData[type] : [];
+    setFormData({
+      ...formData,
+      [type]: currentArray.filter((_, idx) => idx !== i)
+    });
+  };
+
+  // 🤖 ATS
+  const checkATS = () => {
+    const jd = jobDesc.toLowerCase();
+    let score = 50;
+
+    const skills = Array.isArray(formData.skills) ? formData.skills : [];
+    const projects = Array.isArray(formData.projects) ? formData.projects : [];
+
+    skills.forEach(s => {
+      if (jd.includes(s.toLowerCase())) score += 5;
+    });
+
+    if (projects.length) score += 10;
+    if (formData.github) score += 10;
+    if (formData.linkedin) score += 5;
+
+    setAts(Math.min(score, 100));
+  };
+
+  // ✅ Submit
+  const handleSubmit = async () => {
+    const token = localStorage.getItem("access");
+    const data = new FormData();
+
+    Object.keys(formData).forEach(key => {
+      if (key === "resume" && formData.resume) {
+        data.append("resume", formData.resume);
+      } else if (key !== "resumeUrl") {
+        data.append(key, JSON.stringify(formData[key]));
+      }
+    });
+
+    try {
+      await axios.put("http://127.0.0.1:8000/api/profile/update/", data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("Profile Saved ✅");
+      setEditMode(false);
+    } catch (err) {
+      toast.error("Failed to save profile");
+      console.error(err);
     }
-
-    axios
-      .get("http://127.0.0.1:8000/api/profile/", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then((res) => {
-        const data = res.data || {};
-
-        setProfile(data);
-
-        setSkills(
-          (data.skills || []).map((s, i) => ({
-            id: s.id ? String(s.id) : `skill-${i}-${Date.now()}`,
-            backendId: s.id || null,
-            name: s.name || "",
-            level: Number(s.level) || 50
-          }))
-        );
-
-        setProjects(
-          (data.projects || []).map((p, i) => ({
-            id: p.id ? String(p.id) : `proj-${i}-${Date.now()}`,
-            backendId: p.id || null,
-            title: p.title || "",
-            description: p.description || ""
-          }))
-        );
-      })
-      .catch(() => toast.error("Failed to load"))
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  /* ---------- SAVE ---------- */
-
-  const saveProfile = () => {
-    setSaving(true);
-
-    const payload = {
-      name: profile.name || "",
-      phone: profile.phone || "",
-      state: profile.state || "",
-      cgpa: Number(profile.cgpa) || 0,
-      github: profile.github || "",
-      linkedin: profile.linkedin || "",
-
-      skills: skills.map((s) => ({
-        id: s.backendId,
-        name: s.name || "",
-        level: Number(s.level) || 0
-      })),
-
-      projects: projects.map((p) => ({
-        id: p.backendId,
-        title: p.title || "",
-        description: p.description || ""
-      }))
-    };
-
-    axios
-      .put("http://127.0.0.1:8000/api/profile/update/", payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(() => toast.success("Saved"))
-      .catch(() => toast.error("Error saving"))
-      .finally(() => setSaving(false));
   };
 
-  /* ---------- AUTO SAVE ---------- */
-
-  useEffect(() => {
-    if (!edit) return;
-
-    const t = setTimeout(saveProfile, 1200);
-    return () => clearTimeout(t);
-  }, [profile, skills, projects, edit]);
-
-  /* ---------- HANDLERS ---------- */
-
-  const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  const updateSkill = (i, field, value) => {
-    setSkills((prev) => {
-      const arr = [...prev];
-      arr[i][field] = value;
-      return arr;
-    });
-  };
-
-  const updateProject = (i, field, value) => {
-    setProjects((prev) => {
-      const arr = [...prev];
-      arr[i][field] = value;
-      return arr;
-    });
-  };
-
-  /* ---------- ADD ---------- */
-
-  const addSkill = () =>
-    setSkills((prev) => [
-      ...prev,
-      {
-        id: `skill-${Date.now()}-${Math.random()}`,
-        backendId: null,
-        name: "",
-        level: 50
-      }
-    ]);
-
-  const addProject = () =>
-    setProjects((prev) => [
-      ...prev,
-      {
-        id: `proj-${Date.now()}-${Math.random()}`,
-        backendId: null,
-        title: "",
-        description: ""
-      }
-    ]);
-
-  /* ---------- DELETE ---------- */
-
-  const deleteSkill = (id) => {
-    setSkills((prev) =>
-      prev.filter((s) => String(s.id) !== String(id))
-    );
-  };
-
-  const deleteProject = (id) => {
-    setProjects((prev) =>
-      prev.filter((p) => String(p.id) !== String(id))
-    );
-  };
-
-  /* ---------- DRAG ---------- */
-
-  const onSkillDrag = (e) => {
-    const { active, over } = e;
-    if (!over) return;
-
-    const oldIndex = skills.findIndex((s) => String(s.id) === String(active.id));
-    const newIndex = skills.findIndex((s) => String(s.id) === String(over.id));
-
-    setSkills(arrayMove(skills, oldIndex, newIndex));
-  };
-
-  const onProjectDrag = (e) => {
-    const { active, over } = e;
-    if (!over) return;
-
-    const oldIndex = projects.findIndex((p) => String(p.id) === String(active.id));
-    const newIndex = projects.findIndex((p) => String(p.id) === String(over.id));
-
-    setProjects(arrayMove(projects, oldIndex, newIndex));
-  };
-
-  if (loading) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-8 text-center">Loading profile...</div>;
 
   return (
-    <div className="container mt-4">
-      <Toaster />
+    <div className="min-h-screen bg-white">
 
-      <div className="card p-4 shadow rounded-4">
+      {/* PROFILE CARD */}
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
 
         {/* HEADER */}
-        <div className="d-flex align-items-center gap-3 mb-3">
-          <input
-            name="name"
-            value={profile.name || ""}
-            onChange={handleChange}
-            disabled={!edit}
-            className="form-control fw-bold"
-            placeholder="Your Name"
-          />
-
-          <button
-            className="btn btn-primary ms-auto"
-            onClick={() => setEdit(!edit)}
-          >
-            {edit ? "Stop" : "Edit"}
-          </button>
-        </div>
-
-        {edit && (
-          <small className="text-muted">
-            {saving ? "Saving..." : "Auto saved"}
-          </small>
-        )}
-
-        {/* BASIC */}
-        <div className="row mt-3">
-          {["phone", "state", "cgpa"].map((f) => (
-            <div className="col-md-4" key={f}>
-              <input
-                name={f}
-                value={profile[f] || ""}
-                onChange={handleChange}
-                disabled={!edit}
-                className="form-control mb-2"
-                placeholder={f}
-              />
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{formData.name || "Your Name"}</h2>
+              <p className="text-gray-600 text-sm mt-1">{formData.email}</p>
             </div>
-          ))}
-        </div>
 
-        {/* SOCIAL */}
-        <h5 className="mt-3">Social Links</h5>
-        <div className="row">
-          <div className="col-md-6">
-            <input
-              name="github"
-              value={profile.github || ""}
-              onChange={handleChange}
-              disabled={!edit}
-              className="form-control mb-2"
-              placeholder="GitHub URL"
-            />
-          </div>
-          <div className="col-md-6">
-            <input
-              name="linkedin"
-              value={profile.linkedin || ""}
-              onChange={handleChange}
-              disabled={!edit}
-              className="form-control mb-2"
-              placeholder="LinkedIn URL"
-            />
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+            >
+              {editMode ? "Cancel" : "Edit"}
+            </button>
           </div>
         </div>
 
-        {/* SKILLS */}
-        <h5 className="mt-4">Skills</h5>
+        {/* CONTENT */}
+        <div className="p-6 space-y-6">
 
-        <DndContext collisionDetection={closestCenter} onDragEnd={onSkillDrag}>
-          <SortableContext
-            items={skills.map((s) => String(s.id))}
-            strategy={verticalListSortingStrategy}
-          >
-            {skills.map((s, i) => (
-              <SortableItem key={String(s.id)} id={String(s.id)}>
-                <div className="p-3 border rounded mt-2 bg-light">
-
-                  <input
-                    className="form-control mb-2"
-                    value={s.name ?? ""}
-                    onChange={(e) =>
-                      updateSkill(i, "name", e.target.value)
-                    }
-                    disabled={!edit}
-                    placeholder="Skill name"
-                  />
-
-                  <input
-                    type="range"
-                    className="form-range"
-                    value={Number(s.level) || 50}
-                    onChange={(e) =>
-                      updateSkill(i, "level", e.target.value)
-                    }
-                    disabled={!edit}
-                  />
-
-                  <small>Level: {s.level}%</small>
-
-                  <button
-                    className="btn btn-danger btn-sm mt-2"
-                    onClick={() => deleteSkill(s.id)}
-                  >
-                    Delete
-                  </button>
-
+          {/* BASIC INFO */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {["name", "email", "phone", "state"].map(field => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                    {field}
+                  </label>
+                  {editMode ? (
+                    <input
+                      name={field}
+                      value={formData[field]}
+                      onChange={handleChange}
+                      placeholder={field}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  ) : (
+                    <p className="text-gray-700">{formData[field] || "-"}</p>
+                  )}
                 </div>
-              </SortableItem>
-            ))}
-          </SortableContext>
-        </DndContext>
+              ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CGPA</label>
+                {editMode ? (
+                  <input
+                    name="cgpa"
+                    value={formData.cgpa}
+                    onChange={handleChange}
+                    placeholder="CGPA"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.cgpa || "-"}</p>
+                )}
+              </div>
+            </div>
+          </div>
 
-        {edit && (
-          <button className="btn btn-outline-primary mt-2" onClick={addSkill}>
-            + Add Skill
-          </button>
+          {/* SOCIAL LINKS */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub</label>
+                {editMode ? (
+                  <input
+                    name="github"
+                    value={formData.github}
+                    onChange={handleChange}
+                    placeholder="GitHub Profile URL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <a href={formData.github} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                    {formData.github || "-"}
+                  </a>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                {editMode ? (
+                  <input
+                    name="linkedin"
+                    value={formData.linkedin}
+                    onChange={handleChange}
+                    placeholder="LinkedIn Profile URL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <a href={formData.linkedin} className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                    {formData.linkedin || "-"}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SKILLS */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills</h3>
+
+            {editMode && (
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  placeholder="Add a skill"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <button
+                  onClick={addSkill}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                >
+                  Add
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
+                formData.skills.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                    {s}
+                    {editMode && (
+                      <button
+                        onClick={() => removeItem("skills", i)}
+                        className="ml-1 font-bold hover:text-red-600"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No skills added</p>
+              )}
+            </div>
+          </div>
+
+          {/* PROJECTS */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Projects</h3>
+
+            {editMode && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  placeholder="Project Title"
+                  value={project.title}
+                  onChange={(e) => setProject({ ...project, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <textarea
+                  placeholder="Description"
+                  value={project.desc}
+                  onChange={(e) => setProject({ ...project, desc: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                  rows="3"
+                />
+                <button
+                  onClick={addProject}
+                  className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                >
+                  Add Project
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {(Array.isArray(formData.projects) && formData.projects.length > 0) ? (
+                formData.projects.map((p, i) => (
+                  <div key={i} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900">{p.title}</h4>
+                      {editMode && (
+                        <button
+                          onClick={() => removeItem("projects", i)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-gray-700 text-sm">{p.desc}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No projects added</p>
+              )}
+            </div>
+          </div>
+
+          {/* EDUCATION */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Education</h3>
+
+            {editMode && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  placeholder="College/University"
+                  value={edu.college}
+                  onChange={(e) => setEdu({ ...edu, college: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <input
+                  placeholder="Degree"
+                  value={edu.degree}
+                  onChange={(e) => setEdu({ ...edu, degree: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <button
+                  onClick={addEdu}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
+                >
+                  Add Education
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {(Array.isArray(formData.education) && formData.education.length > 0) ? (
+                formData.education.map((e, i) => (
+                  <div key={i} className="p-3 bg-gray-50 rounded-lg text-gray-700">
+                    <span className="font-semibold">{e.college}</span> - {e.degree}
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No education added</p>
+              )}
+            </div>
+          </div>
+
+          {/* ATS CHECKER */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">ATS Score Checker</h3>
+            <textarea
+              placeholder="Paste Job Description here"
+              value={jobDesc}
+              onChange={(e) => setJobDesc(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              rows="4"
+            />
+
+            <button
+              onClick={checkATS}
+              className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition"
+            >
+              Check ATS Score
+            </button>
+
+            {ats && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-lg font-semibold text-gray-900">
+                  ATS Score: <span className={ats >= 70 ? "text-green-600" : ats >= 50 ? "text-yellow-600" : "text-red-600"}>
+                    {ats}%
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* SAVE BUTTON */}
+        {editMode && (
+          <div className="border-t border-gray-200 p-6 bg-gray-50">
+            <button
+              onClick={handleSubmit}
+              className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+            >
+              Save Profile
+            </button>
+          </div>
         )}
 
-        {/* PROJECTS */}
-        <h5 className="mt-4">Projects</h5>
-
-        <DndContext collisionDetection={closestCenter} onDragEnd={onProjectDrag}>
-          <SortableContext
-            items={projects.map((p) => String(p.id))}
-            strategy={verticalListSortingStrategy}
-          >
-            {projects.map((p, i) => (
-              <SortableItem key={String(p.id)} id={String(p.id)}>
-                <div className="p-3 border rounded mt-2 bg-light">
-
-                  <input
-                    className="form-control mb-2"
-                    value={p.title ?? ""}
-                    onChange={(e) =>
-                      updateProject(i, "title", e.target.value)
-                    }
-                    disabled={!edit}
-                  />
-
-                  <textarea
-                    className="form-control mb-2"
-                    value={p.description ?? ""}
-                    onChange={(e) =>
-                      updateProject(i, "description", e.target.value)
-                    }
-                    disabled={!edit}
-                  />
-
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => deleteProject(p.id)}
-                  >
-                    Delete
-                  </button>
-
-                </div>
-              </SortableItem>
-            ))}
-          </SortableContext>
-        </DndContext>
-
-        {edit && (
-          <button className="btn btn-outline-primary mt-2" onClick={addProject}>
-            + Add Project
-          </button>
-        )}
       </div>
     </div>
   );
 }
-
-export default Profile;

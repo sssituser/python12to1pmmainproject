@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import jsPDF from 'jspdf';
 
 function ViewReports() {
 
@@ -35,16 +36,29 @@ function ViewReports() {
 };
 
  const handleDownload = (r) => {
-  const content = `Student: ${r.name} Score: ${r.score}/30 Date: ${r.date}`;
-
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = window.URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "exam-result.txt";
-  a.click();
- };
+    // Create new PDF document
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Exam Report', 105, 20, { align: 'center' });
+    
+    // Add report details
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Student: ${r.name}`, 20, 40);
+    doc.text(`Score: ${r.score}/30`, 20, 50);
+    doc.text(`Exam: ${r.exam}`, 20, 60);
+    doc.text(`Date: ${r.date}`, 20, 70);
+    
+    // Add generation date
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 90, { align: 'center' });
+    
+    // Save the PDF
+    doc.save(`exam-report-${r.name.replace(/\s+/g, '_')}.pdf`);
+  };
 
  // Detail View
  if (selected) {

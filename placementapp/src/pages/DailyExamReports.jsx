@@ -14,7 +14,7 @@ function DailyExamReports() {
   const fetchReports = async () => {
     try {
       // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("http://127.0.0.1:8000/api/all-exam-results/");
+      const res = await axios.get("/api/all-exam-results/");
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {
@@ -85,86 +85,107 @@ function DailyExamReports() {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="min-h-screen bg-gray-50 py-10 px-6">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* BACK BUTTON */}
+        <button
+          onClick={() => navigate("/dashboard/exam-reports")}
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-6 group"
+        >
+          <span className="group-hover:-translate-x-1 transition-transform">←</span> 
+          Back to Reports Overview
+        </button>
 
-      {/* BACK BUTTON */}
-      <button
-        onClick={() => navigate("/dashboard/exam-reports")}
-        className="text-sm text-gray-600 hover:text-blue-600"
-      >
-        ← Back
-      </button>
-
-      <div className="d-flex justify-content-between align-items-center mt-3 mb-4">
-        <h3 className="mb-0 text-dark font-weight-bold">Daily Exam Reports</h3>
-        <span className="badge bg-primary fs-6 py-2 px-3 shadow-sm rounded-pill text-white">
-          Total Exams Written: {exams.length}
-        </span>
-      </div>
-
-      <div className="row mt-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Daily Exam Reports
+            </h1>
+            <p className="text-gray-500 mt-1">Review your daily practice history and progress</p>
+          </div>
+          
+          <div className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-indigo-100 flex items-center gap-2 self-start md:self-center">
+            <span className="opacity-80">Total Attempts:</span>
+            <span>{exams.length}</span>
+          </div>
+        </div>
 
         {exams.length > 0 ? (
-          exams.map((exam) => {
-            const total = exam.totalMarks || 40;
-            const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-            const value = progress[exam.id] || 0;
-            const color = getColor(percentage);
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {exams.map((exam) => {
+              const total = exam.totalMarks || 40;
+              const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+              const value = progress[exam.id] || 0;
+              const color = getColor(percentage);
 
-            return (
-              <div className="col-md-3 mb-4" key={exam.id}>
-                <div className="card text-center shadow-sm p-3">
+              return (
+                <div 
+                  key={exam.id} 
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="w-full mb-4 text-center">
+                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={exam.examTitle}>
+                      {exam.examTitle || `Daily Practice #${exam.id}`}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-medium tracking-wide uppercase mt-1">
+                      {exam.user?.username || "Practice User"}
+                    </p>
+                  </div>
 
-                  <h6 className="mb-1 fw-bold text-truncate">
-                    {exam.examTitle || `Exam-${exam.id}`}
-                  </h6>
-
-                  <small className="text-muted mb-2">
-                    {exam.user?.username || "Unknown"}
-                  </small>
-
-                  <div style={{ width: "90px", margin: "auto" }}>
+                  <div className="w-24 h-24 mb-6 transform hover:scale-110 transition-transform duration-500">
                     <CircularProgressbar
                       value={value}
                       text={`${Math.round(value)}%`}
                       styles={buildStyles({
                         pathColor: color,
                         textColor: color,
-                        trailColor: "#e5e7eb",
+                        trailColor: "#f1f5f9",
+                        textSize: "24px",
+                        pathTransitionDuration: 0.5,
                       })}
                     />
                   </div>
 
-                  <p className="mt-3 text-muted mb-1">
-                    Score: <strong>{exam.score}/{total}</strong>
-                  </p>
-
-                  <small className="text-muted">
-                    {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : ""}
-                  </small>
+                  <div className="w-full space-y-3 mb-6">
+                    <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
+                       <span className="text-gray-500">Score</span>
+                       <span className="font-bold text-gray-800">{exam.score} / {total}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                       <span className="text-gray-400">Date</span>
+                       <span className="text-gray-600 font-medium">
+                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
+                       </span>
+                    </div>
+                  </div>
 
                   <button
-                    className="btn btn-primary btn-sm mt-2"
-                    onClick={() =>
-                      navigate(`/dashboard/exam-report-detail/${exam.id}`)
-                    }
+                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
+                    className="w-full py-3 bg-gray-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
-                    VIEW REPORT
+                    View Analysis 
                   </button>
-
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         ) : (
-          <div className="text-center mt-5">
-            <p className="text-muted fs-5">No exam reports found.</p>
-            <p className="text-muted">Take a Daily Exam to see your results here!</p>
+          <div className="bg-white rounded-3xl p-12 text-center shadow-inner border border-dashed border-gray-200 mt-8">
+            <div className="text-5xl mb-4">📊</div>
+            <h3 className="text-xl font-bold text-gray-800">No practice reports yet.</h3>
+            <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+              Ready to sharp your skills? Take a Daily Exam from the playground and your results will appear here!
+            </p>
+            <button 
+              onClick={() => navigate("/dashboard/playground")}
+              className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+            >
+              Go to Playground
+            </button>
           </div>
         )}
-
       </div>
-
     </div>
   );
 }

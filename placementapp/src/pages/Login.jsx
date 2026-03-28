@@ -1,195 +1,224 @@
-import { useState } from "react";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import Globe from "../components/Globe";
 
 function Login() {
-
   const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+  });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-const handleLogin = async () => {
+  // ✅ AUTO REDIRECT IF ALREADY LOGGED IN
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
-  if (!username || !password) {
-    toast.error("Please enter username and password");
-    return;
-  }
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-  if (loading) return;
+  // ==============================
+  // LOGIN FUNCTION (FIXED)
+  // ==============================
+  const handleLogin = async () => {
+    if (!form.username || !form.password) {
+      toast.error("Fill all fields");
+      return;
+    }
 
-  setLoading(true);
-  setError("");
+    setLoading(true);
 
-  try {
-
-    const response = await fetch("http://127.0.0.1:8000/api/login/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username: username,
-        password: password
-      })
-    });
-
-    let data = {};
     try {
-      data = await response.json();
-      console.log("LOGIN RESPONSE:", data);
-    } catch {
-      data = {};
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/login/",
+        form,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log("LOGIN RESPONSE:", res.data);
+
+      if (!res.data.access) {
+        throw new Error("Login failed - no access token");
+      }
+
+      // ✅ STORE TOKENS
+      localStorage.setItem("access", res.data.access);
+      localStorage.setItem("refresh", res.data.refresh || "");
+
+      // ✅ STORE USER INFO
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          username: res.data.user?.username || form.username,
+          role: res.data.user?.role || "student",
+        })
+      );
+
+      toast.success("Login successful 🚀");
+
+      // ✅ REDIRECT BASED ON ROLE
+      const userRole = res.data.user?.role || "student";
+      if (userRole === "faculty") {
+        navigate("/faculty/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+
+    } catch (err) {
+      console.log(err);
+      toast.error(
+        err?.response?.data?.detail || "Invalid credentials"
+      );
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (response.ok) {
-      console.log("LOGIN RESPONSE:", data);
-
-      localStorage.setItem("access", data.access);
-      localStorage.setItem("refresh", data.refresh);
-      console.log("Saved Token:", localStorage.getItem("access"));
-
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-
-      const user = {
-        username: username,
-        id: randomId
-      };
-
-      localStorage.setItem("user", JSON.stringify(user));
-
-      toast.success(`Welcome ${username}`);
-      navigate("/dashboard",{replace:true});
-      window.location.reload();
-          
-
-    } else {
-
-      toast.error(data.detail || "Invalid username or password");
-
-    }
-
-  } catch (error) {
-
-    toast.error("Server error. Please try again.");
-
-  }
-
-  setLoading(false);
-};
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="min-h-screen flex bg-black text-white overflow-hidden">
+      <Toaster />
 
       {/* LEFT SIDE */}
-      <div className="w-1/2 h-full bg-black relative flex items-center justify-center overflow-hidden">
+      <div className="w-1/2 hidden md:flex items-center justify-center relative">
 
-        <Globe />
+        <div className="absolute inset-0 opacity-70 pointer-events-none">
+          <Globe />
+        </div>
 
-        <div className="absolute left-16 text-white z-10 max-w-md">
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
 
-          <div className="flex items-center gap-2 mb-6">
-            <span className="text-4xl font-bold">Hello</span>
-            <div className="w-4 h-4 bg-green-500"></div>
-          </div>
-
-          <p className="text-gray-400 text-lg mb-2">
-            Welcome to
-          </p>
-
-          <h1 className="text-5xl font-bold mb-4">
-            Placement Portal
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="relative z-10 px-16"
+        >
+          <h1 className="text-6xl font-bold leading-tight">
+            Placement
+            <br />
+            <span className="text-green-400">Portal</span>
           </h1>
 
-          <p className="text-gray-400">
-            Practice coding, prepare for interviews and land your dream job.
+          <p className="text-gray-400 mt-4 text-lg">
+            Track your career journey 🚀
           </p>
-
-        </div>
+        </motion.div>
       </div>
 
       {/* RIGHT SIDE */}
+      <div className="flex-1 flex items-center justify-center px-6">
 
-      <div className="w-1/2 h-full flex items-center justify-center bg-gray-100">
-
-        <div className="bg-white shadow-2xl rounded-xl p-10 w-[420px]">
-
-          <h1 className="text-3xl font-semibold mb-2">
-            Welcome back!
-          </h1>
-
-          <p className="text-gray-500 mb-8">
-            Login to your account
-          </p>
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md p-8 rounded-2xl
+          bg-white/5 backdrop-blur-xl
+          border border-white/10
+          shadow-[0_0_40px_rgba(0,255,0,0.15)]"
+        >
+          <h2 className="text-2xl text-center mb-6 font-semibold">
+            Student Login
+          </h2>
 
           {/* USERNAME */}
-
           <input
             type="text"
-            placeholder="Your username"
-            value={username}
-            onChange={(e)=>setUsername(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+            name="username"
+            placeholder="Username or Email"
+            value={form.username}
+            onChange={handleChange}
+            className="w-full mb-4 px-4 py-3 rounded-lg
+            bg-white/5 border border-white/10
+            focus:border-green-400 focus:ring-1 focus:ring-green-400
+            outline-none transition"
           />
 
           {/* PASSWORD */}
-
-          <div className="relative mb-2">
-
+          <div className="relative mb-4">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Your password"
-              value={password}
-              onChange={(e)=>setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-green-500"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg
+              bg-white/5 border border-white/10
+              focus:border-green-400 focus:ring-1 focus:ring-green-400
+              outline-none transition"
             />
 
-            <button
-              type="button"
-              onClick={()=>setShowPassword(!showPassword)}
-              className="absolute right-3 top-3"
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 cursor-pointer text-gray-400 hover:text-white"
             >
               👁
-            </button>
-
+            </span>
           </div>
 
-          {/* ERROR MESSAGE */}
+          {/* OPTIONS */}
+          <div className="flex justify-between text-sm text-gray-400 mb-6">
+            <span className="cursor-pointer hover:text-white">
+              Forgot password?
+            </span>
+            <span className="cursor-pointer hover:text-green-400">
+              OTP Login
+            </span>
+          </div>
 
-          {error && (
-            <p className="text-red-500 text-sm mb-4">
-              {error}
-            </p>
-          )}
-
-          {/* LOGIN BUTTON */}
-
+          {/* BUTTON */}
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-3 mb-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-500 transition shadow-lg cursor-pointer"
+            className="w-full py-3 rounded-lg font-medium
+            bg-green-500 hover:bg-green-600
+            transition duration-300
+            shadow-[0_0_15px_rgba(0,255,0,0.3)]"
           >
-            {loading ? "Logging in..." : "Log In"}
+            {loading ? "Signing in..." : "SIGN IN"}
           </button>
-          <div className="flex justify-between text-sm mb-6">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" />
-              Remember me
-            </label>
 
-            <a href="#" className="text-blue-600">
-              Forgot password?
-            </a>
+          {/* REGISTER */}
+          <p className="text-center text-sm mt-5 text-gray-400">
+            New here?{" "}
+            <span
+              onClick={() => navigate("/register")}
+              className="text-green-400 cursor-pointer hover:underline"
+            >
+              Create account
+            </span>
+          </p>
 
-          </div>
-
-        </div>
+          {/* FACULTY LOGIN */}
+          <p className="text-center text-xs mt-3 text-gray-500">
+            Faculty?{" "}
+            <span
+              onClick={() => navigate("/faculty/login")}
+              className="text-green-400 cursor-pointer"
+            >
+              Login here
+            </span>
+          </p>
+        </motion.div>
 
       </div>
-
     </div>
   );
 }
