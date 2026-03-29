@@ -8,6 +8,7 @@ import email
 from email.header import decode_header
 import logging
 from django.conf import settings
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -221,15 +222,42 @@ class IMAPEmailManager:
             return False, 0, [str(e)]
 
 
-def delete_old_login_emails(user_email, email_password, count=30, subject_keyword="Login Confirmation"):
+def _get_cleanup_config():
+    """
+    Build a dynamic cleanup configuration from settings with sensible defaults.
+    Values are driven by environment variables (see settings.py) so behaviour
+    can be tuned without code changes or redeploys.
+    """
+    return {
+        "enabled": getattr(settings, "LOGIN_EMAIL_AUTO_DELETE_ENABLED", True),
+        "threshold": getattr(settings, "LOGIN_EMAIL_MAX_ACTIVE", 30),
+        "batch_size": getattr(settings, "LOGIN_EMAIL_DELETE_BATCH", 30),
+        "subject_keyword": getattr(settings, "LOGIN_EMAIL_SUBJECT_KEYWORD", "Login Confirmation"),
+        "mailbox": getattr(settings, "LOGIN_EMAIL_MAILBOX", "INBOX"),
+        "imap_timeout": getattr(settings, "LOGIN_EMAIL_IMAP_TIMEOUT", 10),
+        "imap_enabled": getattr(settings, "LOGIN_EMAIL_IMAP_ENABLED", False),
+        "imap_username": getattr(settings, "LOGIN_EMAIL_IMAP_USERNAME", None),
+        "imap_password": getattr(settings, "LOGIN_EMAIL_IMAP_PASSWORD", None),
+    }
+
+
+def delete_old_login_emails(
+    user_email,
+    email_password,
+    count=None,
+    subject_keyword=None,
+    mailbox=None,
+    timeout=None,
+    imap_username=None,
+):
     """
     Delete old login emails from user inbox
     
     Args:
         user_email: User's email address
         email_password: App-specific password or email password
-        count: Number of oldest emails to delete (default: 30)
-        subject_keyword: Subject keyword to search for (default: "Login Confirmation")
+        count: Number of oldest emails to delete (default: from settings)
+        subject_keyword: Subject keyword to search for (default: from settings)
         
     Returns:
         dict: {
@@ -239,11 +267,18 @@ def delete_old_login_emails(user_email, email_password, count=30, subject_keywor
             'errors': list
         }
     """
-    manager = IMAPEmailManager(user_email, email_password)
+    cfg = _get_cleanup_config()
+    manager = IMAPEmailManager(imap_username or cfg["imap_username"] or user_email, email_password)
     
     try:
+        delete_count = count or cfg["batch_size"] or cfg["threshold"]
+        subject = subject_keyword or cfg["subject_keyword"]
+        target_mailbox = mailbox or cfg["mailbox"]
+        imap_timeout = timeout or cfg["imap_timeout"]
+        domain = (imap_username or user_email).split("@")[-1].lower()
+
         # Attempt connection
-        if not manager.connect():
+        if not manager.connect(timeout=imap_timeout):
             return {
                 'success': False,
                 'deleted_count': 0,
@@ -251,13 +286,31 @@ def delete_old_login_emails(user_email, email_password, count=30, subject_keywor
                 'errors': ['IMAP connection failed']
             }
         
-        # Search and delete
-        success, deleted_count, errors = manager.delete_emails_by_subject(
-            subject_keyword, 
-            limit=count,
-            mailbox='INBOX'
-        )
-        
+        # Build mailbox search order to handle Gmail labels/promotions automatically
+        mailboxes_to_try = [target_mailbox]
+        if domain in ("gmail.com", "googlemail.com"):
+            for extra_box in ("[Gmail]/All Mail", "[Gmail]/Promotions", "[Gmail]/Important"):
+                if extra_box not in mailboxes_to_try:
+                    mailboxes_to_try.append(extra_box)
+
+        deleted_count = 0
+        errors = []
+        success = False
+
+        for box in mailboxes_to_try:
+            batch_success, batch_deleted, batch_errors = manager.delete_emails_by_subject(
+                subject,
+                limit=max(delete_count - deleted_count, 0),
+                mailbox=box
+            )
+            deleted_count += batch_deleted
+            errors.extend(batch_errors or [])
+            success = success or batch_success
+
+            # Stop early if we've removed the requested amount
+            if deleted_count >= delete_count:
+                break
+
         return {
             'success': success,
             'deleted_count': deleted_count,
@@ -280,67 +333,105 @@ def delete_old_login_emails(user_email, email_password, count=30, subject_keywor
 
 def attempt_delete_excess_login_emails(user, user_email, email_password=None):
     """
-    Check if user has more than 30 login emails and delete oldest 30 if threshold exceeded
-    
-    Args:
-        user: Django User object
-        user_email: User's email address
-        email_password: Email password (if available from settings or config)
-        
-    Returns:
-        dict: Status of deletion attempt
+    Dynamically clean up login emails once a configurable threshold is reached.
+    The threshold, batch size, subject keyword and IMAP behaviour are all driven
+    by settings/environment variables to avoid hard-coded limits.
     """
     from myapp.models import LoginEmailLog
-    
-    try:
-        # Check current count
-        active_count = LoginEmailLog.get_user_active_login_emails_count(user)
-        
-        if active_count > 30:
-            logger.info(f"User {user.username} has {active_count} login emails, attempting cleanup...")
-            
-            # Get email password from settings if not provided
-            if not email_password and hasattr(settings, 'EMAIL_HOST_PASSWORD'):
-                email_password = settings.EMAIL_HOST_PASSWORD
-            
-            if not email_password:
-                logger.warning(f"No email password available for deleting emails for user {user.username}")
-                return {
-                    'success': False,
-                    'message': 'Email password not configured',
-                    'is_warning': True
-                }
-            
-            # Attempt IMAP deletion
-            result = delete_old_login_emails(
-                user_email,
-                email_password,
-                count=30,
-                subject_keyword="Login Confirmation"
-            )
-            
-            # If IMAP succeeds, mark emails as deleted in database
-            if result['success'] and result['deleted_count'] > 0:
-                oldest_emails = LoginEmailLog.get_user_oldest_active_emails(user, 30)
-                from django.utils import timezone
-                for email_log in oldest_emails:
-                    email_log.is_deleted = True
-                    email_log.deleted_at = timezone.now()
-                    email_log.save()
-                
-                logger.info(f"Marked {result['deleted_count']} login emails as deleted for user {user.username}")
-            
-            return {
-                'success': result['success'],
-                'message': result['message'],
-                'deleted_count': result['deleted_count'],
-                'is_warning': not result['success']
-            }
-        
+
+    cfg = _get_cleanup_config()
+
+    if not cfg["enabled"]:
         return {
             'success': True,
-            'message': f'Active login emails within limit ({active_count}/30)',
-            'deleted_count': 0
+            'message': 'Login email auto-deletion disabled by configuration',
+            'deleted_count': 0,
+            'is_warning': False
+        }
+    
+    try:
+        active_count = LoginEmailLog.get_user_active_login_emails_count(user)
+
+        if active_count < cfg["threshold"]:
+            return {
+                'success': True,
+                'message': f'Active login emails within limit ({active_count}/{cfg["threshold"]})',
+                'deleted_count': 0
+            }
+
+        logger.info(
+            f"User {user.username} has {active_count} login emails, "
+            f"threshold {cfg['threshold']}, initiating cleanup..."
+        )
+
+        batch_size = cfg["batch_size"] or cfg["threshold"]
+
+        total_deleted_db = 0
+        total_imap_deleted = 0
+        cleanup_batches = 0
+        imap_errors = []
+
+        # Keep deleting in 30-message (or configured) batches until the user
+        # drops below the threshold. This guarantees cleanup works even if a
+        # user has accumulated multiple batches worth of login emails.
+        while active_count >= cfg["threshold"]:
+            cleanup_batches += 1
+            delete_count = min(batch_size, active_count)
+
+            # Optional IMAP deletion (requires valid credentials)
+            imap_result = None
+            if cfg["imap_enabled"]:
+                imap_pwd = email_password or cfg["imap_password"]
+                if not imap_pwd:
+                    error_msg = "IMAP password not configured"
+                    imap_errors.append(error_msg)
+                    logger.warning(error_msg)
+                else:
+                    imap_result = delete_old_login_emails(
+                        user_email,
+                        imap_pwd,
+                        count=delete_count,
+                        subject_keyword=cfg["subject_keyword"],
+                        mailbox=cfg["mailbox"],
+                        timeout=cfg["imap_timeout"],
+                        imap_username=cfg["imap_username"] or user_email,
+                    )
+                    total_imap_deleted += imap_result.get('deleted_count', 0) if imap_result else 0
+                    if imap_result and not imap_result.get('success', False):
+                        imap_errors.append(imap_result.get('message', 'IMAP deletion failed'))
+
+            # Always soft-delete in DB to keep counts correct (works without IMAP)
+            oldest_emails = LoginEmailLog.get_user_oldest_active_emails(user, delete_count)
+            deleted_this_batch = 0
+            for email_log in oldest_emails:
+                email_log.is_deleted = True
+                email_log.deleted_at = timezone.now()
+                email_log.save(update_fields=['is_deleted', 'deleted_at'])
+                deleted_this_batch += 1
+
+            total_deleted_db += deleted_this_batch
+            active_count = max(active_count - deleted_this_batch, 0)
+
+            # If we could not delete anything, break to avoid potential loop
+            if deleted_this_batch == 0:
+                break
+
+        success = not imap_errors
+
+        message_parts = [
+            f"Soft-deleted {total_deleted_db} login email log(s) in {cleanup_batches} batch(es)",
+        ]
+        if total_imap_deleted:
+            message_parts.append(f"IMAP deleted {total_imap_deleted} message(s)")
+        message_parts.extend(imap_errors)
+
+        return {
+            'success': success,
+            'message': "; ".join(filter(None, message_parts)),
+            'deleted_count': total_deleted_db,
+            'imap_deleted': total_imap_deleted,
+            'is_warning': not success,
+            'active_after_cleanup': active_count
         }
     
     except Exception as e:

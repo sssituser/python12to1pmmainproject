@@ -199,5 +199,16 @@ EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 LEAVE_EMAIL_ENABLED = os.environ.get('LEAVE_EMAIL_ENABLED', 'True').lower() == 'true'
 
+# Login email auto‑cleanup (env‑driven to keep it dynamic)
+LOGIN_EMAIL_AUTO_DELETE_ENABLED = os.environ.get('LOGIN_EMAIL_AUTO_DELETE_ENABLED', 'True').lower() == 'true'
+LOGIN_EMAIL_MAX_ACTIVE = int(os.environ.get('LOGIN_EMAIL_MAX_ACTIVE', '30'))
+LOGIN_EMAIL_DELETE_BATCH = int(os.environ.get('LOGIN_EMAIL_DELETE_BATCH', os.environ.get('LOGIN_EMAIL_MAX_ACTIVE', '30')))
+LOGIN_EMAIL_SUBJECT_KEYWORD = os.environ.get('LOGIN_EMAIL_SUBJECT_KEYWORD', 'Login Confirmation')
+LOGIN_EMAIL_MAILBOX = os.environ.get('LOGIN_EMAIL_MAILBOX', 'INBOX')
+LOGIN_EMAIL_IMAP_TIMEOUT = int(os.environ.get('LOGIN_EMAIL_IMAP_TIMEOUT', '10'))
+LOGIN_EMAIL_IMAP_ENABLED = os.environ.get('LOGIN_EMAIL_IMAP_ENABLED', 'True').lower() == 'true'
+LOGIN_EMAIL_IMAP_USERNAME = os.environ.get('LOGIN_EMAIL_IMAP_USERNAME', EMAIL_HOST_USER)
+LOGIN_EMAIL_IMAP_PASSWORD = os.environ.get('LOGIN_EMAIL_IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
+
 
 

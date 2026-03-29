@@ -96,7 +96,7 @@ def send_login_email(user_email, username, login_time, user_ip, browser_info, us
                 )
                 logger.info(f"Login email logged to database for user {user.username}")
                 
-                # Check if cleanup is needed (more than 30 emails)
+                # Check if cleanup is needed (threshold is configurable via settings)
                 try:
                     from myapp.imap_utils import attempt_delete_excess_login_emails
                     cleanup_result = attempt_delete_excess_login_emails(user, user_email)
