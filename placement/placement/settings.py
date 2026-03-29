@@ -79,20 +79,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'placement.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [TEMPLATES_DIR],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
+# Templates moved to end of file
 
 WSGI_APPLICATION = 'placement.wsgi.application'
 
@@ -111,15 +98,7 @@ DATABASES = {
     }
 }
 
-# ================== EMAIL / SMTP CONFIGURATION ==================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'karthikreddybodapati@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'oxda ouau iwli zefd'  # Use Gmail App Password (16 chars)
-DEFAULT_FROM_EMAIL = 'karthikreddybodapati@gmail.com'
-SERVER_EMAIL = 'karthikreddybodapati@gmail.com'
+# Email settings moved or defined below
 
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
@@ -159,10 +138,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-}
+# JWT settings merged below
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),

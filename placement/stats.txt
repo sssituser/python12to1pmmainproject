@@ -1,1 +1,0 @@
-[{'exam_type': None, 'count': 4}, {'exam_type': 'daily', 'count': 41}, {'exam_type': 'weekly', 'count': 65}, {'exam_type': 'monthly', 'count': 8}]

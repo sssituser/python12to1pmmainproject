@@ -7,13 +7,15 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 import logging
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
 
-def send_login_email(user_email, username, login_time, user_ip, browser_info):
+def send_login_email(user_email, username, login_time, user_ip, browser_info, user=None):
     """
-    Send login confirmation email to user
+    Send login confirmation email to user and log it for tracking
+    Automatically manages login email count and triggers cleanup if needed
     """
     subject = "🔐 Login Confirmation - SSSIT Placement Portal"
     
@@ -78,6 +80,42 @@ def send_login_email(user_email, username, login_time, user_ip, browser_info):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
         logger.info(f"Login email sent to {user_email}")
+        
+        # Log the email in database for tracking
+        if user:
+            try:
+                from myapp.models import LoginEmailLog
+                
+                email_log = LoginEmailLog.objects.create(
+                    user=user,
+                    email_address=user_email,
+                    email_subject=subject,
+                    login_time=login_time,
+                    user_ip=user_ip,
+                    browser_info=browser_info
+                )
+                logger.info(f"Login email logged to database for user {user.username}")
+                
+                # Check if cleanup is needed (more than 30 emails)
+                try:
+                    from myapp.imap_utils import attempt_delete_excess_login_emails
+                    cleanup_result = attempt_delete_excess_login_emails(user, user_email)
+                    
+                    if cleanup_result and not cleanup_result.get('success'):
+                        if not cleanup_result.get('is_warning'):
+                            logger.error(f"Email cleanup failed: {cleanup_result.get('message')}")
+                        else:
+                            logger.warning(f"Email cleanup warning: {cleanup_result.get('message')}")
+                except ImportError:
+                    logger.warning("imap_utils not available, skipping email cleanup")
+                except Exception as e:
+                    logger.error(f"Error during email cleanup: {str(e)}")
+                
+            except ImportError:
+                logger.warning("LoginEmailLog model not available, skipping database logging")
+            except Exception as e:
+                logger.error(f"Error logging email to database: {str(e)}")
+        
         return True
     except Exception as e:
         logger.error(f"Failed to send login email to {user_email}: {str(e)}")
