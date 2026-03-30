@@ -18,7 +18,7 @@ function AllJobs() {
 
     // 🔐 Block if not logged in
     if (!token) {
-      alert("Please login first 🔐");
+    alert("Please login first 🔐");
       return;
     }
 
@@ -38,7 +38,7 @@ function AllJobs() {
       const data = await res.json();
 
       if (res.status === 201) {
-        alert("Applied Successfully ✅");
+        console.log("Applied Successfully ✅");
 
         setJobsData((prev) =>
           prev.map((job) =>
@@ -46,11 +46,11 @@ function AllJobs() {
           )
         );
       } else {
-        alert(data?.detail || data?.error || "Already Applied ⚠️");
+        console.log(data?.detail || data?.error || "Already Applied ⚠️");
       }
     } catch (err) {
       console.log(err);
-      alert("Error ❌");
+      console.error("Error ❌");
     }
   }
 

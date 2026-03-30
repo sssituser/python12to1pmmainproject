@@ -19,12 +19,16 @@ class User(AbstractUser):
 import random
 
 class OTP(models.Model):
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
+    username = models.CharField(max_length=100, null=True, blank=True)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def generate_otp(self):
-        self.otp = str(random.randint(100000, 999999))
+    def generate_otp(self, length=6):
+        if length == 4:
+            self.otp = str(random.randint(1000, 9999))
+        else:
+            self.otp = str(random.randint(100000, 999999))
 
 
 
@@ -394,10 +398,7 @@ class Playground(models.Model):
     def __str__(self):
         return self.title
     
-class OTP(models.Model):
-    username = models.CharField(max_length=100)
-    otp = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
+# OTP merged above
 # ===============================
 # COURSE SYSTEM
 # ===============================
@@ -419,9 +420,9 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
-<<<<<<< HEAD
+
     
-=======
+
 
     class Meta:
         ordering = ['created_at']
@@ -465,4 +466,42 @@ class StudentTopicProgress(models.Model):
     class Meta:
         unique_together = ('enrollment', 'topic')
 
->>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
+
+# ===============================
+# LOGIN EMAIL TRACKING
+# ===============================
+
+class LoginEmailLog(models.Model):
+    """Track login confirmation emails sent to users for auto-deletion management"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_email_logs')
+    email_address = models.EmailField()
+    email_subject = models.CharField(max_length=255, default='🔐 Login Confirmation - SSSIT Placement Portal')
+    email_message_id = models.CharField(max_length=255, blank=True, null=True, help_text="IMAP Message ID for deletion")
+    sent_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    login_time = models.CharField(max_length=50, blank=True)
+    user_ip = models.CharField(max_length=50, blank=True)
+    browser_info = models.CharField(max_length=255, blank=True)
+    
+    class Meta:
+        ordering = ['-sent_at']
+        indexes = [
+            models.Index(fields=['user', '-sent_at']),
+            models.Index(fields=['is_deleted', '-sent_at']),
+        ]
+    
+    def __str__(self):
+        return f"Login email to {self.email_address} at {self.sent_at}"
+    
+    @classmethod
+    def get_user_active_login_emails_count(cls, user):
+        """Get count of non-deleted login emails for a user"""
+        return cls.objects.filter(user=user, is_deleted=False).count()
+    
+    @classmethod
+    def get_user_oldest_active_emails(cls, user, count=30):
+        """Get oldest active (non-deleted) login emails for a user"""
+        return cls.objects.filter(user=user, is_deleted=False).order_by('sent_at')[:count]
+
+

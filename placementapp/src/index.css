@@ -286,9 +286,6 @@ a {
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-in-out;
-<<<<<<< HEAD
-
-=======
 }
 
 @keyframes float {
@@ -315,5 +312,4 @@ a {
 
 .input:focus {
   border-color: #22c55e;
->>>>>>> f83998573c91ec84e5041a2cc032d45876a28bc6
 }

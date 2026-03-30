@@ -67,7 +67,8 @@ def login(request):
                         username=username,
                         login_time=login_time,
                         user_ip=user_ip,
-                        browser_info=browser_info
+                        browser_info=browser_info,
+                        user=user
                     )
                 except Exception as e:
                     print("Email error:", e)

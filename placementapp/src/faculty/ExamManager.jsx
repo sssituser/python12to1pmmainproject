@@ -109,7 +109,6 @@ function ExamManager() {
       }
     } catch (err) {
       console.error("Failed to save exam settings:", err);
-      alert("Error: Connection to backend failed. Please check if server is running.");
     } finally {
       setIsSaving(false);
     }
@@ -139,12 +138,12 @@ function ExamManager() {
   // add question
   const addQuestion = () => {
     if (!form.question) {
-      alert("Fill the question field!");
+      console.error("Fill the question field!");
       return;
     }
 
     if (form.type === "mcq" && !form.answer) {
-      alert("Select the correct answer for MCQ!");
+      console.error("Select the correct answer for MCQ!");
       return;
     }
 

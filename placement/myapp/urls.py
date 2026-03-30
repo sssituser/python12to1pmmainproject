@@ -14,6 +14,7 @@ from .views.course_views import CourseViewSet
 from . import api_views
 from .views.stats_views import *
 from .views.otp_views import *
+from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 
 
 # ROUTER
@@ -101,6 +102,11 @@ urlpatterns = [
     path('course/<int:course_id>/', course_views.get_course_details),
     path('course/<str:course_name>/topics/', course_views.get_course_topics),
     path('run-code/', api_views.run_code_api, name='run-code'),
+
+    # ================= AUTO-DELETION MONITORING =================
+    path('login-email-status/', get_login_email_status, name='login_email_status'),
+    path('login-email-history/', get_login_email_history, name='login_email_history'),
+    path('auto-deletion-info/', get_auto_deletion_info, name='auto_deletion_info'),
 
 ]
 

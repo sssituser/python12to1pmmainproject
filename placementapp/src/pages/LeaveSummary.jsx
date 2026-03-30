@@ -583,7 +583,7 @@ function LeaveSummary() {
       console.log("PDF generated successfully with jsPDF");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert(`There was an issue generating the PDF: ${error.message}`);
+      console.error(`There was an issue generating the PDF: ${error.message}`);
     } finally {
       setIsDownloading(false);
     }
