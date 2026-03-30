@@ -81,6 +81,7 @@ def login(request):
             email_sent = False
             if user_email:
                 try:
+                    # Send login confirmation email to ALL users (students and faculty)
                     email_sent = send_login_email(
                         user_email=user_email,
                         username=username,
@@ -89,8 +90,11 @@ def login(request):
                         browser_info=browser_info,
                         user=user
                     )
+                    print(f"DEBUG: Login email {'sent' if email_sent else 'failed to send'} for user {username} (role: {user.role})")
                 except Exception as e:
-                    print("Email error:", e)
+                    print(f"Email error for user {username} (role: {user.role}): {e}")
+            else:
+                print(f"DEBUG: No email address for user {username} (role: {user.role}), skipping login confirmation email")
 
             response_data = {
                 **tokens,
