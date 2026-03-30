@@ -1,6 +1,6 @@
 {
     "Weekly": {
-        "maxQuestions": 25,
+        "maxQuestions": 1,
         "questions": [
             {
                 "type": "mcq",
@@ -24,8 +24,8 @@
             }
         ],
         "passingRule": "percentage",
-        "passingValue": 25,
-        "duration": 45
+        "passingValue": 1,
+        "duration": 1
     },
     "Monthly": {
         "maxQuestions": 25,

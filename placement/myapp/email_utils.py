@@ -65,7 +65,7 @@ def send_login_email(user_email, username, login_time, user_ip, browser_info):
     
     If this wasn't you, contact our support team.
     
-    © 2024 SSSIT Placement Portal
+    © 2026 SSSIT Placement Portal
     """
     
     try:
@@ -124,7 +124,7 @@ def send_exam_confirmation_email(user_email, username, exam_name, exam_date, exa
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                 
                 <p style="color: #999; font-size: 12px; text-align: center;">
-                    © 2024 SSSIT Placement Portal. All rights reserved.
+                    © 2026 SSSIT Placement Portal. All rights reserved.
                 </p>
             </div>
         </body>
@@ -147,7 +147,7 @@ def send_exam_confirmation_email(user_email, username, exam_name, exam_date, exa
     
     Check your dashboard for results and detailed analysis.
     
-    © 2024 SSSIT Placement Portal
+    © 2026 SSSIT Placement Portal
     """
     
     try:
@@ -205,7 +205,7 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                 
                 <p style="color: #999; font-size: 12px; text-align: center;">
-                    © 2024 SSSIT Placement Portal. All rights reserved.
+                    © 2026 SSSIT Placement Portal. All rights reserved.
                 </p>
             </div>
         </body>
@@ -228,7 +228,7 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     
     Check your dashboard for more details.
     
-    © 2024 SSSIT Placement Portal
+    © 2026 SSSIT Placement Portal
     """
     
     try:
@@ -342,7 +342,7 @@ def send_test_email(recipient_email):
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                 
                 <p style="color: #999; font-size: 12px; text-align: center;">
-                    © 2024 SSSIT Placement Portal. All rights reserved.
+                    © 2026 SSSIT Placement Portal. All rights reserved.
                 </p>
             </div>
         </body>
@@ -364,7 +364,7 @@ def send_test_email(recipient_email):
     - Email sending is enabled
     - All users will receive notifications
     
-    © 2024 SSSIT Placement Portal
+    © 2026 SSSIT Placement Portal
     """
     
     try:
