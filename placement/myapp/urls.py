@@ -38,6 +38,7 @@ urlpatterns = [
     path("reset-password/", reset_password),
     path("send_otp/", Send_OTP.as_view()),
     path("verify_register/", Verify_OTP_Register.as_view()),
+    path('faculty/student/<int:pk>/active/', api_views.toggle_student_active),
     
 
 
@@ -90,9 +91,10 @@ urlpatterns = [
     
     # DASHBOARD & STATS
     path('dashboard-stats/', api_views.dashboard_stats_api),
-    path('student-stats/', student_stats),
+    path('student-stats/', api_views.student_stats_api),
     path('student/<int:id>/', student_detail),
     path('students/', api_views.student_stats_api),
+    path('admin/create-credentials/', api_views.admin_create_credentials_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
 
     # ================= COURSE SYSTEM =================

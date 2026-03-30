@@ -1,153 +1,244 @@
-import axios from "axios";
 import { useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
 
 function Register() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
+  const [step, setStep] = useState(1);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student",
+    role: "Student",
   });
 
-  const [strength, setStrength] = useState("Weak");
+  const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm({ ...form, [name]: value });
-
-    if (name === "password") {
-      if (value.length > 8 && /[A-Z]/.test(value)) {
-        setStrength("Strong");
-      } else if (value.length > 5) {
-        setStrength("Medium");
-      } else {
-        setStrength("Weak");
-      }
-    }
+  // ---------------- VALIDATION ----------------
+  const validateStep1 = () => {
+    let err = {};
+    if (!formData.username) err.username = "Username required";
+    if (!formData.email.includes("@")) err.email = "Enter valid email";
+    return err;
   };
 
-  const handleRegister = async () => {
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
-      toast.error("All fields are required");
-      return;
-    }
+  const validateStep2 = () => {
+    let err = {};
+    if (formData.password.length < 6)
+      err.password = "Minimum 6 characters";
+    if (formData.password !== formData.confirmPassword)
+      err.confirmPassword = "Passwords do not match";
+    return err;
+  };
 
-    if (form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+  const handleNext = () => {
+    const err = validateStep1();
+    setErrors(err);
+    if (Object.keys(err).length === 0) setStep(2);
+  };
+
+  const handleSubmit = async () => {
+    const err = validateStep2();
+    setErrors(err);
+
+    if (Object.keys(err).length > 0) return;
 
     try {
-      const { confirmPassword, ...registerData } = form; // Exclude confirmPassword
-      await axios.post("http://127.0.0.1:8000/api/register/", registerData, {
+      const res = await fetch("http://127.0.0.1:8000/api/register/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(formData),
       });
-      toast.success("Account created 🎉");
-      navigate("/");
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Registration failed");
+        return;
+      }
+
+      // ROLE BASED FLOW
+      if (formData.role === "Student") {
+        alert("Account created successfully.Please login.");
+        navigate("/");
+      }
+
+      if (formData.role === "Faculty") {
+        alert("OTP sent to your email for verification.");
+        navigate("/verify-faculty", {
+          state: { email: formData.email },
+        });
+      }
+
     } catch (err) {
-      toast.error(err.response?.data?.error || "Registration failed");
+      alert("Server error ");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white">
-      <Toaster />
+    <div className="min-h-screen flex relative">
 
-      <div className="w-full max-w-md p-8 bg-[#161b22] rounded-xl border border-[#30363d] shadow-lg">
+      {/* 🔙 BACK BUTTON */}
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-6 left-6 flex items-center gap-2 text-white bg-white/20 backdrop-blur px-4 py-2 rounded-lg hover:bg-white/30 transition"
+      >
+        <FaArrowLeft /> Back
+      </button>
 
-        <h1 className="text-2xl font-semibold text-center mb-6">
-          Create Account
-        </h1>
+      {/* LEFT PANEL */}
+      <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-800 to-indigo-900 text-white flex-col justify-center p-12">
 
-        {/* USERNAME */}
-        <input
-          name="username"
-          placeholder="Username"
-          onChange={handleChange}
-          className="input"
-        />
+        <h2 className="text-4xl font-bold mb-4">
+          Placement Portal
+        </h2>
 
-        {/* EMAIL */}
-        <input
-          name="email"
-          placeholder="Email"
-          onChange={handleChange}
-          className="input"
-        />
-
-        {/* PASSWORD */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          onChange={handleChange}
-          className="input"
-        />
-
-        {/* STRENGTH BAR */}
-        <div className="mb-3">
-          <div className="h-2 w-full bg-gray-700 rounded">
-            <div
-              className={`h-2 rounded ${
-                strength === "Strong"
-                  ? "bg-green-500 w-full"
-                  : strength === "Medium"
-                  ? "bg-yellow-500 w-2/3"
-                  : "bg-red-500 w-1/3"
-              }`}
-            />
-          </div>
-          <p className="text-xs mt-1 text-gray-400">
-            Strength: {strength}
-          </p>
-        </div>
-
-        {/* CONFIRM PASSWORD */}
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          onChange={handleChange}
-          className="input"
-        />
-
-        {/* ROLE */}
-        <select
-          name="role"
-          onChange={handleChange}
-          className="input mb-6"
-        >
-          <option value="student">Student</option>
-          <option value="faculty">Faculty</option>
-        </select>
-
-        {/* BUTTON */}
-        <button
-          onClick={handleRegister}
-          className="w-full py-3 rounded-md bg-green-600 hover:bg-green-500 transition font-medium"
-        >
-          Create Account
-        </button>
-
-        {/* LOGIN LINK */}
-        <p className="text-center text-sm text-gray-400 mt-6">
-          Already have an account?{" "}
-          <span
-            onClick={() => navigate("/")}
-            className="text-green-400 cursor-pointer hover:underline"
-          >
-            Login
-          </span>
+        <p className="mb-8 text-gray-200">
+          Register to access placement opportunities and track your journey.
         </p>
 
+        <div className="space-y-4">
+          <div className={`p-4 rounded-lg ${step >= 1 ? "bg-white/20" : "bg-white/10"}`}>
+            Step 1: Basic Details
+          </div>
+          <div className={`p-4 rounded-lg ${step >= 2 ? "bg-white/30" : "bg-white/10"}`}>
+            Step 2: Security Setup
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT FORM */}
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-100 p-6">
+
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
+
+          <h3 className="text-2xl font-semibold mb-6 text-gray-800">
+            Create Account
+          </h3>
+
+          {/* STEP 1 */}
+          {step === 1 && (
+            <>
+              <input
+                type="text"
+                placeholder="Username"
+                className="form-control py-3 mb-2 focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+              />
+              {errors.username && (
+                <p className="text-red-500 text-sm">{errors.username}</p>
+              )}
+
+              <input
+                type="email"
+                placeholder="Email"
+                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email}</p>
+              )}
+
+              <button
+                onClick={handleNext}
+                className="btn btn-primary w-100 mt-4 py-3"
+              >
+                Next →
+              </button>
+            </>
+          )}
+
+          {/* STEP 2 */}
+          {step === 2 && (
+            <>
+              {/* PASSWORD */}
+              <div className="relative mb-3">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-3 cursor-pointer text-gray-500"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm">{errors.password}</p>
+              )}
+
+              {/* CONFIRM PASSWORD */}
+              <div className="relative mb-3">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                />
+                <span
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-4 top-3 cursor-pointer text-gray-500"
+                >
+                  {showConfirm ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm">
+                  {errors.confirmPassword}
+                </p>
+              )}
+
+              {/* ROLE */}
+              <select
+                className="form-select py-3 mb-3 focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value })
+                }
+              >
+                <option>Student</option>
+                <option>Faculty</option>
+              </select>
+
+              {/* FACULTY INFO */}
+              {formData.role === "Faculty" && (
+                <p className="text-sm text-orange-600 mb-3">
+                  🔐 Faculty accounts require OTP verification
+                </p>
+              )}
+
+              {/* BUTTON */}
+              <button
+                onClick={handleSubmit}
+                className="btn btn-success w-100 py-3 text-lg shadow-md hover:scale-[1.02] transition"
+              >
+                CREATE ACCOUNT
+              </button>
+            </>
+          )}
+
+        </div>
       </div>
     </div>
   );

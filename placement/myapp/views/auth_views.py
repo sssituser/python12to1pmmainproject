@@ -1,5 +1,7 @@
 import random
+from datetime import timedelta
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -45,9 +47,26 @@ def login(request):
 
     if user:
         print(f"DEBUG: User found: {user.username}, role: {user.role}")
+
+        if user.role == 'student':
+            cutoff = timezone.now() - timedelta(days=30)
+            last_activity = user.last_login or user.date_joined
+
+            if not user.is_active:
+                print("DEBUG: Student account inactive")
+                return Response({"detail": "Account is inactive. Contact faculty to reactivate."}, status=403)
+
+            if last_activity and last_activity < cutoff:
+                user.is_active = False
+                user.save(update_fields=['is_active'])
+                print("DEBUG: Student locked due to inactivity")
+                return Response({"detail": "Account locked after one month of inactivity. Contact faculty."}, status=403)
+
         password_valid = user.check_password(password)
         print(f"DEBUG: Password valid: {password_valid}")
         if password_valid:
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
             try:
                 tokens = get_tokens(user)
                 print(f"DEBUG: Tokens generated: access={bool(tokens.get('access'))}, refresh={bool(tokens.get('refresh'))}")
@@ -95,10 +114,10 @@ def login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_otp(request):
-    username = request.data.get("username")
+    identifier = request.data.get("username")
 
     otp = str(random.randint(1000, 9999))
-    OTP.objects.create(username=username, otp=otp)
+    OTP.objects.create(username=identifier, otp=otp)
 
     print("OTP:", otp)
     return Response({"message": "OTP sent"})
@@ -108,15 +127,25 @@ def send_otp(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_otp(request):
-    username = request.data.get("username")
+    identifier = request.data.get("username")
     otp = request.data.get("otp")
 
-    record = OTP.objects.filter(username=username, otp=otp).last()
+    record = OTP.objects.filter(username=identifier, otp=otp).last()
 
     if record:
-        user = User.objects.filter(username=username).first()
+        user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+        if not user:
+            return Response({"error": "Invalid OTP"}, status=400)
         tokens = get_tokens(user)
-        return Response(tokens)
+        return Response({
+            **tokens,
+            "user": {
+                "username": user.username,
+                "email": user.email,
+                "name": user.first_name or user.username,
+                "role": user.role or "student",
+            },
+        })
 
     return Response({"error": "Invalid OTP"}, status=400)
 
@@ -125,10 +154,10 @@ def verify_otp(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def reset_password(request):
-    username = request.data.get("username")
+    identifier = request.data.get("username")
     password = request.data.get("password")
 
-    user = User.objects.filter(username=username).first()
+    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
 
     if user:
         user.set_password(password)

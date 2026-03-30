@@ -1,20 +1,30 @@
-import { Outlet, useLocation, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import {
-  LayoutDashboard,
-  BookOpen,
-  BarChart3,
-  Briefcase,
-  FileText,
-  ClipboardList,
-  CalendarDays,
+    AlertTriangle,
+    BarChart3,
+    BookOpen,
+    Briefcase,
+    CalendarDays,
+    ClipboardList,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    ShieldCheck
 } from "lucide-react";
+import { useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar"; // adjust path if needed
 
 function FacultyLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  let currentUser = null;
+  try {
+    currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    currentUser = null;
+  }
+  const isAdmin = currentUser?.role?.toString().toLowerCase() === "admin";
 
   const menu = [
     { name: "Dashboard", path: "/faculty/dashboard", icon: <LayoutDashboard size={18}/> },
@@ -23,11 +33,20 @@ function FacultyLayout() {
     { name: "Jobs", path: "/faculty/jobs", icon: <Briefcase size={18}/> },
     { name: "Applications", path: "/faculty/applications", icon: <FileText size={18}/> },
     { name: "Exams", path: "/faculty/exam", icon: <ClipboardList size={18}/> },
+    { name: "Exam Failures", path: "/faculty/exam-failure", icon: <AlertTriangle size={18}/> },
     { name: "Leave Requests", path: "/faculty/leaves", icon: <CalendarDays size={18}/> },
+    ...(isAdmin ? [{ name: "Admin Center", path: "/faculty/admin", icon: <ShieldCheck size={18}/> }] : []),
   ];
 
   const linkClass =
     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition";
+
+  const handleLogout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
 
   return (
     <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
@@ -64,6 +83,16 @@ function FacultyLayout() {
                 {sidebarOpen && item.name}
               </NavLink>
             ))}
+          </div>
+
+          <div className="px-3 py-4">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left transition hover:bg-slate-800 hover:text-white"
+            >
+              <LogOut size={18} />
+              {sidebarOpen && "Logout"}
+            </button>
           </div>
         </div>
       </div>

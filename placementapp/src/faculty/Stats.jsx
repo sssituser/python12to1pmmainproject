@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis, YAxis
 } from "recharts";
 
 function Stats() {
@@ -13,8 +19,13 @@ function Stats() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:8000/api/student-stats/")
-      .then(res => setStudents(res.data?.students || []))
+    const token = localStorage.getItem("access");
+    axios.get("http://127.0.0.1:8000/api/student-stats/", {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined,
+      },
+    })
+      .then(res => setStudents(res.data || []))
       .catch(() => setStudents([]))
       .finally(() => setLoading(false));
   }, []);
@@ -23,14 +34,26 @@ function Stats() {
     (s.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const statusCounts = students.reduce(
+    (acc, s) => {
+      const state = (s.status || "Inactive").toLowerCase();
+      if (state.includes("pass")) acc.pass += 1;
+      else if (state.includes("fail")) acc.fail += 1;
+      else acc.inactive += 1;
+      return acc;
+    },
+    { pass: 0, fail: 0, inactive: 0 }
+  );
+
   const placementData = [
-    { name: "Placed", value: students.filter(s => s.job_status === "Placed").length },
-    { name: "Not Placed", value: students.filter(s => s.job_status !== "Placed").length }
+    { name: "Passed", value: statusCounts.pass },
+    { name: "Failed", value: statusCounts.fail },
+    { name: "Inactive", value: statusCounts.inactive }
   ];
 
   const scoreData = students.map(s => ({
     name: s.name,
-    score: s.avg_score || 0
+    score: s.progress || 0
   }));
 
   if (loading) {
@@ -51,21 +74,18 @@ function Stats() {
       {/* KPI CARDS */}
       <div className="grid grid-cols-4 gap-6">
         <Card title="Students" value={students.length} />
-        <Card title="Placed" value={placementData[0].value} />
+        <Card title="Passed" value={placementData[0].value} />
+        <Card title="Failed" value={placementData[1].value} />
         <Card
-          title="Avg Score"
+          title="Avg Progress"
           value={
             students.length
               ? (
-                  students.reduce((a, b) => a + (b.avg_score || 0), 0) /
+                  students.reduce((a, b) => a + (b.progress || 0), 0) /
                   students.length
                 ).toFixed(1)
               : 0
           }
-        />
-        <Card
-          title="Exams"
-          value={students.reduce((a, b) => a + (b.exam_count || 0), 0)}
         />
       </div>
 
@@ -88,7 +108,12 @@ function Stats() {
             <PieChart>
               <Pie data={placementData} dataKey="value" outerRadius={100}>
                 {placementData.map((_, i) => (
-                  <Cell key={i} fill={i === 0 ? "#22c55e" : "#f59e0b"} />
+                  <Cell
+                    key={i}
+                    fill={
+                      i === 0 ? "#22c55e" : i === 1 ? "#ef4444" : "#94a3b8"
+                    }
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -111,33 +136,29 @@ function Stats() {
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-sm">
               <th>Name</th>
-              <th>CGPA</th>
-              <th>Score</th>
-              <th>Exams</th>
               <th>Status</th>
+              <th>Progress</th>
+              <th>Last Exam</th>
             </tr>
           </thead>
 
           <tbody>
             {filtered.map((s) => (
-              <tr
-                key={s.id}
-                onClick={() => navigate(`/faculty/student/${s.id}`)}
-                className="hover:bg-white/5 transition cursor-pointer"
-              >
+              <tr key={s.id} className="hover:bg-white/5 transition">
                 <td className="py-3">{s.name}</td>
-                <td>{s.cgpa || 0}</td>
-                <td>{s.avg_score || 0}</td>
-                <td>{s.exam_count || 0}</td>
                 <td>
                   <span className={`px-3 py-1 rounded-full text-xs ${
-                    s.job_status === "Placed"
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-yellow-500/20 text-yellow-400"
+                    s.status?.toLowerCase().includes("pass")
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : s.status?.toLowerCase().includes("fail")
+                      ? "bg-rose-500/20 text-rose-400"
+                      : "bg-slate-500/20 text-slate-200"
                   }`}>
-                    {s.job_status}
+                    {s.status || "Inactive"}
                   </span>
                 </td>
+                <td>{s.progress ?? 0}%</td>
+                <td>{s.last_login ? new Date(s.last_login).toLocaleDateString() : s.date_joined ? new Date(s.date_joined).toLocaleDateString() : "-"}</td>
               </tr>
             ))}
           </tbody>
