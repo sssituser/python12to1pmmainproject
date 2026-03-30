@@ -1,5 +1,9 @@
 import {
-    faCamera
+  faCamera,
+  faClock,
+  faFlag,
+  faArrowRight,
+  faCircle
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
@@ -76,6 +80,17 @@ const WeeklyExam = () => {
       }
       setWebcamActive(true);
       setWebcamStatus('active');
+
+      // Detect student physically closing/disabling camera
+      stream.getVideoTracks().forEach(track => {
+        track.addEventListener('ended', () => {
+          if (!examSubmittedRef.current) {
+            setWebcamActive(false);
+            setWebcamStatus('error');
+            triggerWarning("Camera was turned off or disconnected. Please keep your camera active during the exam.");
+          }
+        });
+      });
 
       globalStreamsToClean.push(stream);
     } catch (err) {
@@ -208,6 +223,13 @@ const WeeklyExam = () => {
       startWebcam();
     }
   }, []);
+
+  // Unify webcam stream syncing to the video element whenever it mounts/remounts
+  useEffect(() => {
+    if (videoRef.current && globalStreamsToClean.length > 0) {
+      videoRef.current.srcObject = globalStreamsToClean[0];
+    }
+  }, [examStarted, webcamStatus]);
 
   // Control global browser back button for pre-exam screen
   useEffect(() => {
@@ -369,14 +391,23 @@ useEffect(() => {
           }
         }
 
-        const violation =
-          isDark || isFlat || noFace || multipleFaces || faceNotCentered;
+        const isCameraCovered = isDark || isFlat;
+        const violation = isCameraCovered || noFace || multipleFaces || faceNotCentered;
+
         if (violation) {
           if (!violationStartTimeRef.current) {
             violationStartTimeRef.current = Date.now();
           } else if (Date.now() - violationStartTimeRef.current > 3000) {
-            triggerWarning("Camera/face violation detected");
-            violationStartTimeRef.current = null; // Reset to allow more warnings
+            if (multipleFaces) {
+              triggerWarning("⚠️ Multiple persons detected on camera. Only the student must be visible during the exam.");
+            } else if (isCameraCovered) {
+              triggerWarning("⚠️ Camera appears to be covered or blocked. Please ensure your face is clearly visible.");
+            } else if (noFace) {
+              triggerWarning("⚠️ Face not detected. Please keep your face clearly visible to the camera. Do not bend down or hide your face.");
+            } else if (faceNotCentered) {
+              triggerWarning("⚠️ Your face has moved off-screen. Please stay centered in front of the camera and avoid looking away.");
+            }
+            violationStartTimeRef.current = null; // Reset so warning can repeat
           }
         } else {
           violationStartTimeRef.current = null;
@@ -465,10 +496,9 @@ useEffect(() => {
   };
 }, [examStarted, examSubmitted]);
 
-  // Prevent back button
+  // Prevent back button - move the initialization pushState to startExam to avoid render loops
   useEffect(() => {
     if (examStarted && !examSubmitted) {
-      window.history.pushState(null, null, window.location.href);
       const handlePopState = (e) => {
         e.preventDefault();
         window.history.pushState(null, null, window.location.href);
@@ -526,26 +556,52 @@ useEffect(() => {
       const isTotallyFlat = (rMax - rMin < 45) && (gMax - gMin < 45) && (bMax - bMin < 45);
 
       const checkViolations = (faces) => {
-        const isCameraCovered = isDark || isTotallyFlat || isRedDominant;
         const isMultipleFaces = faces && faces.length > 1;
+        const noFace = !faces || faces.length === 0;
+        let faceNotCentered = false;
 
-        if (isCameraCovered || isMultipleFaces) {
+        if (faces && faces.length === 1) {
+          const f = faces[0].boundingBox;
+          const centerX = f.x + f.width / 2;
+          const centerY = f.y + f.height / 2;
+          // Check if face is and at least 20% away from edges
+          if (
+            centerX < canvas.width * 0.15 ||
+            centerX > canvas.width * 0.85 ||
+            centerY < canvas.height * 0.15 ||
+            centerY > canvas.height * 0.85
+          ) {
+            faceNotCentered = true;
+          }
+        }
+
+        const isCameraCovered = isDark || isTotallyFlat || isRedDominant;
+
+        if (isCameraCovered || isMultipleFaces || noFace || faceNotCentered) {
           if (cleanTimeoutRef.current) {
             clearTimeout(cleanTimeoutRef.current);
             cleanTimeoutRef.current = null;
           }
           if (!violationStartTimeRef.current) {
-            console.log("🚨 SECURITY VIOLATION WARNING: Condition active, waiting 2 seconds...");
             violationStartTimeRef.current = Date.now();
-          } else if (Date.now() - violationStartTimeRef.current >= 2000) {
-            handleSubmitExam(isCameraCovered ? "Camera covered or blocked" : "Multiple faces detected on webcam");
+          } else if (Date.now() - violationStartTimeRef.current >= 3000) {
+            if (isMultipleFaces) {
+              triggerWarning("⚠️ Multiple persons detected on camera. Only the student must be visible during the exam.");
+            } else if (isCameraCovered) {
+              triggerWarning("⚠️ Camera appears to be covered or blocked. Please ensure your face is clearly visible.");
+            } else if (noFace) {
+              triggerWarning("⚠️ Face not detected. Please keep your face clearly visible to the camera. Do not bend down or hide your face.");
+            } else if (faceNotCentered) {
+              triggerWarning("⚠️ Your face has moved off-screen. Please stay centered in front of the camera and avoid looking away.");
+            }
+            violationStartTimeRef.current = null; // Reset so warning can repeat
           }
         } else {
           if (violationStartTimeRef.current && !cleanTimeoutRef.current) {
             cleanTimeoutRef.current = setTimeout(() => {
               violationStartTimeRef.current = null;
               cleanTimeoutRef.current = null;
-            }, 1000); // Require clean picture for 1s to forgive
+            }, 1000);
           }
         }
       };
@@ -569,8 +625,9 @@ useEffect(() => {
             checkViolations(null);
           });
       } else {
+        // Fallback for browsers without Shape Detection API (assumes 1 face present for center check but still allows brightness/flat checks)
         setFaceCount(1);
-        checkViolations(null);
+        checkViolations([{ boundingBox: { x: canvas.width/4, y: canvas.height/4, width: canvas.width/2, height: canvas.height/2 } }]);
       }
     }, 500);
   };
@@ -603,6 +660,8 @@ useEffect(() => {
       console.error("Error enabling fullscreen", err);
     }
     setExamStarted(true);
+    // Push state once here when exam starts to lock the back button effectively
+    window.history.pushState(null, null, window.location.href);
     startWebcam(); // Start webcam when exam begins
   };
 
@@ -871,11 +930,7 @@ useEffect(() => {
                   muted
                   style={{ transform: 'scaleX(-1)' }}
                   className="w-full h-full object-cover"
-                  ref={(el) => {
-                    if (el && globalStreamsToClean.length > 0) {
-                      el.srcObject = globalStreamsToClean[0];
-                    }
-                  }}
+                  ref={videoRef}
                 />
              ) : webcamStatus === 'error' ? (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-red-50 p-6">
@@ -940,14 +995,50 @@ useEffect(() => {
     );
   }
 
+  if (examSubmitted) {
+    return (
+
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 max-w-lg w-full text-center border border-white">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+               <span className="text-white text-2xl">✓</span>
+            </div>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Assessment Submitted</h2>
+          <p className="text-gray-500 font-medium leading-relaxed mb-8">
+            Your weekly assessment has been securely synchronized with the proctoring server.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/dashboard/playground-results", {replace: true})}
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
+            >
+              View Detailed Results
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentQ = (questions && questions.length > 0) ? questions[currentQuestion] : null;
 
   if (!questions || questions.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Waking up assessment engine...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center p-6">
+        <div className="bg-white rounded-[2rem] p-10 shadow-xl border border-gray-100 max-w-sm w-full">
+          <div className="text-5xl mb-4">📋</div>
+          <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight mb-2">No Questions Available</h2>
+          <p className="text-sm text-gray-500 leading-relaxed mb-6">
+            The faculty has not uploaded any questions for the Weekly Exam yet. Please check back later.
+          </p>
+          <button
+            onClick={() => navigate("/dashboard/playground")}
+            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95"
+          >
+            Back to Playground
+          </button>
         </div>
       </div>
     );
@@ -985,9 +1076,9 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* COMPACT STICKY HEADER matching DailyExam */}
-        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
+        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40 mx-auto max-w-4xl">
           <div className="flex items-center gap-4">
              <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
                 <FontAwesomeIcon icon={faClock} className="text-blue-500 text-xs" />
@@ -1016,174 +1107,184 @@ useEffect(() => {
                   </div>
                   <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
-                    <span className="text-[10px] font-black text-gray-800">{currentQ.marks || 2}</span>
+                    <span className="text-[10px] font-black text-gray-800">{currentQ?.marks || 2}</span>
                   </div>
                 </div>
 
                 <div className="flex-1">
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
-                      {currentQ.question}
-                    </h3>
-                    <div className="h-0.5 w-8 bg-blue-600/40 rounded-full mb-6"></div>
-                  </div>
-
-                  {currentQ.type === 'code' && (
-                    <div className="space-y-4 mb-8">
-                      {/* Compiler UI Displayed for Code Questions */}
-                      <div className="flex items-center justify-between mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100/50">
-                        <div className="flex items-center gap-3">
-                           <div className="flex flex-col">
-                              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Language</span>
-                              <select 
-                                value={codeAnswers[currentQ.id]?.language || selectedLanguage}
-                                onChange={(e) => {
-                                  setSelectedLanguage(e.target.value);
-                                  setCodeAnswers(prev => ({
-                                    ...prev,
-                                    [currentQ.id]: {
-                                      ...prev[currentQ.id],
-                                      language: e.target.value
-                                    }
-                                  }));
-                                }}
-                                className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-blue-600 shadow-sm focus:ring-2 focus:ring-blue-500/20"
-                              >
-                                <option value="python">Python 3</option>
-                                <option value="cpp">C++ (GCC 9.2)</option>
-                                <option value="java">Java 13</option>
-                              </select>
-                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleRunCode(false)}
-                              disabled={executing}
-                              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 shadow-lg shadow-blue-200 flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                            >
-                                <FontAwesomeIcon icon={faArrowRight} className={`text-[10px] ${executing ? 'animate-spin' : ''}`} />
-                                {executing ? 'Executing...' : 'Run Code'}
-                            </button>
-                        </div>
+                  {!currentQ ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Loading Question Content...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-8">
+                        <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
+                          {currentQ.question}
+                        </h3>
+                        <div className="h-0.5 w-8 bg-blue-600/40 rounded-full mb-6"></div>
                       </div>
 
-                      <div className="rounded-3xl overflow-hidden border-2 border-gray-100 shadow-xl h-[400px] bg-white ring-8 ring-gray-50">
-                        <Editor
-                          height="100%"
-                          language={ (codeAnswers[currentQ.id]?.language || selectedLanguage) === 'cpp' ? 'cpp' : (codeAnswers[currentQ.id]?.language || selectedLanguage) }
-                          value={codeAnswers[currentQ.id]?.code || currentQ.starter_code || ""}
-                          theme="vs-light"
-                          onChange={onCodeChange}
-                          options={{
-                            minimap: { enabled: false },
-                            fontSize: 14,
-                            scrollBeyondLastLine: false,
-                            padding: { top: 20 },
-                            domReadOnly: false,
-                            readOnly: false,
-                            contextmenu: false,
-                            copy: false,
-                            paste: false,
-                            suggestOnTriggerCharacters: true,
-                            quickSuggestions: true
-                          }}
-                        />
-                      </div>
-
-                      {showConsole && (
-                        <div className="mt-6 bg-gray-900 rounded-3xl p-6 font-mono text-xs overflow-y-auto max-h-[250px] border border-gray-800 shadow-2xl relative">
-                          <div className="sticky top-0 bg-gray-900/90 backdrop-blur-sm flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
-                            <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                               <span className="text-gray-400 uppercase text-[9px] font-black tracking-widest">Execution Result</span>
-                            </div>
-                            <button onClick={() => setShowConsole(false)} className="text-gray-500 hover:text-white transition-colors">
-                              <FontAwesomeIcon icon={faCircle} className="text-[10px]" />
-                            </button>
-                          </div>
-                          
-                          {executionResult ? (
-                            <div className="space-y-4">
-                               {executionResult.error && (
-                                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400">
-                                    <span className="font-black uppercase text-[9px] block mb-1">Runtime/Compile Error</span>
-                                    {executionResult.error}
-                                 </div>
-                               )}
-                               
-                               <div className="grid grid-cols-1 gap-3">
-                                 {executionResult.results?.map((res, i) => (
-                                   <div key={i} className={`p-4 rounded-2xl border transition-all ${res.passed ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
-                                      <div className="flex items-center justify-between mb-2">
-                                         <span className={`text-[10px] font-black uppercase tracking-widest ${res.passed ? 'text-green-500' : 'text-red-500'}`}>
-                                            Test Case {i+1}
-                                         </span>
-                                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${res.passed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                                            {res.passed ? 'Passed' : 'Failed'}
-                                         </span>
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-4">
-                                         <div>
-                                            <span className="text-[8px] text-gray-500 uppercase block mb-1">Input</span>
-                                            <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-300 overflow-x-auto">{res.input || 'None'}</pre>
-                                         </div>
-                                         <div>
-                                            <span className="text-[8px] text-gray-500 uppercase block mb-1">Expected Output</span>
-                                            <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-400 overflow-x-auto">{res.expected}</pre>
-                                         </div>
-                                      </div>
-                                      <div className="mt-3">
-                                         <span className="text-[8px] text-gray-500 uppercase block mb-1">Your Output</span>
-                                         <pre className="bg-gray-950 p-3 rounded-xl text-white overflow-x-auto border border-gray-800">{res.output || 'No Output'}</pre>
-                                      </div>
-                                   </div>
-                                 ))}
+                      {currentQ.type === 'code' && (
+                        <div className="space-y-4 mb-8">
+                          {/* Compiler UI Displayed for Code Questions */}
+                          <div className="flex items-center justify-between mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100/50">
+                            <div className="flex items-center gap-3">
+                               <div className="flex flex-col">
+                                  <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Language</span>
+                                  <select 
+                                    value={codeAnswers[currentQ.id]?.language || selectedLanguage}
+                                    onChange={(e) => {
+                                      const newLang = e.target.value;
+                                      setSelectedLanguage(newLang);
+                                      setCodeAnswers(prev => ({
+                                        ...prev,
+                                        [currentQ.id]: {
+                                          ...prev[currentQ.id],
+                                          language: newLang
+                                        }
+                                      }));
+                                    }}
+                                    className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-blue-600 shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                                  >
+                                    <option value="python">Python 3</option>
+                                    <option value="cpp">C++ (GCC 9.2)</option>
+                                    <option value="java">Java 13</option>
+                                  </select>
                                </div>
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center py-10 gap-3">
-                                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                <p className="text-gray-500 uppercase text-[9px] font-black tracking-widest">Processing through Judge0...</p>
+                            <div className="flex gap-2">
+                                <button 
+                                  onClick={() => handleRunCode(false)}
+                                  disabled={executing}
+                                  className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 shadow-lg shadow-blue-200 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                                >
+                                    <FontAwesomeIcon icon={faArrowRight} className={`text-[10px] ${executing ? 'animate-spin' : ''}`} />
+                                    {executing ? 'Executing...' : 'Run Code'}
+                                </button>
+                            </div>
+                          </div>
+
+                          <div className="rounded-3xl overflow-hidden border-2 border-gray-100 shadow-xl h-[400px] bg-white ring-8 ring-gray-50">
+                            <Editor
+                              height="100%"
+                              language={ (codeAnswers[currentQ.id]?.language || selectedLanguage) === 'cpp' ? 'cpp' : (codeAnswers[currentQ.id]?.language || selectedLanguage) }
+                              value={codeAnswers[currentQ.id]?.code || currentQ.starter_code || ""}
+                              theme="vs-light"
+                              onChange={onCodeChange}
+                              options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                scrollBeyondLastLine: false,
+                                padding: { top: 20 },
+                                domReadOnly: false,
+                                readOnly: false,
+                                contextmenu: false,
+                                copy: false,
+                                paste: false,
+                                suggestOnTriggerCharacters: true,
+                                quickSuggestions: true
+                              }}
+                            />
+                          </div>
+
+                          {showConsole && (
+                            <div className="mt-6 bg-gray-900 rounded-3xl p-6 font-mono text-xs overflow-y-auto max-h-[250px] border border-gray-800 shadow-2xl relative">
+                              <div className="sticky top-0 bg-gray-900/90 backdrop-blur-sm flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                                <div className="flex items-center gap-2">
+                                   <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                   <span className="text-gray-400 uppercase text-[9px] font-black tracking-widest">Execution Result</span>
+                                </div>
+                                <button onClick={() => setShowConsole(false)} className="text-gray-500 hover:text-white transition-colors">
+                                  <FontAwesomeIcon icon={faCircle} className="text-[10px]" />
+                                </button>
+                              </div>
+                              
+                              {executionResult ? (
+                                <div className="space-y-4">
+                                   {executionResult.error && (
+                                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-300">
+                                        <span className="font-black uppercase text-[9px] block mb-1">Runtime/Compile Error</span>
+                                        {executionResult.error}
+                                     </div>
+                                   )}
+                                   
+                                   <div className="grid grid-cols-1 gap-3">
+                                     {executionResult.results?.map((res, i) => (
+                                       <div key={i} className={`p-4 rounded-2xl border transition-all ${res.passed ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                                          <div className="flex items-center justify-between mb-2">
+                                             <span className={`text-[10px] font-black uppercase tracking-widest ${res.passed ? 'text-green-500' : 'text-red-500'}`}>
+                                                Test Case {i+1}
+                                             </span>
+                                             <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${res.passed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                                                {res.passed ? 'Passed' : 'Failed'}
+                                             </span>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                             <div>
+                                                <span className="text-[8px] text-gray-500 uppercase block mb-1">Input</span>
+                                                <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-300 overflow-x-auto">{res.input || 'None'}</pre>
+                                             </div>
+                                             <div>
+                                                <span className="text-[8px] text-gray-500 uppercase block mb-1">Expected Output</span>
+                                                <pre className="bg-gray-800/50 p-2 rounded-lg text-gray-400 overflow-x-auto">{res.expected}</pre>
+                                             </div>
+                                          </div>
+                                          <div className="mt-3">
+                                             <span className="text-[8px] text-gray-500 uppercase block mb-1">Your Output</span>
+                                             <pre className="bg-gray-950 p-3 rounded-xl text-white overflow-x-auto border border-gray-800">{res.output || 'No Output'}</pre>
+                                          </div>
+                                       </div>
+                                     ))}
+                                   </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="text-gray-500 uppercase text-[9px] font-black tracking-widest">Processing through Judge0...</p>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {currentQ.options && currentQ.options.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {currentQ.options.map((option, index) => (
-                        <label 
-                          key={index} 
-                          className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
-                            answers[currentQuestion] === index 
-                            ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
-                            : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
-                          }`}
-                        >
-                          <div className="flex flex-row items-center w-full gap-3">
-                            <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                               answers[currentQuestion] === index 
-                               ? 'border-white bg-white/25' 
-                               : 'border-gray-200 group-hover:border-blue-300'
-                            }`}>
-                               {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                            </div>
-                            <input
-                              type="radio"
-                              name={`q-${currentQuestion}`}
-                              checked={answers[currentQuestion] === index}
-                              onChange={() => handleAnswerSelect(currentQuestion, index)}
-                              className="hidden"
-                            />
-                            <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
-                               {option}
-                            </span>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+                      {currentQ.type !== 'code' && currentQ.options && currentQ.options.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {currentQ.options.map((option, index) => (
+                            <label 
+                              key={index} 
+                              className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
+                                answers[currentQuestion] === index 
+                                ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
+                                : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
+                              }`}
+                            >
+                              <div className="flex flex-row items-center w-full gap-3">
+                                <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                   answers[currentQuestion] === index 
+                                   ? 'border-white bg-white/25' 
+                                   : 'border-gray-200 group-hover:border-blue-300'
+                                }`}>
+                                   {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                                </div>
+                                <input
+                                  type="radio"
+                                  name={`q-${currentQuestion}`}
+                                  checked={answers[currentQuestion] === index}
+                                  onChange={() => handleAnswerSelect(currentQuestion, index)}
+                                  className="hidden"
+                                />
+                                <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                                   {option}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 

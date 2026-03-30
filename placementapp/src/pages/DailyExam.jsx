@@ -96,6 +96,17 @@ const DailyExam = () => {
       setWebcamActive(true);
       setWebcamStatus('active');
 
+      // Detect student physically closing/disabling camera
+      stream.getVideoTracks().forEach(track => {
+        track.addEventListener('ended', () => {
+          if (!examSubmittedRef.current) {
+            setWebcamActive(false);
+            setWebcamStatus('error');
+            triggerWarning("Camera was turned off or disconnected. Please keep your camera active during the exam.");
+          }
+        });
+      });
+
       globalStreamsToClean.push(stream);
     } catch (err) {
       console.error("Webcam access denied:", err);
@@ -308,14 +319,22 @@ useEffect(() => {
           }
         }
 
-        const violation =
-          isDark || isFlat || noFace || multipleFaces || faceNotCentered;
-        if (violation) {
+        const isCameraCovered = isDark || isFlat;
+
+        if (isCameraCovered || multipleFaces || noFace || faceNotCentered) {
           if (!violationStartTimeRef.current) {
             violationStartTimeRef.current = Date.now();
           } else if (Date.now() - violationStartTimeRef.current > 3000) {
-            triggerWarning("Camera/face violation detected");
-            violationStartTimeRef.current = null;
+            if (multipleFaces) {
+              triggerWarning("⚠️ Multiple persons detected on camera. Only the student must be visible during the exam.");
+            } else if (isCameraCovered) {
+              triggerWarning("⚠️ Camera appears to be covered or blocked. Please ensure your face is clearly visible.");
+            } else if (noFace) {
+              triggerWarning("⚠️ Face not detected. Please keep your face clearly visible to the camera. Do not bend down or hide your face.");
+            } else if (faceNotCentered) {
+              triggerWarning("⚠️ Your face has moved off-screen. Please stay centered in front of the camera and avoid looking away.");
+            }
+            violationStartTimeRef.current = null; // Reset so warning can repeat
           }
         } else {
           violationStartTimeRef.current = null;
@@ -768,36 +787,43 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto">
-
-        {/* COMPACT STICKY HEADER */}
-        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40">
+      <div className="max-w-5xl mx-auto">
+        {/* COMPACT STICKY HEADER matching WeeklyExam */}
+        <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm border border-gray-100 flex justify-between items-center mb-6 sticky top-0 z-40 mx-auto max-w-4xl w-full">
           <div className="flex items-center gap-4">
              <div className="bg-blue-50/50 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-blue-100/50">
                 <FontAwesomeIcon icon={faClock} className="text-blue-500 text-xs" />
-                <span className="font-black text-blue-700 tabular-nums text-base">{formatTime(timeLeft)}</span>
+                <span className="font-black text-blue-700 tabular-nums text-base font-black">{formatTime(timeLeft)}</span>
              </div>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+             <span className="text-blue-600">Daily</span> Assessment
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-6 items-start">
-          {/* Main Assessment Area */}
           <div className="col-span-3 space-y-6">
             <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden flex flex-col min-h-[440px]">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10"></div>
-               
-               <div className="flex items-center justify-between mb-8">
-                  <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-500 border border-blue-100">
-                     Multiple Choice Question
+                
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-blue-600 text-white h-6 w-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md shadow-blue-200">
+                    {currentQuestion + 1}
                   </span>
-                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                     Worth 2 Marks
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1">
+                    Daily Assessment
                   </span>
-               </div>
+                </div>
+                <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
+                  <span className="text-[10px] font-black text-gray-800">{questions[currentQuestion]?.marks || 2}</span>
+                </div>
+              </div>
 
               <div className="flex-1">
                 <div className="mb-8">
-                  <h3 className="text-xl font-bold text-gray-800 leading-relaxed mb-3">
+                  <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
                     {questions[currentQuestion].question}
                   </h3>
                   <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
@@ -836,51 +862,51 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-between items-center bg-white p-4 rounded-[1.5rem] shadow-sm border border-gray-100 mt-6">
-              <button
-                onClick={() => toggleMarkForReview(currentQuestion)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all ${
-                  markedForReview[currentQuestion] 
-                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <FontAwesomeIcon icon={faFlag} className={markedForReview[currentQuestion] ? 'text-amber-500' : 'text-gray-400'} />
-                {markedForReview[currentQuestion] ? 'Flagged' : 'Mark for Review'}
-              </button>
-              
-              <div className="flex gap-3">
-                {currentQuestion > 0 && (
-                  <button
-                    onClick={previousQuestion}
-                    className="bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all active:scale-95"
-                  >
-                    Previous
-                  </button>
-                )}
-                {currentQuestion === questions.length - 1 ? (
-                  <button
-                    onClick={() => handleSubmitExam("Manual submission")}
-                    className="bg-green-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 active:scale-95"
-                  >
-                    Submit Exam
-                  </button>
-                ) : (
-                  <button
-                    onClick={nextQuestion}
-                    className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
-                  >
-                    Next
-                  </button>
-                )}
+              <div className="mt-10 pt-6 border-t border-gray-50 flex justify-between items-center">
+                <button
+                  onClick={() => toggleMarkForReview(currentQuestion)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                    markedForReview[currentQuestion] 
+                    ? 'bg-amber-100 text-amber-600' 
+                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                  }`}
+                >
+                  <FontAwesomeIcon icon={faFlag} className="text-[10px]" />
+                  {markedForReview[currentQuestion] ? 'Flagged' : 'Mark Review'}
+                </button>
+                
+                <div className="flex gap-2">
+                   {currentQuestion > 0 && (
+                     <button 
+                       onClick={previousQuestion} 
+                       className="h-11 px-4 rounded-xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 transition-all flex items-center justify-center text-sm"
+                     >
+                       ←
+                     </button>
+                   )}
+                   {currentQuestion < questions.length - 1 ? (
+                     <button 
+                      onClick={nextQuestion} 
+                      className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
+                     >
+                       Next Question
+                     </button>
+                   ) : (
+                     <button 
+                      onClick={() => handleSubmitExam("Manual submission")} 
+                      className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
+                     >
+                       Finish Exam
+                     </button>
+                   )}
+                </div>
               </div>
             </div>
           </div>
 
-          <aside className="col-span-1 space-y-6 lg:sticky lg:top-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 flex flex-col gap-6">
+          <aside className="col-span-1 space-y-6 lg:sticky lg:top-24">
+            <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 flex flex-col gap-6">
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
@@ -890,55 +916,57 @@ useEffect(() => {
                 </div>
                 
                 <div className="grid grid-cols-4 gap-2">
-              {questions.map((_, index) => {
-                let statusColor = "bg-gray-50 text-gray-300 border-gray-100";
-                
-                if (currentQuestion === index) {
-                  statusColor = "bg-white text-blue-600 border-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.2)]";
-                } else if (markedForReview[index]) {
-                  statusColor = "bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-100";
-                } else if (answers[index] !== null) {
-                  statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100";
-                } else if (visitedQuestions[index]) {
-                  statusColor = "bg-red-50 text-red-400 border-red-100";
-                }
+                  {questions.map((_, index) => {
+                    let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
+                    if (currentQuestion === index) {
+                      statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
+                    } else if (markedForReview[index]) {
+                      statusColor = "bg-amber-500 text-white border-amber-500 shadow-sm";
+                    } else if (answers[index] !== null && answers[index] !== undefined && answers[index] !== "") {
+                      statusColor = "bg-green-500 text-white border-green-500 shadow-sm";
+                    }
 
-                return (
-                  <button
-                    key={index}
-                    onClick={() => goToQuestion(index)}
-                    className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => goToQuestion(index)}
+                        className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t border-gray-50 pt-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
+                  </div>
+                  <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Marked</span>
+                  </div>
+                  <span className="text-xs font-black text-gray-800">{markedForReview.filter(f => f).length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-lg border-2 border-blue-600"></div>
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Active</span>
+                  </div>
+                  <span className="text-xs font-black text-blue-600">{currentQuestion + 1}</span>
+                </div>
+              </div>
             </div>
-            
-            <div className="mt-8 pt-6 border-t border-gray-100 grid grid-cols-2 gap-y-4 gap-x-2">
-               <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Answered</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Flagged</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-100"></div>
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Skipped</span>
-               </div>
-               <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded border-2 border-blue-600 bg-white"></div>
-                  <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Current</span>
-               </div>
-            </div>
-          </div>
+          </aside>
         </div>
-      </aside>
-    </div>
-  </div>
-      {/* PROCTORING WARNING MODAL */}
+      </div>
+
       {showWarningModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border border-amber-100 animate-in fade-in zoom-in duration-300">
@@ -960,6 +988,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };

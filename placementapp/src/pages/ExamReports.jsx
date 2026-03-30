@@ -5,7 +5,7 @@ function ExamReports() {
 
     <div className="container mt-5">
 
-      <h2 className="text-center mb-4">Exam Reports</h2>
+      <h1 className="text-center mb-5">Exam Reports</h1>
 
       <div className="row">
 

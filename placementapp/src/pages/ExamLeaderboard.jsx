@@ -311,62 +311,77 @@ function ExamLeaderboard() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white rounded-[1.5rem] shadow-2xl p-6 max-w-[340px] w-full relative border border-gray-100"
+              className="bg-white rounded-[1.5rem] shadow-2xl relative border border-gray-100 overflow-hidden"
+              style={{ width: "460px", height: "460px" }}
             >
+              {/* Close */}
               <button 
                 onClick={() => setShowRules(false)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-colors z-10"
               >
-                 <i className="bi bi-x-lg text-gray-400 text-sm"></i>
+                <i className="bi bi-x-lg text-gray-400 text-sm"></i>
               </button>
-              
-              <div className="text-center mb-5">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                   <i className="bi bi-stopwatch-fill text-xl"></i>
+
+              {/* Inner flex column filling exactly 460px */}
+              <div style={{ height: "460px", display: "flex", flexDirection: "column", padding: "24px 28px 20px" }}>
+
+                {/* Header — fixed ~90px */}
+                <div className="text-center" style={{ marginBottom: "16px" }}>
+                  <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto" style={{ marginBottom: "10px" }}>
+                    <i className="bi bi-stopwatch-fill text-base"></i>
+                  </div>
+                  <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase leading-tight">
+                    Leaderboard Ranking Rules
+                  </h3>
                 </div>
-                <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase leading-tight px-4">Leaderboard Ranking Rules</h3>
+
+                {/* Rule cards — flex-1, each gets equal height via flex */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+
+                  {/* 1. Primary Rank */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "14px" }}
+                    className="bg-green-50/60 rounded-2xl px-4 border border-green-100">
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-black text-[11px]">1</div>
+                    <div>
+                      <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Primary Rank</h4>
+                      <p className="text-[11px] text-gray-500 font-semibold">Higher score = Higher rank</p>
+                    </div>
+                  </div>
+
+                  {/* 2. Tiebreakers */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "14px" }}
+                    className="bg-blue-50/60 rounded-2xl px-4 border border-blue-100">
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[11px]">2</div>
+                    <div>
+                      <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Tiebreakers</h4>
+                      <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                        Execution time &nbsp;•&nbsp; Time spent &nbsp;•&nbsp; Memory usage &nbsp;•&nbsp; Questions solved
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. Rank Score */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "14px" }}
+                    className="bg-purple-50/60 rounded-2xl px-4 border border-purple-100">
+                    <div className="shrink-0 w-7 h-7 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-black text-[11px]">3</div>
+                    <div>
+                      <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Rank Score</h4>
+                      <p className="text-[11px] text-gray-500 font-medium">Top Rank = 1 &nbsp;|&nbsp; Mid = 2 &nbsp;|&nbsp; Low = 3</p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Button — fixed ~44px + 16px top margin */}
+                <button
+                  onClick={() => setShowRules(false)}
+                  className="w-full bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-100"
+                  style={{ marginTop: "16px", height: "44px", flexShrink: 0 }}
+                >
+                  I Understand
+                </button>
+
               </div>
-
-              <div className="space-y-4">
-                 {/* 1. Primary Rank */}
-                 <div className="flex gap-3">
-                    <div className="shrink-0 w-6 h-6 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-black text-[10px]">1</div>
-                    <div>
-                       <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Primary Rank</h4>
-                       <p className="text-xs text-gray-500 leading-relaxed font-bold">Higher score = Higher rank</p>
-                    </div>
-                 </div>
-
-                 {/* 2. Tiebreakers */}
-                 <div className="flex gap-3">
-                    <div className="shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[10px]">2</div>
-                    <div>
-                       <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Tiebreakers</h4>
-                       <ul className="text-[11px] text-gray-500 leading-relaxed font-medium list-disc ml-3.5 space-y-0">
-                         <li>Execution time</li>
-                         <li>Time spent</li>
-                         <li>Memory usage</li>
-                         <li>Questions solved</li>
-                       </ul>
-                    </div>
-                 </div>
-
-                 {/* 3. Rank Score */}
-                 <div className="flex gap-3">
-                    <div className="shrink-0 w-6 h-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-black text-[10px]">3</div>
-                    <div>
-                       <h4 className="font-black text-[10px] uppercase tracking-widest text-gray-800 mb-0.5">Rank Score</h4>
-                       <p className="text-[11px] text-gray-500 leading-relaxed font-medium">Top Rank = 1 | Mid = 2 | Low = 3</p>
-                    </div>
-                 </div>
-              </div>
-
-              <button
-                onClick={() => setShowRules(false)}
-                className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-100"
-              >
-                I Understand
-              </button>
             </motion.div>
           </div>
         )}

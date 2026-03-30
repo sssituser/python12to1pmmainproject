@@ -18,7 +18,7 @@ function Playground() {
     // Fetch limits safely so UI is dynamic based on Faculty settings
     const fetchSettings = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/admin/exam-settings/");
+        const res = await axios.get("/api/admin/exam-settings/");
         if (res.data && res.data.success && res.data.data) {
           if (res.data.data.Daily) {
             setDailyQuestions(res.data.data.Daily.maxQuestions || 20);
