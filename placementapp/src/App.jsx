@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import StudentLayout from "./Layout/Dashboard";
 import AllJobs from "./pages/Alljobs";
 import AppliedJobs from "./pages/AppliedJobs";
+import ChangePassword from "./pages/ChangePassword";
 import Course from "./pages/Course";
 import DailyExam from "./pages/DailyExam";
 import DailyExamReports from "./pages/DailyExamReports";
@@ -27,6 +28,7 @@ import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import TopicVideo from "./pages/TopicVideo";
 import VideoPlayer from "./pages/VideoPlayer";
 import WeeklyExam from "./pages/WeeklyExam";
@@ -135,6 +137,8 @@ function App() {
         >
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="change-password" element={<ChangePassword />} />
 
           {/* Courses */}
           <Route path="course" element={<Course />} />

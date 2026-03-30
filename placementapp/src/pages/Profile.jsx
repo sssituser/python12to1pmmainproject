@@ -1,12 +1,16 @@
 import axios from "axios";
+import { Edit3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [ats, setAts] = useState(null);
   const [jobDesc, setJobDesc] = useState("");
+  const localStorageKey = "sssit-profile";
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -16,6 +20,8 @@ export default function Profile() {
     cgpa: "",
     github: "",
     linkedin: "",
+    profileImage: null,
+    profileImageUrl: "",
     resume: null,
     resumeUrl: "",
     skills: [],
@@ -23,18 +29,39 @@ export default function Profile() {
     education: []
   });
 
+  const [profileImagePreview, setProfileImagePreview] = useState("");
   const [skill, setSkill] = useState("");
   const [project, setProject] = useState({ title: "", desc: "", link: "" });
   const [edu, setEdu] = useState({ college: "", degree: "", year: "" });
 
+  const getStoredToken = (key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? raw.replace(/^"|"$/g, "") : null;
+  };
+
+  const clearSession = (message) => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("user");
+    if (message) toast.error(message);
+    navigate("/");
+  };
+
+  const getAuthHeaders = (token) => ({ Authorization: `Bearer ${token}` });
+
   // 🔄 Fetch
   useEffect(() => {
-    const token = localStorage.getItem("access");
+    const token = getStoredToken("access");
+    if (!token) {
+      clearSession("Session expired. Please log in again.");
+      return;
+    }
+
     axios.get("http://127.0.0.1:8000/api/profile/", {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: getAuthHeaders(token)
     })
       .then(res => {
-        setFormData({
+        const nextData = {
           name: res.data.name || "",
           email: res.data.email || "",
           phone: res.data.phone || "",
@@ -42,16 +69,32 @@ export default function Profile() {
           cgpa: res.data.cgpa || "",
           github: res.data.github || "",
           linkedin: res.data.linkedin || "",
+          profileImage: null,
+          profileImageUrl: res.data.profile_image || res.data.profileImageUrl || "",
           resume: null,
-          resumeUrl: res.data.resume || "",
+          resumeUrl: res.data.resume || res.data.resumeUrl || "",
           skills: Array.isArray(res.data.skills) ? res.data.skills : [],
           projects: Array.isArray(res.data.projects) ? res.data.projects : [],
           education: Array.isArray(res.data.education) ? res.data.education : []
-        });
+        };
+        setFormData(nextData);
+        localStorage.setItem(localStorageKey, JSON.stringify(nextData));
         setLoading(false);
       })
       .catch(err => {
         console.error("Error fetching profile:", err);
+        if (err.response?.status === 401) {
+          clearSession("Unauthorized. Please log in again.");
+          return;
+        }
+        const cached = localStorage.getItem(localStorageKey);
+        if (cached) {
+          try {
+            setFormData(JSON.parse(cached));
+          } catch (parseErr) {
+            console.error("Error parsing cached profile:", parseErr);
+          }
+        }
         setLoading(false);
       });
   }, []);
@@ -63,13 +106,48 @@ export default function Profile() {
   const handleFile = (e) =>
     setFormData({ ...formData, resume: e.target.files[0] });
 
-  // ➕ Add
-  const addSkill = () => {
-    if (!skill.trim()) return;
-    const currentSkills = Array.isArray(formData.skills) ? formData.skills : [];
-    setFormData({ ...formData, skills: [...currentSkills, skill] });
-    setSkill("");
+  const handleImageFile = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, profileImage: file });
+      setProfileImagePreview(URL.createObjectURL(file));
+    }
   };
+
+  const addNotification = (title, message) => {
+    try {
+      const raw = localStorage.getItem("notifications") || "[]";
+      const list = JSON.parse(raw);
+      const next = [
+        {
+          id: Date.now(),
+          title,
+          message,
+          createdAt: new Date().toISOString(),
+          read: false,
+        },
+        ...(Array.isArray(list) ? list : []),
+      ].slice(0, 20);
+      localStorage.setItem("notifications", JSON.stringify(next));
+      window.dispatchEvent(new Event("notificationsUpdated"));
+    } catch (error) {
+      console.error("Notifications update failed", error);
+    }
+  };
+
+  // ➕ Add
+const addSkill = () => {
+  if (!skill.trim()) return;
+
+  const currentSkills = Array.isArray(formData.skills) ? formData.skills : [];
+
+  setFormData({
+    ...formData,
+    skills: [...currentSkills, { name: skill, level: 50 }]
+  });
+
+  setSkill("");
+};
 
   const addProject = () => {
     if (!project.title.trim()) return;
@@ -113,27 +191,145 @@ export default function Profile() {
   };
 
   // ✅ Submit
+  const resolveMediaUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `http://127.0.0.1:8000${path}`;
+  };
+
+  const profileImageSrc =
+    profileImagePreview ||
+    resolveMediaUrl(formData.profileImageUrl) ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || "Student")}&background=2563EB&color=ffffff`;
+
   const handleSubmit = async () => {
-    const token = localStorage.getItem("access");
+    const token = getStoredToken("access");
+    if (!token) {
+      clearSession("Missing access token. Please log in again.");
+      return;
+    }
+
+    const normalizedSkills = Array.isArray(formData.skills)
+      ? formData.skills.map((skillItem) =>
+          typeof skillItem === "string"
+            ? { name: skillItem }
+            : {
+                id: skillItem?.id,
+                name: skillItem?.name || skillItem?.title || "",
+                level: skillItem?.level || 50,
+              }
+        )
+      : [];
+
+      const updateSkillLevel = (index, value) => {
+      const updated = [...formData.skills];
+      updated[index] = {
+      ...updated[index],
+      level: Number(value)
+      };
+      setFormData({ ...formData, skills: updated });
+      };
+
+    const normalizedProjects = Array.isArray(formData.projects)
+      ? formData.projects.map((projectItem) =>
+          projectItem && typeof projectItem === "object"
+            ? {
+                id: projectItem?.id,
+                title: projectItem.title || "",
+                description: projectItem.desc || projectItem.description || "",
+              }
+            : { title: String(projectItem || ""), description: "" }
+        )
+      : [];
+
+    const normalizedEducation = Array.isArray(formData.education)
+      ? formData.education
+      : [];
+
     const data = new FormData();
 
-    Object.keys(formData).forEach(key => {
-      if (key === "resume" && formData.resume) {
-        data.append("resume", formData.resume);
-      } else if (key !== "resumeUrl") {
-        data.append(key, JSON.stringify(formData[key]));
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "resume") {
+        if (value instanceof File) {
+          data.append("resume", value);
+        }
+        return;
+      }
+
+      if (key === "profileImage") {
+        if (value instanceof File) {
+          data.append("profile_image", value);
+        }
+        return;
+      }
+
+      if (key === "resumeUrl" || key === "profileImageUrl") {
+        return;
+      }
+
+      if (key === "skills") {
+        data.append("skills", JSON.stringify(normalizedSkills));
+        return;
+      }
+
+      if (key === "projects") {
+        data.append("projects", JSON.stringify(normalizedProjects));
+        return;
+      }
+
+      if (key === "education") {
+        if (Array.isArray(normalizedEducation) && normalizedEducation.length > 0) {
+          data.append("education", JSON.stringify(normalizedEducation));
+        }
+        return;
+      }
+
+      if (value !== undefined && value !== null) {
+        data.append(key, value);
       }
     });
 
     try {
       await axios.put("http://127.0.0.1:8000/api/profile/update/", data, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getAuthHeaders(token)
       });
+
+      const refreshed = await axios.get("http://127.0.0.1:8000/api/profile/", {
+        headers: getAuthHeaders(token)
+      });
+      const refreshedData = {
+        name: refreshed.data.name || "",
+        email: refreshed.data.email || "",
+        phone: refreshed.data.phone || "",
+        state: refreshed.data.state || "",
+        cgpa: refreshed.data.cgpa || "",
+        github: refreshed.data.github || "",
+        linkedin: refreshed.data.linkedin || "",
+        profileImage: null,
+        profileImageUrl: refreshed.data.profile_image || refreshed.data.profileImageUrl || formData.profileImageUrl || "",
+        resume: null,
+        resumeUrl: refreshed.data.resume || refreshed.data.resumeUrl || formData.resumeUrl || "",
+        skills: Array.isArray(refreshed.data.skills) ? refreshed.data.skills : [],
+        projects: Array.isArray(refreshed.data.projects) ? refreshed.data.projects : [],
+        education: Array.isArray(refreshed.data.education) ? refreshed.data.education : []
+      };
+      setFormData(refreshedData);
+      localStorage.setItem(localStorageKey, JSON.stringify(refreshedData));
+      setProfileImagePreview("");
+      addNotification("Profile Updated", "Your profile was saved successfully.");
       toast.success("Profile Saved ✅");
       setEditMode(false);
     } catch (err) {
-      toast.error("Failed to save profile");
-      console.error(err);
+      if (err.response?.status === 401) {
+        clearSession("Unauthorized. Please log in again.");
+        return;
+      }
+      console.error("Profile save error:", err.response?.data || err);
+      toast.error(
+        err.response?.data?.detail ||
+        err.response?.data ||
+        "Failed to save profile"
+      );
     }
   };
 
@@ -147,17 +343,27 @@ export default function Profile() {
 
         {/* HEADER */}
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{formData.name || "Your Name"}</h2>
-              <p className="text-gray-600 text-sm mt-1">{formData.email}</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 rounded-full overflow-hidden bg-slate-100 border border-gray-200">
+                <img
+                  src={profileImageSrc}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{formData.name || "Your Name"}</h2>
+                <p className="text-gray-600 text-sm mt-1">{formData.email || "No email provided"}</p>
+              </div>
             </div>
 
             <button
-              onClick={() => setEditMode(!editMode)}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+              onClick={() => setEditMode(true)}
+              className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition"
+              title="Edit profile"
             >
-              {editMode ? "Cancel" : "Edit"}
+              <Edit3 size={18} />
             </button>
           </div>
         </div>
@@ -199,6 +405,43 @@ export default function Profile() {
                   />
                 ) : (
                   <p className="text-gray-700">{formData.cgpa || "-"}</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
+                {editMode ? (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFile}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.profileImageUrl ? "Uploaded" : "No image uploaded"}</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resume</label>
+                {editMode ? (
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFile}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : formData.resumeUrl ? (
+                  <a
+                    href={resolveMediaUrl(formData.resumeUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Download Resume
+                  </a>
+                ) : (
+                  <p className="text-gray-700">No resume uploaded</p>
                 )}
               </div>
             </div>
@@ -244,46 +487,57 @@ export default function Profile() {
           </div>
 
           {/* SKILLS */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills</h3>
+          <div className="space-y-3">
+          {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
+          formData.skills.map((s, i) => {
+          const skillName = typeof s === "string" ? s : s?.name || "Skill";
+          const level = typeof s === "object" ? s?.level || 50 : 50;
 
-            {editMode && (
-              <div className="flex gap-2 mb-4">
-                <input
-                  value={skill}
-                  onChange={(e) => setSkill(e.target.value)}
-                  placeholder="Add a skill"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <button
-                  onClick={addSkill}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                >
-                  Add
-                </button>
-              </div>
-            )}
+          return (
+          <div key={i} className="p-3 border rounded-lg bg-gray-50">
 
-            <div className="flex flex-wrap gap-2">
-              {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
-                formData.skills.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                    {s}
-                    {editMode && (
-                      <button
-                        onClick={() => removeItem("skills", i)}
-                        className="ml-1 font-bold hover:text-red-600"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No skills added</p>
-              )}
-            </div>
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-medium">{skillName}</span>
+            <span className="text-sm text-gray-600">{level}%</span>
           </div>
+
+          {/* PROGRESS BAR */}
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{ width: `${level}%` }}
+            ></div>
+          </div>
+
+          {/* EDIT MODE SLIDER */}
+          {editMode && (
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={level}
+                onChange={(e) => updateSkillLevel(i, e.target.value)}
+                className="w-full"
+              />
+
+              <button
+                onClick={() => removeItem("skills", i)}
+                className="text-red-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+        </div>
+      );
+    })
+  ) : (
+    <p className="text-gray-500">No skills added</p>
+  )}
+</div>
 
           {/* PROJECTS */}
           <div className="border-t border-gray-200 pt-6">

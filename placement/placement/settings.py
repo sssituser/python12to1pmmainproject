@@ -165,6 +165,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Templates
 # https://docs.djangoproject.com/en/6.0/topics/templates/
 

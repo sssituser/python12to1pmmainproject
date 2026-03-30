@@ -1,31 +1,65 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
+const defaultSettings = {
+  emailNotifications: true,
+  pushNotifications: false,
+  theme: "light",
+  language: "en"
+};
+
 export default function Settings() {
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    theme: "light",
-    language: "en"
-  });
+  const localStorageKey = "sssit-settings";
+  const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    // Fetch current settings
-    const token = localStorage.getItem("access");
-    axios.get("http://127.0.0.1:8000/api/settings/", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => {
-        setSettings(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching settings:", err);
-        setLoading(false);
-      });
+    const stored = localStorage.getItem(localStorageKey);
+    if (stored) {
+      try {
+        setSettings(JSON.parse(stored));
+      } catch (err) {
+        console.error("Error parsing stored settings:", err);
+      }
+    } else {
+      localStorage.setItem(localStorageKey, JSON.stringify(defaultSettings));
+    }
+    loadedRef.current = true;
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    localStorage.setItem(localStorageKey, JSON.stringify(settings));
+  }, [settings]);
+
+  useEffect(() => {
+    const applyTheme = (theme) => {
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.body.style.backgroundColor = "#0f172a";
+        document.body.style.color = "#e2e8f0";
+      } else if (theme === "light") {
+        document.documentElement.classList.remove("dark");
+        document.body.style.backgroundColor = "#f8fafc";
+        document.body.style.color = "#0f172a";
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (prefersDark) {
+          document.documentElement.classList.add("dark");
+          document.body.style.backgroundColor = "#0f172a";
+          document.body.style.color = "#e2e8f0";
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.body.style.backgroundColor = "#f8fafc";
+          document.body.style.color = "#0f172a";
+        }
+      }
+    };
+
+    applyTheme(settings.theme);
+  }, [settings.theme]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -35,14 +69,10 @@ export default function Settings() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("access");
-
     try {
-      await axios.put("http://127.0.0.1:8000/api/settings/", settings, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      localStorage.setItem(localStorageKey, JSON.stringify(settings));
       toast.success("Settings saved successfully!");
     } catch (err) {
       toast.error("Failed to save settings");
@@ -50,12 +80,15 @@ export default function Settings() {
     }
   };
 
+  const systemPrefersDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const activeTheme = settings.theme === "auto" ? (systemPrefersDark ? "dark" : "light") : settings.theme;
+
   if (loading) return <div className="p-8 text-center">Loading settings...</div>;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen ${activeTheme === "dark" ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900"}`}>
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className={`${activeTheme === "dark" ? "bg-slate-900" : "bg-white"} rounded-lg shadow-md p-6`}>
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">

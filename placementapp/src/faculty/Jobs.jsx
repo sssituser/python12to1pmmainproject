@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Jobs() {
+  const navigate = useNavigate();
 
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -26,10 +28,25 @@ function Jobs() {
     fetch("/api/admin/jobs/", {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        if (res.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          navigate("/faculty/login", { replace: true });
+          return [];
+        }
+        if (!res.ok) {
+          console.error("Failed to load jobs", res.status);
+          return [];
+        }
+        return await res.json();
+      })
       .then(data => {
         const list = Array.isArray(data) ? data : data.results;
         setJobs(list || []);
+      })
+      .catch(err => {
+        console.error("Fetch jobs error", err);
       });
   }
 
@@ -130,7 +147,19 @@ fetch(url, {
     fetch(`/api/admin/jobs/${id}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
-    }).then(() => fetchJobs());
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          navigate("/faculty/login", { replace: true });
+          return;
+        }
+        if (!res.ok) {
+          console.error("Delete failed", res.status);
+        }
+      })
+      .finally(() => fetchJobs());
   }
 
   return (

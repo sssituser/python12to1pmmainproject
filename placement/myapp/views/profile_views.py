@@ -1,6 +1,6 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json
@@ -19,9 +19,11 @@ from ..serializers import StudentProfileSerializer
 def profile_view(request):
 
     profile, _ = StudentProfile.objects.get_or_create(user=request.user)
-    serializer = StudentProfileSerializer(profile)
-
-    return Response(serializer.data)
+    serializer = StudentProfileSerializer(profile, context={"request": request})
+    data = serializer.data
+    data["name"] = request.user.get_full_name() or request.user.username
+    data["email"] = request.user.email
+    return Response(data)
 
 
 # =============================
@@ -31,12 +33,41 @@ def profile_view(request):
 @api_view(["PUT"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def update_profile(request):
 
     profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+    user = request.user
+    name = request.data.get("name")
+    email = request.data.get("email")
+    if name:
+        user.first_name = name
+    if email:
+        user.email = email
+    if name or email:
+        user.save()
 
     skills_data = request.data.get("skills", [])
     projects_data = request.data.get("projects", [])
+    raw_education = request.data.get("education", None)
+
+    def parse_json_value(value):
+        if isinstance(value, (list, tuple)) and len(value) == 1 and isinstance(value[0], str):
+            value = value[0]
+        if isinstance(value, bytes):
+            try:
+                value = value.decode("utf-8")
+            except UnicodeDecodeError:
+                return None
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed == "" or trimmed.lower() == "null":
+                return None
+            try:
+                return json.loads(trimmed)
+            except json.JSONDecodeError:
+                return None
+        return value
 
     # Parse JSON strings if they are strings
     if isinstance(skills_data, str):
@@ -50,22 +81,66 @@ def update_profile(request):
         except:
             projects_data = []
 
+    education_data = parse_json_value(raw_education)
+
+    def normalize_json_field(value):
+        if isinstance(value, (list, tuple)) and len(value) == 1 and isinstance(value[0], str):
+            value = value[0]
+        if isinstance(value, bytes):
+            try:
+                value = value.decode('utf-8')
+            except UnicodeDecodeError:
+                return value
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed == "" or trimmed.lower() == "null":
+                return None
+            if trimmed.startswith("[") or trimmed.startswith("{"):
+                try:
+                    return json.loads(trimmed)
+                except json.JSONDecodeError:
+                    return value
+        return value
+
     data = request.data.copy()
     data.pop("skills", None)
     data.pop("projects", None)
+    data.pop("education", None)
+    data.pop("name", None)
+    data.pop("email", None)
+    data.pop("profileImage", None)
+    data.pop("profileImageUrl", None)
+    data.pop("resumeUrl", None)
 
-    # Parse other JSON string fields
-    for key in data:
-        if isinstance(data[key], str) and data[key].startswith(('{', '[')):
-            try:
-                data[key] = json.loads(data[key])
-            except:
-                pass
+    allowed_fields = {
+        "student_id",
+        "age",
+        "state",
+        "phone",
+        "college",
+        "year",
+        "cgpa",
+        "tenth_percentage",
+        "twelfth_percentage",
+        "github",
+        "linkedin",
+        "profile_image",
+        "resume",
+    }
+
+    for key in list(data.keys()):
+        if key not in allowed_fields:
+            data.pop(key, None)
+        else:
+            data[key] = normalize_json_field(data[key])
 
     serializer = StudentProfileSerializer(profile, data=data, partial=True)
 
     if serializer.is_valid():
         serializer.save()
+        if raw_education is not None and education_data is not None:
+            profile.education = education_data
+            profile.save(update_fields=["education"])
 
         # Skills
         sent_ids = [s.get("id") for s in skills_data if s.get("id")]
