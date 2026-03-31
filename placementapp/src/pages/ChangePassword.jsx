@@ -34,12 +34,16 @@ export default function ChangePassword() {
 
     setLoading(true);
     const token = localStorage.getItem("access");
+    const url = "http://127.0.0.1:8000/api/change-password/";
+    const payload = {
+      current_password: formData.currentPassword,
+      old_password: formData.currentPassword,
+      new_password: formData.newPassword,
+      confirm_password: formData.confirmPassword
+    };
 
     try {
-      await axios.put("http://127.0.0.1:8000/api/change-password/", {
-        current_password: formData.currentPassword,
-        new_password: formData.newPassword
-      }, {
+      await axios.post(url, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -52,12 +56,33 @@ export default function ChangePassword() {
       navigate("/dashboard/profile");
 
     } catch (err) {
-      if (err.response?.status === 400) {
-        toast.error("Current password is incorrect!");
-      } else {
-        toast.error("Failed to change password");
+      let finalError = err;
+      if (err.response?.status === 405) {
+        try {
+          await axios.put(url, payload, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          toast.success("Password changed successfully!");
+          setFormData({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: ""
+          });
+          navigate("/dashboard/profile");
+          return;
+        } catch (fallbackErr) {
+          finalError = fallbackErr;
+        }
       }
-      console.error(err);
+
+      if (finalError.response?.status === 400) {
+        toast.error("Current password is incorrect or the new password is invalid.");
+      } else if (finalError.response?.data?.detail) {
+        toast.error(finalError.response.data.detail);
+      } else {
+        toast.error("Failed to change password. Please try again.");
+      }
+      console.error(finalError);
     } finally {
       setLoading(false);
     }
