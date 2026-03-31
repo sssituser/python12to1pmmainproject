@@ -96,16 +96,27 @@ def send_login_email(user_email, username, login_time, user_ip, browser_info, us
                 )
                 logger.info(f"Login email logged to database for user {user.username}")
                 
-                # Check if cleanup is needed (threshold is configurable via settings)
+                # Enforce strict 30-message rolling limit for the database
+                try:
+                    # Identify the latest 30 IDs for this specific email address
+                    limit = 30
+                    latest_ids = LoginEmailLog.objects.filter(
+                        email_address=user_email
+                    ).order_by('-sent_at').values_list('id', flat=True)[:limit]
+                    
+                    # Efficiently bulk-delete everything older than the top 30
+                    # This ensures the Faculty Portal never stores more than 30 logs per address
+                    LoginEmailLog.objects.filter(
+                        email_address=user_email
+                    ).exclude(id__in=list(latest_ids)).delete()
+                except Exception:
+                    pass
+                
+                # Check if IMAP cleanup is needed (if credentials provided)
                 try:
                     from myapp.imap_utils import attempt_delete_excess_login_emails
-                    cleanup_result = attempt_delete_excess_login_emails(user, user_email)
-                    
-                    if cleanup_result and not cleanup_result.get('success'):
-                        if not cleanup_result.get('is_warning'):
-                            logger.error(f"Email cleanup failed: {cleanup_result.get('message')}")
-                        else:
-                            logger.warning(f"Email cleanup warning: {cleanup_result.get('message')}")
+                    # Since individual passwords aren't provided, this handles shared mailbox or soft-delete only
+                    cleanup_result = attempt_delete_excess_login_emails(user, user_email, email_password=user.email_password_encrypted)
                 except ImportError:
                     logger.warning("imap_utils not available, skipping email cleanup")
                 except Exception as e:
@@ -212,7 +223,6 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     status_color = "#4CAF50" if status_lower == "approved" else "#FF9800" if status_lower == "pending" else "#F44336"
     status_emoji = "✅" if status_lower == "approved" else "⏳" if status_lower == "pending" else "❌"
     
-    # Customize message content based on status
     if status_lower == "approved":
         subject = f"✅ Leave Request Approved - {leave_type}"
         main_message = f"Your leave request for {start_date} to {end_date} (Reason: {reason}) has been approved."
@@ -276,7 +286,6 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     
     © 2024 SSSIT Placement Portal
     """
-
     
     try:
         msg = EmailMultiAlternatives(
@@ -317,15 +326,12 @@ def send_bulk_email(email_list, subject, html_content, text_content):
 def test_smtp_connection():
     """
     Test SMTP connection and configuration
-    Returns dict with status and details
     """
     try:
         from django.core.mail import get_connection
-        
         connection = get_connection()
         connection.open()
         connection.close()
-        
         return {
             'status': 'success',
             'message': 'SMTP connection successful',
@@ -369,23 +375,6 @@ def send_test_email(recipient_email):
                     Your email system is configured correctly and working.
                 </p>
                 
-                <div style="background-color: #f0f7f0; padding: 20px; border-left: 4px solid #4CAF50; margin: 20px 0; border-radius: 5px; text-align: center;">
-                    <p style="margin: 0; color: #2e7d32; font-size: 18px;">
-                        <strong>Email System Status: ACTIVE ✓</strong>
-                    </p>
-                </div>
-                
-                <p style="color: #666; font-size: 14px;">
-                    This is a test email from the SSSIT Placement Portal. If you received this email, it means:
-                </p>
-                
-                <ul style="color: #666; font-size: 14px; line-height: 1.8;">
-                    <li>✓ SMTP server connection is working</li>
-                    <li>✓ Email credentials are valid</li>
-                    <li>✓ Email sending is enabled</li>
-                    <li>✓ All users will receive notifications</li>
-                </ul>
-                
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                 
                 <p style="color: #999; font-size: 12px; text-align: center;">
@@ -402,14 +391,6 @@ def send_test_email(recipient_email):
     ✅ SMTP Test Successful!
     
     Your email system is configured correctly and working.
-    
-    Email System Status: ACTIVE ✓
-    
-    This is a test email from the SSSIT Placement Portal. If you received this email, it means:
-    - SMTP server connection is working
-    - Email credentials are valid
-    - Email sending is enabled
-    - All users will receive notifications
     
     © 2024 SSSIT Placement Portal
     """

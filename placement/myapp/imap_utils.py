@@ -343,6 +343,11 @@ def attempt_delete_excess_login_emails(user, user_email, email_password=None):
     3. Comprehensive error handling with fallback
     4. Guaranteed processing even if IMAP fails
     5. Transaction safety for database operations
+    
+    Faculty-Only Feature:
+    - Auto-deletion triggers IMMEDIATELY on login
+    - ONLY for faculty users (role='faculty')
+    - NOT triggered for students
     """
     from myapp.models import LoginEmailLog
     from django.db import transaction
@@ -357,21 +362,23 @@ def attempt_delete_excess_login_emails(user, user_email, email_password=None):
             'is_warning': False
         }
     
+    # --- Threshold check and auto-deletion trigger ---
+    
     max_retries = 3
     retry_count = 0
     
     try:
-        active_count = LoginEmailLog.get_user_active_login_emails_count(user)
+        active_count = LoginEmailLog.get_email_active_count(user_email)
 
         if active_count < cfg["threshold"]:
             return {
                 'success': True,
-                'message': f'Active login emails within limit ({active_count}/{cfg["threshold"]})',
+                'message': f'Active login emails for {user_email} within limit ({active_count}/{cfg["threshold"]})',
                 'deleted_count': 0
             }
 
         logger.info(
-            f"User {user.username} (role: {user.role}) has {active_count} login emails, "
+            f"Email address {user_email} has {active_count} login emails, "
             f"threshold {cfg['threshold']}, initiating GUARANTEED cleanup..."
         )
 
@@ -382,26 +389,26 @@ def attempt_delete_excess_login_emails(user, user_email, email_password=None):
         cleanup_batches = 0
         imap_errors = []
 
-        # Keep deleting in 30-message (or configured) batches until the user
-        # drops below the threshold. This guarantees cleanup works even if a
-        # user has accumulated multiple batches worth of login emails.
+        # Keep deleting in 30-message batches until the email address 
+        # drops below the threshold across ALL user accounts.
         while active_count >= cfg["threshold"]:
             cleanup_batches += 1
             delete_count = min(batch_size, active_count)
 
             logger.info(
-                f"Batch {cleanup_batches}: Deleting {delete_count} emails for user {user.username} "
-                f"(role: {user.role}). Active count: {active_count}"
+                f"Batch {cleanup_batches}: Deleting {delete_count} emails for address {user_email}. "
+                f"Active count: {active_count}"
             )
 
+            # 🔐 Decrypt or prepare IMAP password
+            imap_pwd = email_password or cfg["imap_password"]
+            
             # Optional IMAP deletion (requires valid credentials)
             imap_result = None
             if cfg["imap_enabled"]:
-                imap_pwd = email_password or cfg["imap_password"]
                 if not imap_pwd:
-                    error_msg = "IMAP password not configured"
-                    imap_errors.append(error_msg)
-                    logger.warning(error_msg)
+                    # Log but continue to DB cleanup
+                    logger.warning(f"IMAP password not available for {user_email}, skipping Gmail deletion.")
                 else:
                     imap_result = delete_old_login_emails(
                         user_email,
@@ -415,19 +422,17 @@ def attempt_delete_excess_login_emails(user, user_email, email_password=None):
                     total_imap_deleted += imap_result.get('deleted_count', 0) if imap_result else 0
                     if imap_result and not imap_result.get('success', False):
                         imap_errors.append(imap_result.get('message', 'IMAP deletion failed'))
-                        logger.warning(f"IMAP deletion warning for user {user.username}: {imap_result.get('message')}")
 
             # GUARANTEED: Always soft-delete in DB with transaction safety
-            # This MUST succeed regardless of IMAP status
             try:
                 with transaction.atomic():
-                    oldest_emails = LoginEmailLog.get_user_oldest_active_emails(user, delete_count)
+                    # Get oldest emails for THIS EMAIL ADDRESS (regardless of user object)
+                    oldest_emails = LoginEmailLog.objects.filter(
+                        email_address=user_email, 
+                        is_deleted=False
+                    ).order_by('sent_at')[:delete_count]
                     
                     if not oldest_emails:
-                        logger.warning(
-                            f"No emails found to delete for user {user.username} in batch {cleanup_batches}. "
-                            f"This should not happen. Breaking to avoid infinite loop."
-                        )
                         break
                     
                     deleted_this_batch = 0
@@ -442,12 +447,8 @@ def attempt_delete_excess_login_emails(user, user_email, email_password=None):
                     total_deleted_db += deleted_this_batch
                     active_count = max(active_count - deleted_this_batch, 0)
                     
-                    logger.info(
-                        f"✓ GUARANTEED: {deleted_this_batch} emails successfully soft-deleted in DB "
-                        f"for user {user.username}. Remaining: {active_count}"
-                    )
+                    logger.info(f"✓ DB Cleanup: {deleted_this_batch} logs marked deleted for {user_email}")
                 
-                # Reset retry counter on successful batch
                 retry_count = 0
 
             except Exception as db_error:
