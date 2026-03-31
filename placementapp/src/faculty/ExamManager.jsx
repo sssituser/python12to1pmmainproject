@@ -319,10 +319,10 @@ function ExamManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {form.options.map((opt, i) => (
             <div key={i}>
-              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {i + 1}</label>
+              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {String.fromCharCode(65 + i)}</label>
               <input
                 type="text"
-                placeholder={`Choice ${i + 1}`}
+                placeholder={`Choice ${String.fromCharCode(65 + i)}`}
                 value={opt}
                 onChange={(e) => handleOptionChange(i, e.target.value)}
                 className="w-full p-2.5 border border-gray-100 rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
@@ -349,7 +349,7 @@ function ExamManager() {
                     : "bg-white text-gray-400 border-gray-100 hover:border-gray-300 shadow-sm"
                 }`}
               >
-                {opt || `Opt ${i + 1}`}
+                {String.fromCharCode(65 + i)}. {opt || `Option ${String.fromCharCode(65 + i)}`}
               </button>
             ))}
           </div>
@@ -424,7 +424,7 @@ function ExamManager() {
                         }`}
                       >
                         {opt === q.answer && <FontAwesomeIcon icon={faCheckCircle} className="text-[10px]" />}
-                        {opt}
+                        <span className="opacity-60">{String.fromCharCode(65 + i)}.</span> {opt}
                       </div>
                     ))}
                   </div>

@@ -259,7 +259,7 @@ function Login() {
           <input
             type="text"
             name="username"
-            placeholder="Username or Email"
+            placeholder="Username"
             value={form.username}
             onChange={handleChange}
             className="w-full mb-4 px-4 py-3 rounded-lg
@@ -326,7 +326,7 @@ function Login() {
                 <input
                   type="text"
                   name="forgotUsername"
-                  placeholder="Username or Email"
+                  placeholder="Email"
                   value={forgotUsername}
                   onChange={(e) => setForgotUsername(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg
