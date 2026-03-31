@@ -1,0 +1,58 @@
+{
+    "Weekly": {
+        "maxQuestions": 1,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "What does HTML stand for?",
+                "options": [
+                    "Hyperlinks and Text Markup Language",
+                    "Home Tool Markup Language",
+                    "Hyper Text Markup Language",
+                    "Hyper Tool Multi Language"
+                ],
+                "answer": "Hyper Text Markup Language",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1774965813338
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 1,
+        "duration": 1
+    },
+    "Monthly": {
+        "maxQuestions": 50,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "What does HTML stand for?",
+                "options": [
+                    "Hyperlinks and Text Markup Language",
+                    "Home Tool Markup Language",
+                    "Hyper Text Markup Language",
+                    "Hyper Tool Multi Language"
+                ],
+                "answer": "Hyper Text Markup Language",
+                "marks": 2,
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "id": 1774965883773
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
+    }
+}
