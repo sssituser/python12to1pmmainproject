@@ -20,6 +20,9 @@ def start_scheduler():
     """
     Initialize and start the background scheduler.
     Called automatically from myapp/apps.py AppConfig.ready()
+    
+    NOTE: Scheduled auto-deletion is DISABLED to avoid 2 AM UTC cleanup.
+    Faculty users only: Auto-deletion happens IMMEDIATELY on login (not scheduled).
     """
     if scheduler.running:
         logger.info("Scheduler already running")
@@ -27,12 +30,12 @@ def start_scheduler():
     
     try:
         # Get configuration from environment variables
-        cleanup_enabled = os.environ.get('LOGIN_EMAIL_CLEANUP_TASK_ENABLED', 'true').lower() == 'true'
+        cleanup_enabled = os.environ.get('LOGIN_EMAIL_CLEANUP_TASK_ENABLED', 'false').lower() == 'true'
         cleanup_hour = int(os.environ.get('LOGIN_EMAIL_CLEANUP_HOUR', '2'))  # Default: 2 AM UTC
         cleanup_minute = int(os.environ.get('LOGIN_EMAIL_CLEANUP_MINUTE', '0'))
         
         if not cleanup_enabled:
-            logger.info("Email cleanup scheduled task is disabled via LOGIN_EMAIL_CLEANUP_TASK_ENABLED")
+            logger.info("✓ Email cleanup scheduled task is DISABLED (faculty users only get immediate on-login cleanup)")
             return
         
         # Import the task here to avoid circular imports

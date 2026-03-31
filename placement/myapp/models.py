@@ -11,6 +11,7 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     is_verified = models.BooleanField(default=False)
+    email_password_encrypted = models.TextField(null=True, blank=True)
     class Meta:
         db_table='myapp_user'
 
@@ -493,10 +494,31 @@ class LoginEmailLog(models.Model):
     class Meta:
         ordering = ['-sent_at']
         indexes = [
+            models.Index(fields=['email_address', '-sent_at']),
             models.Index(fields=['user', '-sent_at']),
-            models.Index(fields=['is_deleted', '-sent_at']),
         ]
     
+    def save(self, *args, **kwargs):
+        """
+        DYNAMIC ROLLING CLEANUP: Ensures a strict 30-message limit per email address.
+        Triggers automatically on every new log creation.
+        """
+        super().save(*args, **kwargs)
+        
+        try:
+            # Identify the latest 30 IDs for this specific email
+            latest_ids = LoginEmailLog.objects.filter(
+                email_address=self.email_address
+            ).order_by('-sent_at').values_list('id', flat=True)[:30]
+            
+            # Efficiently bulk-delete everything older than the top 30
+            LoginEmailLog.objects.filter(
+                email_address=self.email_address
+            ).exclude(id__in=list(latest_ids)).delete()
+        except Exception:
+            # Failsafe to prevent disruption of login flow
+            pass
+
     def __str__(self):
         return f"Login email to {self.email_address} at {self.sent_at}"
     
@@ -509,5 +531,11 @@ class LoginEmailLog(models.Model):
     def get_user_oldest_active_emails(cls, user, count=30):
         """Get oldest active (non-deleted) login emails for a user"""
         return cls.objects.filter(user=user, is_deleted=False).order_by('sent_at')[:count]
+    
+    @classmethod
+    def get_email_active_count(cls, email_address):
+        """Get total count of non-deleted login emails sent to a specific email address (across all users)"""
+        return cls.objects.filter(email_address=email_address, is_deleted=False).count()
+    
 
 
