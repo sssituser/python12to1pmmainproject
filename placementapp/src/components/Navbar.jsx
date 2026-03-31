@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
   const [openProfile, setOpenProfile] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [user, setUser] = useState({
     name: "Student",
     username: "student",
@@ -13,44 +15,78 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
   const navigate = useNavigate();
 
   // Fetch user data on mount and listen for storage changes
-  useEffect(() => {
-    const updateUserFromStorage = () => {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          setUser({
-            name: userData.name || userData.username || "Student",
-            username: userData.username || "student",
-            role: userData.role || "student",
-            logoUrl: userData.logoUrl || logoUrl
-          });
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-          setUser({
-            name: "Student",
-            username: "student",
-            role: "student",
-            logoUrl: logoUrl
-          });
+  const loadNotifications = () => {
+    try {
+      const raw = localStorage.getItem("notifications");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setNotifications(parsed);
+          return;
         }
       }
-    };
+    } catch (error) {
+      console.error("Failed to load notifications", error);
+    }
+    setNotifications([
+      {
+        id: 1,
+        title: "Welcome to SSSIT",
+        message: "Your profile updates and job alerts will appear here.",
+        createdAt: new Date().toISOString(),
+        read: false,
+      },
+    ]);
+  };
 
+  const updateUserFromStorage = () => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser({
+          name: userData.name || userData.username || "Student",
+          username: userData.username || "student",
+          role: userData.role || "student",
+          logoUrl: userData.logoUrl || logoUrl
+        });
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setUser({
+          name: "Student",
+          username: "student",
+          role: "student",
+          logoUrl: logoUrl
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
     // Initial load
     updateUserFromStorage();
+    loadNotifications();
 
     // Listen for storage changes (cross-tab updates)
     const handleStorageChange = (e) => {
       if (e.key === "user") {
         updateUserFromStorage();
       }
+      if (e.key === "notifications") {
+        loadNotifications();
+      }
+    };
+
+    const handleNotificationsUpdated = () => {
+      loadNotifications();
     };
 
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("notificationsUpdated", handleNotificationsUpdated);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("notificationsUpdated", handleNotificationsUpdated);
     };
   }, [logoUrl]);
 
@@ -60,6 +96,19 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
     localStorage.removeItem("refresh");
     localStorage.removeItem("user");
     navigate("/");
+  };
+
+  const unreadCount = notifications.filter((item) => !item.read).length;
+
+  const markNotificationsRead = () => {
+    const updated = notifications.map((item) => ({ ...item, read: true }));
+    localStorage.setItem("notifications", JSON.stringify(updated));
+    setNotifications(updated);
+  };
+
+  const clearNotifications = () => {
+    localStorage.setItem("notifications", JSON.stringify([]));
+    setNotifications([]);
   };
 
   return (
@@ -96,12 +145,50 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       <div className="flex items-center gap-4">
         {/* NOTIFICATIONS */}
         <div className="relative">
-          <button className="p-2 rounded-xl hover:bg-gray-200 transition relative">
+          <button
+            onClick={() => {
+              setNotificationsOpen((prev) => !prev);
+              if (unreadCount > 0) markNotificationsRead();
+            }}
+            className="p-2 rounded-xl hover:bg-gray-200 transition relative"
+          >
             <Bell size={20} />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-              3
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                {unreadCount}
+              </span>
+            )}
           </button>
+
+          {notificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <span className="font-semibold text-sm">Notifications</span>
+                <button
+                  onClick={clearNotifications}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="max-h-72 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-5 text-sm text-gray-500">No notifications yet.</div>
+                ) : (
+                  notifications.map((note) => (
+                    <div
+                      key={note.id}
+                      className={`px-4 py-3 border-b border-gray-100 ${note.read ? "bg-gray-50" : "bg-white"}`}
+                    >
+                      <p className="text-sm font-semibold text-gray-800">{note.title}</p>
+                      <p className="text-xs text-gray-600 mt-1">{note.message}</p>
+                      <p className="text-[11px] text-gray-400 mt-2">{new Date(note.createdAt).toLocaleString()}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* PROFILE */}

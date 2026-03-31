@@ -14,6 +14,7 @@ from .views.course_views import CourseViewSet
 from . import api_views
 from .views.stats_views import *
 from .views.otp_views import *
+from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 
 
 # ROUTER
@@ -37,6 +38,7 @@ urlpatterns = [
     path("reset-password/", reset_password),
     path("send_otp/", Send_OTP.as_view()),
     path("verify_register/", Verify_OTP_Register.as_view()),
+    path('faculty/student/<int:pk>/active/', api_views.toggle_student_active),
     
 
 
@@ -89,9 +91,10 @@ urlpatterns = [
     
     # DASHBOARD & STATS
     path('dashboard-stats/', api_views.dashboard_stats_api),
-    path('student-stats/', student_stats),
+    path('student-stats/', api_views.student_stats_api),
     path('student/<int:id>/', student_detail),
     path('students/', api_views.student_stats_api),
+    path('admin/create-credentials/', api_views.admin_create_credentials_api),
     path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
 
     # ================= COURSE SYSTEM =================
@@ -101,6 +104,11 @@ urlpatterns = [
     path('course/<int:course_id>/', course_views.get_course_details),
     path('course/<str:course_name>/topics/', course_views.get_course_topics),
     path('run-code/', api_views.run_code_api, name='run-code'),
+
+    # ================= AUTO-DELETION MONITORING =================
+    path('login-email-status/', get_login_email_status, name='login_email_status'),
+    path('login-email-history/', get_login_email_history, name='login_email_history'),
+    path('auto-deletion-info/', get_auto_deletion_info, name='auto_deletion_info'),
 
 ]
 

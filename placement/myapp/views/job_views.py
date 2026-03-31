@@ -53,12 +53,12 @@ class AppliedJobViewSet(viewsets.ModelViewSet):
 # ================= ADMIN JOB API =================
 class AdminJobViewSet(viewsets.ModelViewSet):
     """
-    Admin-only API - Manage jobs
+    Job management API for authenticated faculty users
     """
     queryset = Job.objects.all().order_by("-created_at")
     serializer_class = JobSerializer
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
     def perform_create(self, serializer):

@@ -1,6 +1,6 @@
 import { OrbitControls, Stars } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 
@@ -30,7 +30,7 @@ function Earth() {
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[2.5, 64, 64]} />
+      <sphereGeometry args={[2.5, 32, 32]} />
 
       {/* 🔥 glassy neon material */}
       <meshStandardMaterial
@@ -61,7 +61,7 @@ function Atmosphere() {
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[2.8, 64, 64]} />
+      <sphereGeometry args={[2.8, 32, 32]} />
       <meshBasicMaterial
         color="#22d3ee"
         transparent
@@ -85,23 +85,39 @@ function Background() {
 
 // 🌍 MAIN COMPONENT
 export default function Globe() {
-  const handleContextLost = (event) => {
-    console.warn("WebGL context lost, attempting recovery...");
-    event.preventDefault();
-  };
+  const canvasRef = useRef(null);
 
-  const handleContextRestored = () => {
-    console.log("WebGL context restored");
-  };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleContextLost = (event) => {
+      event.preventDefault();
+      console.warn("WebGL context lost, attempting recovery...");
+    };
+
+    const handleContextRestored = () => {
+      console.log("WebGL context restored");
+    };
+
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleContextLost, false);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored, false);
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0">
       <Canvas
+        ref={canvasRef}
         camera={{ position: [0, 0, 7] }}
         dpr={[1, 1.5]}
+        gl={{ antialias: true, powerPreference: "low-power", preserveDrawingBuffer: false }}
         onCreated={({ gl }) => {
-          gl.domElement.addEventListener('webglcontextlost', handleContextLost);
-          gl.domElement.addEventListener('webglcontextrestored', handleContextRestored);
+          gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         }}
         onError={(error) => console.error("Three.js error:", error)}
       >
@@ -121,7 +137,7 @@ export default function Globe() {
         <Stars
           radius={100}
           depth={50}
-          count={2000}
+          count={1000}
           factor={4}
           saturation={0}
           fade

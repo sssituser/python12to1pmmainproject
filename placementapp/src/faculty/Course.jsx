@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FaPython,
@@ -27,7 +27,8 @@ import {
   FaAndroid,
   FaPlay,
   FaTrash,
-  FaEdit
+  FaEdit,
+  FaCheckCircle
 } from "react-icons/fa";
 
 import { defaultCourses, getIconForCourse, generateTopicsForCourse } from '../components/CourseData';
@@ -35,6 +36,11 @@ import { defaultCourses, getIconForCourse, generateTopicsForCourse } from '../co
 function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  
+  // Suppress all alerts on this page
+  const originalAlert = window.alert;
+  window.alert = function() { return; };
+  
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [newTopic, setNewTopic] = useState("");
   const [showAddCourse, setShowAddCourse] = useState(false);
@@ -45,6 +51,19 @@ function CoursesPage() {
   const [showTopicVideoOptions, setShowTopicVideoOptions] = useState(false);
   const [editingVideoForTopic, setEditingVideoForTopic] = useState(null);
   const [courses, setCourses] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedForDeletion, setSelectedForDeletion] = useState([]);
+  const isFirstRender = useRef(true);
+  
+  // State for manual topic management in new course
+  const [manualTopicEntry, setManualTopicEntry] = useState("");
+  const [manualTopicsList, setManualTopicsList] = useState([]);
+  const [showAddVideosMenu, setShowAddVideosMenu] = useState(false);
+  const [videoAddMode, setVideoAddMode] = useState(null);
+  const [expandedVideoTopic, setExpandedVideoTopic] = useState(null);
+  const [topicVideos, setTopicVideos] = useState({});
+  const [videoUploadFile, setVideoUploadFile] = useState({});
+  const [videoUploadLink, setVideoUploadLink] = useState({});
 
   // Form states specifically for dynamic video configurations
   const [newCourseTopicsConfig, setNewCourseTopicsConfig] = useState({});
@@ -52,59 +71,51 @@ function CoursesPage() {
     setNewCourseTopicsConfig(prev => ({ ...prev, [topic]: { type, value } }));
   };
 
-  const [newTopicVidOpt, setNewTopicVidOpt] = useState('generate');
+  const [newTopicVidOpt, setNewTopicVidOpt] = useState('upload');
   const [newTopicVidFile, setNewTopicVidFile] = useState('');
   const [newTopicVidLink, setNewTopicVidLink] = useState('');
 
-  const [editTopicVidOpt, setEditTopicVidOpt] = useState('generate');
+  const [editTopicVidOpt, setEditTopicVidOpt] = useState('upload');
   const [editTopicVidFile, setEditTopicVidFile] = useState('');
   const [editTopicVidLink, setEditTopicVidLink] = useState('');
   
   // Load courses from localStorage on component mount
   useEffect(() => {
-    console.log('=== LOADING COURSES FROM LOCALSTORAGE ===');
     const savedCourses = localStorage.getItem('courses');
-    console.log('Saved courses from localStorage:', savedCourses);
     
     if (savedCourses) {
       try {
         const parsedCourses = JSON.parse(savedCourses);
-        console.log('Parsed courses:', parsedCourses);
         
-        // Load parsed courses precisely as they were saved to preserve custom-added topics
-        const updatedCourses = parsedCourses;
-        
-        // Debug each course's topics
-        updatedCourses.forEach((course, index) => {
-          console.log(`Course ${index + 1}: "${course.title}"`);
-          console.log(`  Topics:`, course.topics);
-          console.log(`  Topic count:`, course.topics?.length || 0);
-        });
-        
-        const coursesWithIcons = updatedCourses.map(course => ({
+        if (!parsedCourses || parsedCourses.length === 0) {
+           setCourses(defaultCourses);
+           localStorage.setItem('courses', JSON.stringify(defaultCourses));
+           return;
+        }
+
+        const coursesWithIcons = parsedCourses.map(course => ({
           ...course,
           icon: getIconForCourse(course.title)
         }));
         setCourses(coursesWithIcons);
-        console.log('Courses set with icons:', coursesWithIcons);
       } catch (error) {
-        console.error('Error loading courses from localStorage:', error);
         setCourses(defaultCourses);
+        localStorage.setItem('courses', JSON.stringify(defaultCourses));
       }
     } else {
-      console.log('No saved courses found, using default courses');
       setCourses(defaultCourses);
       localStorage.setItem('courses', JSON.stringify(defaultCourses));
     }
-    console.log('=== COURSE LOADING COMPLETE ===');
   }, []);
 
   // Save courses to localStorage whenever they change
   useEffect(() => {
-    if (courses.length > 0) {
-      localStorage.setItem('courses', JSON.stringify(courses));
-      localStorage.setItem('facultyCourses', JSON.stringify(courses)); // Sync with student view
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    localStorage.setItem('courses', JSON.stringify(courses));
+    localStorage.setItem('facultyCourses', JSON.stringify(courses)); // Sync with student view
   }, [courses]);
 
   // Handle URL parameter for specific course
@@ -123,54 +134,49 @@ function CoursesPage() {
     }
   }, [courseId, courses, navigate]);
 
-  // Generate Topics for Preview
-  const generateTopicsForPreview = () => {
-    if (!newCourseName.trim()) {
-      alert('Please enter a course name first');
-      return;
+  // Add New Course
+  const handleAddManualTopic = () => {
+    if (manualTopicEntry.trim()) {
+      setManualTopicsList([...manualTopicsList, manualTopicEntry.trim()]);
+      setManualTopicEntry("");
     }
-    
-    console.log('Generating topics for preview:', newCourseName);
-    const topics = generateTopicsForCourse(newCourseName);
-    console.log('Generated topics:', topics);
-    setGeneratedTopics(topics);
-    setShowTopicPreview(true);
-    setShowVideoOptions(false);
   };
 
-  // Add New Course
+  const removeManualTopic = (index) => {
+    setManualTopicsList(manualTopicsList.filter((_, i) => i !== index));
+  };
+
   const addNewCourse = () => {
-    if (!newCourseName.trim()) return;
-    
-    if (generatedTopics.length === 0) {
-      alert('Please generate topics first by clicking "Generate Topics" button');
+    if (!newCourseName.trim() || manualTopicsList.length === 0) {
       return;
     }
     
-    console.log('Adding new course:', newCourseName);
+    const topicsToUse = [...manualTopicsList];
     
     const newCourse = {
-      id: Math.max(...courses.map(c => c.id)) + 1,
+      id: courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1,
       title: newCourseName,
       icon: getIconForCourse(newCourseName),
       level: "Beginner",
       duration: "3 hrs",
       progress: 0,
       locked: false,
-      topics: generatedTopics,
-      customVideos: generatedTopics.reduce((acc, topic) => {
-        const config = newCourseTopicsConfig[topic] || { type: 'generate', value: '' };
-        if (config.type !== 'generate') {
-          acc[topic] = {
-            type: config.type,
-            url: config.value
-          };
+      topics: topicsToUse,
+      customVideos: topicsToUse.reduce((acc, topic) => {
+        if (topicVideos[topic]) {
+          acc[topic] = topicVideos[topic];
+        } else {
+          const config = newCourseTopicsConfig[topic];
+          if (config && config.value) {
+            acc[topic] = {
+              type: config.type,
+              url: config.value
+            };
+          }
         }
         return acc;
       }, {})
     };
-    
-    console.log('Generated course with topics:', newCourse);
     
     // Add the new course to the courses array
     const updatedCourses = [...courses, newCourse];
@@ -179,20 +185,24 @@ function CoursesPage() {
     // Save to localStorage immediately
     localStorage.setItem('courses', JSON.stringify(updatedCourses));
     localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-    console.log('Saved to localStorage');
     
     // Clear form and reset state
     setNewCourseName("");
     setGeneratedTopics([]);
     setShowTopicPreview(false);
     setShowVideoOptions(false);
-    setNewCourseTopicsConfig({});
+    setManualTopicsList([]);
+    setManualTopicEntry("");
     setShowAddCourse(false);
+    setExpandedVideoTopic(null);
+    setTopicVideos({});
+    setVideoUploadFile({});
+    setVideoUploadLink({});
+    setVideoAddMode(null);
     
     // Navigate to the newly created course topics page after a short delay
     setTimeout(() => {
       const courseName = newCourse.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-      console.log('Navigating to:', `/faculty/Course/${courseName}`);
       navigate(`/faculty/Course/${courseName}`);
       setSelectedCourse(newCourse);
     }, 100);
@@ -202,11 +212,15 @@ function CoursesPage() {
   const resetCourseForm = () => {
     setNewCourseName("");
     setGeneratedTopics([]);
+    setManualTopicsList([]);
+    setManualTopicEntry("");
     setShowTopicPreview(false);
     setShowVideoOptions(false);
-    setNewCourseVidOpt('generate');
-    setNewCourseVidFile('');
-    setNewCourseVidLink('');
+    setExpandedVideoTopic(null);
+    setTopicVideos({});
+    setVideoUploadFile({});
+    setVideoUploadLink({});
+    setVideoAddMode(null);
   };
 
   // Handle explicit saving of custom changed videos per topic dynamically
@@ -216,10 +230,11 @@ function CoursesPage() {
       const updatedCourses = [...courses];
       if (!updatedCourses[courseIndex].customVideos) updatedCourses[courseIndex].customVideos = {};
       
-      if (editTopicVidOpt !== 'generate') {
+      const videoUrl = editTopicVidOpt === 'upload' ? editTopicVidFile : editTopicVidLink;
+      if (videoUrl) {
         updatedCourses[courseIndex].customVideos[topic] = {
           type: editTopicVidOpt,
-          url: editTopicVidOpt === 'upload' ? editTopicVidFile : editTopicVidLink
+          url: videoUrl
         };
       } else {
         delete updatedCourses[courseIndex].customVideos[topic];
@@ -231,7 +246,7 @@ function CoursesPage() {
       localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
     }
     setEditingVideoForTopic(null);
-    setEditTopicVidOpt('generate');
+    setEditTopicVidOpt('upload');
     setEditTopicVidFile('');
     setEditTopicVidLink('');
   };
@@ -249,10 +264,11 @@ function CoursesPage() {
       if (!updatedCourses[courseIndex].customVideos) {
         updatedCourses[courseIndex].customVideos = {};
       }
-      if (newTopicVidOpt !== 'generate') {
+      const videoUrl = newTopicVidOpt === 'upload' ? newTopicVidFile : newTopicVidLink;
+      if (videoUrl) {
          updatedCourses[courseIndex].customVideos[newTopic] = {
             type: newTopicVidOpt,
-            url: newTopicVidOpt === 'upload' ? newTopicVidFile : newTopicVidLink
+            url: videoUrl
          };
       }
       
@@ -265,9 +281,39 @@ function CoursesPage() {
 
     setNewTopic("");
     setShowTopicVideoOptions(false);
-    setNewTopicVidOpt('generate');
+    setNewTopicVidOpt('upload');
     setNewTopicVidFile('');
     setNewTopicVidLink('');
+  };
+
+  // Remove Course
+  const removeCourse = (id) => {
+    performRemoval([id]);
+  };
+
+  const removeSelectedCourses = () => {
+    if (selectedForDeletion.length === 0) return;
+    performRemoval(selectedForDeletion);
+  };
+
+  const performRemoval = (idsToRemove) => {
+    const updatedCourses = courses.filter(c => !idsToRemove.includes(c.id));
+    setCourses(updatedCourses);
+    localStorage.setItem('courses', JSON.stringify(updatedCourses));
+    localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+    
+    if (selectedCourse && idsToRemove.includes(selectedCourse.id)) {
+      setSelectedCourse(null);
+      navigate('/faculty/Course');
+    }
+    setIsSelectionMode(false);
+    setSelectedForDeletion([]);
+  };
+
+  const toggleCourseSelection = (id) => {
+    setSelectedForDeletion(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   // Remove Topic
@@ -280,6 +326,22 @@ function CoursesPage() {
       );
       setCourses(updatedCourses);
       setSelectedCourse({...updatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+    }
+  };
+
+  // Remove All Topics
+  const removeAllTopics = () => {
+    const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
+    if (courseIndex !== -1) {
+      const updatedCourses = [...courses];
+      updatedCourses[courseIndex].topics = [];
+      updatedCourses[courseIndex].customVideos = {};
+      setCourses(updatedCourses);
+      setSelectedCourse({...updatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
     }
   };
 
@@ -320,12 +382,20 @@ function CoursesPage() {
             {selectedCourse.title} Topics
           </h2>
 
-          <button
-            onClick={handleBackToTopics}
-            className="text-blue-600 hover:underline"
-          >
-            ← Back 
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={removeAllTopics}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-bold transition flex items-center gap-2 shadow-md hover:-translate-y-0.5"
+            >
+              <FaTrash /> Remove All Topics
+            </button>
+            <button
+              onClick={handleBackToTopics}
+              className="text-blue-600 hover:underline font-semibold"
+            >
+              ← Back 
+            </button>
+          </div>
         </div>
 
         {/* Add Topic Area with Video Source Options */}
@@ -382,19 +452,7 @@ function CoursesPage() {
                   </div>
                 )}
 
-                <div className="p-3 border-2 border-green-500 bg-green-50 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">RECOMMENDED</div>
-                  <label className="flex items-center gap-3 cursor-pointer p-1">
-                    <input type="radio" checked={newTopicVidOpt === 'generate'} onChange={() => setNewTopicVidOpt('generate')} name="topicVideoSource" className="w-5 h-5 text-green-600" />
-                    <span className="text-green-800 font-bold text-lg">(iii) generate videos</span>
-                  </label>
-                  {newTopicVidOpt === 'generate' && (
-                    <div className="ml-8 mt-2 animate-fadeIn">
-                      <button onClick={addTopic} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                    </div>
-                  )}
 
-                </div>
               </div>
 
             </div>
@@ -463,18 +521,7 @@ function CoursesPage() {
                       </div>
                     )}
 
-                    <div className="p-3 border-2 border-green-500 bg-green-50 rounded-xl relative overflow-hidden">
-                      <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">RECOMMENDED</div>
-                      <label className="flex items-center gap-3 cursor-pointer p-1">
-                        <input type="radio" checked={editTopicVidOpt === 'generate'} onChange={() => setEditTopicVidOpt('generate')} name={`editVideoSource_${index}`} className="w-5 h-5 text-green-600" />
-                        <span className="text-green-800 font-bold text-lg">(iii) generate videos</span>
-                      </label>
-                      {editTopicVidOpt === 'generate' && (
-                        <div className="ml-8 mt-2 animate-fadeIn">
-                          <button onClick={() => saveChangeVideoOption(topic)} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                        </div>
-                      )}
-                    </div>
+
                   </div>
                 </div>
               )}
@@ -494,135 +541,218 @@ function CoursesPage() {
       {showAddCourse && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold mb-6 text-gray-900">Add New Course</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
-                <input
-                  type="text"
-                  value={newCourseName}
-                  onChange={(e) => {
-                    setNewCourseName(e.target.value);
-                    setShowTopicPreview(false);
-                    setShowVideoOptions(false);
-                    setGeneratedTopics([]);
-                  }}
-                  placeholder="Enter course name (e.g., Python Automation Testing)"
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Topic Preview Section */}
-              {showTopicPreview && generatedTopics.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-blue-900 mb-3">
-                    Generated Topics for "{newCourseName}":
-                  </h4>
-                  <ul className="space-y-2">
-                    {generatedTopics.map((topic, index) => (
-                      <li key={index} className="flex items-center text-blue-800">
-                        <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs mr-2">
-                          {index + 1}
-                        </span>
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-sm text-blue-600 mt-3">
-                    These topics will be added to your course. Click "Add videos" to configure playback.
-                  </p>
-                </div>
-              )}
-
-              {/* Video Source Configuration Panel Per Topic */}
-              {showTopicPreview && generatedTopics.length > 0 && showVideoOptions && (
-                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-4 transition-all animate-fadeIn space-y-6 max-h-96 overflow-y-auto shadow-inner">
-
-                  {generatedTopics.map((topic, index) => {
-                    const currentConfig = newCourseTopicsConfig[topic] || { type: 'generate', value: '' };
-
-                    return (
-                      <div key={index} className="bg-white p-5 rounded-xl shadow-md border border-purple-100 flex flex-col gap-4">
-                        <p className="font-bold text-gray-900 border-b pb-2 text-lg">{index + 1}. {topic}</p>
-                        
-                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
-                          <input type="radio" checked={currentConfig.type === 'upload'} onChange={() => handleUpdateTopicConfig(topic, 'upload', '')} name={`videoSource_${index}`} className="w-5 h-5 text-purple-600" />
-                          <span className="text-gray-800 font-medium">(i) Upload video from PC</span>
-                        </label>
-                        {currentConfig.type === 'upload' && (
-                          <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn">
-                            <input type="file" accept="video/*" className="p-2 border border-purple-300 rounded bg-white shadow-sm" onChange={(e) => {
-                               if(e.target.files[0]) handleUpdateTopicConfig(topic, 'upload', URL.createObjectURL(e.target.files[0]));
-                            }} />
-                            <button onClick={() => alert(`Configured option (i) properly for "${topic}"! Please submit the entire course when finished.`)} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                          </div>
-                        )}
-
-                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
-                          <input type="radio" checked={currentConfig.type === 'link'} onChange={() => handleUpdateTopicConfig(topic, 'link', '')} name={`videoSource_${index}`} className="w-5 h-5 text-purple-600" />
-                          <span className="text-gray-800 font-medium">(ii) Paste your link here</span>
-                        </label>
-                        {currentConfig.type === 'link' && (
-                          <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn w-full">
-                            <input type="url" placeholder="Paste video link here..." className="p-3 w-3/4 border border-purple-300 rounded bg-white shadow-sm" value={currentConfig.value} onChange={(e) => handleUpdateTopicConfig(topic, 'link', e.target.value)} />
-                            <button onClick={() => alert(`Configured option (ii) properly for "${topic}"! Please submit the entire course when finished.`)} disabled={!currentConfig.value.trim()} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                          </div>
-                        )}
-
-                        <div className="p-3 border-2 border-green-500 bg-green-50 rounded-xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">RECOMMENDED</div>
-                          <label className="flex items-center gap-3 cursor-pointer p-1">
-                            <input type="radio" checked={currentConfig.type === 'generate'} onChange={() => handleUpdateTopicConfig(topic, 'generate', '')} name={`videoSource_${index}`} className="w-5 h-5 text-green-600" />
-                            <span className="text-green-800 font-bold text-lg">(iii) generate videos</span>
-                          </label>
-                          {currentConfig.type === 'generate' && (
-                            <div className="ml-8 mt-2 animate-fadeIn">
-                              <button onClick={() => alert(`Configured option (iii) properly for "${topic}"! Please submit the entire course when finished.`)} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-between items-center mt-6 border-t pt-5">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Add New Course</h3>
               <button
                 onClick={() => {
                   resetCourseForm();
                   setShowAddCourse(false);
                 }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                className="text-blue-600 hover:underline font-semibold flex items-center gap-1"
+              >
+                ← Back
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Course Name Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Course Name</label>
+                <input
+                  type="text"
+                  value={newCourseName}
+                  onChange={(e) => setNewCourseName(e.target.value)}
+                  placeholder="e.g., Python Automation Testing"
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+              </div>
+
+              {/* Manual Topic Entry */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Add Topics Manually</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualTopicEntry}
+                    onChange={(e) => setManualTopicEntry(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddManualTopic()}
+                    placeholder="Enter topic name..."
+                    className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                  <button
+                    onClick={handleAddManualTopic}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-md"
+                  >
+                    Add Topic
+                  </button>
+                </div>
+              </div>
+
+              {/* Topics List Display */}
+              <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 min-h-[240px]">
+                <h4 className="text-xl font-bold mb-4 text-gray-900">Course Content:</h4>
+                {manualTopicsList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                    <p className="italic">Your topics will appear here...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {manualTopicsList.map((topic, index) => (
+                      <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-6 h-6 bg-blue-600 text-white text-xs flex items-center justify-center rounded-full">
+                              {index + 1}
+                            </span>
+                            <span className="text-gray-900 font-medium">{topic}</span>
+                            {topicVideos[topic] && (
+                              <span className="text-green-600 text-sm font-semibold">✓ Video Added</span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => setExpandedVideoTopic(expandedVideoTopic === topic ? null : topic)}
+                              className="bg-purple-100 text-purple-600 hover:bg-purple-200 px-3 py-1 rounded text-sm font-semibold transition"
+                              title="Add Video"
+                            >
+                              🎬 Add Video
+                            </button>
+                            <button 
+                              onClick={() => removeManualTopic(index)}
+                              className="text-red-500 hover:text-red-700 p-2 transition-colors"
+                              title="Remove Topic"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Video Addition Panel for Each Topic */}
+                        {expandedVideoTopic === topic && (
+                          <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 mt-3">
+                            <h5 className="text-sm font-bold text-purple-900 mb-3">Add Video for "{topic}":</h5>
+                            <div className="space-y-3">
+                              {/* Upload Option */}
+                              <div className="border-2 border-purple-300 rounded-lg p-3 hover:bg-purple-100/50 cursor-pointer transition">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                  <input 
+                                    type="radio" 
+                                    name={`videoOption_${index}`}
+                                    checked={videoAddMode === `upload_${index}`}
+                                    onChange={() => setVideoAddMode(`upload_${index}`)}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="font-semibold text-gray-800">📤 Upload from PC</span>
+                                </label>
+                                {videoAddMode === `upload_${index}` && (
+                                  <div className="mt-3 ml-7 flex flex-col gap-2">
+                                    <input 
+                                      type="file" 
+                                      accept="video/*"
+                                      onChange={(e) => {
+                                        if(e.target.files[0]) {
+                                          setVideoUploadFile(prev => ({
+                                            ...prev,
+                                            [topic]: URL.createObjectURL(e.target.files[0])
+                                          }));
+                                        }
+                                      }}
+                                      className="p-2 border border-purple-300 rounded bg-white text-sm"
+                                    />
+                                    <button 
+                                      onClick={() => {
+                                        if(videoUploadFile[topic]) {
+                                          setTopicVideos(prev => ({
+                                            ...prev,
+                                            [topic]: { type: 'upload', url: videoUploadFile[topic] }
+                                          }));
+                                          setVideoAddMode(null);
+                                          setVideoUploadFile(prev => ({ ...prev, [topic]: '' }));
+                                        }
+                                      }}
+                                      disabled={!videoUploadFile[topic]}
+                                      className="bg-purple-600 text-white px-3 py-2 rounded font-semibold text-sm hover:bg-purple-700 disabled:bg-gray-300 transition"
+                                    >
+                                      Add Upload
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Link Option */}
+                              <div className="border-2 border-purple-300 rounded-lg p-3 hover:bg-purple-100/50 cursor-pointer transition">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                  <input 
+                                    type="radio" 
+                                    name={`videoOption_${index}`}
+                                    checked={videoAddMode === `link_${index}`}
+                                    onChange={() => setVideoAddMode(`link_${index}`)}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="font-semibold text-gray-800">🔗 Paste Link</span>
+                                </label>
+                                {videoAddMode === `link_${index}` && (
+                                  <div className="mt-3 ml-7 flex flex-col gap-2">
+                                    <input 
+                                      type="url"
+                                      placeholder="Paste video link here..."
+                                      value={videoUploadLink[topic] || ''}
+                                      onChange={(e) => {
+                                        setVideoUploadLink(prev => ({
+                                          ...prev,
+                                          [topic]: e.target.value
+                                        }));
+                                      }}
+                                      className="p-2 border border-purple-300 rounded bg-white text-sm"
+                                    />
+                                    <button 
+                                      onClick={() => {
+                                        if(videoUploadLink[topic]) {
+                                          setTopicVideos(prev => ({
+                                            ...prev,
+                                            [topic]: { type: 'link', url: videoUploadLink[topic] }
+                                          }));
+                                          setVideoAddMode(null);
+                                          setVideoUploadLink(prev => ({ ...prev, [topic]: '' }));
+                                        }
+                                      }}
+                                      disabled={!videoUploadLink[topic]?.trim()}
+                                      className="bg-purple-600 text-white px-3 py-2 rounded font-semibold text-sm hover:bg-purple-700 disabled:bg-gray-300 transition"
+                                    >
+                                      Add Link
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex justify-between items-center mt-8 border-t pt-5">
+              <button
+                onClick={() => {
+                  resetCourseForm();
+                  setShowAddCourse(false);
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
               >
                 Cancel
               </button>
               
-              <div className="flex gap-3">
-                <button
-                  onClick={generateTopicsForPreview}
-                  disabled={!newCourseName.trim()}
-                  className="bg-gray-800 text-white px-5 py-2 rounded-lg hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow"
-                >
-                  Generate Topics
-                </button>
-                <button
-                  onClick={() => setShowVideoOptions(true)}
-                  disabled={generatedTopics.length === 0}
-                  className="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow transition-all duration-300"
-                >
-                  Add videos
-                </button>
-                <button
-                  onClick={addNewCourse}
-                  disabled={generatedTopics.length === 0}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-lg text-lg transform hover:scale-105 transition-all"
-                >
-                  Create Complete Course
-                </button>
-              </div>
+              <button
+                onClick={addNewCourse}
+                disabled={!newCourseName.trim() || manualTopicsList.length === 0}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
+              >
+                Create Complete Course
+              </button>
             </div>
           </div>
         </div>
@@ -632,12 +762,28 @@ function CoursesPage() {
         <h2 className="text-gray-900 text-2xl font-bold">
           Courses
         </h2>
-        <button
-          onClick={() => setShowAddCourse(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg"
-        >
-          + Add Course
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (isSelectionMode && selectedForDeletion.length > 0) {
+                removeSelectedCourses();
+              } else {
+                setIsSelectionMode(!isSelectionMode);
+                setSelectedForDeletion([]);
+              }
+            }}
+            className={`${isSelectionMode ? (selectedForDeletion.length > 0 ? 'bg-red-600 text-white' : 'bg-gray-800 text-white hover:bg-gray-900') : 'bg-red-600 text-white hover:bg-red-700'} px-6 py-3 rounded-lg transition-all font-bold shadow-lg flex items-center gap-2`}
+          >
+            {isSelectionMode ? (selectedForDeletion.length > 0 ? <FaTrash /> : <FaCheckCircle />) : <FaTrash />} 
+            {isSelectionMode ? (selectedForDeletion.length > 0 ? `Remove (${selectedForDeletion.length})` : 'Exit Selection') : 'Remove'}
+          </button>
+          <button
+            onClick={() => setShowAddCourse(true)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg"
+          >
+            + Add Course
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -649,7 +795,28 @@ function CoursesPage() {
               key={index}
               className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 hover:scale-105 transition duration-300 relative overflow-hidden flex flex-col h-80"
             >
-              {/* Background faded icon */}
+              {/* Selection overlay & Border */}
+              {isSelectionMode && (
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCourseSelection(course.id);
+                  }}
+                  className={`absolute inset-0 z-50 cursor-pointer transition-all duration-300 ${selectedForDeletion.includes(course.id) ? 'ring-4 ring-red-500 ring-inset rounded-xl bg-red-500/5' : 'hover:bg-black/5'}`}
+                >
+                  {selectedForDeletion.includes(course.id) ? (
+                    <div className="absolute top-3 right-3 bg-red-600 text-white rounded-full p-1 shadow-lg animate-bounce z-[60]">
+                      <FaCheckCircle className="text-xl" />
+                    </div>
+                  ) : (
+                    <div className="absolute top-3 right-3 bg-red-50 text-red-300 rounded-full p-1 border border-red-100 z-[60]">
+                      <FaCheckCircle className="text-xl" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Background faded icon border */}
               <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10">
                 <Icon />
               </div>

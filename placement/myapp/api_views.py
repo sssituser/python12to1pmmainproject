@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, User, Job
+from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
 from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from .email_utils import send_exam_confirmation_email
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.utils import timezone
 import json
 
 import requests
@@ -317,6 +318,31 @@ def exam_reports_api(request):
     
     formatted_data = []
     for attempt in attempts:
+        raw_status = str(attempt.status or '').strip()
+        normalized_status = raw_status.lower()
+        percentage = round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks else 0
+        final_status = raw_status
+
+        if 'cheat' in normalized_status or 'suspicious' in normalized_status:
+            final_status = 'Cheated'
+        elif normalized_status in ['pass', 'passed', 'success']:
+            final_status = 'Pass'
+        elif normalized_status in ['fail', 'failed']:
+            final_status = 'Fail'
+        elif normalized_status in ['completed', 'incomplete', 'pending', '']:
+            final_status = 'Pass' if percentage >= 50 else 'Fail'
+        else:
+            final_status = raw_status or ('Pass' if percentage >= 50 else 'Fail')
+
+        suspicious_detected = False
+        if attempt.user and attempt.user.email:
+            sessions = ExamSession.objects.filter(student_email__iexact=attempt.user.email)
+            if attempt.start_time:
+                sessions = sessions.filter(start_time__date=attempt.start_time.date())
+            suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
+            if suspicious_detected:
+                final_status = 'Cheated'
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
@@ -328,10 +354,10 @@ def exam_reports_api(request):
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
             'totalQuestions': attempt.total_questions,
-            'status': attempt.status,
+            'status': final_status,
             'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
             'timeTaken': attempt.time_taken,
-            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+            'percentage': percentage
         })
 
     return Response({
@@ -426,7 +452,22 @@ def save_exam_report_api(request):
         elif passed_input is False:
             final_status = 'Fail'
         else:
-            final_status = data.get('status', 'completed')
+            raw_status = str(data.get('status', '')).strip()
+            lower_status = raw_status.lower()
+            if 'cheat' in lower_status or 'suspicious' in lower_status:
+                final_status = 'Cheated'
+            elif lower_status in ['pass', 'passed', 'success']:
+                final_status = 'Pass'
+            elif lower_status in ['fail', 'failed']:
+                final_status = 'Fail'
+            else:
+                marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
+                total_marks = data.get('total_marks') or data.get('totalMarks') or 0
+                if total_marks:
+                    percentage = (float(marks_obtained) / float(total_marks)) * 100
+                    final_status = 'Pass' if percentage >= 50 else 'Fail'
+                else:
+                    final_status = raw_status or 'Completed'
 
         attempt = ExamAttempt.objects.create(
             user=user,
@@ -1027,24 +1068,81 @@ def student_stats_api(request):
     try:
         students = User.objects.filter(is_staff=False)
         data = []
-        
+        cutoff = timezone.now() - timedelta(days=30)
+
         for student in students:
-            # Get latest exam result to derive status/progress
             latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
-            status_val = "Inactive"
             progress = 0
-            
+            status_val = "Inactive" if not student.is_active else "Active"
+
             if latest:
-                status_val = latest.status
+                status_val = latest.status or status_val
                 progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
-                
+            else:
+                last_activity = student.last_login or student.date_joined
+                if last_activity and last_activity < cutoff:
+                    status_val = "Inactive"
+
             data.append({
                 "id": student.id,
                 "name": student.username,
                 "status": status_val,
-                "progress": progress
+                "progress": progress,
+                "is_active": student.is_active,
+                "last_login": student.last_login.isoformat() if student.last_login else None,
+                "date_joined": student.date_joined.isoformat() if student.date_joined else None,
             })
-            
+
         return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_create_credentials_api(request):
+    if not hasattr(request.user, 'role') or request.user.role != 'admin':
+        return Response({'detail': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    username = request.data.get('username')
+    password = request.data.get('password')
+    email = request.data.get('email', '')
+    role = request.data.get('role', 'student')
+
+    if not username or not password:
+        return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'User already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.create_user(username=username, password=password, email=email)
+    user.role = role
+    user.is_active = True
+    user.save(update_fields=['role', 'is_active'])
+
+    return Response({
+        'success': True,
+        'message': 'User credentials created successfully',
+        'user': {
+            'username': user.username,
+            'email': user.email,
+            'role': user.role,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def toggle_student_active(request, pk):
+    active = request.data.get('active')
+    if active is None:
+        return Response({'error': 'active field is required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        student = User.objects.filter(pk=pk, role='student').first()
+        if not student:
+            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+        student.is_active = bool(active)
+        student.save(update_fields=['is_active'])
+        return Response({'success': True, 'is_active': student.is_active})
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -50,14 +50,20 @@ function FacultyLogin() {
         throw new Error("Login failed - no access token");
       }
 
+      const role = res.data.user?.role?.toString().toLowerCase() || "faculty";
+
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
       localStorage.setItem("user", JSON.stringify({
         username: res.data.user?.username || form.username,
-        role: res.data.user?.role || "faculty",
+        role,
       }));
 
-      toast.success("Welcome Faculty 🎓");
+      toast.success(
+        role === "admin"
+          ? "Welcome Admin 🔐"
+          : "Welcome Faculty 🎓"
+      );
 
       navigate("/faculty/dashboard");
     } catch (err) {
@@ -84,8 +90,8 @@ function FacultyLogin() {
           <div className="inline-block p-3 bg-blue-500/20 rounded-full mb-4">
             <span className="text-3xl">👨‍🏫</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Faculty Portal</h1>
-          <p className="text-gray-400 text-sm">Sign in to manage courses and students</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Faculty / Admin Portal</h1>
+          <p className="text-gray-400 text-sm">Sign in to manage courses, students, or admin credentials</p>
         </div>
 
         {/* FORM CARD */}
@@ -148,7 +154,7 @@ function FacultyLogin() {
           </button>
 
           {/* DIVIDER */}
-          <div className="border-t border-white/10 pt-4">
+          <div className="border-t border-white/10 pt-4 space-y-3">
             <p className="text-center text-xs text-gray-400">
               Student?{" "}
               <button
@@ -157,6 +163,10 @@ function FacultyLogin() {
               >
                 Student Login
               </button>
+            </p>
+            <p className="text-center text-xs text-gray-400">
+              Admin? Sign in with your admin credentials here. After login,
+              access the Admin Center from the sidebar.
             </p>
           </div>
         </div>

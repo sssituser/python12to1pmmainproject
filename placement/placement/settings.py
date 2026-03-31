@@ -79,20 +79,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'placement.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [TEMPLATES_DIR],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
+# Templates moved to end of file
 
 WSGI_APPLICATION = 'placement.wsgi.application'
 
@@ -111,15 +98,7 @@ DATABASES = {
     }
 }
 
-# ================== EMAIL / SMTP CONFIGURATION ==================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'karthikreddybodapati@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'oxda ouau iwli zefd'  # Use Gmail App Password (16 chars)
-DEFAULT_FROM_EMAIL = 'karthikreddybodapati@gmail.com'
-SERVER_EMAIL = 'karthikreddybodapati@gmail.com'
+# Email settings moved or defined below
 
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
@@ -159,10 +138,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-}
+# JWT settings merged below
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
@@ -188,6 +164,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Templates
 # https://docs.djangoproject.com/en/6.0/topics/templates/
@@ -222,6 +201,17 @@ EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 LEAVE_EMAIL_ENABLED = os.environ.get('LEAVE_EMAIL_ENABLED', 'True').lower() == 'true'
+
+# Login email auto‑cleanup (env‑driven to keep it dynamic)
+LOGIN_EMAIL_AUTO_DELETE_ENABLED = os.environ.get('LOGIN_EMAIL_AUTO_DELETE_ENABLED', 'True').lower() == 'true'
+LOGIN_EMAIL_MAX_ACTIVE = int(os.environ.get('LOGIN_EMAIL_MAX_ACTIVE', '30'))
+LOGIN_EMAIL_DELETE_BATCH = int(os.environ.get('LOGIN_EMAIL_DELETE_BATCH', os.environ.get('LOGIN_EMAIL_MAX_ACTIVE', '30')))
+LOGIN_EMAIL_SUBJECT_KEYWORD = os.environ.get('LOGIN_EMAIL_SUBJECT_KEYWORD', 'Login Confirmation')
+LOGIN_EMAIL_MAILBOX = os.environ.get('LOGIN_EMAIL_MAILBOX', 'INBOX')
+LOGIN_EMAIL_IMAP_TIMEOUT = int(os.environ.get('LOGIN_EMAIL_IMAP_TIMEOUT', '10'))
+LOGIN_EMAIL_IMAP_ENABLED = os.environ.get('LOGIN_EMAIL_IMAP_ENABLED', 'True').lower() == 'true'
+LOGIN_EMAIL_IMAP_USERNAME = os.environ.get('LOGIN_EMAIL_IMAP_USERNAME', EMAIL_HOST_USER)
+LOGIN_EMAIL_IMAP_PASSWORD = os.environ.get('LOGIN_EMAIL_IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
 
 
 

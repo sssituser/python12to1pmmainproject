@@ -62,37 +62,8 @@ function Leaves() {
       // Handle different data structures
       const allLeaves = data.data || data || [];
       if (Array.isArray(allLeaves)) {
-        // Filter requests for current user only - SECURITY: Ensures users see only their own data
-        const userLeaves = allLeaves.filter(request => {
-          // Match by name, email, student ID, or phone (any of these should work)
-          const nameMatch = request.name === userName;
-          const emailMatch = request.email === userEmail;
-          const idMatch = request.student_id && request.student_id.toString() === userStudentId?.toString();
-          const phoneMatch = request.phone && request.phone.toString() === userPhone?.toString();
-          
-          // Security logging
-          console.log("Filtering request:", {
-            requestName: request.name,
-            requestEmail: request.email,
-            requestId: request.student_id,
-            requestPhone: request.phone,
-            userName,
-            userEmail,
-            userStudentId,
-            userPhone,
-            matches: { nameMatch, emailMatch, idMatch, phoneMatch }
-          });
-          
-          // User must match at least one identifier
-          return nameMatch || emailMatch || idMatch || phoneMatch;
-        });
-
-        console.log(`=== FILTERED USER LEAVES ===`);
-        console.log(`Found ${userLeaves.length} requests for user ${userName}`);
-        console.log("User leaves:", userLeaves);
-        console.log("==============================");
-
-        setLeaves(userLeaves);
+        // Ensure all leaves are shown to faculty - no filtering needed for admin view
+        setLeaves(allLeaves);
       } else {
         console.error("Leaves data is not an array:", allLeaves);
         setLeaves([]);
@@ -159,13 +130,11 @@ function Leaves() {
         const errorData = await res.text();
         console.error("Failed to approve leave request. Status:", res.status);
         console.error("Error response:", errorData);
-        alert(`Failed to approve leave request: ${res.status} ${errorData}`);
       }
     } catch (error) {
       // Revert optimistic update on error
       setLeaves(originalLeaves);
       console.error("Error approving leave:", error);
-      alert(`Error approving leave request: ${error.message || error}`);
     }
   };
 
@@ -228,13 +197,11 @@ function Leaves() {
         const errorData = await res.text();
         console.error("Failed to reject leave request. Status:", res.status);
         console.error("Error response:", errorData);
-        alert(`Failed to reject leave request: ${res.status} ${errorData}`);
       }
     } catch (error) {
       // Revert optimistic update on error
       setLeaves(originalLeaves);
       console.error("Error rejecting leave:", error);
-      alert(`Error rejecting leave request: ${error.message || error}`);
     }
   };
 

@@ -7,8 +7,9 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         ('student', 'Student'),
         ('faculty', 'Faculty'),
+        ('admin', 'Admin'),
     )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     is_verified = models.BooleanField(default=False)
     class Meta:
         db_table='myapp_user'
@@ -19,12 +20,16 @@ class User(AbstractUser):
 import random
 
 class OTP(models.Model):
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
+    username = models.CharField(max_length=100, null=True, blank=True)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def generate_otp(self):
-        self.otp = str(random.randint(100000, 999999))
+    def generate_otp(self, length=6):
+        if length == 4:
+            self.otp = str(random.randint(1000, 9999))
+        else:
+            self.otp = str(random.randint(100000, 999999))
 
 
 
@@ -44,6 +49,10 @@ class StudentProfile(models.Model):
     cgpa = models.FloatField(null=True, blank=True)
     tenth_percentage = models.FloatField(null=True, blank=True)
     twelfth_percentage = models.FloatField(null=True, blank=True)
+    github = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    education = models.JSONField(blank=True, null=True, default=list)
+    profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
 
     def __str__(self):
@@ -53,6 +62,7 @@ class StudentProfile(models.Model):
 class Skill(models.Model):
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name="skills")
     name = models.CharField(max_length=100)
+    level = models.IntegerField(default=50)
 
     def __str__(self):
         return self.name
@@ -394,10 +404,7 @@ class Playground(models.Model):
     def __str__(self):
         return self.title
     
-class OTP(models.Model):
-    username = models.CharField(max_length=100)
-    otp = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
+# OTP merged above
 # ===============================
 # COURSE SYSTEM
 # ===============================
@@ -464,5 +471,43 @@ class StudentTopicProgress(models.Model):
 
     class Meta:
         unique_together = ('enrollment', 'topic')
+
+
+# ===============================
+# LOGIN EMAIL TRACKING
+# ===============================
+
+class LoginEmailLog(models.Model):
+    """Track login confirmation emails sent to users for auto-deletion management"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_email_logs')
+    email_address = models.EmailField()
+    email_subject = models.CharField(max_length=255, default='🔐 Login Confirmation - SSSIT Placement Portal')
+    email_message_id = models.CharField(max_length=255, blank=True, null=True, help_text="IMAP Message ID for deletion")
+    sent_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    login_time = models.CharField(max_length=50, blank=True)
+    user_ip = models.CharField(max_length=50, blank=True)
+    browser_info = models.CharField(max_length=255, blank=True)
+    
+    class Meta:
+        ordering = ['-sent_at']
+        indexes = [
+            models.Index(fields=['user', '-sent_at']),
+            models.Index(fields=['is_deleted', '-sent_at']),
+        ]
+    
+    def __str__(self):
+        return f"Login email to {self.email_address} at {self.sent_at}"
+    
+    @classmethod
+    def get_user_active_login_emails_count(cls, user):
+        """Get count of non-deleted login emails for a user"""
+        return cls.objects.filter(user=user, is_deleted=False).count()
+    
+    @classmethod
+    def get_user_oldest_active_emails(cls, user, count=30):
+        """Get oldest active (non-deleted) login emails for a user"""
+        return cls.objects.filter(user=user, is_deleted=False).order_by('sent_at')[:count]
 
 

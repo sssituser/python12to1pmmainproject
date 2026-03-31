@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { FaArrowLeft, FaArrowRight, FaEye } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 function AllJobs() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ function AllJobs() {
 
     // 🔐 Block if not logged in
     if (!token) {
-      alert("Please login first 🔐");
+    alert("Please login first 🔐");
       return;
     }
 
@@ -38,7 +38,7 @@ function AllJobs() {
       const data = await res.json();
 
       if (res.status === 201) {
-        alert("Applied Successfully ✅");
+        console.log("Applied Successfully ✅");
 
         setJobsData((prev) =>
           prev.map((job) =>
@@ -46,11 +46,11 @@ function AllJobs() {
           )
         );
       } else {
-        alert(data?.detail || data?.error || "Already Applied ⚠️");
+        console.log(data?.detail || data?.error || "Already Applied ⚠️");
       }
     } catch (err) {
       console.log(err);
-      alert("Error ❌");
+      console.error("Error ❌");
     }
   }
 
@@ -152,6 +152,7 @@ function AllJobs() {
           <tr>
             <th>Company</th>
             <th>Job Title</th>
+            <th>Description</th>
             <th>Skills</th>
             <th>Deadline</th>
             <th>Location</th>
@@ -163,7 +164,7 @@ function AllJobs() {
         <tbody>
           {records.length === 0 ? (
             <tr>
-              <td colSpan="7" className="text-center">
+              <td colSpan="8" className="text-center">
                 No Jobs
               </td>
             </tr>
@@ -172,6 +173,7 @@ function AllJobs() {
               <tr key={job.id}>
                 <td>{job.company}</td>
                 <td>{job.job_title}</td>
+                <td>{job.description || "N/A"}</td>
                 <td>{job.primary_skills}</td>
                 <td>{job.deadline}</td>
                 <td>{job.location}</td>

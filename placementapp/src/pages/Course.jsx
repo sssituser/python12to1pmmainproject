@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FaPython,
@@ -152,6 +152,7 @@ function CoursesPage() {
   ];
 
   const [courses, setCourses] = useState([]);
+  const isFirstRender = useRef(true);
 
   // Icon mapping for automatic logo generation
   const getIconForCourse = (courseName) => {
@@ -206,9 +207,11 @@ function CoursesPage() {
 
   // Save courses to localStorage whenever they change
   useEffect(() => {
-    if (courses.length > 0) {
-      localStorage.setItem('courses', JSON.stringify(courses));
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    localStorage.setItem('courses', JSON.stringify(courses));
   }, [courses]);
 
   // Sync courses from faculty - Check for new courses added by faculty

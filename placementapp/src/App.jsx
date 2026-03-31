@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import StudentLayout from "./Layout/Dashboard";
 import AllJobs from "./pages/Alljobs";
 import AppliedJobs from "./pages/AppliedJobs";
+import ChangePassword from "./pages/ChangePassword";
 import Course from "./pages/Course";
 import DailyExam from "./pages/DailyExam";
 import DailyExamReports from "./pages/DailyExamReports";
@@ -27,15 +28,18 @@ import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import TopicVideo from "./pages/TopicVideo";
 import VideoPlayer from "./pages/VideoPlayer";
 import WeeklyExam from "./pages/WeeklyExam";
 import WeeklyExamReports from "./pages/WeeklyExamReports";
 
 /* 🔹 FACULTY */
+import AdminPanel from "./faculty/AdminPanel";
 import Applications from "./faculty/Application";
 import FacultyCourse from "./faculty/Course";
 import FacultyDashboard from "./faculty/Dashboard";
+import ExamFailureDashboard from "./faculty/ExamFailureDashboard";
 import ExamManager from "./faculty/ExamManager";
 import FacultyLayout from "./faculty/FacultyLayout";
 import FacultyJobs from "./faculty/Jobs";
@@ -45,13 +49,14 @@ import Stats from "./faculty/Stats";
 
 
 /* 🔹 AUTH */
+import VerifyFaculty from "./pages/FacultyOtp";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
 function App() {
 
-  const isLoggedIn = localStorage.getItem("access");
   const location = useLocation();
+  const preventBackInitialized = useRef(false);
 
   // Disable browser back button only on exam pages and faculty course pages
   useEffect(() => {
@@ -59,34 +64,48 @@ function App() {
       return;
     }
 
-    // Block back button only on exam pages (not faculty course pages)
     const isExamPage = location.pathname.includes('/python-exam') || 
                       location.pathname.includes('/weekly-exam') || 
                       location.pathname.includes('/monthly-exam');
-    
-    if (isExamPage) {
-      window.history.pushState(null, null, window.location.pathname + window.location.search);
 
-      const handlePopState = (event) => {
-        if (window.allowBrowserBack) {
-          return;
-        }
-        window.history.pushState(null, null, window.location.pathname + window.location.search);
-      };
-
-      window.addEventListener("popstate", handlePopState);
-
-      return () => {
-        window.removeEventListener("popstate", handlePopState);
-      };
+    if (!isExamPage) {
+      return;
     }
+
+    if (preventBackInitialized.current) {
+      return;
+    }
+
+    preventBackInitialized.current = true;
+    window.history.pushState(null, null, window.location.pathname + window.location.search);
+
+    const handlePopState = (event) => {
+      if (window.allowBrowserBack) {
+        return;
+      }
+      window.history.pushState(null, null, window.location.pathname + window.location.search);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      preventBackInitialized.current = false;
+    };
   }, [location]);
 
   const token = localStorage.getItem("access");
-  const user = JSON.parse(localStorage.getItem("user"));
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null");
+  } catch (error) {
+    user = null;
+  }
 
-  const isStudent = user?.role === "student";
-  const isFaculty = user?.role === "faculty";
+  const userRole = user?.role?.toString().trim().toLowerCase();
+  const isStudent = userRole === "student";
+  const isFaculty = userRole === "faculty";
+  const isAdmin = userRole === "admin";
 
 
   return (
@@ -99,6 +118,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/faculty/login" element={<FacultyLogin />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-faculty" element={<VerifyFaculty />} />
 
         {/* 🎥 Standalone */}
         <Route path="/video/:courseTitle/:topicName" element={<VideoPlayer />} />
@@ -135,6 +155,8 @@ function App() {
         >
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="change-password" element={<ChangePassword />} />
 
           {/* Courses */}
           <Route path="course" element={<Course />} />
@@ -175,13 +197,14 @@ function App() {
         <Route
           path="/faculty"
           element={
-            token && isFaculty ? <FacultyLayout /> : <Navigate to="/" />
+            token && (isFaculty || isAdmin) ? <FacultyLayout /> : <Navigate to="/" />
           }
         >
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
+          <Route path="exam-failure" element={<ExamFailureDashboard />} />
           <Route path="stats" element={<Stats />} />
-          {/* <Route path="jobs" element={<Jobs />} /> */}
+          <Route path="admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/faculty/dashboard" />} />
           <Route path="/faculty/login" element={<FacultyLogin />} />
           <Route path="jobs" element={<FacultyJobs />} />
           <Route path="exam" element={<ExamManager />} />

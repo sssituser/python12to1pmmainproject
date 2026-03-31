@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Jobs() {
+  const navigate = useNavigate();
 
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -26,10 +28,25 @@ function Jobs() {
     fetch("/api/admin/jobs/", {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        if (res.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          navigate("/faculty/login", { replace: true });
+          return [];
+        }
+        if (!res.ok) {
+          console.error("Failed to load jobs", res.status);
+          return [];
+        }
+        return await res.json();
+      })
       .then(data => {
         const list = Array.isArray(data) ? data : data.results;
         setJobs(list || []);
+      })
+      .catch(err => {
+        console.error("Fetch jobs error", err);
       });
   }
 
@@ -52,7 +69,7 @@ function createJob(e) {
   const token = localStorage.getItem("access");
 
   if (!token) {
-    alert("Please login again ❌");
+    console.error("Please login again ❌");
     return;
   }
 
@@ -94,7 +111,7 @@ fetch(url, {
       console.log("RESPONSE:", data);
 
       if (res.status === 200 || res.status === 201) {
-        alert(form.id ? "Job Updated ✅" : "Job Posted ✅");
+        console.log(form.id ? "Job Updated ✅" : "Job Posted ✅");
         setShowForm(false);
 
         setForm({
@@ -113,12 +130,12 @@ fetch(url, {
 
         fetchJobs();
       } else {
-        alert("Error ❌ Check console");
+        console.error("Error ❌ Check console");
       }
     })
     .catch(err => {
       console.log("ERROR:", err);
-      alert("Server error ❌");
+      console.error("Server error ❌");
     });
 }
 
@@ -130,7 +147,19 @@ fetch(url, {
     fetch(`/api/admin/jobs/${id}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
-    }).then(() => fetchJobs());
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          navigate("/faculty/login", { replace: true });
+          return;
+        }
+        if (!res.ok) {
+          console.error("Delete failed", res.status);
+        }
+      })
+      .finally(() => fetchJobs());
   }
 
   return (
