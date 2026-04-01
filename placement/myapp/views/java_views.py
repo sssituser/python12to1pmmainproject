@@ -1,3 +1,4 @@
+"""
 import random
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -69,3 +70,4 @@ def playground_questions_java_api(request):
         'success': True,
         'data': selected_questions
     })
+"""
