@@ -46,67 +46,77 @@ def login(request):
     user = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
     if user:
-        if not user.is_active:
-            print(f"DEBUG: Account inactive for {user.username}")
-            role_msg = "Contact faculty" if user.role == 'student' else "Contact admin"
-            return Response({"detail": f"Account is inactive. {role_msg} to reactivate."}, status=403)
+        # 🔐 Verify password FIRST before checking active status
+        password_valid = user.check_password(password)
+        print(f"DEBUG: User found: {user.username}, Password valid: {password_valid}")
+
+        if not password_valid:
+            return Response({"detail": "Invalid credentials"}, status=401)
+
+        # ⚡ AUTO-ACTIVATE FACULTY ON CORRECT LOGIN (Fix for stuck accounts)
+        if user.role == 'faculty' and not user.is_active:
+            print(f"DEBUG: Auto-activating faculty account for {user.username}")
+            user.is_active = True
+            # We will save after updating last_login below
+
+        # 🛑 Still block inactive students
+        if user.role == 'student' and not user.is_active:
+            print(f"DEBUG: Student account inactive: {user.username}")
+            return Response({"detail": "Account is inactive. Contact faculty to reactivate."}, status=403)
 
         if user.role == 'student':
             cutoff = timezone.now() - timedelta(days=30)
             last_activity = user.last_login or user.date_joined
-            
             if last_activity and last_activity < cutoff:
                 user.is_active = False
                 user.save(update_fields=['is_active'])
                 print(f"DEBUG: Student {user.username} locked due to inactivity")
                 return Response({"detail": "Account locked after one month of inactivity. Contact faculty."}, status=403)
 
-        password_valid = user.check_password(password)
-        print(f"DEBUG: Password valid: {password_valid}")
-        if password_valid:
-            user.last_login = timezone.now()
-            user.save(update_fields=['last_login'])
+        # ✅ SUCCESSFUL LOGIN FLOW
+        user.last_login = timezone.now()
+        # If faculty was inactive, this save will also activate them
+        user.save(update_fields=['last_login', 'is_active'])
+        
+        try:
+            tokens = get_tokens(user)
+            print(f"DEBUG: Tokens generated for {user.username}")
+        except Exception as e:
+            return Response({"detail": f"Token generation failed: {str(e)}"}, status=500)
+        user_email = user.email or ""
+        login_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+        user_ip = get_client_ip(request)
+        browser_info = get_browser_info(request)
+
+        email_sent = False
+        if user_email:
             try:
-                tokens = get_tokens(user)
-                print(f"DEBUG: Tokens generated: access={bool(tokens.get('access'))}, refresh={bool(tokens.get('refresh'))}")
+                email_sent = send_login_email(
+                    user_email=user_email,
+                    username=username,
+                    login_time=login_time,
+                    user_ip=user_ip,
+                    browser_info=browser_info,
+                    user=user
+                )
+                print(f"DEBUG: Login email {'sent' if email_sent else 'failed to send'} for user {username}")
             except Exception as e:
-                print(f"DEBUG: Token generation error: {e}")
-                return Response({"detail": "Token generation failed"}, status=500)
-            user_email = user.email or ""
-            login_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
-            user_ip = get_client_ip(request)
-            browser_info = get_browser_info(request)
+                print(f"Email error for user {username}: {e}")
+        else:
+            print(f"DEBUG: No email address for user {username}, skipping login confirmation email")
 
-            email_sent = False
-            if user_email:
-                try:
-                    # Send login confirmation email to ALL users (students and faculty)
-                    email_sent = send_login_email(
-                        user_email=user_email,
-                        username=username,
-                        login_time=login_time,
-                        user_ip=user_ip,
-                        browser_info=browser_info,
-                        user=user
-                    )
-                    print(f"DEBUG: Login email {'sent' if email_sent else 'failed to send'} for user {username} (role: {user.role})")
-                except Exception as e:
-                    print(f"Email error for user {username} (role: {user.role}): {e}")
-            else:
-                print(f"DEBUG: No email address for user {username} (role: {user.role}), skipping login confirmation email")
-
-            response_data = {
-                **tokens,
-                "user": {
-                    "username": user.username,
-                    "email": user_email,
-                    "name": user.first_name or user.username,
-                    "role": user.role or "student"
-                },
-                "email_sent": email_sent
-            }
-            print(f"DEBUG: Response data keys: {list(response_data.keys())}")
-            return Response(response_data)
+        response_data = {
+            **tokens,
+            "user": {
+                "username": user.username,
+                "email": user_email,
+                "name": user.first_name or user.username,
+                "role": user.role or "student"
+            },
+            "email_sent": email_sent
+        }
+        print(f"DEBUG: Response data successful for {user.username}")
+        return Response(response_data)
     else:
         print("DEBUG: User not found")
 
