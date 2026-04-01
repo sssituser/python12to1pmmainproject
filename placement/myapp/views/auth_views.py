@@ -115,16 +115,44 @@ def login(request):
 
 
 # 🔢 SEND OTP
+from django.core.mail import send_mail
+from django.conf import settings
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def send_otp(request):
     identifier = request.data.get("username")
+    if not identifier:
+        return Response({"error": "Identifier (username or email) is required"}, status=400)
 
-    otp = str(random.randint(1000, 9999))
-    OTP.objects.create(username=identifier, otp=otp)
+    # 🔍 Find user to get their email
+    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+    target_email = identifier if "@" in identifier else (user.email if user else None)
 
-    print("OTP:", otp)
-    return Response({"message": "OTP sent"})
+    if not target_email:
+        return Response({"error": "Could not find a valid email for this user. Please use your email address."}, status=400)
+
+    otp = str(random.randint(100000, 999999)) # 6 digits for mapping to OTP model if needed, or 4 as per Login.jsx expectation
+    # But Login.jsx has maxLength={6} (line 371), so 6 digits is better.
+    
+    OTP.objects.create(username=identifier, email=target_email, otp=otp)
+
+    try:
+        subject = f"Your OTP for {settings.PLATFORM_NAME}"
+        message = f"Hello {user.username if user else 'User'},\n\nYour One-Time Password (OTP) for login is: {otp}\n\nThis code will expire shortly. Do not share it with anyone."
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [target_email],
+            fail_silently=False,
+        )
+        print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
+        return Response({"message": "OTP sent successfully"})
+    except Exception as e:
+        print(f"DEBUG: Failed to send OTP email: {str(e)}")
+        return Response({"error": f"Failed to send email: {str(e)}"}, status=500)
 
 
 # ✅ VERIFY OTP
