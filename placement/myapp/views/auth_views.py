@@ -161,7 +161,7 @@ def verify_otp(request):
     identifier = request.data.get("username")
     otp = request.data.get("otp")
 
-    record = OTP.objects.filter(username=identifier, otp=otp).last()
+    record = OTP.objects.filter(Q(username=identifier) | Q(email=identifier), otp=otp).last()
 
     if record:
         user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
