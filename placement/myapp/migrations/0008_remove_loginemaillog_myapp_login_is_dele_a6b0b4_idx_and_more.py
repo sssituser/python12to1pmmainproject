@@ -10,10 +10,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name='loginemaillog',
-            name='myapp_login_is_dele_a6b0b4_idx',
-        ),
+        # migrations.RemoveIndex(
+        #     model_name='loginemaillog',
+        #     name='myapp_login_is_dele_a6b0b4_idx',
+        # ),
         migrations.AddIndex(
             model_name='loginemaillog',
             index=models.Index(fields=['email_address', '-sent_at'], name='myapp_login_email_a_bf2618_idx'),

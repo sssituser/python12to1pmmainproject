@@ -9,9 +9,15 @@ from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
+from .views.html_views import playground_questions_html_api
+from .views.css_views import playground_questions_css_api
+from .views.javascript_views import playground_questions_javascript_api
+from .views.bootstrap_views import playground_questions_bootstrap_api
+from .views.oracle_views import playground_questions_oracle_api
+from .views.java_views import playground_questions_java_api
 from .views import course_views
 from .views.course_views import CourseViewSet
-from . import api_views
+from . import python_views as api_views
 from .views.stats_views import *
 from .views.otp_views import *
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
@@ -74,6 +80,13 @@ urlpatterns = [
     # ================= PLAYGROUND =================
 
     path('playground-questions/', api_views.playground_questions_api, name='playground-questions'),
+    path('playground-questions/python/', api_views.playground_questions_api, name='playground-questions-python'),
+    path('playground-questions/html/', playground_questions_html_api, name='playground-questions-html'),
+    path('playground-questions/css/', playground_questions_css_api, name='playground-questions-css'),
+    path('playground-questions/javascript/', playground_questions_javascript_api, name='playground-questions-javascript'),
+    path('playground-questions/bootstrap/', playground_questions_bootstrap_api, name='playground-questions-bootstrap'),
+    path('playground-questions/oracle/', playground_questions_oracle_api, name='playground-questions-oracle'),
+    path('playground-questions/java/', playground_questions_java_api, name='playground-questions-java'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),
