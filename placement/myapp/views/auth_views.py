@@ -263,20 +263,28 @@ def register(request):
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
 
-    if User.objects.filter(username=username).exists():
-        return Response({"error": "Username already exists"}, status=400)
-
-    # For Faculty, we might want to mark them as inactive until verified
-    is_active = False if role == 'faculty' else True
-
-    user = User.objects.create_user(
-        username=username,
-        password=password,
-        email=email,
-        is_active=is_active
-    )
-    user.role = role
-    user.save()
+    existing_user = User.objects.filter(username=username).first()
+    if existing_user:
+        if existing_user.is_active:
+            return Response({"error": "Username already exists and is active. Please login."}, status=400)
+        
+        # If it's an inactive faculty, we allow "re-registering" to get a new OTP
+        if existing_user.role == 'faculty':
+            user = existing_user
+            print(f"DEBUG: Allowing re-registration/OTP resend for inactive faculty {username}")
+        else:
+            return Response({"error": "Username already exists. Contact admin."}, status=400)
+    else:
+        # Create new user if doesn't exist
+        is_active = False if role == 'faculty' else True
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email,
+            is_active=is_active
+        )
+        user.role = role
+        user.save()
 
     if role == 'faculty':
         # Generate & Send OTP for verification
