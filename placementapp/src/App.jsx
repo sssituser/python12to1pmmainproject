@@ -200,6 +200,7 @@ function App() {
         >
           <Route index element={<FacultyDashboard />} />
           <Route path="dashboard" element={<FacultyDashboard />} />
+          <Route path="change-password" element={<ChangePassword />} />
           <Route path="exam-failure" element={<ExamFailureDashboard />} />
           <Route path="stats" element={<Stats />} />
           <Route path="admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/faculty/dashboard" />} />

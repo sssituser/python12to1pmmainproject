@@ -23,86 +23,46 @@ function ExamFailureDashboard() {
       
       console.log("🚀 Starting fetchReports for faculty dashboard...");
       
-      // For faculty dashboard, we want ALL exam results, not just for one user
-      // Remove username filter to get all student results
-      console.log("🌐 Fetching ALL exam results for faculty dashboard...");
+      const token = localStorage.getItem("access");
+      const response = await axios.get("/api/all-exam-results/", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      // Use the all-exam-results endpoint to get all student data
-      const response = await fetch("/api/all-exam-results/");
-      console.log("� API response status:", response.status);
+      console.log("✅ API response status:", response.status);
+      const json = response.data;
       
-      const json = await response.json();
-      console.log("📊 Full API response:", json);
-
       let examList = [];
-      
-      // Handle different response structures
       if (json.success && json.data) {
         examList = json.data;
       } else if (Array.isArray(json)) {
         examList = json;
-      } else if (json.data && Array.isArray(json.data)) {
-        examList = json.data;
-      } else if (json.results && Array.isArray(json.results)) {
-        examList = json.results;
       } else {
-        console.log("⚠️ Unexpected response structure, trying to find array data...");
-        // Try to find any array in the response
-        const arrayKeys = Object.keys(json).filter(key => Array.isArray(json[key]));
-        if (arrayKeys.length > 0) {
-          examList = json[arrayKeys[0]];
-          console.log("� Found array in key:", arrayKeys[0]);
-        }
+        const arrayKey = Object.keys(json).find(key => Array.isArray(json[key]));
+        if (arrayKey) examList = json[arrayKey];
       }
       
-      console.log("✅ Successfully fetched", examList.length, "results");
-      if (examList.length > 0) {
-        console.log("📋 Sample result:", examList[0]);
-      }
-      
-      // Check for examFailure in localStorage (same as PlaygroundResults)
-      const examFailure = localStorage.getItem("examFailure");
-      console.log("🔍 examFailure in localStorage:", examFailure);
-      if (examFailure) {
-        const failedResult = JSON.parse(examFailure);
-        examList = [failedResult, ...examList];
-        localStorage.removeItem("examFailure");
-        console.log("➕ Added examFailure from localStorage, total now:", examList.length);
-      }
-      
-      console.log("🎯 Final examList:", examList.length, "items");
-      console.log("📝 Setting reports and selected report...");
-      
+      console.log("📊 Final examList size:", examList.length);
       setReports(examList);
-      if (examList.length) {
+      
+      if (examList.length > 0) {
         setSelectedReport(examList[0]);
-        console.log("✅ Selected first report:", examList[0]);
       } else {
-        console.log("⚠️ No reports to select");
         setSelectedReport(null);
-        setError("No exam results found. Students may not have taken any exams yet.");
+        // Do not set an "error" if it's just empty, showing it as a message later is better
       }
       
     } catch (err) {
       console.error("❌ Failed to load exam reports:", err);
+      const errorMessage = err.response?.data?.detail || err.response?.data?.error || err.message;
+      setError(`Failed to load data: ${errorMessage}`);
       
-      // Fallback to localStorage on network error (same as PlaygroundResults)
+      // Fallback
       const results = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-      console.log("💾 localStorage fallback:", results.length, "items");
-      
       if (results.length > 0) {
-        console.log("📦 Using localStorage data");
         setReports(results);
         setSelectedReport(results[0]);
-        setError("Using cached data from localStorage due to network error.");
-      } else {
-        console.log("📭 No cached data available");
-        setReports([]);
-        setSelectedReport(null);
-        setError(`Failed to load exam data: ${err.message}. No cached data available.`);
       }
     } finally {
-      console.log("🏁 fetchReports completed");
       setLoading(false);
     }
   };
@@ -224,29 +184,23 @@ function ExamFailureDashboard() {
     
     const filtered = processedReports.filter((item) => {
       const title = (item.examTitle || "").toLowerCase();
-      const examDate = new Date(item.examDate);
+      const type = (item.examType || "").toLowerCase();
       
-      // Check if it's a daily exam (by title)
-      const isDaily = title.includes("daily") || title.includes("day");
+      if (activePeriod === "all") return true;
+
+      // Check if it's a daily exam
+      const isDaily = type === "daily" || title.includes("daily") || title.includes("day");
+      if (activePeriod === "daily") return isDaily;
       
-      // Check if it's a weekly exam (by title)
-      const isWeekly = (title.includes("weekly") || title.includes("week")) && !isDaily;
+      // Check if it's a weekly exam
+      const isWeekly = (type === "weekly" || title.includes("weekly") || title.includes("week")) && !isDaily;
+      if (activePeriod === "weekly") return isWeekly;
       
-      // Check if it's a monthly exam (by title)
-      const isMonthly = (title.includes("monthly") || title.includes("month")) && !isDaily && !isWeekly;
+      // Check if it's a monthly exam
+      const isMonthly = (type === "monthly" || title.includes("monthly") || title.includes("month")) && !isDaily && !isWeekly;
+      if (activePeriod === "monthly") return isMonthly;
       
-      if (activePeriod === "daily") {
-        return isDaily;
-      }
-      if (activePeriod === "weekly") {
-        return isWeekly;
-      }
-      if (activePeriod === "monthly") {
-        return isMonthly;
-      }
-      
-      // Default: show all
-      return true;
+      return false;
     });
     
     return filtered;
@@ -493,8 +447,12 @@ function ExamFailureDashboard() {
 
         <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mt-4">
           <div className="col">
-            <div className="border rounded-4 p-3 h-100">
-              <small className="text-uppercase text-muted">Scope</small>
+            <div 
+              className={`border rounded-4 p-3 h-100 cursor-pointer transition-all ${activeFilter === "all" ? "border-primary bg-primary text-white" : ""}`}
+              onClick={() => setActiveFilter("all")}
+              style={{ cursor: 'pointer' }}
+            >
+              <small className={`text-uppercase ${activeFilter === "all" ? "text-white-50" : "text-muted"}`}>Scope</small>
               <h5 className="mt-2 mb-0">
                 {activePeriod === "all" ? "All Exams" : 
                  activePeriod === "daily" ? "Daily Exam" : 
@@ -504,165 +462,100 @@ function ExamFailureDashboard() {
             </div>
           </div>
           <div className="col">
-            <div className="rounded-4 p-3 h-100 bg-danger text-white">
-              <small className="text-uppercase">Failed</small>
+            <div 
+              className={`rounded-4 p-3 h-100 bg-danger text-white transition-all ${activeFilter === "failed" ? "shadow-lg opacity-100 scale-105" : "opacity-75"}`}
+              style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+              onClick={() => setActiveFilter(activeFilter === "failed" ? "all" : "failed")}
+            >
+              <small className="text-uppercase text-white-50">Failed</small>
               <h3 className="mt-2 mb-0">{summary.failed}</h3>
             </div>
           </div>
           <div className="col">
-            <div className="rounded-4 p-3 h-100 bg-warning text-dark">
-              <small className="text-uppercase">Cheated</small>
+            <div 
+              className={`rounded-4 p-3 h-100 bg-warning text-dark transition-all ${activeFilter === "cheated" ? "shadow-lg opacity-100 scale-105" : "opacity-75"}`}
+              style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+              onClick={() => setActiveFilter(activeFilter === "cheated" ? "all" : "cheated")}
+            >
+              <small className="text-uppercase text-black-50">Cheated</small>
               <h3 className="mt-2 mb-0">{summary.cheated}</h3>
             </div>
           </div>
           <div className="col">
-            <div className="rounded-4 p-3 h-100 bg-secondary text-white">
-              <small className="text-uppercase">Low Score</small>
+            <div 
+              className={`rounded-4 p-3 h-100 bg-secondary text-white transition-all ${activeFilter === "low-score" ? "shadow-lg opacity-100 scale-105" : "opacity-75"}`}
+              style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+              onClick={() => setActiveFilter(activeFilter === "low-score" ? "all" : "low-score")}
+            >
+              <small className="text-uppercase text-white-50">Low Score</small>
               <h3 className="mt-2 mb-0">{summary.lowScore}</h3>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="d-flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={`btn btn-sm ${activeFilter === "failed" ? "btn-primary" : "btn-outline-primary"}`}
-            onClick={() => setActiveFilter("failed")}
-          >
-            Failed
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${activeFilter === "cheated" ? "btn-warning text-dark" : "btn-outline-warning text-dark"}`}
-            onClick={() => setActiveFilter("cheated")}
-          >
-            Cheated
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${activeFilter === "low-score" ? "btn-secondary text-white" : "btn-outline-secondary text-dark"}`}
-            onClick={() => setActiveFilter("low-score")}
-          >
-            Low Score
-          </button>
-        </div>
-      </div>
 
-      <div className="row g-3 mb-4">
-        <FilterCard
-          title="Failed"
-          value={summary.failed}
-          active={activeFilter === "failed"}
-          onClick={() => setActiveFilter("failed")}
-          color="danger"
-          subtitle="Confirmed failure records"
-        />
-        <FilterCard
-          title="Cheated"
-          value={summary.cheated}
-          active={activeFilter === "cheated"}
-          onClick={() => setActiveFilter("cheated")}
-          color="warning"
-          subtitle="Suspicious / proctoring alerts"
-        />
-        <FilterCard
-          title="Low score"
-          value={summary.lowScore}
-          active={activeFilter === "low-score"}
-          onClick={() => setActiveFilter("low-score")}
-          color="secondary"
-          subtitle="Below 40% score"
-        />
-      </div>
 
       <div className="row">
-        <div className="col-xl-7 mb-4">
-          <div className="bg-white p-4 shadow-sm rounded">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0">Exam failures</h5>
-              <small className="text-muted">{filteredReports.length} records</small>
+        {/* LEFT COLUMN: CATEGORIZED LISTS */}
+        <div className="col-xl-7">
+          {/* FAILED SECTION */}
+          {(activeFilter === "all" || activeFilter === "failed") && (
+            <div className="bg-white p-4 shadow-sm rounded border-start border-4 border-danger mb-4 transition-all">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0 text-danger fw-bold"><i className="bi bi-x-circle me-2"></i>Exam Failures</h6>
+                <span className="badge bg-danger rounded-pill">{summary.failed} Records</span>
+              </div>
+              <ReportTable 
+                reports={periodReports.filter(item => item.normalizedStatus === "fail")} 
+                selectedId={selectedReport?.id}
+                onSelect={setSelectedReport}
+                emptyMessage="No failed records found."
+              />
             </div>
+          )}
 
-            {filteredReports.length === 0 ? (
-              <div className="text-center py-5">
-                <div className="mb-3">
-                  <i className="bi bi-inbox" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
-                </div>
-                <h5 className="text-muted">No {activeFilter.replace('-', ' ')} records found</h5>
-                <p className="text-muted">
-                  {activePeriod === "weekly" ? "Weekly" : "Monthly"} exam data is not available for this filter.
-                </p>
-                <button 
-                  className="btn btn-outline-primary btn-sm"
-                  onClick={() => setActiveFilter("failed")}
-                >
-                  View All Failed Exams
-                </button>
+          {/* CHEATED SECTION */}
+          {(activeFilter === "all" || activeFilter === "cheated") && (
+            <div className="bg-white p-4 shadow-sm rounded border-start border-4 border-warning mb-4 transition-all">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0 text-warning text-dark fw-bold"><i className="bi bi-eye me-2"></i>Suspicious Activity</h6>
+                <span className="badge bg-warning text-dark rounded-pill">{summary.cheated} Records</span>
               </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Student</th>
-                      <th>Exam</th>
-                      <th>Score</th>
-                      <th>Percent</th>
-                      <th>Status</th>
-                      <th>Quick Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReports.slice(0, 8).map((report) => (
-                      <tr
-                        key={report.id}
-                        className={selectedReport?.id === report.id ? "table-primary" : ""}
-                        onClick={() => setSelectedReport(report)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <td>{report.user?.username || "Unknown"}</td>
-                        <td>{report.examTitle}</td>
-                        <td>{report.score}/{report.totalMarks}</td>
-                        <td>{report.percentage}%</td>
-                        <td>
-                          <span className={`badge ${
-                            (report.normalizedStatus || '') === 'fail' ? 'bg-danger' :
-                            (report.normalizedStatus || '').includes('cheat') ? 'bg-warning text-dark' :
-                            (report.normalizedStatus || '').includes('suspicious') ? 'bg-warning text-dark' :
-                            'bg-secondary'
-                          }`}>
-                            {report.status}
-                          </span>
-                        </td>
-                        <td>
-                          <small className="text-muted d-block" style={{ maxWidth: '200px' }}>
-                            {report.failureReason ? 
-                              (report.failureReason.length > 50 ? 
-                                report.failureReason.substring(0, 50) + '...' : 
-                                report.failureReason
-                              ) : 
-                              'No reason provided'
-                            }
-                          </small>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <ReportTable 
+                reports={periodReports.filter(item => item.normalizedStatus.includes("cheat") || item.normalizedStatus.includes("suspicious"))} 
+                selectedId={selectedReport?.id}
+                onSelect={setSelectedReport}
+                emptyMessage="No suspicious activity detected."
+              />
+            </div>
+          )}
+
+          {/* LOW SCORE SECTION */}
+          {(activeFilter === "all" || activeFilter === "low-score") && (
+            <div className="bg-white p-4 shadow-sm rounded border-start border-4 border-secondary mb-4 transition-all">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0 text-secondary fw-bold"><i className="bi bi-graph-down me-2"></i>Low Score Alerts (&lt;40%)</h6>
+                <span className="badge bg-secondary rounded-pill">{summary.lowScore} Records</span>
               </div>
-            )}
-          </div>
+              <ReportTable 
+                reports={periodReports.filter(item => Number(item.percentage) < 40)} 
+                selectedId={selectedReport?.id}
+                onSelect={setSelectedReport}
+                emptyMessage="No low score alerts."
+              />
+            </div>
+          )}
         </div>
 
+        {/* RIGHT COLUMN: DETAIL VIEW */}
         <div className="col-xl-5 mb-4">
-          <div className="bg-white p-4 shadow-sm rounded h-100">
+          <div className="bg-white p-4 shadow-sm rounded h-100 sticky-top" style={{ top: '80px', zIndex: 10 }}>
             <h5 className="mb-3">📋 Exam Analysis & Failure Details</h5>
             {!selectedReport ? (
               <div className="text-center py-5">
                 <i className="bi bi-mouse2" style={{ fontSize: '2rem', color: '#6c757d' }}></i>
-                <p className="text-muted mt-3">Select a record to view detailed analysis</p>
+                <p className="text-muted mt-3">Select a record from any list to view detailed analysis</p>
               </div>
             ) : (
               <div>
@@ -683,9 +576,6 @@ function ExamFailureDashboard() {
                   } />
                   <DetailRow label="Score" value={`${selectedReport.score}/${selectedReport.totalMarks} (${selectedReport.percentage}%)`} />
                   <DetailRow label="Date" value={new Date(selectedReport.examDate).toLocaleString()} />
-                  {selectedReport.examTime && (
-                    <DetailRow label="Duration" value={selectedReport.examTime} />
-                  )}
                 </div>
 
                 {/* Failure Analysis */}
@@ -697,35 +587,6 @@ function ExamFailureDashboard() {
                   </div>
                 </div>
 
-                {/* Academic Performance Issues */}
-                {selectedReport.weakTopics && selectedReport.weakTopics.length > 0 && (
-                  <div className="mb-4">
-                    <h6 className="text-warning mb-3">📚 Weak Areas Identified</h6>
-                    <div className="list-group list-group-flush">
-                      {selectedReport.weakTopics.map((topic, index) => (
-                        <div key={index} className="list-group-item d-flex align-items-center">
-                          <i className="bi bi-exclamation-triangle text-warning me-2"></i>
-                          {topic}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Suspicious Activity */}
-                {selectedReport.suspiciousActivity && selectedReport.suspiciousActivity.length > 0 && (
-                  <div className="mb-4">
-                    <h6 className="text-warning mb-3">🔍 Suspicious Activity Detected</h6>
-                    <div className="alert alert-warning">
-                      <ul className="mb-0">
-                        {selectedReport.suspiciousActivity.map((activity, index) => (
-                          <li key={index}>{activity}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
                 {/* Recommendations */}
                 <div className="mb-4">
                   <h6 className="text-success mb-3">💡 Recommendations</h6>
@@ -736,14 +597,14 @@ function ExamFailureDashboard() {
 
                 {/* Action Buttons */}
                 <div className="d-grid gap-2">
-                  <button className="btn btn-outline-primary btn-sm" onClick={handleContactStudent}>
+                  <button className="btn btn-primary btn-sm py-2" onClick={handleContactStudent}>
                     <i className="bi bi-envelope me-1"></i> Contact Student
                   </button>
                   <button className="btn btn-outline-warning btn-sm" onClick={handleScheduleRetake}>
                     <i className="bi bi-arrow-clockwise me-1"></i> Schedule Retake
                   </button>
                   <button className="btn btn-outline-info btn-sm" onClick={handleFullReport}>
-                    <i className="bi bi-file-text me-1"></i> Full Report
+                    <i className="bi bi-file-text me-1"></i> Download PDF Report
                   </button>
                 </div>
               </div>
@@ -751,6 +612,57 @@ function ExamFailureDashboard() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
+  if (!reports || reports.length === 0) {
+    return <div className="text-center py-4 text-muted small">{emptyMessage}</div>;
+  }
+
+  return (
+    <div className="table-responsive">
+      <table className="table table-sm table-hover align-middle mb-0" style={{ fontSize: '0.85rem' }}>
+        <thead className="table-light">
+          <tr>
+            <th>Student</th>
+            <th>Exam</th>
+            <th>Score</th>
+            <th>%</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {reports.slice(0, 5).map((report) => (
+            <tr
+              key={report.id}
+              className={selectedId === report.id ? "table-primary" : ""}
+              onClick={() => onSelect(report)}
+              style={{ cursor: "pointer" }}
+            >
+              <td className="fw-medium">{report.user?.username || "Unknown"}</td>
+              <td>{report.examTitle}</td>
+              <td>{report.score}/{report.totalMarks}</td>
+              <td>{report.percentage}%</td>
+              <td>
+                <span className={`badge ${
+                  (report.normalizedStatus || '') === 'fail' ? 'bg-danger' :
+                  (report.normalizedStatus || '').includes('cheat') ? 'bg-warning text-dark' :
+                  'bg-secondary'
+                }`} style={{ fontSize: '0.7rem' }}>
+                  {report.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {reports.length > 5 && (
+        <div className="text-center mt-2">
+          <small className="text-muted">+ {reports.length - 5} more records</small>
+        </div>
+      )}
     </div>
   );
 }

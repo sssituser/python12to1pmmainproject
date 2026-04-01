@@ -11,6 +11,10 @@ export default function ChangePassword() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isStudent = user.role === "student";
+  const backPath = isStudent ? "/dashboard/profile" : "/faculty/dashboard";
+  const backLabel = isStudent ? "Back to Profile" : "Back to Dashboard";
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -53,7 +57,7 @@ export default function ChangePassword() {
         newPassword: "",
         confirmPassword: ""
       });
-      navigate("/dashboard/profile");
+      navigate(backPath);
 
     } catch (err) {
       let finalError = err;
@@ -68,7 +72,7 @@ export default function ChangePassword() {
             newPassword: "",
             confirmPassword: ""
           });
-          navigate("/dashboard/profile");
+          navigate(backPath);
           return;
         } catch (fallbackErr) {
           finalError = fallbackErr;
@@ -163,10 +167,10 @@ export default function ChangePassword() {
           {/* BACK BUTTON */}
           <div className="mt-4 text-center">
             <button
-              onClick={() => navigate("/dashboard/profile")}
+              onClick={() => navigate(backPath)}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              ← Back to Profile
+              {backLabel}
             </button>
           </div>
         </div>

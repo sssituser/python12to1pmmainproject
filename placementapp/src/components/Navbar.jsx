@@ -208,14 +208,22 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
           {openProfile && (
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fadeIn">
               <button
-                onClick={() => navigate("/dashboard/profile")}
+                onClick={() => {
+                  const path = user.role === "student" ? "/dashboard/profile" : "/faculty/dashboard";
+                  navigate(path);
+                  setOpenProfile(false);
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
               >
-                Profile
+                {user.role === "student" ? "Profile" : "Dashboard"}
               </button>
 
               <button
-                onClick={() => navigate("/dashboard/change-password")}
+                onClick={() => {
+                  const path = user.role === "student" ? "/dashboard/change-password" : "/faculty/change-password";
+                  navigate(path);
+                  setOpenProfile(false);
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
               >
                 <Key size={14} />
@@ -223,7 +231,10 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
               </button>
 
               <button
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  setOpenProfile(false);
+                }}
                 className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2"
               >
                 <LogOut size={14} />
