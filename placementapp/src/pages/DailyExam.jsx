@@ -66,12 +66,26 @@ const DailyExam = () => {
 
   const handleCloseWarningModal = async () => {
     setShowWarningModal(false);
-    // Request fullscreen as this is now a fresh user gesture (button click)
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    
+    // Request fullscreen with comprehensive vendor prefix support
+    const docEl = document.documentElement;
+    if (!document.fullscreenElement && 
+        !document.webkitFullscreenElement && 
+        !document.mozFullScreenElement && 
+        !document.msFullscreenElement) {
+      
       try {
-        await document.documentElement.requestFullscreen();
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        } else if (docEl.mozRequestFullScreen) {
+          await docEl.mozRequestFullScreen();
+        } else if (docEl.msRequestFullscreen) {
+          await docEl.msRequestFullscreen();
+        }
       } catch (err) {
-        console.error("Failed to restore fullscreen", err);
+        console.error("Critical: Fullscreen restoration failed", err);
       }
     }
   };
@@ -547,9 +561,19 @@ useEffect(() => {
 
     try {
       if (document.fullscreenElement) {
-        await document.exitFullscreen();
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
       }
-    } catch (err) { }
+    } catch (err) {
+      console.error("Failed to exit full screen:", err);
+    }
 
     const userStr = localStorage.getItem("user");
     let user = {};
@@ -590,8 +614,12 @@ useEffect(() => {
        passed = correctCount >= passingValue;
     }
 
+    // Determine proctoring status
+    const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
+    const finalStatus = isTerminated ? "Cheated" : "completed";
+
     const result = {
-      status: "completed",
+      status: finalStatus,
       correctAnswers: correctCount,
       incorrectAnswers: totalQ - correctCount,
       totalQuestions: totalQ,
@@ -634,18 +662,7 @@ useEffect(() => {
     // Clear session storage so a new start will shuffle fresh questions
     sessionStorage.removeItem('dailyExamState');
 
-    // Exit full screen mode
-    if (document.fullscreenElement) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-    }
+    // Exit full screen mode logic moved to top of function
 
     navigate("/dashboard/playground-results", { replace: true });
   };

@@ -322,28 +322,42 @@ def exam_reports_api(request):
     
     formatted_data = []
     for attempt in attempts:
+        # Calculate attempt number based on user history of the same type
+        # count how many attempts of this type this user took on or before this date
+        attempt_number = 1
+        if attempt.user:
+            attempt_number = ExamAttempt.objects.filter(
+                user=attempt.user,
+                exam_type=attempt.exam_type,
+                exam_date__lte=attempt.exam_date
+            ).count()
+
         raw_status = str(attempt.status or '').strip()
         normalized_status = raw_status.lower()
         percentage = round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks else 0
         final_status = raw_status
-
-        if 'cheat' in normalized_status or 'suspicious' in normalized_status:
+        # Priority: If it's already cheated or suspicious in DB, keep it
+        if 'cheat' in normalized_status or 'suspicious' in normalized_status or 'violated' in normalized_status:
             final_status = 'Cheated'
-        elif normalized_status in ['pass', 'passed', 'success']:
+        elif percentage >= 50:
             final_status = 'Pass'
-        elif normalized_status in ['fail', 'failed']:
-            final_status = 'Fail'
-        elif normalized_status in ['completed', 'incomplete', 'pending', '']:
-            final_status = 'Pass' if percentage >= 50 else 'Fail'
         else:
-            final_status = raw_status or ('Pass' if percentage >= 50 else 'Fail')
+            final_status = 'Fail'
 
         suspicious_detected = False
         if attempt.user and attempt.user.email:
             sessions = ExamSession.objects.filter(student_email__iexact=attempt.user.email)
-            if attempt.start_time:
+            if attempt.start_time and attempt.end_time:
+                # Only check snapshots that were taken precisely during this exam attempt
+                suspicious_detected = WebcamSnapshot.objects.filter(
+                    session__in=sessions, 
+                    is_suspicious=True,
+                    timestamp__gte=attempt.start_time,
+                    timestamp__lte=attempt.end_time
+                ).exists()
+            elif attempt.start_time:
                 sessions = sessions.filter(start_time__date=attempt.start_time.date())
-            suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
+                suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
             if suspicious_detected:
                 final_status = 'Cheated'
 
@@ -370,6 +384,7 @@ def exam_reports_api(request):
             },
             'examTitle': attempt.exam_title,
             'examType': attempt.exam_type,
+            'attemptNumber': attempt_number,  # NEW FIELD
             'score': attempt.marks_obtained,
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
@@ -467,29 +482,38 @@ def save_exam_report_api(request):
         if not random_id_val and isinstance(data.get('user'), dict):
             random_id_val = data['user'].get('randomId') or ''
 
+        # Priority: Check if explicitly flagged as cheated/violated first
+        raw_status = str(data.get('status', '')).strip()
+        lower_status = raw_status.lower()
+        
         # pass/fail
         passed_input = data.get('passed')
-        if passed_input is True:
+        
+        if 'cheat' in lower_status or 'violated' in lower_status:
+            final_status = 'Cheated'
+            # Maybe include the specific reason in status if available
+            reason = data.get('reason') or data.get('submissionReason')
+            if reason:
+                # Truncate if too long, but include it
+                final_status = f"Cheated: {reason}"[:20] 
+                # Actually, better to keep it just 'Cheated' for internal logic 
+                # but maybe store the detailed reason in the status string
+                final_status = f"Cheated"
+        elif passed_input is True:
             final_status = 'Pass'
         elif passed_input is False:
             final_status = 'Fail'
         else:
-            raw_status = str(data.get('status', '')).strip()
-            lower_status = raw_status.lower()
-            if 'cheat' in lower_status or 'suspicious' in lower_status:
-                final_status = 'Cheated'
-            elif lower_status in ['pass', 'passed', 'success']:
+            marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
+            total_marks = data.get('total_marks') or data.get('totalMarks') or 40
+            
+            # Calculate percentage for pass/fail decision
+            percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
+            
+            if percentage >= 50:
                 final_status = 'Pass'
-            elif lower_status in ['fail', 'failed']:
-                final_status = 'Fail'
             else:
-                marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-                total_marks = data.get('total_marks') or data.get('totalMarks') or 0
-                if total_marks:
-                    percentage = (float(marks_obtained) / float(total_marks)) * 100
-                    final_status = 'Pass' if percentage >= 50 else 'Fail'
-                else:
-                    final_status = raw_status or 'Completed'
+                final_status = 'Fail'
 
         attempt = ExamAttempt.objects.create(
             user=user,

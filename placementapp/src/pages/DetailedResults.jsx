@@ -146,6 +146,12 @@ function DetailedResults() {
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
                 </p>
               </div> 
+              <div className="space-y-1">
+                <p className="text-gray-400 text-sm font-medium">Exam</p>
+                <p className="text-xl font-black text-gray-900 truncate">
+                  {location.state?.examNumber ? `${location.state.examType} Exam ${location.state.examNumber}` : (result.examTitle || "Assessment")}
+                </p>
+              </div> 
               <div className="space-y-1 text-right md:text-left">
                 <p className="text-gray-400 text-sm font-medium">Final Score</p>
                 <p className="text-xl font-black text-indigo-600">
