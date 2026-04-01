@@ -10,6 +10,7 @@ import AppliedJobs from "./pages/AppliedJobs";
 import ChangePassword from "./pages/ChangePassword";
 import Course from "./pages/Course";
 import DailyExam from "./pages/DailyExam";
+import DailyExamSubjects from "./pages/DailyExamSubjects";
 import DailyExamReports from "./pages/DailyExamReports";
 import DetailedResults from "./pages/DetailedResults";
 import ExamLeaderboard from "./pages/ExamLeaderboard";
@@ -131,8 +132,9 @@ function App() {
 
         {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 
-        <Route path="/dashboard/daily-exam" element={<DailyExam />} />
-        <Route path="/dashboard/python-exam" element={<DailyExam />} />
+        <Route path="/dashboard/daily-exam" element={<DailyExamSubjects />} />
+        <Route path="/dashboard/daily-exam/:subject" element={<DailyExam />} />
+        <Route path="/dashboard/python-exam" element={<Navigate to="/dashboard/daily-exam/python" replace />} />
         <Route path="/dashboard/weekly-exam" element={<WeeklyExam />} />
         <Route path="/dashboard/monthly-exam" element={<MonthlyExam />} />
 

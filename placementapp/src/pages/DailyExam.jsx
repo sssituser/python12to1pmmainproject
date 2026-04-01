@@ -5,13 +5,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
 
 const DailyExam = () => {
 
+  const { subject } = useParams();
+  const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : 'Python';
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -141,7 +143,7 @@ const DailyExam = () => {
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
-        const res = await fetch("/api/playground-questions/");
+        const res = await fetch("/api/playground-questions/" + (subject || 'python') + "/");
         const json = await res.json();
         const data = json.data || json;
 
@@ -609,7 +611,7 @@ useEffect(() => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Daily Exam",
+      examTitle: subjectName + " Daily Exam",
       submissionReason: reason
     };
 
@@ -707,7 +709,7 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              Daily Assessment
+              {subjectName} Daily Assessment
             </h2>
             <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
@@ -797,7 +799,7 @@ useEffect(() => {
              </div>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-             <span className="text-blue-600">Daily</span> Assessment
+             <span className="text-blue-600">{subjectName}</span> Daily Assessment
           </div>
         </div>
 
