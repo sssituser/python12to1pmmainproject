@@ -19,7 +19,7 @@ function VerifyFaculty() {
 
     if (res.ok) {
       alert("Faculty verified 🎉");
-      navigate("/login");
+      navigate("/faculty/login", { replace: true });
     } else {
       alert("Invalid OTP ❌");
     }
