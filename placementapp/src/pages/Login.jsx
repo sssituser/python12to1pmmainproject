@@ -246,10 +246,7 @@ function Login() {
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-md p-8 rounded-2xl
-          bg-white/5 backdrop-blur-xl
-          border border-white/10
-          shadow-[0_0_40px_rgba(0,255,0,0.15)]"
+          className="w-full max-w-md p-8 rounded-2xl bg-slate-900 border border-slate-700"
         >
           <h2 className="text-2xl text-center mb-6 font-semibold">
             Student Login
@@ -262,10 +259,7 @@ function Login() {
             placeholder="Username"
             value={form.username}
             onChange={handleChange}
-            className="w-full mb-4 px-4 py-3 rounded-lg
-            bg-white/5 border border-white/10
-            focus:border-green-400 focus:ring-1 focus:ring-green-400
-            outline-none transition"
+            className="w-full mb-4 px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
           />
 
           {mode === "login" && (
@@ -278,10 +272,7 @@ function Login() {
                   placeholder="Password"
                   value={form.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg
-                  bg-white/5 border border-white/10
-                  focus:border-green-400 focus:ring-1 focus:ring-green-400
-                  outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                 />
 
                 <span
@@ -329,10 +320,7 @@ function Login() {
                   placeholder="Email"
                   value={forgotUsername}
                   onChange={(e) => setForgotUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg
-                  bg-white/5 border border-white/10
-                  focus:border-green-400 focus:ring-1 focus:ring-green-400
-                  outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                 />
               </div>
               <div className="mb-4">
@@ -341,10 +329,7 @@ function Login() {
                   placeholder="New password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg
-                  bg-white/5 border border-white/10
-                  focus:border-green-400 focus:ring-1 focus:ring-green-400
-                  outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                 />
               </div>
               <div className="mb-4">
@@ -353,10 +338,7 @@ function Login() {
                   placeholder="Confirm password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg
-                  bg-white/5 border border-white/10
-                  focus:border-green-400 focus:ring-1 focus:ring-green-400
-                  outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                 />
               </div>
               <div className="text-sm text-gray-400 mb-6">
@@ -378,10 +360,7 @@ function Login() {
                   placeholder="Username or Email"
                   value={otpUsername}
                   onChange={(e) => setOtpUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg
-                  bg-white/5 border border-white/10
-                  focus:border-green-400 focus:ring-1 focus:ring-green-400
-                  outline-none transition"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                 />
               </div>
               {otpSent && (
@@ -392,10 +371,7 @@ function Login() {
                     placeholder="Enter OTP"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg
-                    bg-white/5 border border-white/10
-                    focus:border-green-400 focus:ring-1 focus:ring-green-400
-                    outline-none transition"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
                   />
                 </div>
               )}
@@ -422,10 +398,7 @@ function Login() {
                 : handleSendOtp
             }
             disabled={loading || otpLoading}
-            className="w-full py-3 rounded-lg font-medium
-            bg-green-500 hover:bg-green-600
-            transition duration-300
-            shadow-[0_0_15px_rgba(0,255,0,0.3)]"
+            className="w-full py-3 rounded-lg font-medium bg-green-500 hover:bg-green-600 transition duration-300"
           >
             {loading || otpLoading
               ? "Processing..."

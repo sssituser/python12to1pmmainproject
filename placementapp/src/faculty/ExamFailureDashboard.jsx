@@ -9,7 +9,7 @@ function ExamFailureDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("failed");
-  const [activePeriod, setActivePeriod] = useState("weekly");
+  const [activePeriod, setActivePeriod] = useState("all");
   const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
@@ -184,27 +184,18 @@ function ExamFailureDashboard() {
   };
 
   const processedReports = useMemo(() => {
-    console.log("🔄 Processing reports...");
-    console.log("📊 Reports state:", reports);
-    console.log("📏 Reports length:", reports.length);
-    console.log("📋 Reports type:", typeof reports);
-    console.log("🔍 Is array?", Array.isArray(reports));
-    
     if (!Array.isArray(reports)) {
       console.log("❌ Reports is not an array:", reports);
       return [];
     }
     
     if (reports.length === 0) {
-      console.log("ℹ️ No reports available to process");
       return [];
     }
     
     console.log("✅ Processing reports:", reports.length, "items");
     
-    const processed = reports.map((item, index) => {
-      console.log(`📝 Processing item ${index}:`, item);
-      
+    return reports.map((item) => {
       // Handle missing or invalid data gracefully
       const score = Number(item.score) || 0;
       const totalMarks = Number(item.totalMarks) || Number(item.total_marks) || 1;
@@ -212,7 +203,7 @@ function ExamFailureDashboard() {
         ? Number(item.percentage) 
         : totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
       
-      const processedItem = {
+      return {
         ...item,
         id: item.id || Math.random().toString(36).substr(2, 9),
         percentage,
@@ -223,50 +214,31 @@ function ExamFailureDashboard() {
         score,
         totalMarks,
       };
-      
-      console.log(`✅ Processed item ${index}:`, processedItem);
-      return processedItem;
     });
-    
-    console.log("🎯 Final processed reports:", processed.length, "items");
-    return processed;
   }, [reports]);
 
   const periodReports = useMemo(() => {
-    console.log("🔍 Filtering for period:", activePeriod);
-    
     if (processedReports.length === 0) {
-      console.log("❌ No processed reports available for filtering");
       return [];
     }
-    
-    console.log("📊 Available exams:", processedReports.map(r => ({ id: r.id, title: r.examTitle, date: r.examDate })));
     
     const filtered = processedReports.filter((item) => {
       const title = (item.examTitle || "").toLowerCase();
       const examDate = new Date(item.examDate);
       
-      // Get current date for date-based filtering
-      const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
       // Check if it's a daily exam (by title)
       const isDaily = title.includes("daily") || title.includes("day");
       
-      // Check if it's a weekly exam (by title or date, excluding daily)
+      // Check if it's a weekly exam (by title)
       const isWeekly = (title.includes("weekly") || title.includes("week")) && !isDaily;
       
-      // Check if it's a monthly exam (by title or date, excluding daily/weekly)
+      // Check if it's a monthly exam (by title)
       const isMonthly = (title.includes("monthly") || title.includes("month")) && !isDaily && !isWeekly;
-      
-      console.log(`📋 Item ${item.id}: "${item.examTitle}" - Daily: ${isDaily}, Weekly: ${isWeekly}, Monthly: ${isMonthly}`);
       
       if (activePeriod === "daily") {
         return isDaily;
       }
       if (activePeriod === "weekly") {
-        // Show ONLY weekly exams, not daily exams
         return isWeekly;
       }
       if (activePeriod === "monthly") {
@@ -277,7 +249,6 @@ function ExamFailureDashboard() {
       return true;
     });
     
-    console.log("✅ Filtered results:", filtered.length, "items for", activePeriod);
     return filtered;
   }, [processedReports, activePeriod]);
 
@@ -372,17 +343,17 @@ function ExamFailureDashboard() {
       doc.text(`Generated: ${timestamp}`, 14, 28);
       
       doc.setFontSize(11);
-      doc.text(`Scope: ${activePeriod === "daily" ? "Daily Exam" : activePeriod === "weekly" ? "Weekly Exam" : "Monthly Exam"}`, 14, 36);
-      doc.text(`Filter: ${activeFilter === "cheated" ? "Cheated" : activeFilter === "low-score" ? "Low score" : "Failed"}`, 14, 42);
-      doc.text(`Records: ${filteredReports.length}`, 14, 48);
+      doc.text(`Scope: ${activePeriod === "all" ? "All Exams" : activePeriod === "daily" ? "Daily Exam" : activePeriod === "weekly" ? "Weekly Exam" : "Monthly Exam"}`, 14, 30);
+      doc.text(`Filter: ${activeFilter === "cheated" ? "Cheated" : activeFilter === "low-score" ? "Low score" : "Failed"}`, 14, 36);
+      doc.text(`Records: ${filteredReports.length}`, 14, 42);
 
       doc.setFontSize(12);
-      doc.text("Summary", 14, 60);
+      doc.text("Summary", 14, 54);
       doc.setFontSize(10);
-      doc.text(`Failed: ${summary.failed}`, 14, 68);
-      doc.text(`Cheated: ${summary.cheated}`, 14, 75);
-      doc.text(`Low score: ${summary.lowScore}`, 14, 82);
-      doc.text(`Total ${activePeriod === "daily" ? "daily" : activePeriod === "weekly" ? "weekly" : "monthly"} exams: ${summary.total}`, 14, 89);
+      doc.text(`Failed: ${summary.failed}`, 14, 62);
+      doc.text(`Cheated: ${summary.cheated}`, 14, 69);
+      doc.text(`Low score: ${summary.lowScore}`, 14, 76);
+      doc.text(`Total ${activePeriod === "all" ? "all" : activePeriod === "daily" ? "daily" : activePeriod === "weekly" ? "weekly" : "monthly"} exams: ${summary.total}`, 14, 83);
 
       let y = 101;
       doc.setFontSize(11);
@@ -480,6 +451,13 @@ function ExamFailureDashboard() {
           <div className="d-flex flex-wrap gap-2 align-items-center">
             <button
               type="button"
+              className={`btn btn-sm ${activePeriod === "all" ? "btn-primary" : "btn-outline-primary"}`}
+              onClick={() => setActivePeriod("all")}
+            >
+              Show All
+            </button>
+            <button
+              type="button"
               className={`btn btn-sm ${activePeriod === "daily" ? "btn-primary" : "btn-outline-primary"}`}
               onClick={() => setActivePeriod("daily")}
             >
@@ -518,7 +496,8 @@ function ExamFailureDashboard() {
             <div className="border rounded-4 p-3 h-100">
               <small className="text-uppercase text-muted">Scope</small>
               <h5 className="mt-2 mb-0">
-                {activePeriod === "daily" ? "Daily Exam" : 
+                {activePeriod === "all" ? "All Exams" : 
+                 activePeriod === "daily" ? "Daily Exam" : 
                  activePeriod === "weekly" ? "Weekly Exam" : 
                  "Monthly Exam"}
               </h5>

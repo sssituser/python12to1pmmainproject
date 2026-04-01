@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa";
 
 function Register() {
   const navigate = useNavigate();
@@ -89,7 +89,7 @@ function Register() {
       {/* 🔙 BACK BUTTON */}
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-6 left-6 flex items-center gap-2 text-white bg-white/20 backdrop-blur px-4 py-2 rounded-lg hover:bg-white/30 transition"
+        className="absolute top-6 left-6 flex items-center gap-2 text-white bg-slate-800 px-4 py-2 rounded-lg hover:bg-slate-700 transition"
       >
         <FaArrowLeft /> Back
       </button>
@@ -106,10 +106,10 @@ function Register() {
         </p>
 
         <div className="space-y-4">
-          <div className={`p-4 rounded-lg ${step >= 1 ? "bg-white/20" : "bg-white/10"}`}>
+          <div className={`p-4 rounded-lg ${step >= 1 ? "bg-slate-800" : "bg-slate-700"}`}>
             Step 1: Basic Details
           </div>
-          <div className={`p-4 rounded-lg ${step >= 2 ? "bg-white/30" : "bg-white/10"}`}>
+          <div className={`p-4 rounded-lg ${step >= 2 ? "bg-slate-800" : "bg-slate-700"}`}>
             Step 2: Security Setup
           </div>
         </div>
@@ -118,7 +118,7 @@ function Register() {
       {/* RIGHT FORM */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-100 p-6">
 
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl">
 
           <h3 className="text-2xl font-semibold mb-6 text-gray-800">
             Create Account

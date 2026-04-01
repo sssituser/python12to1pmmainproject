@@ -95,7 +95,7 @@ function FacultyLogin() {
         </div>
 
         {/* FORM CARD */}
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 shadow-lg">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
           
           {/* USERNAME */}
           <div className="mb-5">
@@ -108,10 +108,7 @@ function FacultyLogin() {
               placeholder="Enter your faculty ID"
               value={form.username}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg
-              bg-white/10 border border-white/20
-              focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30
-              outline-none transition text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 outline-none transition text-white placeholder-gray-500"
             />
           </div>
 
@@ -127,10 +124,7 @@ function FacultyLogin() {
                 placeholder="Enter your password"
                 value={form.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-lg
-                bg-white/10 border border-white/20
-                focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30
-                outline-none transition text-white placeholder-gray-500"
+                className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 outline-none transition text-white placeholder-gray-500"
               />
               <button
                 type="button"
