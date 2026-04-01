@@ -28,7 +28,6 @@ import Playground from "./pages/Playground";
 import PlaygroundDetail from "./pages/PlaygroundDetail";
 import PlaygroundResults from "./pages/PlaygroundResults";
 import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
 import TopicVideo from "./pages/TopicVideo";
 import VideoPlayer from "./pages/VideoPlayer";
 import WeeklyExam from "./pages/WeeklyExam";
@@ -155,7 +154,6 @@ function App() {
         >
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="settings" element={<Settings />} />
           <Route path="change-password" element={<ChangePassword />} />
 
           {/* Courses */}

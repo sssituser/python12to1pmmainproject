@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, Key, LogOut, Menu, Settings, UserCircle } from "lucide-react";
+import { Bell, ChevronDown, Key, LogOut, Menu, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -212,14 +212,6 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
               >
                 Profile
-              </button>
-
-              <button
-                onClick={() => navigate("/dashboard/settings")}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
-              >
-                <Settings size={14} />
-                Settings
               </button>
 
               <button

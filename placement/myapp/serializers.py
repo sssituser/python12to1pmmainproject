@@ -187,12 +187,9 @@ from .models import AppliedJob
 
 class AppliedJobSerializer(serializers.ModelSerializer):
 
-    job = JobSerializer()   
-
-
+    job = serializers.PrimaryKeyRelatedField(queryset=Job.objects.all())
     job_details = JobSerializer(source='job', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
-
 
     class Meta:
         model = AppliedJob
