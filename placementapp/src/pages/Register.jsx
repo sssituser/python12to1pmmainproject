@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 function Register() {
   const navigate = useNavigate();
@@ -61,30 +62,30 @@ function Register() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Registration failed");
+        toast.error(data.error || data.message || "Registration failed");
         return;
       }
 
       // ROLE BASED FLOW
       if (formData.role === "Student") {
-        alert("Account created successfully.Please login.");
+        toast.success("Account created! Please login.");
         navigate("/");
       }
 
       if (formData.role === "Faculty") {
-        alert("OTP sent to your email for verification.");
         navigate("/verify-faculty", {
           state: { email: formData.email },
         });
       }
 
     } catch (err) {
-      alert("Server error ");
+      toast.error("Server error. Please try again later.");
     }
   };
 
   return (
     <div className="min-h-screen flex relative">
+      <Toaster />
 
       {/* 🔙 BACK BUTTON */}
       <button

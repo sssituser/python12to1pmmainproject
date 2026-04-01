@@ -43,23 +43,22 @@ def login(request):
 
     print(f"DEBUG LOGIN: username={username}, password={password}")
 
-    user = User.objects.filter(username=username).first()
+    user = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
     if user:
-        print(f"DEBUG: User found: {user.username}, role: {user.role}")
+        if not user.is_active:
+            print(f"DEBUG: Account inactive for {user.username}")
+            role_msg = "Contact faculty" if user.role == 'student' else "Contact admin"
+            return Response({"detail": f"Account is inactive. {role_msg} to reactivate."}, status=403)
 
         if user.role == 'student':
             cutoff = timezone.now() - timedelta(days=30)
             last_activity = user.last_login or user.date_joined
-
-            if not user.is_active:
-                print("DEBUG: Student account inactive")
-                return Response({"detail": "Account is inactive. Contact faculty to reactivate."}, status=403)
-
+            
             if last_activity and last_activity < cutoff:
                 user.is_active = False
                 user.save(update_fields=['is_active'])
-                print("DEBUG: Student locked due to inactivity")
+                print(f"DEBUG: Student {user.username} locked due to inactivity")
                 return Response({"detail": "Account locked after one month of inactivity. Contact faculty."}, status=403)
 
         password_valid = user.check_password(password)
@@ -168,6 +167,11 @@ def verify_otp(request):
         user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
         if not user:
             return Response({"error": "Invalid OTP"}, status=400)
+        # ✅ ACTIVATE USER ON SUCCESSFUL OTP
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+
         tokens = get_tokens(user)
         return Response({
             **tokens,
@@ -242,28 +246,60 @@ def register(request):
     username = request.data.get("username")
     password = request.data.get("password")
     email = request.data.get("email", "")
-    role = request.data.get("role", "student")
+    role = request.data.get("role", "student").strip().lower()
 
     print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}")
 
     if not username or not password:
-        print("DEBUG: Missing username or password")
         return Response({"error": "Username and password required"}, status=400)
 
     if User.objects.filter(username=username).exists():
-        print("DEBUG: Username already exists")
         return Response({"error": "Username already exists"}, status=400)
+
+    # For Faculty, we might want to mark them as inactive until verified
+    is_active = False if role == 'faculty' else True
 
     user = User.objects.create_user(
         username=username,
         password=password,
-        email=email
+        email=email,
+        is_active=is_active
     )
     user.role = role
     user.save()
 
-    tokens = get_tokens(user)
+    if role == 'faculty':
+        # Generate & Send OTP for verification
+        otp = str(random.randint(100000, 999999))
+        OTP.objects.create(username=username, email=email, otp=otp)
+        
+        try:
+            subject = f"Verify Your Faculty Account - {settings.PLATFORM_NAME}"
+            message = f"Hello {username},\n\nThank you for registering as faculty. To activate your account, please use the following OTP:\n\nOTP: {otp}\n\nDo not share this code."
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            print(f"DEBUG: Registration OTP {otp} sent to {email}")
+            return Response({
+                "message": "Registration successful. Please verify your OTP to activate your account.",
+                "user": {"username": username, "role": role},
+                "verification_required": True
+            })
+        except Exception as e:
+            print(f"DEBUG: Failed to send registration email: {e}")
+            # Even if email fails, account is created (but inactive)
+            return Response({
+                "message": "Account created, but failed to send verification email. Please contact admin.",
+                "verification_required": True
+            }, status=201)
 
+    # Student flow (immediate login)
+    tokens = get_tokens(user)
     return Response({
         **tokens,
         "user": {
