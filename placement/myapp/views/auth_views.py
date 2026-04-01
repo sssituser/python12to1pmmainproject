@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from myapp.models import OTP
 from myapp.email_utils import send_login_email
@@ -169,6 +169,42 @@ def reset_password(request):
         return Response({"success": True})
 
     return Response({"error": "User not found"}, status=404)
+
+
+@api_view(['POST', 'PUT'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    
+    # 🔍 Extract fields
+    current_password = request.data.get("current_password") or request.data.get("old_password")
+    new_password = request.data.get("new_password")
+    confirm_password = request.data.get("confirm_password")
+
+    print(f"DEBUG CHANGE_PASSWORD: user={user.username}")
+
+    if not current_password or not new_password or not confirm_password:
+        return Response({"detail": "Missing required fields"}, status=400)
+
+    # 🔐 Verify old password
+    if not user.check_password(current_password):
+        print(f"DEBUG: Incorrect current password for user {user.username}")
+        return Response({"detail": "Current password is incorrect"}, status=400)
+
+    # 🔗 Verify match
+    if new_password != confirm_password:
+        return Response({"detail": "New passwords don't match"}, status=400)
+
+    # 📏 Length check (8 chars min as per frontend)
+    if len(new_password) < 8:
+        return Response({"detail": "Password must be at least 8 characters long"}, status=400)
+
+    # 💾 Update & Save
+    user.set_password(new_password)
+    user.save()
+    
+    print(f"DEBUG: Password changed for user {user.username}")
+    return Response({"success": True, "message": "Password changed successfully!"})
 
 
 # 📝 REGISTER

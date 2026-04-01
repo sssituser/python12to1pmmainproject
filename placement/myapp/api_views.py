@@ -307,9 +307,12 @@ def exam_reports_api(request):
     GET: Get all exam reports for a user or all users (daily reports)
     """
     username = request.GET.get('username')
-    exam_type = request.GET.get('exam_type', 'daily')
+    exam_type = request.GET.get('exam_type', 'all')
     
-    attempts = ExamAttempt.objects.filter(exam_type=exam_type)
+    if exam_type == 'all':
+        attempts = ExamAttempt.objects.all()
+    else:
+        attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
     if username:
         attempts = attempts.filter(user__username__iexact=username)
@@ -343,18 +346,36 @@ def exam_reports_api(request):
             if suspicious_detected:
                 final_status = 'Cheated'
 
+        failure_reason = "Performance was satisfactory."
+        recommendations = "Keep up the good work!"
+        
+        if final_status == 'Fail':
+            failure_reason = f"Scored {percentage}%, which is below the 50% passing threshold. Student may need to review fundamental concepts."
+            recommendations = "Assign remedial exercises and recommend a one-on-one doubt clearing session."
+        elif final_status == 'Cheated':
+            if suspicious_detected:
+                failure_reason = "AI Proctoring system flagged suspicious behavior via webcam (person mismatch, tab switching, or auxiliary help detected)."
+                recommendations = "Manual review of proctoring screenshots required. Consider 0 marks or a proctored re-exam under strict supervision."
+            else:
+                failure_reason = "Academic integrity violation flagged manually or via session behavior."
+                recommendations = "Schedule a meeting to discuss academic integrity and consider a proctored retake."
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
                 'username': attempt.user.username if attempt.user else 'Unknown',
-                'randomId': attempt.random_id or 'N/A'
+                'randomId': attempt.random_id or 'N/A',
+                'email': attempt.user.email if attempt.user else ''
             },
             'examTitle': attempt.exam_title,
+            'examType': attempt.exam_type,
             'score': attempt.marks_obtained,
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
             'totalQuestions': attempt.total_questions,
             'status': final_status,
+            'failureReason': failure_reason,
+            'recommendations': recommendations,
             'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
             'timeTaken': attempt.time_taken,
             'percentage': percentage

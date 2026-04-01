@@ -617,6 +617,8 @@ function ExamFailureDashboard() {
 }
 
 function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
+  const [showAll, setShowAll] = useState(false);
+
   if (!reports || reports.length === 0) {
     return <div className="text-center py-4 text-muted small">{emptyMessage}</div>;
   }
@@ -634,7 +636,7 @@ function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
           </tr>
         </thead>
         <tbody>
-          {reports.slice(0, 5).map((report) => (
+          {(showAll ? reports : reports.slice(0, 5)).map((report) => (
             <tr
               key={report.id}
               className={selectedId === report.id ? "table-primary" : ""}
@@ -660,7 +662,16 @@ function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
       </table>
       {reports.length > 5 && (
         <div className="text-center mt-2">
-          <small className="text-muted">+ {reports.length - 5} more records</small>
+          <button 
+            type="button"
+            className="btn btn-link btn-sm text-decoration-none p-0" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAll(!showAll);
+            }}
+          >
+            {showAll ? "Show Less" : `+ ${reports.length - 5} more records`}
+          </button>
         </div>
       )}
     </div>

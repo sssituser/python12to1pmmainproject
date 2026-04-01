@@ -36,6 +36,7 @@ urlpatterns = [
     path('jwt/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("reset-password/", reset_password),
+    path("change-password/", change_password),
     path("send_otp/", Send_OTP.as_view()),
     path("verify_register/", Verify_OTP_Register.as_view()),
     path('faculty/student/<int:pk>/active/', api_views.toggle_student_active),
