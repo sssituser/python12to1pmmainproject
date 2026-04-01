@@ -112,7 +112,7 @@ function MonthlyExamReports() {
 
         {exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {exams.map((exam) => {
+            {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
               const value = progress[exam.id] || 0;
@@ -124,8 +124,8 @@ function MonthlyExamReports() {
                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-b-4 border-b-purple-500"
                 >
                   <div className="w-full mb-4 text-center">
-                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={exam.examTitle}>
-                      {exam.examTitle || `Monthly Exam #${exam.id}`}
+                    <h3 className="text-lg font-bold text-gray-800 truncate px-2">
+                       {`Monthly Exam ${exams.length - index}`}
                     </h3>
                     <p className="text-xs text-purple-600 font-bold tracking-wider uppercase mt-1">
                        Monthly Assessment
@@ -160,7 +160,7 @@ function MonthlyExamReports() {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
+                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Monthly' } })}
                     className="w-full py-3 bg-purple-50 text-purple-700 rounded-xl font-bold text-sm hover:bg-purple-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
                     View Result Analysis 

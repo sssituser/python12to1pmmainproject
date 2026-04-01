@@ -9,6 +9,7 @@ from .email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
 from django.utils import timezone
 import json
+from django.db.models import Q
 
 import requests
 import base64
@@ -687,12 +688,8 @@ def weekly_exam_reports_api(request):
     from django.utils import timezone
 
     username = request.GET.get('username')
-    now = timezone.now()
-    start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
-
     attempts = ExamAttempt.objects.filter(
-        exam_date__gte=start_of_week,
-        exam_type='weekly'
+        Q(exam_type='weekly') | Q(exam_title__icontains='weekly')
     )
     
     if username:
@@ -736,12 +733,8 @@ def monthly_exam_reports_api(request):
     from django.utils import timezone
 
     username = request.GET.get('username')
-    now = timezone.now()
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
     attempts = ExamAttempt.objects.filter(
-        exam_date__gte=start_of_month,
-        exam_type='monthly'
+        Q(exam_type='monthly') | Q(exam_title__icontains='monthly')
     )
     
     if username:

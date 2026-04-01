@@ -112,7 +112,7 @@ function WeeklyExamReports() {
 
         {exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {exams.map((exam) => {
+            {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
               const value = progress[exam.id] || 0;
@@ -124,8 +124,8 @@ function WeeklyExamReports() {
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="w-full mb-4 text-center">
-                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={exam.examTitle}>
-                      {exam.examTitle || `Weekly Assessment #${exam.id}`}
+                    <h3 className="text-lg font-bold text-gray-800 truncate px-2">
+                       {`Weekly Exam ${exams.length - index}`}
                     </h3>
                     <p className="text-xs text-green-600 font-bold tracking-wider uppercase mt-1">
                        Weekly Exam
@@ -160,7 +160,7 @@ function WeeklyExamReports() {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`)}
+                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Weekly' } })}
                     className="w-full py-3 bg-gray-50 text-green-600 rounded-xl font-bold text-sm hover:bg-green-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
                     View Report 

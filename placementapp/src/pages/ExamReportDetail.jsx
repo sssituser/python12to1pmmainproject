@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 function ExamReportDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,7 +64,9 @@ function ExamReportDetail() {
       {/* Summary Card */}
       <div className="card shadow-sm border-0 mb-4">
         <div className={`card-header fw-bold fs-5 text-white ${passed ? "bg-success" : "bg-danger"}`}>
-          {report.exam_title || "Exam Report"} &nbsp;—&nbsp; {passed ? "✅ PASS" : "❌ FAIL"}
+          {location.state?.examNumber 
+            ? `${location.state.examType} Exam ${location.state.examNumber}` 
+            : (report.exam_title || "Exam Report")} &nbsp;—&nbsp; {passed ? "✅ PASS" : "❌ FAIL"}
         </div>
         <div className="card-body">
           <div className="row text-center">
