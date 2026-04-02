@@ -83,17 +83,26 @@ function PlaygroundResults() {
     navigate("/dashboard");
   };
 
-  // VIEW DETAILS
-  const handleViewDetails = (result,index) => {
+  const handleViewDetails = (result, index) => {
+    // Determine the chronological number for this specific result
+    const title = result.examTitle || "";
+    const type = (result.examType || result.exam_type || "").toLowerCase();
+    let currentType = "Daily";
+    if (type.includes("weekly") || title.toLowerCase().includes("weekly")) currentType = "Weekly";
+    else if (type.includes("monthly") || title.toLowerCase().includes("monthly")) currentType = "Monthly";
 
-    // store selected result
-    localStorage.setItem(
-      "selectedExamResult",
-      JSON.stringify(result)
-    );
-    navigate(`/dashboard/playground/detailed-results/${index}`);
+    const occurrences = allResults.slice(index).filter(r => {
+        const rTitle = r.examTitle || "";
+        const rType = (r.examType || r.exam_type || "").toLowerCase();
+        if (currentType === "Weekly") return rType.includes("weekly") || rTitle.toLowerCase().includes("weekly");
+        if (currentType === "Monthly") return rType.includes("monthly") || rTitle.toLowerCase().includes("monthly");
+        return (!rType.includes("weekly") && !rTitle.toLowerCase().includes("weekly") && !rType.includes("monthly") && !rTitle.toLowerCase().includes("monthly"));
+    }).length;
 
-    
+    localStorage.setItem("selectedExamResult", JSON.stringify(result));
+    navigate(`/dashboard/playground/detailed-results/${index}`, { 
+        state: { examNumber: occurrences, examType: currentType } 
+    });
   };
 
   // DOWNLOAD RESULT
@@ -266,8 +275,23 @@ function PlaygroundResults() {
                     {result.user?.randomId || "N/A"}
                   </td> */}
                   <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
-                    {result.examTitle ||
-                      "Python Programming"}
+                    {(() => {
+                      const title = result.examTitle || "";
+                      const type = (result.examType || result.exam_type || "").toLowerCase();
+                      let currentType = "Daily";
+                      if (type.includes("weekly") || title.toLowerCase().includes("weekly")) currentType = "Weekly";
+                      else if (type.includes("monthly") || title.toLowerCase().includes("monthly")) currentType = "Monthly";
+
+                      const occurrences = allResults.slice(index).filter(r => {
+                          const rTitle = r.examTitle || "";
+                          const rType = (r.examType || r.exam_type || "").toLowerCase();
+                          if (currentType === "Weekly") return rType.includes("weekly") || rTitle.toLowerCase().includes("weekly");
+                          if (currentType === "Monthly") return rType.includes("monthly") || rTitle.toLowerCase().includes("monthly");
+                          return (!rType.includes("weekly") && !rTitle.toLowerCase().includes("weekly") && !rType.includes("monthly") && !rTitle.toLowerCase().includes("monthly"));
+                      }).length;
+
+                      return `${currentType} Exam ${occurrences}`;
+                    })()}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                     {new Date(

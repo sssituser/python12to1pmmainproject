@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faDownload } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from 'jspdf';
@@ -8,6 +8,7 @@ function DetailedResults() {
 
   const navigate = useNavigate();
   const { index } = useParams();
+  const location = useLocation();
 
   const [result, setResult] = useState(null);
 
@@ -135,7 +136,7 @@ function DetailedResults() {
           <div className="p-4 sm:p-6">
             <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-8 h-[2px] bg-indigo-500"></span>
-              Student Assessment Summary
+              {location.state?.examNumber ? `${location.state.examType} Exam ${location.state.examNumber}` : "Student Assessment Summary"}
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -143,6 +144,12 @@ function DetailedResults() {
                 <p className="text-gray-400 text-sm font-medium">Student Name</p>
                 <p className="text-xl font-black text-gray-900 truncate">
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
+                </p>
+              </div> 
+              <div className="space-y-1">
+                <p className="text-gray-400 text-sm font-medium">Exam</p>
+                <p className="text-xl font-black text-gray-900 truncate">
+                  {location.state?.examNumber ? `${location.state.examType} Exam ${location.state.examNumber}` : (result.examTitle || "Assessment")}
                 </p>
               </div> 
               <div className="space-y-1 text-right md:text-left">

@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
-from .serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
-from .email_utils import send_exam_confirmation_email
+from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
+from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
+from ..email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
 from django.utils import timezone
 import json
+from django.db.models import Q
+from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
 
 import requests
 import base64
@@ -20,7 +22,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import (
+from ..models import (
     AppliedJob,
     CodeSnippet,
     CodeTemplate,
@@ -31,7 +33,7 @@ from .models import (
     PythonQuestion,
     User,
 )
-from .serializers import (
+from ..serializers import (
     CodeSnippetSerializer,
     CodeTemplateSerializer,
     ExamAttemptSerializer,
@@ -321,28 +323,42 @@ def exam_reports_api(request):
     
     formatted_data = []
     for attempt in attempts:
+        # Calculate attempt number based on user history of the same type
+        # count how many attempts of this type this user took on or before this date
+        attempt_number = 1
+        if attempt.user:
+            attempt_number = ExamAttempt.objects.filter(
+                user=attempt.user,
+                exam_type=attempt.exam_type,
+                exam_date__lte=attempt.exam_date
+            ).count()
+
         raw_status = str(attempt.status or '').strip()
         normalized_status = raw_status.lower()
         percentage = round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks else 0
         final_status = raw_status
-
-        if 'cheat' in normalized_status or 'suspicious' in normalized_status:
+        # Priority: If it's already cheated or suspicious in DB, keep it
+        if 'cheat' in normalized_status or 'suspicious' in normalized_status or 'violated' in normalized_status:
             final_status = 'Cheated'
-        elif normalized_status in ['pass', 'passed', 'success']:
+        elif percentage >= 50:
             final_status = 'Pass'
-        elif normalized_status in ['fail', 'failed']:
-            final_status = 'Fail'
-        elif normalized_status in ['completed', 'incomplete', 'pending', '']:
-            final_status = 'Pass' if percentage >= 50 else 'Fail'
         else:
-            final_status = raw_status or ('Pass' if percentage >= 50 else 'Fail')
+            final_status = 'Fail'
 
         suspicious_detected = False
         if attempt.user and attempt.user.email:
             sessions = ExamSession.objects.filter(student_email__iexact=attempt.user.email)
-            if attempt.start_time:
+            if attempt.start_time and attempt.end_time:
+                # Only check snapshots that were taken precisely during this exam attempt
+                suspicious_detected = WebcamSnapshot.objects.filter(
+                    session__in=sessions, 
+                    is_suspicious=True,
+                    timestamp__gte=attempt.start_time,
+                    timestamp__lte=attempt.end_time
+                ).exists()
+            elif attempt.start_time:
                 sessions = sessions.filter(start_time__date=attempt.start_time.date())
-            suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
+                suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
             if suspicious_detected:
                 final_status = 'Cheated'
 
@@ -369,6 +385,7 @@ def exam_reports_api(request):
             },
             'examTitle': attempt.exam_title,
             'examType': attempt.exam_type,
+            'attemptNumber': attempt_number,  # NEW FIELD
             'score': attempt.marks_obtained,
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
@@ -466,29 +483,38 @@ def save_exam_report_api(request):
         if not random_id_val and isinstance(data.get('user'), dict):
             random_id_val = data['user'].get('randomId') or ''
 
+        # Priority: Check if explicitly flagged as cheated/violated first
+        raw_status = str(data.get('status', '')).strip()
+        lower_status = raw_status.lower()
+        
         # pass/fail
         passed_input = data.get('passed')
-        if passed_input is True:
+        
+        if 'cheat' in lower_status or 'violated' in lower_status:
+            final_status = 'Cheated'
+            # Maybe include the specific reason in status if available
+            reason = data.get('reason') or data.get('submissionReason')
+            if reason:
+                # Truncate if too long, but include it
+                final_status = f"Cheated: {reason}"[:20] 
+                # Actually, better to keep it just 'Cheated' for internal logic 
+                # but maybe store the detailed reason in the status string
+                final_status = f"Cheated"
+        elif passed_input is True:
             final_status = 'Pass'
         elif passed_input is False:
             final_status = 'Fail'
         else:
-            raw_status = str(data.get('status', '')).strip()
-            lower_status = raw_status.lower()
-            if 'cheat' in lower_status or 'suspicious' in lower_status:
-                final_status = 'Cheated'
-            elif lower_status in ['pass', 'passed', 'success']:
+            marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
+            total_marks = data.get('total_marks') or data.get('totalMarks') or 40
+            
+            # Calculate percentage for pass/fail decision
+            percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
+            
+            if percentage >= 50:
                 final_status = 'Pass'
-            elif lower_status in ['fail', 'failed']:
-                final_status = 'Fail'
             else:
-                marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-                total_marks = data.get('total_marks') or data.get('totalMarks') or 0
-                if total_marks:
-                    percentage = (float(marks_obtained) / float(total_marks)) * 100
-                    final_status = 'Pass' if percentage >= 50 else 'Fail'
-                else:
-                    final_status = raw_status or 'Completed'
+                final_status = 'Fail'
 
         attempt = ExamAttempt.objects.create(
             user=user,
@@ -687,12 +713,8 @@ def weekly_exam_reports_api(request):
     from django.utils import timezone
 
     username = request.GET.get('username')
-    now = timezone.now()
-    start_of_week = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=now.weekday())
-
     attempts = ExamAttempt.objects.filter(
-        exam_date__gte=start_of_week,
-        exam_type='weekly'
+        Q(exam_type='weekly') | Q(exam_title__icontains='weekly')
     )
     
     if username:
@@ -736,12 +758,8 @@ def monthly_exam_reports_api(request):
     from django.utils import timezone
 
     username = request.GET.get('username')
-    now = timezone.now()
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
     attempts = ExamAttempt.objects.filter(
-        exam_date__gte=start_of_month,
-        exam_type='monthly'
+        Q(exam_type='monthly') | Q(exam_title__icontains='monthly')
     )
     
     if username:
@@ -828,57 +846,61 @@ def playground_questions_api(request):
     questions_pool = [
         {"id": 1, "question": "What is the output of print(2 ** 3)?", "options": ["6", "8", "9", "12"], "correct": 1},
         {"id": 2, "question": "Which keyword is used to define a function in Python?", "options": ["func", "def", "function", "define"], "correct": 1},
-        {"id": 3, "question": "What is the correct file extension for Python files?", "options": [".py", ".python", ".pt", ".pyth"], "correct": 0},
+        {"id": 3, "question": "What is the correct file extension for Python files?", "options": [".py", ".python", ".pt", ".pyin"], "correct": 0},
         {"id": 4, "question": "Which of the following is a mutable data type in Python?", "options": ["Tuple", "String", "List", "Integer"], "correct": 2},
         {"id": 5, "question": "What does len() function do in Python?", "options": ["Returns the length of an object", "Deletes an object", "Creates an object", "Copies an object"], "correct": 0},
         {"id": 6, "question": "Which operator is used for exponentiation in Python?", "options": ["^", "**", "*", "^^"], "correct": 1},
         {"id": 7, "question": "What is the output of print(type('Hello'))?", "options": ["<class 'int'>", "<class 'str'>", "<class 'string'>", "<class 'char'>"], "correct": 1},
         {"id": 8, "question": "Which method is used to add an element to the end of a list?", "options": ["add()", "append()", "insert()", "extend()"], "correct": 1},
-        {"id": 9, "question": "What is the correct way to create a dictionary in Python?", "options": ["{}", "[]", "()", "||"], "correct": 0},
-        {"id": 10, "question": "Which statement is used to exit a loop in Python?", "options": ["exit", "break", "continue", "return"], "correct": 1},
+        {"id": 9, "question": "What is the correct way to create a dictionary in Python?", "options": ["{key: value}", "[]", "()", "||"], "correct": 0},
+        {"id": 10, "question": "Which statement is used to properly exit a loop in Python?", "options": ["exit", "break", "continue", "return"], "correct": 1},
         {"id": 11, "question": "What is the output of print(10 // 3)?", "options": ["3.33", "3", "4", "Error"], "correct": 1},
         {"id": 12, "question": "Which function is used to get input from user in Python 3?", "options": ["input()", "raw_input()", "scanf()", "cin()"], "correct": 0},
-        {"id": 13, "question": "What is the default value of a parameter if not specified?", "options": ["0", "None", "null", "undefined"], "correct": 1},
-        {"id": 14, "question": "Which module is used for mathematical operations in Python?", "options": ["math", "cmath", "maths", "calc"], "correct": 0},
-        {"id": 15, "question": "What is the output of print(bool(0))?", "options": ["True", "False", "0", "Error"], "correct": 1},
+        {"id": 13, "question": "Which operator is used to overload the addition operation in a class?", "options": ["__plus__", "__add__", "__sum__", "__append__"], "correct": 1},
+        {"id": 14, "question": "Which module is used for complex mathematical operations in Python?", "options": ["math", "cmath", "maths", "calc"], "correct": 1},
+        {"id": 15, "question": "What is the output of print(bool(0))?", "options": ["True", "False", "0", "1"], "correct": 1},
         {"id": 16, "question": "Which method removes whitespace from both ends of a string?", "options": ["trim()", "strip()", "remove()", "clean()"], "correct": 1},
-        {"id": 17, "question": "What is the output of print(range(5))?", "options": ["[0,1,2,3,4]", "range(0,5)", "0,1,2,3,4", "Error"], "correct": 1},
+        {"id": 17, "question": "What is the output of list(range(2, 6))?", "options": ["[2, 3, 4, 5, 6]", "[2, 3, 4, 5]", "[1, 2, 3, 4, 5]", "Error"], "correct": 1},
         {"id": 18, "question": "Which keyword is used to handle exceptions in Python?", "options": ["try", "except", "catch", "handle"], "correct": 1},
-        {"id": 19, "question": "What is the output of print('Hello' * 3)?", "options": ["HelloHelloHello", "Hello 3", "Hello3", "Error"], "correct": 0},
+        {"id": 19, "question": "What is a python lambda function?", "options": ["A multiline function", "An anonymous single-expression function", "A class definition", "A built-in loop"], "correct": 1},
         {"id": 20, "question": "Which function is used to open a file in Python?", "options": ["open()", "file()", "read()", "load()"], "correct": 0},
         {"id": 21, "question": "What is the purpose of the __init__ method in Python?", "options": ["Constructor", "Destructor", "Iterator", "Generator"], "correct": 0},
-        {"id": 22, "question": "Which of the following is not a valid Python data type?", "options": ["int", "float", "char", "str"], "correct": 2},
-        {"id": 23, "question": "What does the 'self' parameter represent in Python methods?", "options": ["Current instance", "Class name", "Method name", "Parent class"], "correct": 0},
-        {"id": 24, "question": "Which method is used to find the index of an element in a list?", "options": ["index()", "find()", "search()", "locate()"], "correct": 0},
-        {"id": 25, "question": "What is the output of print(2 + 3 * 2)?", "options": ["10", "12", "8", "7"], "correct": 0},
-        {"id": 26, "question": "Which keyword is used to define a class in Python?", "options": ["class", "Class", "def", "define"], "correct": 0},
-        {"id": 27, "question": "What is the output of print(len('Python'))?", "options": ["5", "6", "7", "Error"], "correct": 1},
-        {"id": 28, "question": "Which method is used to sort a list in Python?", "options": ["sort()", "sorted()", "order()", "arrange()"], "correct": 0},
-        {"id": 29, "question": "What is the output of print(3 ** 2 ** 1)?", "options": ["9", "27", "81", "3"], "correct": 0},
+        {"id": 22, "question": "How do you create a generator in Python?", "options": ["Using the yield keyword", "Using the return keyword", "Using generator()", "Using class()"], "correct": 0},
+        {"id": 23, "question": "What does the 'self' parameter represent in Python methods?", "options": ["Current instance of the class", "Class name", "Method name", "Parent class"], "correct": 0},
+        {"id": 24, "question": "How do you achieve multi-threading in Python?", "options": ["Using the threading module", "Using the multithread library", "Using parallel loops", "Threads are not supported"], "correct": 0},
+        {"id": 25, "question": "What is the output of [x for x in range(3)]?", "options": ["[0, 1, 2]", "(0, 1, 2)", "{0, 1, 2}", "Generates an error"], "correct": 0},
+        {"id": 26, "question": "Which keyword is used to derive a class from another class in Python?", "options": ["inherit", "extends", "Parentheses () in class definition", "super"], "correct": 2},
+        {"id": 27, "question": "What is a Python decorator?", "options": ["A tool to style UI", "A function that modifies the behavior of another function", "An inheritance concept", "A string formatting tool"], "correct": 1},
+        {"id": 28, "question": "Which method is used to sort a list in place in Python?", "options": ["sort()", "sorted()", "order()", "arrange()"], "correct": 0},
+        {"id": 29, "question": "What does the GIL stand for in Python?", "options": ["General Interpreter Lock", "Global Interpreter Lock", "Graphic Instruction Layer", "Guaranteed Iteration Loop"], "correct": 1},
         {"id": 30, "question": "Which function is used to convert a string to uppercase?", "options": ["upper()", "uppercase()", "toUpper()", "toUpperCase()"], "correct": 0},
         {"id": 31, "question": "What is the output of print(bool([]))?", "options": ["True", "False", "[]", "Error"], "correct": 1},
-        {"id": 32, "question": "Which operator is used for floor division in Python?", "options": ["//", "/", "%", "%%"], "correct": 0},
-        {"id": 33, "question": "What is the output of print(type(5))?", "options": ["<class 'int'>", "<class 'float'>", "<class 'number'>", "<class 'digit'>"], "correct": 0},
-        {"id": 34, "question": "Which method is used to remove the last element from a list?", "options": ["pop()", "remove()", "delete()", "del()"], "correct": 0},
-        {"id": 35, "question": "What is the output of print('Hello'[-1])?", "options": ["o", "H", "Error", "Hello"], "correct": 0},
+        {"id": 32, "question": "Which tool is commonly used to install Python packages?", "options": ["pip", "npm", "composer", "apt"], "correct": 0},
+        {"id": 33, "question": "Which sequence correctly defines a try-except-finally block?", "options": ["try, finally, except", "try, except, finally", "except, try, finally", "finally, try, except"], "correct": 1},
+        {"id": 34, "question": "What is the primary difference between deepcopy and copy?", "options": ["deepcopy copies nested objects, copy only copies surface references", "copy is faster", "deepcopy modifies the original", "They are identical"], "correct": 0},
+        {"id": 35, "question": "What does the zip() function do?", "options": ["Compresses a file", "Combines multiple iterables element by element", "Sorts a list", "Extracts strings"], "correct": 1},
         {"id": 36, "question": "Which keyword is used to import modules in Python?", "options": ["import", "include", "require", "using"], "correct": 0},
-        {"id": 37, "question": "What is the output of print(list((1,2,3)))?", "options": ["[1, 2, 3]", "(1, 2, 3)", "Error", "[1, 2, 3, ]"], "correct": 0},
-        {"id": 38, "question": "Which method is used to join strings in a list?", "options": ["join()", "concat()", "merge()", "combine()"], "correct": 0},
-        {"id": 39, "question": "What is the output of print(10 % 3)?", "options": ["1", "3", "0", "10"], "correct": 0},
-        {"id": 40, "question": "Which function is used to get the type of a variable in Python?", "options": ["type()", "typeof()", "gettype()", "vartype()"], "correct": 0},
+        {"id": 37, "question": "How are keyword arguments passed to a function?", "options": ["*args", "**kwargs", "&args", "&&kwargs"], "correct": 1},
+        {"id": 38, "question": "Which built-in function returns an iterator?", "options": ["iter()", "next()", "loop()", "iterate()"], "correct": 0},
+        {"id": 39, "question": "What is the output of type(lambda x: x)?", "options": ["<class 'lambda'>", "<class 'function'>", "<class 'method'>", "<class 'def'>"], "correct": 1},
+        {"id": 40, "question": "Which module allows regular expression matching?", "options": ["regex", "re", "match", "pattern"], "correct": 1},
         {"id": 41, "question": "What is the difference between list and tuple in Python?", "options": ["List is mutable, tuple is immutable", "Tuple is mutable, list is immutable", "Both are mutable", "Both are immutable"], "correct": 0},
-        {"id": 42, "question": "Which of the following is a built-in Python function?", "options": ["print()", "printf()", "cout()", "System.out.println()"], "correct": 0},
-        {"id": 43, "question": "What is the output of print([1,2,3] + [4,5,6])?", "options": ["[1, 2, 3, 4, 5, 6]", "[1, 2, 3, [4, 5, 6]]", "Error", "[1, 2, 3] + [4, 5, 6]"], "correct": 0},
-        {"id": 44, "question": "Which method is used to copy a list in Python?", "options": ["copy()", "clone()", "duplicate()", "replicate()"], "correct": 0},
-        {"id": 45, "question": "What is the output of print(dict(zip(['a','b'],[1,2])))?", "options": ["{'a': 1, 'b': 2}", "{'a': 1, 'b': 2, }", "Error", "{'a': 1, 'b': 2}"], "correct": 0},
-        {"id": 46, "question": "Which of the following is a valid Python variable name?", "options": ["my_var", "2var", "var-name", "class"], "correct": 0},
-        {"id": 47, "question": "What is the output of print(set([1,2,2,3,3]))?", "options": ["{1, 2, 3}", "{1, 2, 2, 3, 3}", "[1, 2, 3]", "Error"], "correct": 0},
-        {"id": 48, "question": "Which method is used to add elements to a set?", "options": ["add()", "append()", "insert()", "push()"], "correct": 0},
-        {"id": 49, "question": "What is the output of print('Python'[2:5])?", "options": ["tho", "th", "hon", "hon"], "correct": 0},
-        {"id": 50, "question": "Which keyword is used to define a generator function?", "options": ["yield", "return", "generate", "gen"], "correct": 0},
+        {"id": 42, "question": "Which of the following creates a set?", "options": ["{1, 2, 3}", "[1, 2, 3]", "(1, 2, 3)", "{'a': 1}"], "correct": 0},
+        {"id": 43, "question": "What is the purpose of the 'pass' statement?", "options": ["To skip the current loop iteration", "To exit the program", "To serve as a placeholder for future code", "To ignore exceptions"], "correct": 2},
+        {"id": 44, "question": "What is a static method in Python?", "options": ["A method bound to the class and not the object of the class", "A method that cannot be overridden", "A method imported from a static library", "An alternative to __init__"], "correct": 0},
+        {"id": 45, "question": "How do you define a class method in Python?", "options": ["@staticmethod", "@classmethod", "@class", "class()"], "correct": 1},
+        {"id": 46, "question": "What is the output of the following code?\ndef foo(a, b=[]):\n    b.append(a)\n    return b\nprint(foo(1))\nprint(foo(2))", "options": ["[1] [2]", "[1] [1, 2]", "[1, 2] [1, 2]", "Error"], "correct": 1},
+        {"id": 47, "question": "What is the output of this code?\nx = [1, 2, 3]\ny = x\ny[0] = 5\nprint(x[0])", "options": ["1", "5", "3", "Error"], "correct": 1},
+        {"id": 48, "question": "What will this list comprehension produce?\nprint([x for x in range(5) if x % 2 == 0])", "options": ["[0, 2, 4]", "[1, 3]", "[0, 1, 2, 3, 4]", "[2, 4]"], "correct": 0},
+        {"id": 49, "question": "What does this code output?\nd = {'a': 1, 'b': 2}\nprint(d.get('c', 3))", "options": ["1", "2", "3", "None"], "correct": 2},
+        {"id": 50, "question": "What is the output of the following snippet?\ncount = 0\nfor i in range(3):\n    count += i\nprint(count)", "options": ["3", "6", "0", "2"], "correct": 0},
     ]
 
-    selected_questions = random.sample(questions_pool, 20)
+    theoretical_questions = questions_pool[:45]
+    practical_questions = questions_pool[45:50]
+    
+    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
+    random.shuffle(selected_questions)
     
     return Response({
         'success': True,
@@ -1058,7 +1080,7 @@ def run_code_api(request):
 from rest_framework.decorators import  permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from .models import User, Job, AppliedJob
+from ..models import User, Job, AppliedJob
 
 
 

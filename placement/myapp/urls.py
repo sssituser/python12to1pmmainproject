@@ -9,12 +9,21 @@ from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
+from .views.html_views import playground_questions_html_api
+from .views.css_views import playground_questions_css_api
+from .views.javascript_views import playground_questions_javascript_api
+from .views.bootstrap_views import playground_questions_bootstrap_api
+from .views.oracle_views import playground_questions_oracle_api
+#from .views.java_views import playground_questions_java_api
 from .views import course_views
 from .views.course_views import CourseViewSet
-from . import api_views
+from .views.python_views import *
 from .views.stats_views import *
 from .views.otp_views import *
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
+from .views import python_views
+
+
 
 
 # ROUTER
@@ -40,7 +49,7 @@ urlpatterns = [
     path("send_otp/", send_otp),
     path("verify_otp/", verify_otp),
     path("verify_register/", Verify_OTP_Register.as_view()),
-    path('faculty/student/<int:pk>/active/', api_views.toggle_student_active),
+    path('faculty/student/<int:pk>/active/', python_views.toggle_student_active),
     
 
 
@@ -73,31 +82,33 @@ urlpatterns = [
 
     # ================= PLAYGROUND =================
 
-    path('playground-questions/', api_views.playground_questions_api, name='playground-questions'),
+    path('playground-questions/', python_views.playground_questions_api, name='playground-questions'),
+    path('playground-questions/python/', python_views.playground_questions_api, name='playground-questions-python'),
+    path('playground-questions/html/', playground_questions_html_api, name='playground-questions-html'),
+    path('playground-questions/css/', playground_questions_css_api, name='playground-questions-css'),
+    path('playground-questions/javascript/', playground_questions_javascript_api, name='playground-questions-javascript'),
+    path('playground-questions/bootstrap/', playground_questions_bootstrap_api, name='playground-questions-bootstrap'),
+    path('playground-questions/oracle/', playground_questions_oracle_api, name='playground-questions-oracle'),
+    #path('playground-questions/java/', python_views.playground_questions_java_api, name='playground-questions-java'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),
-    path('execute-code-api/', api_views.execute_code_api),
-
-    # ================= JOB ROUTER =================
-    path('', include(router.urls)),
-
     # ================= EXAM REPORTS =================
-    path('all-exam-results/', api_views.exam_reports_api),
-    path('user-combined-results/', api_views.user_combined_results_api),
-    path('save-exam-report/', api_views.save_exam_report_api),
-    path('exam-report-detail/<int:pk>/', api_views.exam_report_detail_api),
-    path('leaderboard/', api_views.leaderboard_api),
-    path('weekly-exam-results/', api_views.weekly_exam_reports_api),
-    path('monthly-exam-results/', api_views.monthly_exam_reports_api),
+    path('all-exam-results/', python_views.exam_reports_api),
+    path('user-combined-results/', python_views.user_combined_results_api),
+    path('save-exam-report/', python_views.save_exam_report_api),
+    path('exam-report-detail/<int:pk>/', python_views.exam_report_detail_api),
+    path('leaderboard/', python_views.leaderboard_api),
+    path('weekly-exam-results/', python_views.weekly_exam_reports_api),
+    path('monthly-exam-results/', python_views.monthly_exam_reports_api),
     
     # DASHBOARD & STATS
-    path('dashboard-stats/', api_views.dashboard_stats_api),
-    path('student-stats/', api_views.student_stats_api),
+    path('dashboard-stats/', python_views.dashboard_stats_api),
+    path('student-stats/', python_views.student_stats_api),
     path('student/<int:id>/', student_detail),
-    path('students/', api_views.student_stats_api),
-    path('admin/create-credentials/', api_views.admin_create_credentials_api),
-    path('admin/exam-settings/', api_views.exam_settings_api, name='exam_settings'),
+    path('students/', python_views.student_stats_api),
+    path('admin/create-credentials/', python_views.admin_create_credentials_api),
+    path('admin/exam-settings/', python_views.exam_settings_api, name='exam_settings'),
 
     # ================= COURSE SYSTEM =================
     path('student/courses/', course_views.student_courses),
@@ -105,7 +116,7 @@ urlpatterns = [
     path('course/create/', course_views.create_course),
     path('course/<int:course_id>/', course_views.get_course_details),
     path('course/<str:course_name>/topics/', course_views.get_course_topics),
-    path('run-code/', api_views.run_code_api, name='run-code'),
+    path('run-code/', python_views.run_code_api, name='run-code'),
 
     # ================= AUTO-DELETION MONITORING =================
     path('login-email-status/', get_login_email_status, name='login_email_status'),

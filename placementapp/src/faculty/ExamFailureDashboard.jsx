@@ -11,6 +11,8 @@ function ExamFailureDashboard() {
   const [activeFilter, setActiveFilter] = useState("failed");
   const [activePeriod, setActivePeriod] = useState("all");
   const [selectedReport, setSelectedReport] = useState(null);
+  const [detailedData, setDetailedData] = useState(null);
+  const [fetchingDetails, setFetchingDetails] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -64,6 +66,31 @@ function ExamFailureDashboard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedReport?.id) {
+      fetchReportDetails(selectedReport.id);
+    } else {
+      setDetailedData(null);
+    }
+  }, [selectedReport]);
+
+  const fetchReportDetails = async (pk) => {
+    try {
+      setFetchingDetails(true);
+      const token = localStorage.getItem("access");
+      const res = await axios.get(`/api/exam-report-detail/${pk}/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setDetailedData(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching detailed data:", err);
+    } finally {
+      setFetchingDetails(false);
     }
   };
 
@@ -519,14 +546,20 @@ function ExamFailureDashboard() {
           {(activeFilter === "all" || activeFilter === "cheated") && (
             <div className="bg-white p-4 shadow-sm rounded border-start border-4 border-warning mb-4 transition-all">
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h6 className="mb-0 text-warning text-dark fw-bold"><i className="bi bi-eye me-2"></i>Suspicious Activity</h6>
-                <span className="badge bg-warning text-dark rounded-pill">{summary.cheated} Records</span>
+                <div className="d-flex align-items-center gap-2">
+                  <div className="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
+                    <i className="bi bi-shield-exclamation"></i>
+                  </div>
+                  <h6 className="mb-0 text-dark fw-bold">Suspicious Activity & Violations</h6>
+                </div>
+                <span className="badge bg-warning text-dark rounded-pill shadow-sm">{summary.cheated} INCIDENTS</span>
               </div>
               <ReportTable 
                 reports={periodReports.filter(item => item.normalizedStatus.includes("cheat") || item.normalizedStatus.includes("suspicious"))} 
                 selectedId={selectedReport?.id}
                 onSelect={setSelectedReport}
                 emptyMessage="No suspicious activity detected."
+                isCheatedView={true}
               />
             </div>
           )}
@@ -563,7 +596,11 @@ function ExamFailureDashboard() {
                 <div className="mb-4">
                   <h6 className="text-primary mb-3">📊 Basic Information</h6>
                   <DetailRow label="Student" value={selectedReport.user?.username || "Unknown"} />
-                  <DetailRow label="Exam" value={selectedReport.examTitle} />
+                  <DetailRow label="Exam" value={(() => {
+                    const type = (selectedReport.examType || "Daily").charAt(0).toUpperCase() + (selectedReport.examType || "Daily").slice(1).toLowerCase();
+                    const num = selectedReport.attemptNumber || "";
+                    return `${type} Exam ${num}`;
+                  })()} />
                   <DetailRow label="Status" value={
                     <span className={`badge ${
                       (selectedReport.normalizedStatus || '') === 'fail' ? 'bg-danger' :
@@ -587,8 +624,90 @@ function ExamFailureDashboard() {
                   </div>
                 </div>
 
+                {/* Question Breakdown */}
+                <div className="mt-5 pt-4 border-top">
+                  <h6 className="text-secondary mb-4 flex items-center justify-between">
+                    <span>📝 Question Breakdown</span>
+                    {fetchingDetails && (
+                      <div className="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    )}
+                  </h6>
+
+                  {detailedData?.questions?.length > 0 ? (
+                    <div className="accordion accordion-flush" id="questionsAccordion">
+                      {detailedData.questions.map((q, idx) => {
+                        const userAnswerIdx = detailedData.answers ? detailedData.answers[idx] : null;
+                        const isCorrect = userAnswerIdx === q.correct;
+                        const notAttempted = userAnswerIdx === null || userAnswerIdx === undefined;
+                        const isCoding = q.type === 'coding' || !q.options || q.options.length === 0;
+
+                        return (
+                          <div className="accordion-item border-bottom" key={idx}>
+                            <h2 className="accordion-header">
+                              <button 
+                                className={`accordion-button collapsed py-3 text-start ${!notAttempted && !isCorrect ? 'bg-danger-subtle' : ''}`} 
+                                type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target={`#collapse${idx}`}
+                                style={{ fontSize: '0.85rem' }}
+                              >
+                                <div className="d-flex align-items-start gap-2">
+                                  <span className={`badge ${notAttempted ? 'bg-secondary' : isCorrect ? 'bg-success' : 'bg-danger'} rounded-pill me-2`} style={{ minWidth: '40px' }}>
+                                    Q{idx + 1}
+                                  </span>
+                                  <span className="text-truncate d-inline-block" style={{ maxWidth: '250px' }}>
+                                    {q.question || "Coding Challenge"}
+                                  </span>
+                                </div>
+                              </button>
+                            </h2>
+                            <div id={`collapse${idx}`} className="accordion-collapse collapse" data-bs-parent="#questionsAccordion">
+                              <div className="accordion-body bg-light-subtle rounded-3 p-3">
+                                {isCoding ? (
+                                  <div className="coding-answer">
+                                    <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Student Submission</small>
+                                    <pre className="bg-dark text-success p-3 rounded mt-2 overflow-x-auto" style={{ fontSize: '0.75rem' }}>
+                                      {userAnswerIdx || "# No code submitted"}
+                                    </pre>
+                                  </div>
+                                ) : (
+                                  <div className="options-list">
+                                    <small className="text-muted text-uppercase fw-bold d-block mb-2" style={{ fontSize: '0.65rem' }}>Options Analysis</small>
+                                    {q.options?.map((opt, optIdx) => {
+                                      const isUserChoice = userAnswerIdx === optIdx;
+                                      const isCorrectOpt = q.correct === optIdx;
+                                      let bgColor = "";
+                                      if (isUserChoice && isCorrectOpt) bgColor = "bg-success-subtle text-success border-success";
+                                      else if (isUserChoice && !isCorrectOpt) bgColor = "bg-danger-subtle text-danger border-danger";
+                                      else if (isCorrectOpt) bgColor = "bg-success-subtle opacity-75 border-success";
+
+                                      return (
+                                        <div key={optIdx} className={`p-2 rounded border mb-1 d-flex justify-content-between align-items-center ${bgColor}`} style={{ fontSize: '0.8rem' }}>
+                                          <span>{String.fromCharCode(65 + optIdx)}. {opt}</span>
+                                          {isCorrectOpt && <i className="bi bi-patch-check-fill text-success"></i>}
+                                          {isUserChoice && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger"></i>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-light rounded-4 border border-dashed">
+                      <p className="text-muted small mb-0">
+                         {fetchingDetails ? "Fetching question data..." : "Details not found for this report."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Recommendations */}
-                <div className="mb-4">
+                <div className="mb-4 mt-5">
                   <h6 className="text-success mb-3">💡 Recommendations</h6>
                   <div className="alert alert-success">
                     <p className="mb-0">{selectedReport.recommendations || "Contact student for further discussion"}</p>
@@ -616,11 +735,16 @@ function ExamFailureDashboard() {
   );
 }
 
-function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
+function ReportTable({ reports, selectedId, onSelect, emptyMessage, isCheatedView = false }) {
   const [showAll, setShowAll] = useState(false);
 
   if (!reports || reports.length === 0) {
-    return <div className="text-center py-4 text-muted small">{emptyMessage}</div>;
+    return (
+      <div className="text-center py-5 bg-light rounded-3 border-dashed">
+        <i className="bi bi-check2-circle text-success fs-3"></i>
+        <p className="mt-2 mb-0 text-muted small">{emptyMessage}</p>
+      </div>
+    );
   }
 
   return (
@@ -628,49 +752,97 @@ function ReportTable({ reports, selectedId, onSelect, emptyMessage }) {
       <table className="table table-sm table-hover align-middle mb-0" style={{ fontSize: '0.85rem' }}>
         <thead className="table-light">
           <tr>
+            <th className="ps-3" style={{ width: '50px' }}>S.No</th>
             <th>Student</th>
-            <th>Exam</th>
-            <th>Score</th>
-            <th>%</th>
-            <th>Status</th>
+            <th>Exam Type</th>
+            {isCheatedView ? (
+              <th className="text-danger">Violation Detail</th>
+            ) : (
+              <>
+                <th>Score</th>
+                <th>%</th>
+              </>
+            )}
+            <th className="text-end pe-3">Record Info</th>
           </tr>
         </thead>
         <tbody>
-          {(showAll ? reports : reports.slice(0, 5)).map((report) => (
+          {(showAll ? reports : reports.slice(0, 5)).map((report, idx) => (
             <tr
               key={report.id}
-              className={selectedId === report.id ? "table-primary" : ""}
+              className={`${selectedId === report.id ? "table-primary shadow-sm" : ""} transition-all`}
               onClick={() => onSelect(report)}
               style={{ cursor: "pointer" }}
             >
-              <td className="fw-medium">{report.user?.username || "Unknown"}</td>
-              <td>{report.examTitle}</td>
-              <td>{report.score}/{report.totalMarks}</td>
-              <td>{report.percentage}%</td>
+              <td className="ps-3 fw-bold text-muted">{idx + 1}</td>
               <td>
-                <span className={`badge ${
-                  (report.normalizedStatus || '') === 'fail' ? 'bg-danger' :
-                  (report.normalizedStatus || '').includes('cheat') ? 'bg-warning text-dark' :
-                  'bg-secondary'
-                }`} style={{ fontSize: '0.7rem' }}>
-                  {report.status}
-                </span>
+                <div className="d-flex align-items-center gap-2">
+                   <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '24px', height: '24px', fontSize: '0.65rem' }}>
+                      {report.user?.username?.charAt(0).toUpperCase() || "U"}
+                   </div>
+                   <span className="fw-bold text-dark">{report.user?.username || "Unknown"}</span>
+                </div>
+              </td>
+              <td className="text-muted">
+                {(() => {
+                   const type = (report.examType || "Daily").charAt(0).toUpperCase() + (report.examType || "Daily").slice(1).toLowerCase();
+                   const num = report.attemptNumber || "";
+                   return `${type} Exam ${num}`;
+                })()}
+              </td>
+              
+              {isCheatedView ? (
+                <td className="text-danger">
+                  <span className="d-inline-flex align-items-center gap-1 fw-medium">
+                    <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: '0.7rem' }}></i>
+                    {report.failureReason ? (
+                      report.failureReason.length > 50 
+                        ? report.failureReason.substring(0, 50) + "..." 
+                        : report.failureReason
+                    ) : "Proctoring Alert"}
+                  </span>
+                </td>
+              ) : (
+                <>
+                  <td className="fw-medium">{report.score}/{report.totalMarks}</td>
+                  <td>
+                    <span className={Number(report.percentage) < 30 ? "text-danger fw-bold" : ""}>
+                      {report.percentage}%
+                    </span>
+                  </td>
+                </>
+              )}
+
+              <td className="text-end pe-3">
+                <div className="d-flex flex-column align-items-end">
+                   <span className={`badge ${
+                      (report.normalizedStatus || '') === 'fail' ? 'bg-danger-subtle text-danger' :
+                      (report.normalizedStatus || '').includes('cheat') ? 'bg-warning-subtle text-warning-emphasis' :
+                      'bg-secondary-subtle text-secondary'
+                    } rounded-pill px-2`} style={{ fontSize: '0.65rem' }}>
+                      {report.status}
+                    </span>
+                    <small className="text-muted mt-1" style={{ fontSize: '0.6rem' }}>
+                       {new Date(report.examDate).toLocaleDateString()}
+                    </small>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
       {reports.length > 5 && (
-        <div className="text-center mt-2">
+        <div className="text-center mt-3 pt-2 border-top">
           <button 
             type="button"
-            className="btn btn-link btn-sm text-decoration-none p-0" 
+            className="btn btn-outline-secondary btn-sm px-4 rounded-pill text-decoration-none" 
             onClick={(e) => {
               e.stopPropagation();
               setShowAll(!showAll);
             }}
+            style={{ fontSize: '0.75rem' }}
           >
-            {showAll ? "Show Less" : `+ ${reports.length - 5} more records`}
+            {showAll ? "Show Less" : `View ${reports.length - 5} More Incidents`}
           </button>
         </div>
       )}

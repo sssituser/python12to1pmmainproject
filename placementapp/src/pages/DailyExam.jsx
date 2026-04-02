@@ -5,13 +5,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
 
 const DailyExam = () => {
 
+  const { subject } = useParams();
+  const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : 'Python';
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -64,12 +66,26 @@ const DailyExam = () => {
 
   const handleCloseWarningModal = async () => {
     setShowWarningModal(false);
-    // Request fullscreen as this is now a fresh user gesture (button click)
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    
+    // Request fullscreen with comprehensive vendor prefix support
+    const docEl = document.documentElement;
+    if (!document.fullscreenElement && 
+        !document.webkitFullscreenElement && 
+        !document.mozFullScreenElement && 
+        !document.msFullscreenElement) {
+      
       try {
-        await document.documentElement.requestFullscreen();
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        } else if (docEl.mozRequestFullScreen) {
+          await docEl.mozRequestFullScreen();
+        } else if (docEl.msRequestFullscreen) {
+          await docEl.msRequestFullscreen();
+        }
       } catch (err) {
-        console.error("Failed to restore fullscreen", err);
+        console.error("Critical: Fullscreen restoration failed", err);
       }
     }
   };
@@ -141,7 +157,7 @@ const DailyExam = () => {
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
-        const res = await fetch("/api/playground-questions/");
+        const res = await fetch("/api/playground-questions/" + (subject || 'python') + "/");
         const json = await res.json();
         const data = json.data || json;
 
@@ -545,9 +561,19 @@ useEffect(() => {
 
     try {
       if (document.fullscreenElement) {
-        await document.exitFullscreen();
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
       }
-    } catch (err) { }
+    } catch (err) {
+      console.error("Failed to exit full screen:", err);
+    }
 
     const userStr = localStorage.getItem("user");
     let user = {};
@@ -588,8 +614,12 @@ useEffect(() => {
        passed = correctCount >= passingValue;
     }
 
+    // Determine proctoring status
+    const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
+    const finalStatus = isTerminated ? "Cheated" : "completed";
+
     const result = {
-      status: "completed",
+      status: finalStatus,
       correctAnswers: correctCount,
       incorrectAnswers: totalQ - correctCount,
       totalQuestions: totalQ,
@@ -609,7 +639,7 @@ useEffect(() => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Daily Exam",
+      examTitle: subjectName + " Daily Exam",
       submissionReason: reason
     };
 
@@ -632,18 +662,7 @@ useEffect(() => {
     // Clear session storage so a new start will shuffle fresh questions
     sessionStorage.removeItem('dailyExamState');
 
-    // Exit full screen mode
-    if (document.fullscreenElement) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-    }
+    // Exit full screen mode logic moved to top of function
 
     navigate("/dashboard/playground-results", { replace: true });
   };
@@ -707,7 +726,7 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              Daily Assessment
+              {subjectName} Daily Assessment
             </h2>
             <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
@@ -797,7 +816,7 @@ useEffect(() => {
              </div>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-             <span className="text-blue-600">Daily</span> Assessment
+             <span className="text-blue-600">{subjectName}</span> Daily Assessment
           </div>
         </div>
 

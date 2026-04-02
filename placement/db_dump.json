@@ -1,0 +1,182 @@
+[
+  {
+    "id": 46,
+    "exam_title": "Python Daily Exam",
+    "exam_type": "daily",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 18:35:09.335662+00:00"
+  },
+  {
+    "id": 45,
+    "exam_title": "Python Daily Exam",
+    "exam_type": "daily",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 18:30:26.420862+00:00"
+  },
+  {
+    "id": 44,
+    "exam_title": "Html Daily Exam",
+    "exam_type": "daily",
+    "status": "Fail",
+    "score": 14,
+    "marks_obtained": 14,
+    "exam_date": "2026-04-01 18:28:07.994226+00:00"
+  },
+  {
+    "id": 43,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:29:42.072726+00:00"
+  },
+  {
+    "id": 42,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:29:42.058913+00:00"
+  },
+  {
+    "id": 41,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:27:06.225842+00:00"
+  },
+  {
+    "id": 40,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:27:06.209062+00:00"
+  },
+  {
+    "id": 39,
+    "exam_title": "Bootstrap Daily Exam",
+    "exam_type": "daily",
+    "status": "Cheated",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:26:32.131469+00:00"
+  },
+  {
+    "id": 38,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:25:35.737907+00:00"
+  },
+  {
+    "id": 37,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 17:25:35.732922+00:00"
+  },
+  {
+    "id": 36,
+    "exam_title": "Daily Exam",
+    "exam_type": "daily",
+    "status": "Cheated",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 15:49:36.792508+00:00"
+  },
+  {
+    "id": 35,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 2,
+    "marks_obtained": 2,
+    "exam_date": "2026-04-01 15:49:30.059789+00:00"
+  },
+  {
+    "id": 34,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Pass",
+    "score": 2,
+    "marks_obtained": 2,
+    "exam_date": "2026-04-01 15:49:23.408057+00:00"
+  },
+  {
+    "id": 33,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Pass",
+    "score": 2,
+    "marks_obtained": 2,
+    "exam_date": "2026-04-01 15:38:35.914646+00:00"
+  },
+  {
+    "id": 32,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 07:56:14.536897+00:00"
+  },
+  {
+    "id": 31,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-04-01 07:56:14.533530+00:00"
+  },
+  {
+    "id": 30,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-03-31 14:05:55.089745+00:00"
+  },
+  {
+    "id": 29,
+    "exam_title": "Monthly Python Programming Assessment",
+    "exam_type": "monthly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-03-31 14:05:55.083783+00:00"
+  },
+  {
+    "id": 28,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-03-31 14:05:27.020921+00:00"
+  },
+  {
+    "id": 27,
+    "exam_title": "Weekly Python Programming Assessment",
+    "exam_type": "weekly",
+    "status": "Fail",
+    "score": 0,
+    "marks_obtained": 0,
+    "exam_date": "2026-03-31 14:05:27.017973+00:00"
+  }
+]
