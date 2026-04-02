@@ -143,6 +143,9 @@ function PlaygroundResults() {
     const storedProfile = (() => {
       try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
     })();
+    const profileCache = (() => {
+      try { return JSON.parse(localStorage.getItem("sssit-profile") || "{}"); } catch { return {}; }
+    })();
     const studentName =
       storedProfile.name ||
       storedProfile.firstName ||
@@ -168,10 +171,13 @@ function PlaygroundResults() {
     const lcEmail = localStorage.getItem("email");
     let email = result.user?.email
       || result.user?.Email
+      || profileCache.email
       || storedProfile.email
       || storedProfile.Email
+      || profileCache.username
       || (lcEmail && lcEmail.includes("@") ? lcEmail : null)
       || (storedProfile.username && storedProfile.username.includes("@") ? storedProfile.username : null)
+      || (profileCache.name && profileCache.name.includes("@") ? profileCache.name : null)
       || "N/A";
     doc.text(`Email: ${email}`, 20, 60);
     doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);

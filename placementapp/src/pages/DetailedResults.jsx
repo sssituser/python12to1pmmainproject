@@ -70,8 +70,26 @@ function DetailedResults() {
       return;
     }
 
+    const storedProfile = (() => {
+      try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
+    })();
+    const profileCache = (() => {
+      try { return JSON.parse(localStorage.getItem("sssit-profile") || "{}"); } catch { return {}; }
+    })();
     const studentName = (result.user?.firstName || result.user?.username || "Unknown").toUpperCase();
     const examDate = result.examDate ? new Date(result.examDate).toLocaleString() : "Unknown Date";
+    const lcEmail = localStorage.getItem("email");
+    const email =
+      result.user?.email
+      || result.user?.Email
+      || profileCache.email
+      || storedProfile.email
+      || storedProfile.Email
+      || profileCache.username
+      || (lcEmail && lcEmail.includes("@") ? lcEmail : null)
+      || (storedProfile.username && storedProfile.username.includes("@") ? storedProfile.username : null)
+      || (profileCache.name && profileCache.name.includes("@") ? profileCache.name : null)
+      || "N/A";
 
     const doc = new jsPDF();
     doc.setFontSize(20);
@@ -82,7 +100,7 @@ function DetailedResults() {
     doc.text('Student Information:', 20, 40);
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${studentName}`, 20, 50);
-    doc.text(`Email: ${result.user?.email || 'N/A'}`, 20, 60);
+    doc.text(`Email: ${email}`, 20, 60);
     doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
     
     doc.setFont('helvetica', 'bold');
