@@ -147,6 +147,10 @@ const DailyExam = () => {
 
   // Fetch questions from backend
   useEffect(() => {
+    if (localStorage.getItem("examResult")) {
+      navigate("/dashboard/playground-results", { replace: true });
+      return;
+    }
     // Always start fresh - don't restore previous exam state
     try {
       sessionStorage.removeItem('dailyExamState');
@@ -662,9 +666,11 @@ useEffect(() => {
     // Clear session storage so a new start will shuffle fresh questions
     sessionStorage.removeItem('dailyExamState');
 
-    // Exit full screen mode logic moved to top of function
-
-    navigate("/dashboard/playground-results", { replace: true });
+    // Remove the locked back-button state, then navigate to results replacing the exam in history
+    window.history.go(-1);
+    setTimeout(() => {
+      navigate("/dashboard/playground-results", { replace: true });
+    }, 100);
   };
 
   const formatTime = (seconds) => {

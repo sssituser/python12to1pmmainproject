@@ -164,6 +164,10 @@ const WeeklyExam = () => {
 
   // Fetch 50 randomized questions from backend pool
   useEffect(() => {
+    if (localStorage.getItem("examResult")) {
+      navigate("/dashboard/playground-results", { replace: true });
+      return;
+    }
     const fetchQuestionsFromBackend = async () => {
       // Always clear any previous session state for fresh start
       try {
@@ -847,9 +851,10 @@ useEffect(() => {
 
     sessionStorage.removeItem('weeklyExamState');
 
-    sessionStorage.removeItem('weeklyExamState');
-
-    navigate("/dashboard/playground-results",{replace:true});
+    window.history.go(-1);
+    setTimeout(() => {
+      navigate("/dashboard/playground-results", { replace: true });
+    }, 100);
   };
 
   const formatTime = (seconds) => {
