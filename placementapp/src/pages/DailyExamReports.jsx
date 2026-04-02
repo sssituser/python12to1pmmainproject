@@ -126,7 +126,7 @@ function DailyExamReports() {
                 >
                   <div className="w-full mb-4 text-center">
                     <h3 className="text-lg font-bold text-gray-800 truncate px-2">
-                       {`Daily Exam ${exams.length - index}`}
+                       {exam.examTitle || exam.title || `Daily Exam ${exams.length - index}`}
                     </h3>
                     <p className="text-xs text-gray-400 font-medium tracking-wide uppercase mt-1">
                       {exam.user?.username || "Practice User"}

@@ -11,10 +11,33 @@ function PlaygroundResults() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const getPassingScore = (title) => {
+    const t = (title || "").toLowerCase();
+    if (t.includes("ui")) return 45;
+    if (t.includes("python") || t.includes("java") || t.includes("oracle") || t.includes("django")) return 20;
+    if (t.includes("weekly") || t.includes("monthly")) return 35;
+    return 20;
+  };
+
+  const formatExamTitle = (title = "") => {
+    const t = title.toLowerCase();
+    if (t.includes("python")) return "Python Exam";
+    if (t.includes("java")) return "Java Exam";
+    if (t.includes("oracle")) return "Oracle Exam";
+    if (t.includes("ui")) return "UI Exam";
+    if (t.includes("django")) return "Django Exam";
+    return title || "Exam";
+  };
+
   useEffect(() => {
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
+
+      let localResults = [];
+      try {
+        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      } catch (e) {}
       
       const userStr = localStorage.getItem("user");
       const username = localStorage.getItem("username");
@@ -27,6 +50,7 @@ function PlaygroundResults() {
       const targetUsername = username || currentUser?.username;
 
       if (!targetUsername) {
+        setAllResults(localResults);
         setIsLoading(false);
         return;
       }
@@ -36,26 +60,38 @@ function PlaygroundResults() {
         const json = await response.json();
 
         if (json.success) {
-          setAllResults(json.data);
+          // Merge local storage results (to capture unsynced/new exams) with backend results
+          let localResults = [];
+          try {
+             localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+          } catch(e) {}
           
-          // Also set current result if it exists in localStorage (most recent one)
-          const examResult = localStorage.getItem("examResult");
-          if (examResult) {
-            setCurrentResult(JSON.parse(examResult));
-          } else if (json.data.length > 0) {
-            // Fallback to most recent result from backend if nothing in localStorage
-            setCurrentResult(json.data[0]);
+          let backendResults = json.data || [];
+          
+          const seen = new Set();
+          const merged = [];
+          
+          // We put localResults first so the most recent locally saved exam takes priority visually
+          for (const res of [...localResults, ...backendResults]) {
+             const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
+             if (key && !seen.has(key)) {
+                seen.add(key);
+                merged.push(res);
+             } else if (!key) {
+                // If it really lacks a key, just add it to avoid losing data
+                merged.push(res);
+             }
           }
+          
+          setAllResults(merged);
         } else {
           setError(json.error || "Failed to fetch results");
+          setAllResults(localResults);
         }
       } catch (err) {
         console.error("Error fetching results:", err);
         setError("Network error. Please check if the server is running.");
-        
-        // Fallback to localStorage on network error
-        const results = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-        setAllResults(results);
+        setAllResults(localResults);
       } finally {
         setIsLoading(false);
       }
@@ -80,28 +116,13 @@ function PlaygroundResults() {
 
   // BACK TO DASHBOARD
   const handleDashboard = () => {
-    navigate("/dashboard");
+    navigate("/dashboard/playground");
   };
 
   const handleViewDetails = (result, index) => {
-    // Determine the chronological number for this specific result
-    const title = result.examTitle || "";
-    const type = (result.examType || result.exam_type || "").toLowerCase();
-    let currentType = "Daily";
-    if (type.includes("weekly") || title.toLowerCase().includes("weekly")) currentType = "Weekly";
-    else if (type.includes("monthly") || title.toLowerCase().includes("monthly")) currentType = "Monthly";
-
-    const occurrences = allResults.slice(index).filter(r => {
-        const rTitle = r.examTitle || "";
-        const rType = (r.examType || r.exam_type || "").toLowerCase();
-        if (currentType === "Weekly") return rType.includes("weekly") || rTitle.toLowerCase().includes("weekly");
-        if (currentType === "Monthly") return rType.includes("monthly") || rTitle.toLowerCase().includes("monthly");
-        return (!rType.includes("weekly") && !rTitle.toLowerCase().includes("weekly") && !rType.includes("monthly") && !rTitle.toLowerCase().includes("monthly"));
-    }).length;
-
     localStorage.setItem("selectedExamResult", JSON.stringify(result));
     navigate(`/dashboard/playground/detailed-results/${index}`, { 
-        state: { examNumber: occurrences, examType: currentType } 
+        state: { examTitle: formatExamTitle(result.examTitle) } 
     });
   };
 
@@ -113,18 +134,22 @@ function PlaygroundResults() {
       return;
     }
 
-    // Determine passing criteria based on exam type
-    const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
-    const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
-    const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
-    
-    let totalQuestions = result.totalQuestions || 20; // use actual value from result
-    let totalMarks = result.totalMarks || 40; // use actual value from result
-    // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
-    const passed = result.passed !== undefined ? result.passed : (result.score >= (totalMarks * 0.5));
-    const criteriaText = result.passed !== undefined ? "Faculty Rule Applied" : `${totalMarks * 0.5} (50%)`;
+    const totalQuestions = result.totalQuestions || result.questions?.length || 20;
+    const totalMarks = result.totalMarks || result.total_marks || (totalQuestions * 2);
+    const passingScore = getPassingScore(result.examTitle);
+    const passed = result.passed !== undefined ? result.passed : ((result.score || (result.correctAnswers || 0) * 2) >= passingScore);
+    const criteriaText = result.passed !== undefined ? "Faculty Rule Applied" : `${passingScore} marks`;
     const examDate = new Date(result.examDate || Date.now()).toLocaleString();
-    const studentName = result.user?.firstName || result.user?.username || "Unknown";
+    const storedProfile = (() => {
+      try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
+    })();
+    const studentName =
+      storedProfile.name ||
+      storedProfile.firstName ||
+      result.user?.firstName ||
+      result.user?.username ||
+      storedProfile.username ||
+      "Unknown";
 
     // Create new PDF document
     const doc = new jsPDF();
@@ -140,14 +165,22 @@ function PlaygroundResults() {
     doc.text('Student Information:', 20, 40);
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${studentName}`, 20, 50);
-    doc.text(`Email: ${result.user?.email || 'N/A'}`, 20, 60);
+    const lcEmail = localStorage.getItem("email");
+    let email = result.user?.email
+      || result.user?.Email
+      || storedProfile.email
+      || storedProfile.Email
+      || (lcEmail && lcEmail.includes("@") ? lcEmail : null)
+      || (storedProfile.username && storedProfile.username.includes("@") ? storedProfile.username : null)
+      || "N/A";
+    doc.text(`Email: ${email}`, 20, 60);
     doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
     
     // Add exam information
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Exam: ${result.examTitle || 'Python Programming Assessment'}`, 20, 100);
+    doc.text(`Exam: ${formatExamTitle(result.examTitle)}`, 20, 100);
     doc.text(`Date: ${examDate}`, 20, 110);
     doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
@@ -201,26 +234,24 @@ function PlaygroundResults() {
 
   return (
 
-    <div className="bg-white shadow p-6">
+    <div
+      className="bg-white shadow p-6 w-full"
+      style={{
+        width: "100%",
+        margin: 0,
+        overflowX: "hidden"
+      }}
+    >
 
       {/* ACTION BUTTONS */}
 
-      <div className="flex justify-end gap-3 mb-4">
-
-        <button
-          onClick={handleTakeNewExam}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Take New Exam
-        </button>
-
+      <div className="flex items-center justify-start gap-3 mb-4">
         <button
           onClick={handleDashboard}
           className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
         >
-          Back to Dashboard
+          Back
         </button>
-
       </div>
 
       <h3 className="text-xl font-semibold mb-4">
@@ -244,22 +275,11 @@ function PlaygroundResults() {
           <tbody>
             {allResults.map((result, index) => {
 
-              // Determine passing criteria based on exam type
-              const isDailyExam = result.examTitle?.toLowerCase().includes('daily');
-              const isWeeklyExam = result.examTitle?.toLowerCase().includes('weekly');
-              const isMonthlyExam = result.examTitle?.toLowerCase().includes('monthly');
-              
-              let totalQuestions = result.totalQuestions || 20; // use actual value from result
-              let totalMarks = result.totalMarks || 40; // use actual value from result
-              let passingScore = 15; // default (marks needed to pass)
-              
-              if (isDailyExam) {
-                passingScore = 20; // 20 marks to pass for daily exam (out of 40)
-              } else if (isWeeklyExam || isMonthlyExam) {
-                passingScore = 35; // 35 marks to pass for weekly/monthly exams (out of 100)
-              }
-              
-              const passed = (result.score || (result.correctAnswers || 0) * 2) >= passingScore;
+              const totalQuestions = result.totalQuestions || result.questions?.length || 0;
+              const totalMarks = result.totalMarks || result.total_marks || (totalQuestions ? totalQuestions * 2 : 40);
+              const passingScore = getPassingScore(result.examTitle);
+              const scoreValue = result.score || (result.correctAnswers || 0) * 2;
+              const passed = scoreValue >= passingScore;
 
               return (
                 <tr key={index} className="border-b">
@@ -275,23 +295,7 @@ function PlaygroundResults() {
                     {result.user?.randomId || "N/A"}
                   </td> */}
                   <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
-                    {(() => {
-                      const title = result.examTitle || "";
-                      const type = (result.examType || result.exam_type || "").toLowerCase();
-                      let currentType = "Daily";
-                      if (type.includes("weekly") || title.toLowerCase().includes("weekly")) currentType = "Weekly";
-                      else if (type.includes("monthly") || title.toLowerCase().includes("monthly")) currentType = "Monthly";
-
-                      const occurrences = allResults.slice(index).filter(r => {
-                          const rTitle = r.examTitle || "";
-                          const rType = (r.examType || r.exam_type || "").toLowerCase();
-                          if (currentType === "Weekly") return rType.includes("weekly") || rTitle.toLowerCase().includes("weekly");
-                          if (currentType === "Monthly") return rType.includes("monthly") || rTitle.toLowerCase().includes("monthly");
-                          return (!rType.includes("weekly") && !rTitle.toLowerCase().includes("weekly") && !rType.includes("monthly") && !rTitle.toLowerCase().includes("monthly"));
-                      }).length;
-
-                      return `${currentType} Exam ${occurrences}`;
-                    })()}
+                    {formatExamTitle(result.examTitle)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                     {new Date(
@@ -299,7 +303,7 @@ function PlaygroundResults() {
                     ).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
-                    {result.score || (result.correctAnswers || 0) * 2}/{result.totalMarks || (result.correctAnswers || 0) * 2}
+                    {scoreValue}/{totalMarks}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
                     <div className="flex gap-2">

@@ -1305,7 +1305,7 @@ useEffect(() => {
                                   onChange={() => handleAnswerSelect(currentQuestion, index)}
                                   className="hidden"
                                 />
-                                <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                                <span className={`text-sm font-bold tracking-tight break-words flex-1 ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
                                    {option}
                                 </span>
                               </div>

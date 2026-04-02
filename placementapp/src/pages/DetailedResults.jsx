@@ -11,6 +11,22 @@ function DetailedResults() {
   const location = useLocation();
 
   const [result, setResult] = useState(null);
+  const getPassingScore = (title) => {
+    const t = (title || "").toLowerCase();
+    if (t.includes("ui")) return 45;
+    if (t.includes("python") || t.includes("java") || t.includes("oracle") || t.includes("django")) return 20;
+    if (t.includes("weekly") || t.includes("monthly")) return 35;
+    return 20;
+  };
+  const formatExamTitle = (title = "") => {
+    const t = title.toLowerCase();
+    if (t.includes("python")) return "Python Exam";
+    if (t.includes("java")) return "Java Exam";
+    if (t.includes("oracle")) return "Oracle Exam";
+    if (t.includes("ui")) return "UI Exam";
+    if (t.includes("django")) return "Django Exam";
+    return title || "Exam";
+  };
 
   useEffect(() => {
     // 1. Try to get the specific selected result first
@@ -37,15 +53,16 @@ function DetailedResults() {
   };
 
   // ─── Shared exam calculations (computed at component scope) ───
-  const totalQuestions = result?.totalQuestions || 20;
-  const totalMarks = result?.totalMarks || 40;
-  
+  const totalQuestions = result?.totalQuestions || result?.questions?.length || 20;
+  const totalMarks = result?.totalMarks || result?.total_marks || (totalQuestions * 2);
+  const passingScore = getPassingScore(result?.examTitle);
+
   // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
   const passed = result && result.passed !== undefined 
     ? result.passed 
-    : (result ? (result.score || 0) >= (totalMarks * 0.5) : false);
+    : (result ? ((result.score || (result.correctAnswers || 0) * 2) >= passingScore) : false);
 
-  const passingScoreText = result && result.passed !== undefined ? "Faculty Rule Applied" : `${totalMarks * 0.5}`;
+  const passingScoreText = result && result.passed !== undefined ? "Faculty Rule Applied" : `${passingScore} marks`;
 
   const handleDownload = () => {
     if (!result) {
@@ -71,7 +88,7 @@ function DetailedResults() {
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Exam: ${result.examTitle || 'Python Programming Assessment'}`, 20, 100);
+    doc.text(`Exam: ${formatExamTitle(result.examTitle)}`, 20, 100);
     doc.text(`Date: ${examDate}`, 20, 110);
     doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
@@ -136,7 +153,7 @@ function DetailedResults() {
           <div className="p-4 sm:p-6">
             <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-8 h-[2px] bg-indigo-500"></span>
-              {location.state?.examNumber ? `${location.state.examType} Exam ${location.state.examNumber}` : "Student Assessment Summary"}
+              {formatExamTitle(result?.examTitle) || "Student Assessment Summary"}
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -149,7 +166,7 @@ function DetailedResults() {
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Exam</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {location.state?.examNumber ? `${location.state.examType} Exam ${location.state.examNumber}` : (result.examTitle || "Assessment")}
+                  {formatExamTitle(result.examTitle)}
                 </p>
               </div> 
               <div className="space-y-1 text-right md:text-left">
