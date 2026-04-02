@@ -1,0 +1,9 @@
+{
+    "Monthly": {
+        "maxQuestions": 50,
+        "questions": [],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
+    }
+}
