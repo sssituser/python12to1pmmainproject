@@ -213,17 +213,12 @@ function NewLeaveRequest() {
 
     // Check if this is the same device
     if (storedDeviceFingerprint && storedDeviceFingerprint !== currentDeviceFingerprint) {
-      // Different device detected - clear credentials
-      console.log("Different device detected - clearing stored credentials");
+      // Fingerprint changed (e.g. browser context change), but we KEEP credentials 
+      // to ensure leave history is permanent on this laptop.
+      console.log("Device fingerprint changed or updated - keeping credentials for permanent history");
       
-      localStorage.removeItem('permanentName');
-      localStorage.removeItem('permanentEmail');
-      localStorage.removeItem('permanentStudentId');
-      localStorage.removeItem('permanentPhone');
-      localStorage.removeItem('deviceFingerprint');
-      
-      setError('This is a different device. Please register your credentials on this device.');
-      return;
+      // Update fingerprint to new one instead of clearing out the user's saved data
+      localStorage.setItem('deviceFingerprint', currentDeviceFingerprint);
     }
 
     // Store current device fingerprint
