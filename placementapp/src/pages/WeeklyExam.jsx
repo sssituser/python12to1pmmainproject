@@ -164,6 +164,10 @@ const WeeklyExam = () => {
 
   // Fetch 50 randomized questions from backend pool
   useEffect(() => {
+    if (localStorage.getItem("examResult")) {
+      navigate("/dashboard/playground-results", { replace: true });
+      return;
+    }
     const fetchQuestionsFromBackend = async () => {
       // Always clear any previous session state for fresh start
       try {
@@ -847,9 +851,10 @@ useEffect(() => {
 
     sessionStorage.removeItem('weeklyExamState');
 
-    sessionStorage.removeItem('weeklyExamState');
-
-    navigate("/dashboard/playground-results",{replace:true});
+    window.history.go(-1);
+    setTimeout(() => {
+      navigate("/dashboard/playground-results", { replace: true });
+    }, 100);
   };
 
   const formatTime = (seconds) => {
@@ -1301,7 +1306,7 @@ useEffect(() => {
                                   onChange={() => handleAnswerSelect(currentQuestion, index)}
                                   className="hidden"
                                 />
-                                <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                                <span className={`text-sm font-bold tracking-tight break-words flex-1 ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
                                    {option}
                                 </span>
                               </div>

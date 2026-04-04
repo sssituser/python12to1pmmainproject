@@ -64,9 +64,7 @@ function ExamReportDetail() {
       {/* Summary Card */}
       <div className="card shadow-sm border-0 mb-4">
         <div className={`card-header fw-bold fs-5 text-white ${passed ? "bg-success" : "bg-danger"}`}>
-          {location.state?.examNumber 
-            ? `${location.state.examType} Exam ${location.state.examNumber}` 
-            : (report.exam_title || "Exam Report")} &nbsp;—&nbsp; {passed ? "✅ PASS" : "❌ FAIL"}
+          {(report.exam_title || report.examTitle || "Exam Report")} &nbsp;—&nbsp; {passed ? "✅ PASS" : "❌ FAIL"}
         </div>
         <div className="card-body">
           <div className="row text-center">

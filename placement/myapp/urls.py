@@ -15,7 +15,9 @@ from .views.css_views import playground_questions_css_api
 from .views.javascript_views import playground_questions_javascript_api
 from .views.bootstrap_views import playground_questions_bootstrap_api
 from .views.oracle_views import playground_questions_oracle_api
-#from .views.java_views import playground_questions_java_api
+from .views.java_views import playground_questions_java_api
+from .views.react_views import playground_questions_react_api
+from .views.django_views import playground_questions_django_api
 from .views import course_views
 from .views.course_views import CourseViewSet
 from .views.python_views import *
@@ -89,7 +91,9 @@ urlpatterns = [
     path('playground-questions/javascript/', playground_questions_javascript_api, name='playground-questions-javascript'),
     path('playground-questions/bootstrap/', playground_questions_bootstrap_api, name='playground-questions-bootstrap'),
     path('playground-questions/oracle/', playground_questions_oracle_api, name='playground-questions-oracle'),
-    #path('playground-questions/java/', python_views.playground_questions_java_api, name='playground-questions-java'),
+    path('playground-questions/java/', playground_questions_java_api, name='playground-questions-java'),
+    path('playground-questions/react/', playground_questions_react_api, name='playground-questions-react'),
+    path('playground-questions/django/', playground_questions_django_api, name='playground-questions-django'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),

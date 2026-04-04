@@ -641,11 +641,14 @@ function ExamFailureDashboard() {
                 <div className="mb-4">
                   <h6 className="text-primary mb-3">📊 Basic Information</h6>
                   <DetailRow label="Student" value={selectedReport.user?.username || "Unknown"} />
-                  <DetailRow label="Exam" value={(() => {
-                    const type = (selectedReport.examType || "Daily").charAt(0).toUpperCase() + (selectedReport.examType || "Daily").slice(1).toLowerCase();
-                    const num = selectedReport.attemptNumber || "";
-                    return `${type} Exam ${num}`;
-                  })()} />
+                  <DetailRow 
+                    label="Exam" 
+                    value={selectedReport.examTitle ? selectedReport.examTitle : (() => {
+                      const type = (selectedReport.examType || "Daily").charAt(0).toUpperCase() + (selectedReport.examType || "Daily").slice(1).toLowerCase();
+                      const num = selectedReport.attemptNumber || "";
+                      return `${type} Exam ${num}`;
+                    })()} 
+                  />
                   <DetailRow label="Status" value={
                     <span className={`badge ${
                       (selectedReport.normalizedStatus || '') === 'fail' ? 'bg-danger' :
@@ -829,7 +832,7 @@ function ReportTable({ reports, selectedId, onSelect, emptyMessage, isCheatedVie
                 </div>
               </td>
               <td className="text-muted">
-                {(() => {
+                {report.examTitle ? report.examTitle : (() => {
                    const type = (report.examType || "Daily").charAt(0).toUpperCase() + (report.examType || "Daily").slice(1).toLowerCase();
                    const num = report.attemptNumber || "";
                    return `${type} Exam ${num}`;

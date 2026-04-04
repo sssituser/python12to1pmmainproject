@@ -103,7 +103,7 @@ function Playground() {
               </p>
 
               <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
-                20 MCQs • 45 min
+                Daily practice exam
               </span>
             </div>
 
