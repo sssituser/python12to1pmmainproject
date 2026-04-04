@@ -10,6 +10,21 @@ function DailyExamReports() {
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
+  const getCurrentUsername = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr && userStr !== "undefined") {
+        const parsedUser = JSON.parse(userStr);
+        return parsedUser?.username?.toLowerCase() || null;
+      }
+    } catch (e) {
+      console.error("User parse error:", e);
+    }
+    return null;
+  };
+
+  const cacheKey = `daily-exam-reports-${getCurrentUsername() || "guest"}`;
+
   //  FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
   const fetchReports = async () => {
     try {
@@ -24,16 +39,7 @@ function DailyExamReports() {
       }
 
       // Filter by logged-in username from localStorage (case-insensitive)
-      let currentUsername = null;
-      try {
-        const userStr = localStorage.getItem("user");
-        if (userStr && userStr !== "undefined") {
-          const parsedUser = JSON.parse(userStr);
-          currentUsername = parsedUser?.username?.toLowerCase() || null;
-        }
-      } catch (e) {
-        console.error("User parse error:", e);
-      }
+      const currentUsername = getCurrentUsername();
 
       if (currentUsername) {
         examList = examList.filter(
@@ -42,14 +48,27 @@ function DailyExamReports() {
       }
 
       setExams(examList);
+      localStorage.setItem(cacheKey, JSON.stringify(examList));
 
     } catch (err) {
       console.error("Failed to fetch exam reports:", err);
-      setExams([]);
+      // keep whatever is already shown (likely cache)
     }
   };
 
   useEffect(() => {
+    // Show cached data instantly if present
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setExams(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to read cached daily reports:", e);
+    }
     fetchReports();
   }, []);
 

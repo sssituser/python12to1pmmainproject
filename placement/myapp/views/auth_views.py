@@ -113,7 +113,8 @@ def login(request):
                 "username": user.username,
                 "email": user_email,
                 "name": user.first_name or user.username,
-                "role": user.role or "student"
+                "role": user.role or "student",
+                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course else ""
             },
             "email_sent": email_sent
         }
@@ -192,6 +193,7 @@ def verify_otp(request):
                 "email": user.email,
                 "name": user.first_name or user.username,
                 "role": user.role or "student",
+                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course else ""
             },
         })
 

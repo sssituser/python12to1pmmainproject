@@ -10,6 +10,21 @@ function WeeklyExamReports() {
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
+  const getCurrentUsername = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr && userStr !== "undefined") {
+        const parsedUser = JSON.parse(userStr);
+        return parsedUser?.username?.toLowerCase() || null;
+      }
+    } catch (e) {
+      console.error("User parse error:", e);
+    }
+    return null;
+  };
+
+  const cacheKey = `weekly-exam-reports-${getCurrentUsername() || "guest"}`;
+
   // FETCH DATA FROM BACKEND - Weekly exams only (this week)
   const fetchReports = async () => {
     try {
@@ -24,31 +39,36 @@ function WeeklyExamReports() {
       }
 
       // Filter by logged-in user (case-insensitive)
-      try {
-        const userStr = localStorage.getItem("user");
-        if (userStr && userStr !== "undefined") {
-          const parsedUser = JSON.parse(userStr);
-          const currentUsername = parsedUser?.username?.toLowerCase();
-          if (currentUsername) {
-            examList = examList.filter(
-              (e) => e.user?.username?.toLowerCase() === currentUsername
-            );
-          }
-        }
-      } catch (e) {
-        console.error("User parse error:", e);
+      const currentUsername = getCurrentUsername();
+      if (currentUsername) {
+        examList = examList.filter(
+          (e) => e.user?.username?.toLowerCase() === currentUsername
+        );
       }
 
       // No fallback — weekly page only shows weekly data
       setExams(examList);
+      localStorage.setItem(cacheKey, JSON.stringify(examList));
 
     } catch (err) {
       console.error("Failed to fetch weekly exam reports:", err);
-      setExams([]);
+      // keep existing cache on screen
     }
   };
 
   useEffect(() => {
+    // Load cached weekly reports first
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setExams(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to read cached weekly reports:", e);
+    }
     fetchReports();
   }, []);
 

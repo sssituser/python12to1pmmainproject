@@ -351,7 +351,7 @@ def exam_reports_api(request):
         # Priority: If it's already cheated or suspicious in DB, keep it
         if 'cheat' in normalized_status or 'suspicious' in normalized_status or 'violated' in normalized_status:
             final_status = 'Cheated'
-        elif percentage >= 50:
+        elif percentage >= 33.33:
             final_status = 'Pass'
         else:
             final_status = 'Fail'
@@ -377,7 +377,7 @@ def exam_reports_api(request):
         recommendations = "Keep up the good work!"
         
         if final_status == 'Fail':
-            failure_reason = f"Scored {percentage}%, which is below the 50% passing threshold. Student may need to review fundamental concepts."
+            failure_reason = f"Scored {percentage}%, which is below the 33.33% (20 marks out of 60) passing threshold. Student may need to review fundamental concepts."
             recommendations = "Assign remedial exercises and recommend a one-on-one doubt clearing session."
         elif final_status == 'Cheated':
             if suspicious_detected:
@@ -528,12 +528,12 @@ def save_exam_report_api(request):
             final_status = 'Fail'
         else:
             marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-            total_marks = data.get('total_marks') or data.get('totalMarks') or 40
+            total_marks = data.get('total_marks') or data.get('totalMarks') or 60
             
             # Calculate percentage for pass/fail decision
             percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
             
-            if percentage >= 50:
+            if percentage >= 33.33:
                 final_status = 'Pass'
             else:
                 final_status = 'Fail'
@@ -543,11 +543,11 @@ def save_exam_report_api(request):
             exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
             exam_type=data.get('exam_type') or data.get('examType', 'daily'),
             score=data.get('score', 0),
-            total_questions=data.get('total_questions') or data.get('totalQuestions', 20),
+            total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
             correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
             incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
             marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-            total_marks=data.get('total_marks') or data.get('totalMarks', 40),
+            total_marks=data.get('total_marks') or data.get('totalMarks', 60),
             time_taken=data.get('time_taken') or data.get('timeTaken', 0),
             start_time=start_time,
             end_time=end_time,
@@ -931,7 +931,8 @@ def playground_questions_api(request):
     theoretical_questions = questions_pool[:45]
     practical_questions = questions_pool[45:50]
     
-    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
+    # Return 30 questions total (25 theory + 5 practical)
+    selected_questions = random.sample(theoretical_questions, 25) + practical_questions
     random.shuffle(selected_questions)
     
     return Response({
