@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 import {
   FaPython,
   FaJs,
@@ -22,6 +23,7 @@ import {
   FaGitAlt,
   FaDocker,
   FaAws,
+  FaLink,
   FaGoogle,
   FaApple,
   FaAndroid,
@@ -32,127 +34,16 @@ function CoursesPage() {
   const navigate = useNavigate();
   const { courseId } = useParams();
   const [selectedCourse, setSelectedCourse] = useState(null);
-  
-  // Default courses for first-time setup
-  const defaultCourses = [
-    {
-      id: 1,
-      title: "Python (Basic)",
-      icon: FaPython,
-      level: "Beginner",
-      duration: "3 hrs",
-      progress: 60,
-      locked: false,
-      topics: [
-        "Python Basics",
-        "Variables and Data Types",
-        "Loops",
-        "Functions",
-        "Lists and Tuples",
-        "Dictionaries",
-        "File Handling",
-        "Exception Handling"
-      ]
-    },
-    {
-      id: 2,
-      title: "JavaScript (Basic)",
-      icon: FaJs,
-      level: "Beginner",
-      duration: "2.5 hrs",
-      progress: 40,
-      locked: false,
-      topics: [
-        "JS Basics",
-        "ES6",
-        "DOM Manipulation",
-        "React Basics",
-        "Arrays and Objects",
-        "Async Programming",
-        "Event Handling",
-        "Error Handling"
-      ]
-    },
-    {
-      id: 3,
-      title: "Java (Intermediate)",
-      icon: FaJava,
-      level: "Intermediate",
-      duration: "4 hrs",
-      progress: 20,
-      locked: false,
-      topics: [
-        "Introduction to Java",
-        "Java Operators",
-        "Data Types",
-        "Control Flow",
-        "Methods",
-        "Classes and Objects",
-        "Inheritance",
-        "Polymorphism"
-      ]
-    },
-    {
-      id: 4,
-      title: "SQL (Basic)",
-      icon: FaDatabase,
-      level: "Beginner",
-      duration: "2 hrs",
-      progress: 80,
-      locked: false,
-      topics: [
-        "SQL Basics",
-        "SELECT Queries",
-        "Joins",
-        "Aggregate Functions",
-        "Subqueries",
-        "Indexes",
-        "Transactions",
-        "Database Normalization"
-      ]
-    },
-    {
-      id: 5,
-      title: ".NET (Intermediate)",
-      icon: FaMicrosoft,
-      level: "Intermediate",
-      duration: "5 hrs",
-      progress: 0,
-      locked: false,
-      topics: [
-        ".NET Introduction",
-        "C# Basics",
-        "ASP.NET Core",
-        "MVC Pattern",
-        "Entity Framework",
-        "Dependency Injection",
-        "Authentication",
-        "Web API Development"
-      ]
-    },
-    {
-      id: 6,
-      title: "React (Basic)",
-      icon: FaReact,
-      level: "Beginner",
-      duration: "3 hrs",
-      progress: 30,
-      locked: false,
-      topics: [
-        "React Intro",
-        "Components",
-        "State Management",
-        "Hooks",
-        "Props and PropTypes",
-        "Conditional Rendering",
-        "Forms in React",
-        "React Router"
-      ]
-    }
-  ];
-
+  const [studentCourse, setStudentCourse] = useState("");
+  const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
   const isFirstRender = useRef(true);
+
+  // Helper function to get auth token
+  const getStoredToken = (key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? raw.replace(/^"|"$/g, "") : null;
+  };
 
   // Icon mapping for automatic logo generation
   const getIconForCourse = (courseName) => {
@@ -171,6 +62,7 @@ function CoursesPage() {
     if (lowerName.includes('data') || lowerName.includes('analytics')) return FaChartLine;
     if (lowerName.includes('mobile') || lowerName.includes('app')) return FaMobile;
     if (lowerName.includes('game') || lowerName.includes('gaming')) return FaGamepad;
+    if (lowerName.includes('blockchain') || lowerName.includes('crypto')) return FaLink;
     if (lowerName.includes('server') || lowerName.includes('backend')) return FaServer;
     if (lowerName.includes('devops') || lowerName.includes('tools')) return FaCogs;
     if (lowerName.includes('web') || lowerName.includes('frontend')) return FaLaptopCode;
@@ -184,81 +76,84 @@ function CoursesPage() {
     return FaCode; // Default icon
   };
 
-  // Load courses from localStorage on component mount
+  // Load courses from API on component mount
   useEffect(() => {
-    const savedCourses = localStorage.getItem('courses');
-    if (savedCourses) {
-      try {
-        const parsedCourses = JSON.parse(savedCourses);
-        const coursesWithIcons = parsedCourses.map(course => ({
-          ...course,
-          icon: getIconForCourse(course.title)
-        }));
-        setCourses(coursesWithIcons);
-      } catch (error) {
-        console.error('Error loading courses from localStorage:', error);
-        setCourses(defaultCourses);
+    const fetchCourses = async () => {
+      const token = getStoredToken("access");
+      if (!token) {
+        setLoading(false);
+        return;
       }
-    } else {
-      setCourses(defaultCourses);
-      localStorage.setItem('courses', JSON.stringify(defaultCourses));
-    }
-  }, []);
 
-  // Save courses to localStorage whenever they change
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    localStorage.setItem('courses', JSON.stringify(courses));
-  }, [courses]);
-
-  // Sync courses from faculty - Check for new courses added by faculty
-  useEffect(() => {
-    const checkForFacultyUpdates = () => {
-      const facultyCourses = localStorage.getItem('facultyCourses');
-      if (facultyCourses) {
-        try {
-          const parsedFacultyCourses = JSON.parse(facultyCourses);
-          const studentCourses = localStorage.getItem('courses');
-          
-          if (studentCourses) {
-            const parsedStudentCourses = JSON.parse(studentCourses);
-            
-            // Check if faculty courses are different from student courses
-            const facultyUpdated = JSON.stringify(parsedFacultyCourses) !== JSON.stringify(parsedStudentCourses);
-            
-            if (facultyUpdated) {
-              // Update student courses with faculty changes
-              const updatedStudentCourses = parsedFacultyCourses.map(course => ({
-                ...course,
-                icon: getIconForCourse(course.title)
-              }));
-              localStorage.setItem('courses', JSON.stringify(updatedStudentCourses));
-              setCourses(updatedStudentCourses);
-            }
-          } else {
-            // If no student courses, use faculty courses
-            const coursesWithIcons = parsedFacultyCourses.map(course => ({
-              ...course,
-              icon: getIconForCourse(course.title)
-            }));
-            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
-            setCourses(coursesWithIcons);
-          }
-        } catch (error) {
-          console.error('Error syncing courses from faculty:', error);
+      try {
+        // Use student endpoint to get courses with progress
+        const response = await axios.get("http://127.0.0.1:8000/api/courses/student/", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data.success) {
+          const coursesWithIcons = response.data.data.map(course => ({
+            ...course,
+            icon: getIconForCourse(course.title)
+          }));
+          setCourses(coursesWithIcons);
+        } else {
+          console.error('Failed to fetch courses:', response.data);
+          loadDefaultCourses();
         }
+      } catch (error) {
+        console.error('Error fetching courses from API:', error);
+        loadDefaultCourses();
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Check for faculty updates every 2 seconds
-    const interval = setInterval(checkForFacultyUpdates, 2000);
-    
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
+    fetchCourses();
   }, []);
+
+  // Helper function to load default courses
+  const loadDefaultCourses = () => {
+    // Import default courses from CourseData
+    import('../components/CourseData.jsx').then(module => {
+      const coursesWithIcons = module.defaultCourses.map(course => ({
+        ...course,
+        icon: module.getIconForCourse(course.title)
+      }));
+      setCourses(coursesWithIcons);
+    }).catch(error => {
+      console.error('Error loading default courses:', error);
+    });
+  };
+
+  // Filter courses when studentCourse changes (only after courses are loaded)
+  useEffect(() => {
+    if (studentCourse && courses.length > 0 && !loading) {
+      // Filter courses based on student's course
+      const filteredCourses = courses.filter(course => {
+        const courseTitle = course.title.toLowerCase();
+        const studentCourseLower = studentCourse.toLowerCase();
+        
+        // Check if student's course is mentioned in the course title
+        return courseTitle.includes(studentCourseLower) || 
+               studentCourseLower.includes(courseTitle) ||
+               courseTitle.includes('basic') || 
+               courseTitle.includes('introduction') ||
+               courseTitle.includes('fundamentals') ||
+               courseTitle.includes('development') ||
+               courseTitle.includes('programming') ||
+               courseTitle.includes('full stack') ||
+               courseTitle.includes('stack') ||
+               courseTitle.includes('web') ||
+               courseTitle.includes('software');
+      });
+      
+      // Only update if filtered courses are different
+      if (JSON.stringify(filteredCourses) !== JSON.stringify(courses)) {
+        setCourses(filteredCourses);
+      }
+    }
+  }, [studentCourse]); // Remove courses from dependencies, add loading check
 
   // Handle URL parameter for specific course
   useEffect(() => {
@@ -308,7 +203,7 @@ function CoursesPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-900">
-            {selectedCourse.title} Topics
+            {selectedCourse.title} Course Content
           </h2>
 
           <button
@@ -319,20 +214,71 @@ function CoursesPage() {
           </button>
         </div>
 
-        {/* Topics */}
-        <div className="space-y-4">
-          {selectedCourse.topics.map((topic, index) => (
-            <div key={index} className="flex justify-between items-center">
-              <p className="text-lg font-medium text-gray-800">{topic}</p>
-              <button
-                onClick={() => handleWatchClick(selectedCourse.title, topic)}
-                className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
-                title="Watch Video"
-              >
-                <FaPlay className="text-xl" />
-              </button>
+        {/* Modules with Topics */}
+        <div className="space-y-6">
+          {selectedCourse.modules ? (
+            selectedCourse.modules.map((module, moduleIndex) => (
+              <div key={moduleIndex} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                {/* Module Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-xl">
+                  <h3 className="text-lg font-bold flex items-center gap-3">
+                    <span className="bg-white/20 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                      {moduleIndex + 1}
+                    </span>
+                    {module.title}
+                  </h3>
+                  <p className="text-sm text-white/80 mt-1">
+                    {module.topics.length} topics
+                  </p>
+                </div>
+
+                {/* Topics List */}
+                <div className="p-4">
+                  <div className="space-y-3">
+                    {module.topics.map((topic, topicIndex) => (
+                      <div key={topicIndex} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                            {topicIndex + 1}
+                          </span>
+                          <p className="text-gray-800 font-medium">{topic}</p>
+                        </div>
+                        <button
+                          onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                          className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                          title="Watch Video"
+                        >
+                          <FaPlay className="text-lg" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            /* Fallback to flat topics list if no modules */
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Course Topics</h3>
+              {selectedCourse.topics.map((topic, index) => (
+                <div key={index} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                      {index + 1}
+                    </span>
+                    <p className="text-lg font-medium text-gray-800">{topic}</p>
+                  </div>
+                  <button
+                    onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                    className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                    title="Watch Video"
+                  >
+                    <FaPlay className="text-xl" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
@@ -341,12 +287,30 @@ function CoursesPage() {
   // =========================
   // COURSE LIST VIEW
   // =========================
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-gray-900 text-2xl font-bold">
-          Courses
-        </h2>
+        <div>
+          <h2 className="text-gray-900 text-2xl font-bold">
+            Courses
+          </h2>
+          {studentCourse && (
+            <p className="text-sm text-gray-600 mt-1">
+              Showing courses for: <span className="font-semibold text-blue-600">{studentCourse}</span>
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -420,6 +384,21 @@ function CoursesPage() {
             </div>
           );
         })}
+
+        {courses.length === 0 && studentCourse && (
+          <div className="col-span-full text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">
+              📚
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No courses found for your course
+            </h3>
+            <p className="text-gray-600">
+              We don't have any specific courses for "{studentCourse}" yet. 
+              Check back later or contact your instructor.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

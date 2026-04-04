@@ -3,14 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
+from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob
 from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from ..email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
 from django.utils import timezone
 import json
 from django.db.models import Q
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job
+from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob
 
 import requests
 import base64
@@ -318,6 +318,17 @@ def exam_reports_api(request):
     
     if username:
         attempts = attempts.filter(user__username__iexact=username)
+    
+    # Filter by student's course if user is authenticated
+    if request.user and request.user.is_authenticated:
+        try:
+            profile = StudentProfile.objects.get(user=request.user)
+            if profile.course:
+                # Filter attempts by users who have the same course
+                same_course_users = StudentProfile.objects.filter(course=profile.course).values_list('user', flat=True)
+                attempts = attempts.filter(user__in=same_course_users)
+        except StudentProfile.DoesNotExist:
+            pass  # If no profile, show all attempts
         
     attempts = attempts.order_by('-exam_date')
     
@@ -376,6 +387,16 @@ def exam_reports_api(request):
                 failure_reason = "Academic integrity violation flagged manually or via session behavior."
                 recommendations = "Schedule a meeting to discuss academic integrity and consider a proctored retake."
 
+        # Get student's course information
+        student_course = None
+        if attempt.user:
+            try:
+                student_profile = StudentProfile.objects.get(user=attempt.user)
+                if student_profile.course:
+                    student_course = student_profile.course.title
+            except StudentProfile.DoesNotExist:
+                pass
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
@@ -395,7 +416,8 @@ def exam_reports_api(request):
             'recommendations': recommendations,
             'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
             'timeTaken': attempt.time_taken,
-            'percentage': percentage
+            'percentage': percentage,
+            'course': student_course  # NEW FIELD
         })
 
     return Response({
@@ -535,10 +557,20 @@ def save_exam_report_api(request):
             questions_json=json.dumps(data.get('questions', []))
         )
 
+        # Get student's course information for response
+        student_course = None
+        try:
+            student_profile = StudentProfile.objects.get(user=user)
+            if student_profile.course:
+                student_course = student_profile.course.title
+        except StudentProfile.DoesNotExist:
+            pass
+
         return Response({
             'success': True,
             'message': 'Exam report saved successfully',
             'saved_username': user.username,
+            'course': student_course,
             'data': ExamAttemptSerializer(attempt).data
         }, status=status.HTTP_201_CREATED)
 
@@ -1092,18 +1124,53 @@ def dashboard_stats_api(request):
     """
     try:
         total_students = User.objects.filter(is_staff=False).count()
+        active_students = User.objects.filter(is_staff=False, is_active=True).count()
+        total_courses = Course.objects.count()
         placed_students = AppliedJob.objects.values('user').distinct().count()
         active_jobs = Job.objects.count()
         pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
         
         return Response({
             "total_students": total_students,
+            "active_students": active_students,
+            "total_courses": total_courses,
+            "total_jobs": active_jobs,
             "placed_students": placed_students,
-            "active_jobs": active_jobs,
             "pending_reviews": pending_leaves
         })
     except Exception as e:
         return Response({'success': False, 'message': str(e)}, status=500)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def toggle_student_status(request, student_id):
+    """
+    Toggle student active/inactive status
+    """
+    try:
+        student = get_object_or_404(User, id=student_id, is_staff=False)
+        
+        # Check if user has permission (faculty or admin)
+        user = request.user
+        if not (user.is_staff or getattr(user, 'role', None) in ['faculty', 'admin']):
+            return Response({'error': 'Permission denied'}, status=403)
+        
+        new_status = request.data.get('is_active')
+        if new_status is not None:
+            student.is_active = new_status
+        else:
+            # Toggle if no specific status provided
+            student.is_active = not student.is_active
+            
+        student.save()
+        
+        return Response({
+            'message': f'Student {"activated" if student.is_active else "deactivated"} successfully',
+            'student_id': student.id,
+            'is_active': student.is_active
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
 
 # ---------------- STUDENT STATS (FACULTY) ----------------
 @api_view(['GET'])

@@ -6,6 +6,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
   const [openProfile, setOpenProfile] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [profileImage, setProfileImage] = useState(null);
   const [user, setUser] = useState({
     name: "Student",
     username: "student",
@@ -39,6 +40,95 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
     ]);
   };
 
+  const refreshAccessToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refresh");
+      if (!refreshToken) {
+        throw new Error("No refresh token available");
+      }
+
+      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("access", data.access);
+        return data.access;
+      } else {
+        throw new Error("Token refresh failed");
+      }
+    } catch (error) {
+      console.log("Token refresh failed:", error);
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+      return null;
+    }
+  };
+
+  const makeAuthenticatedRequest = async (url, options = {}) => {
+    let token = localStorage.getItem("access");
+    
+    const makeRequest = async (authToken) => {
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: authToken ? `Bearer ${authToken}` : undefined,
+        },
+      });
+    };
+
+    let response = await makeRequest(token);
+    
+    if (response.status === 401 && token) {
+      console.log("Token expired, attempting refresh...");
+      token = await refreshAccessToken();
+      if (token) {
+        response = await makeRequest(token);
+      }
+    }
+    
+    return response;
+  };
+
+  const fetchProfileImage = () => {
+    const token = localStorage.getItem("access");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    
+    if (!token) return;
+
+    // For all users, use existing profile endpoint
+    makeAuthenticatedRequest("http://127.0.0.1:8000/api/profile/")
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (data && data.profile_image) {
+        const imageUrl = data.profile_image.startsWith('http') 
+          ? data.profile_image 
+          : `http://127.0.0.1:8000${data.profile_image}`;
+        setProfileImage(imageUrl);
+      }
+    })
+    .catch(err => {
+      console.log("Failed to fetch profile image:", err);
+      // Don't show error for 401 as it's handled by makeAuthenticatedRequest
+      if (err.message && !err.message.includes("401")) {
+        console.error("Profile image fetch error:", err);
+      }
+    });
+  };
+
   const updateUserFromStorage = () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -65,30 +155,34 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
   useEffect(() => {
     // Initial load
     updateUserFromStorage();
+    fetchProfileImage();
     loadNotifications();
 
     // Listen for storage changes (cross-tab updates)
     const handleStorageChange = (e) => {
       if (e.key === "user") {
         updateUserFromStorage();
+        fetchProfileImage(); // Refresh profile image when user data changes
       }
       if (e.key === "notifications") {
         loadNotifications();
       }
-    };
-
-    const handleNotificationsUpdated = () => {
-      loadNotifications();
+      // Listen for profile image updates
+      if (e.key === "profileImageUpdated") {
+        fetchProfileImage(); // Refresh profile image when updated
+      }
+      if (e.key === "userProfileImage") {
+        // Direct profile image update
+        const imageUrl = e.newValue;
+        if (imageUrl) {
+          setProfileImage(imageUrl);
+        }
+      }
     };
 
     window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("notificationsUpdated", handleNotificationsUpdated);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("notificationsUpdated", handleNotificationsUpdated);
-    };
-  }, [logoUrl]);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const logout = () => {
     // Clear only auth-related items, not all localStorage
@@ -197,7 +291,18 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
             onClick={() => setOpenProfile(!openProfile)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-200 transition"
           >
-            <UserCircle size={22} />
+            {profileImage ? (
+              <img 
+                src={profileImage} 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full object-cover border-2 border-gray-300"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
+              />
+            ) : null}
+            <UserCircle size={22} className={profileImage ? "hidden" : "block"} />
             <span className="text-sm font-medium text-gray-700 hidden md:block">
               {user.name}
             </span>

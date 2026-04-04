@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 import {
   FaPython,
   FaJs,
@@ -30,8 +31,9 @@ import {
   FaEdit,
   FaCheckCircle
 } from "react-icons/fa";
+// import VideoPlayer from '../components/VideoPlayer'; // Temporarily disabled
 
-import { defaultCourses, getIconForCourse, generateTopicsForCourse } from '../components/CourseData';
+import { defaultCourses, getIconForCourse, generateTopicsForCourse, generateModulesForCourse } from '../components/CourseData.jsx';
 
 function CoursesPage() {
   const navigate = useNavigate();
@@ -45,7 +47,17 @@ function CoursesPage() {
   const [newTopic, setNewTopic] = useState("");
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [newCourseName, setNewCourseName] = useState('');
-  const [generatedTopics, setGeneratedTopics] = useState([]);
+  // Generate modules preview when course name changes
+  useEffect(() => {
+    if (newCourseName.trim()) {
+      const modules = generateModulesForCourse(newCourseName);
+      setGeneratedModules(modules);
+    } else {
+      setGeneratedModules([]);
+    }
+  }, [newCourseName]);
+
+  const [generatedModules, setGeneratedModules] = useState([]);
   const [showTopicPreview, setShowTopicPreview] = useState(false);
   const [showVideoOptions, setShowVideoOptions] = useState(false);
   const [showTopicVideoOptions, setShowTopicVideoOptions] = useState(false);
@@ -79,33 +91,87 @@ function CoursesPage() {
   const [editTopicVidFile, setEditTopicVidFile] = useState('');
   const [editTopicVidLink, setEditTopicVidLink] = useState('');
   
-  // Load courses from localStorage on component mount
+  // Load courses from API dynamically on component mount
   useEffect(() => {
-    const savedCourses = localStorage.getItem('courses');
-    
-    if (savedCourses) {
+    const fetchCourses = async () => {
       try {
-        const parsedCourses = JSON.parse(savedCourses);
+        const token = localStorage.getItem('access');
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
         
-        if (!parsedCourses || parsedCourses.length === 0) {
-           setCourses(defaultCourses);
-           localStorage.setItem('courses', JSON.stringify(defaultCourses));
-           return;
-        }
+        // For faculty users, skip API call and use localStorage directly
+        if (user.role === "faculty") {
+          console.log("Faculty user detected - using localStorage only");
+        } else if (token) {
+          // For non-faculty users with token, try to fetch from API first
+          const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
 
-        const coursesWithIcons = parsedCourses.map(course => ({
-          ...course,
-          icon: getIconForCourse(course.title)
-        }));
-        setCourses(coursesWithIcons);
+          if (response.ok) {
+            const apiCourses = await response.json();
+            
+            // Transform API data to match frontend structure
+            const coursesWithIcons = apiCourses.map(course => ({
+              ...course,
+              icon: getIconForCourse(course.title),
+              // Ensure required fields exist
+              level: course.level || "Beginner",
+              duration: course.duration || "Self-paced",
+              progress: course.progress || 0,
+              locked: course.locked || false,
+              topics: course.topics || [],
+              modules: course.modules || null,
+              customVideos: course.custom_videos || {}
+            }));
+            
+            setCourses(coursesWithIcons);
+            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
+            localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
+            return;
+          } else if (response.status === 401) {
+            console.log("Unauthorized - falling back to localStorage");
+          }
+        }
       } catch (error) {
+        console.log("API fetch failed, falling back to localStorage:", error);
+      }
+
+      // Fallback to localStorage (used for faculty users and when API fails)
+      const savedCourses = localStorage.getItem('courses');
+      
+      if (savedCourses) {
+        try {
+          const parsedCourses = JSON.parse(savedCourses);
+          
+          if (!parsedCourses || parsedCourses.length === 0) {
+             setCourses(defaultCourses);
+             localStorage.setItem('courses', JSON.stringify(defaultCourses));
+             localStorage.setItem('facultyCourses', JSON.stringify(defaultCourses));
+             return;
+          }
+
+          const coursesWithIcons = parsedCourses.map(course => ({
+            ...course,
+            icon: getIconForCourse(course.title)
+          }));
+          setCourses(coursesWithIcons);
+          localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
+        } catch (error) {
+          setCourses(defaultCourses);
+          localStorage.setItem('courses', JSON.stringify(defaultCourses));
+          localStorage.setItem('facultyCourses', JSON.stringify(defaultCourses));
+        }
+      } else {
         setCourses(defaultCourses);
         localStorage.setItem('courses', JSON.stringify(defaultCourses));
+        localStorage.setItem('facultyCourses', JSON.stringify(defaultCourses));
       }
-    } else {
-      setCourses(defaultCourses);
-      localStorage.setItem('courses', JSON.stringify(defaultCourses));
-    }
+    };
+
+    fetchCourses();
   }, []);
 
   // Save courses to localStorage whenever they change
@@ -146,23 +212,29 @@ function CoursesPage() {
     setManualTopicsList(manualTopicsList.filter((_, i) => i !== index));
   };
 
-  const addNewCourse = () => {
-    if (!newCourseName.trim() || manualTopicsList.length === 0) {
+  const addNewCourse = async () => {
+    if (!newCourseName.trim()) {
       return;
     }
     
-    const topicsToUse = [...manualTopicsList];
+    // Generate modules with topics for the course
+    const modules = generateModulesForCourse(newCourseName);
+    
+    // Flatten all topics from all modules for backward compatibility
+    const allTopics = modules.reduce((topics, module) => {
+      return topics.concat(module.topics);
+    }, []);
     
     const newCourse = {
-      id: courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1,
       title: newCourseName,
       icon: getIconForCourse(newCourseName),
       level: "Beginner",
-      duration: "3 hrs",
+      duration: "Self-paced",
       progress: 0,
       locked: false,
-      topics: topicsToUse,
-      customVideos: topicsToUse.reduce((acc, topic) => {
+      topics: allTopics, // Keep for backward compatibility
+      modules: modules, // New structured modules
+      custom_videos: allTopics.reduce((acc, topic) => {
         if (topicVideos[topic]) {
           acc[topic] = topicVideos[topic];
         } else {
@@ -178,7 +250,43 @@ function CoursesPage() {
       }, {})
     };
     
-    // Add the new course to the courses array
+    try {
+      // Try to save to backend API first (skip for faculty users)
+      const token = localStorage.getItem('access');
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      
+      if (token && user.role !== "faculty") {
+        // Only try API for non-faculty users
+        const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newCourse)
+        });
+
+        if (response.ok) {
+          const savedCourse = await response.json();
+          // Use the ID from the backend response
+          newCourse.id = savedCourse.id;
+          console.log("Course saved to backend successfully");
+        } else if (response.status === 401) {
+          console.log("Unauthorized - falling back to localStorage only");
+        } else {
+          console.log("Backend save failed, falling back to localStorage");
+        }
+      } else {
+        console.log("Faculty user - skipping backend API call");
+      }
+    } catch (error) {
+      console.log("API save failed, using localStorage only:", error);
+    }
+    
+    // Add the new course to the courses array (with backend ID or local ID)
+    const localId = courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1;
+    newCourse.id = newCourse.id || localId;
+    
     const updatedCourses = [...courses, newCourse];
     setCourses(updatedCourses);
     
@@ -188,11 +296,7 @@ function CoursesPage() {
     
     // Clear form and reset state
     setNewCourseName("");
-    setGeneratedTopics([]);
-    setShowTopicPreview(false);
-    setShowVideoOptions(false);
-    setManualTopicsList([]);
-    setManualTopicEntry("");
+    setGeneratedModules([]);
     setShowAddCourse(false);
     setExpandedVideoTopic(null);
     setTopicVideos({});
@@ -211,11 +315,8 @@ function CoursesPage() {
   // Reset Course Creation Form
   const resetCourseForm = () => {
     setNewCourseName("");
-    setGeneratedTopics([]);
-    setManualTopicsList([]);
-    setManualTopicEntry("");
-    setShowTopicPreview(false);
-    setShowVideoOptions(false);
+    setGeneratedModules([]);
+    setShowAddCourse(false);
     setExpandedVideoTopic(null);
     setTopicVideos({});
     setVideoUploadFile({});
@@ -296,7 +397,43 @@ function CoursesPage() {
     performRemoval(selectedForDeletion);
   };
 
-  const performRemoval = (idsToRemove) => {
+  const performRemoval = async (idsToRemove) => {
+    // Try to delete from backend API first (skip for faculty users)
+    try {
+      const token = localStorage.getItem('access');
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      
+      if (token && user.role !== "faculty") {
+        // Only try API for non-faculty users
+        const deletePromises = idsToRemove.map(id => 
+          fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+        );
+
+        const results = await Promise.allSettled(deletePromises);
+        const successfulDeletes = results.filter(result => result.status === 'fulfilled');
+        const failedDeletes = results.filter(result => result.status === 'rejected');
+        
+        if (successfulDeletes.length > 0) {
+          console.log(`Successfully deleted ${successfulDeletes.length} courses from backend`);
+        }
+        
+        if (failedDeletes.length > 0) {
+          console.log(`Failed to delete ${failedDeletes.length} courses from backend, removing from local storage only`);
+        }
+      } else {
+        console.log("Faculty user - skipping backend API deletion");
+      }
+    } catch (error) {
+      console.log("Backend deletion failed, removing from localStorage only:", error);
+    }
+    
+    // Always remove from local state and localStorage
     const updatedCourses = courses.filter(c => !idsToRemove.includes(c.id));
     setCourses(updatedCourses);
     localStorage.setItem('courses', JSON.stringify(updatedCourses));
@@ -435,7 +572,16 @@ function CoursesPage() {
                 {newTopicVidOpt === 'upload' && (
                   <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn">
                     <input type="file" accept="video/*" className="p-2 border border-purple-300 rounded bg-white shadow-sm" onChange={(e) => {
-                       if(e.target.files[0]) setNewTopicVidFile(URL.createObjectURL(e.target.files[0]));
+                       if(e.target.files[0]) {
+                         // Check if running in browser environment
+                         if (typeof window !== 'undefined' && window.URL && window.URL.createObjectURL) {
+                           setNewTopicVidFile(URL.createObjectURL(e.target.files[0]));
+                         } else {
+                           // Fallback for non-browser environments
+                           console.log('File selected:', e.target.files[0].name);
+                           setNewTopicVidFile(e.target.files[0].name);
+                         }
+                       }
                     }} />
                     <button onClick={addTopic} disabled={!newTopicVidFile} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
                   </div>
@@ -459,74 +605,178 @@ function CoursesPage() {
           )}
         </div>
 
-        {/* Topics */}
-        <div className="space-y-4">
-          {selectedCourse.topics.map((topic, index) => (
-            <div key={index} className="flex flex-col">
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-lg font-medium">{topic}</p>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => handleWatchClick(selectedCourse.title, topic)}
-                    className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
-                    title="Watch Video"
-                  >
-                    <FaPlay className="text-xl" />
-                  </button>
-                  <button
-                    onClick={() => setEditingVideoForTopic(editingVideoForTopic === topic ? null : topic)}
-                    className="text-purple-600 hover:text-purple-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
-                    title="Change video option"
-                  >
-                    <FaEdit className="text-xl" />
-                  </button>
-                  <button
-                    onClick={() => removeTopic(topic)}
-                    className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
-                    title="Remove Topic"
-                  >
-                    <FaTrash className="text-xl" />
-                  </button>
+        {/* Modules and Topics */}
+        <div className="space-y-6">
+          {selectedCourse.modules ? (
+            // Display structured modules
+            selectedCourse.modules.map((module, moduleIndex) => (
+              <div key={moduleIndex} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h4 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                    {moduleIndex + 1}
+                  </span>
+                  {module.title}
+                </h4>
+                <div className="space-y-3">
+                  {module.topics.map((topic, topicIndex) => (
+                    <div key={topicIndex} className="flex flex-col bg-white rounded-lg p-4 border border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-gray-200 text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">
+                            {topicIndex + 1}
+                          </span>
+                          <p className="text-lg font-medium text-gray-800">{topic}</p>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                            className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                            title="Watch Video"
+                          >
+                            <FaPlay className="text-lg" />
+                          </button>
+                          <button
+                            onClick={() => setEditingVideoForTopic(editingVideoForTopic === topic ? null : topic)}
+                            className="text-purple-600 hover:text-purple-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                            title="Change video option"
+                          >
+                            <FaEdit className="text-lg" />
+                          </button>
+                          <button
+                            onClick={() => removeTopic(topic)}
+                            className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                            title="Remove Topic"
+                          >
+                            <FaTrash className="text-lg" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Change Video Options Panel */}
+                      {editingVideoForTopic === topic && (
+                        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-3 transition-all animate-fadeIn shadow-sm">
+                          <h5 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+                            <span>🎬</span> Change Video Source for "{topic}"
+                          </h5>
+                          <div className="flex flex-col gap-4">
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
+                              <input type="radio" checked={editTopicVidOpt === 'upload'} onChange={() => setEditTopicVidOpt('upload')} name={`editVideoSource_${topicIndex}`} className="w-5 h-5 text-purple-600" />
+                              <span className="text-gray-800 font-medium">(i) Upload video from PC</span>
+                            </label>
+                            {editTopicVidOpt === 'upload' && (
+                              <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn">
+                                <input type="file" accept="video/*" className="p-2 border border-purple-300 rounded bg-white shadow-sm" onChange={(e) => {
+                                   if(e.target.files[0]) {
+                                     // Check if running in browser environment
+                                     if (typeof window !== 'undefined' && window.URL && window.URL.createObjectURL) {
+                                       setEditTopicVidFile(URL.createObjectURL(e.target.files[0]));
+                                     } else {
+                                       // Fallback for non-browser environments
+                                       console.log('File selected:', e.target.files[0].name);
+                                       setEditTopicVidFile(e.target.files[0].name);
+                                     }
+                                   }
+                                }} />
+                                <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidFile} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
+                              </div>
+                            )}
+
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
+                              <input type="radio" checked={editTopicVidOpt === 'link'} onChange={() => setEditTopicVidOpt('link')} name={`editVideoSource_${topicIndex}`} className="w-5 h-5 text-purple-600" />
+                              <span className="text-gray-800 font-medium">(ii) Paste your link here</span>
+                            </label>
+                            {editTopicVidOpt === 'link' && (
+                              <div className="ml-8 mt-2 flex flex-col items-start gap-4 w-full animate-fadeIn">
+                                <input type="url" placeholder="Paste video link here..." className="p-3 w-3/4 border border-purple-300 rounded bg-white shadow-sm" value={editTopicVidLink} onChange={(e) => setEditTopicVidLink(e.target.value)} />
+                                <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidLink.trim()} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Change Video Options Panel */}
-              {editingVideoForTopic === topic && (
-                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-2 transition-all animate-fadeIn shadow-sm">
-                  <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
-                    <span>🎬</span> Change Video Source for "{topic}"
-                  </h4>
-                  <div className="flex flex-col gap-4">
-                    <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
-                      <input type="radio" checked={editTopicVidOpt === 'upload'} onChange={() => setEditTopicVidOpt('upload')} name={`editVideoSource_${index}`} className="w-5 h-5 text-purple-600" />
-                      <span className="text-gray-800 font-medium">(i) Upload video from PC</span>
-                    </label>
-                    {editTopicVidOpt === 'upload' && (
-                      <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn">
-                        <input type="file" accept="video/*" className="p-2 border border-purple-300 rounded bg-white shadow-sm" onChange={(e) => {
-                           if(e.target.files[0]) setEditTopicVidFile(URL.createObjectURL(e.target.files[0]));
-                        }} />
-                        <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidFile} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                      </div>
-                    )}
-
-                    <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
-                      <input type="radio" checked={editTopicVidOpt === 'link'} onChange={() => setEditTopicVidOpt('link')} name={`editVideoSource_${index}`} className="w-5 h-5 text-purple-600" />
-                      <span className="text-gray-800 font-medium">(ii) Paste your link here</span>
-                    </label>
-                    {editTopicVidOpt === 'link' && (
-                      <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn w-full">
-                        <input type="url" placeholder="Paste video link here..." className="p-3 w-3/4 border border-purple-300 rounded bg-white shadow-sm" value={editTopicVidLink} onChange={(e) => setEditTopicVidLink(e.target.value)} />
-                        <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidLink.trim()} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
-                      </div>
-                    )}
-
-
+            ))
+          ) : (
+            // Fallback to flat topics list for backward compatibility
+            <div className="space-y-4">
+              {selectedCourse.topics.map((topic, index) => (
+                <div key={index} className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-lg font-medium">{topic}</p>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                        className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                        title="Watch Video"
+                      >
+                        <FaPlay className="text-xl" />
+                      </button>
+                      <button
+                        onClick={() => setEditingVideoForTopic(editingVideoForTopic === topic ? null : topic)}
+                        className="text-purple-600 hover:text-purple-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                        title="Change video option"
+                      >
+                        <FaEdit className="text-xl" />
+                      </button>
+                      <button
+                        onClick={() => removeTopic(topic)}
+                        className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
+                        title="Remove Topic"
+                      >
+                        <FaTrash className="text-xl" />
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Change Video Options Panel */}
+                  {editingVideoForTopic === topic && (
+                    <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-2 transition-all animate-fadeIn shadow-sm">
+                      <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+                        <span>🎬</span> Change Video Source for "{topic}"
+                      </h4>
+                      <div className="flex flex-col gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
+                          <input type="radio" checked={editTopicVidOpt === 'upload'} onChange={() => setEditTopicVidOpt('upload')} name={`editVideoSource_${index}`} className="w-5 h-5 text-purple-600" />
+                          <span className="text-gray-800 font-medium">(i) Upload video from PC</span>
+                        </label>
+                        {editTopicVidOpt === 'upload' && (
+                          <div className="ml-8 mt-2 flex flex-col items-start gap-4 animate-fadeIn">
+                            <input type="file" accept="video/*" className="p-2 border border-purple-300 rounded bg-white shadow-sm" onChange={(e) => {
+                               if(e.target.files[0]) {
+                                 // Check if running in browser environment
+                                 if (typeof window !== 'undefined' && window.URL && window.URL.createObjectURL) {
+                                   setEditTopicVidFile(URL.createObjectURL(e.target.files[0]));
+                                 } else {
+                                   // Fallback for non-browser environments
+                                   console.log('File selected:', e.target.files[0].name);
+                                   setEditTopicVidFile(e.target.files[0].name);
+                                 }
+                               }
+                            }} />
+                            <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidFile} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
+                          </div>
+                        )}
+
+                        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
+                          <input type="radio" checked={editTopicVidOpt === 'link'} onChange={() => setEditTopicVidOpt('link')} name={`editVideoSource_${index}`} className="w-5 h-5 text-purple-600" />
+                          <span className="text-gray-800 font-medium">(ii) Paste your link here</span>
+                        </label>
+                        {editTopicVidOpt === 'link' && (
+                          <div className="ml-8 mt-2 flex flex-col items-start gap-4 w-full animate-fadeIn">
+                            <input type="url" placeholder="Paste video link here..." className="p-3 w-3/4 border border-purple-300 rounded bg-white shadow-sm" value={editTopicVidLink} onChange={(e) => setEditTopicVidLink(e.target.value)} />
+                            <button onClick={() => saveChangeVideoOption(topic)} disabled={!editTopicVidLink.trim()} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-purple-700 hover:-translate-y-0.5 transition-all w-fit">Submit</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
@@ -567,170 +817,46 @@ function CoursesPage() {
                 />
               </div>
 
-              {/* Manual Topic Entry */}
+              {/* Auto-Generated Modules Preview */}
               <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Add Topics Manually</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={manualTopicEntry}
-                    onChange={(e) => setManualTopicEntry(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddManualTopic()}
-                    placeholder="Enter topic name..."
-                    className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  />
-                  <button
-                    onClick={handleAddManualTopic}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-md"
-                  >
-                    Add Topic
-                  </button>
-                </div>
-              </div>
-
-              {/* Topics List Display */}
-              <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 min-h-[240px]">
-                <h4 className="text-xl font-bold mb-4 text-gray-900">Course Content:</h4>
-                {manualTopicsList.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-                    <p className="italic">Your topics will appear here...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {manualTopicsList.map((topic, index) => (
-                      <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 bg-blue-600 text-white text-xs flex items-center justify-center rounded-full">
-                              {index + 1}
-                            </span>
-                            <span className="text-gray-900 font-medium">{topic}</span>
-                            {topicVideos[topic] && (
-                              <span className="text-green-600 text-sm font-semibold">✓ Video Added</span>
-                            )}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Auto-Generated Course Content</label>
+                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 min-h-[240px] max-h-[400px] overflow-y-auto">
+                  {generatedModules.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                      <p className="italic">Enter a course name to see generated modules...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {generatedModules.map((module, moduleIndex) => (
+                        <div key={moduleIndex} className="bg-white rounded-xl border border-blue-100 shadow-sm">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-t-xl">
+                            <h5 className="font-bold flex items-center gap-2">
+                              <span className="bg-white/20 backdrop-blur-sm rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                                {moduleIndex + 1}
+                              </span>
+                              {module.title}
+                            </h5>
                           </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => setExpandedVideoTopic(expandedVideoTopic === topic ? null : topic)}
-                              className="bg-purple-100 text-purple-600 hover:bg-purple-200 px-3 py-1 rounded text-sm font-semibold transition"
-                              title="Add Video"
-                            >
-                              🎬 Add Video
-                            </button>
-                            <button 
-                              onClick={() => removeManualTopic(index)}
-                              className="text-red-500 hover:text-red-700 p-2 transition-colors"
-                              title="Remove Topic"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Video Addition Panel for Each Topic */}
-                        {expandedVideoTopic === topic && (
-                          <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 mt-3">
-                            <h5 className="text-sm font-bold text-purple-900 mb-3">Add Video for "{topic}":</h5>
-                            <div className="space-y-3">
-                              {/* Upload Option */}
-                              <div className="border-2 border-purple-300 rounded-lg p-3 hover:bg-purple-100/50 cursor-pointer transition">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                  <input 
-                                    type="radio" 
-                                    name={`videoOption_${index}`}
-                                    checked={videoAddMode === `upload_${index}`}
-                                    onChange={() => setVideoAddMode(`upload_${index}`)}
-                                    className="w-4 h-4"
-                                  />
-                                  <span className="font-semibold text-gray-800">📤 Upload from PC</span>
-                                </label>
-                                {videoAddMode === `upload_${index}` && (
-                                  <div className="mt-3 ml-7 flex flex-col gap-2">
-                                    <input 
-                                      type="file" 
-                                      accept="video/*"
-                                      onChange={(e) => {
-                                        if(e.target.files[0]) {
-                                          setVideoUploadFile(prev => ({
-                                            ...prev,
-                                            [topic]: URL.createObjectURL(e.target.files[0])
-                                          }));
-                                        }
-                                      }}
-                                      className="p-2 border border-purple-300 rounded bg-white text-sm"
-                                    />
-                                    <button 
-                                      onClick={() => {
-                                        if(videoUploadFile[topic]) {
-                                          setTopicVideos(prev => ({
-                                            ...prev,
-                                            [topic]: { type: 'upload', url: videoUploadFile[topic] }
-                                          }));
-                                          setVideoAddMode(null);
-                                          setVideoUploadFile(prev => ({ ...prev, [topic]: '' }));
-                                        }
-                                      }}
-                                      disabled={!videoUploadFile[topic]}
-                                      className="bg-purple-600 text-white px-3 py-2 rounded font-semibold text-sm hover:bg-purple-700 disabled:bg-gray-300 transition"
-                                    >
-                                      Add Upload
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Link Option */}
-                              <div className="border-2 border-purple-300 rounded-lg p-3 hover:bg-purple-100/50 cursor-pointer transition">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                  <input 
-                                    type="radio" 
-                                    name={`videoOption_${index}`}
-                                    checked={videoAddMode === `link_${index}`}
-                                    onChange={() => setVideoAddMode(`link_${index}`)}
-                                    className="w-4 h-4"
-                                  />
-                                  <span className="font-semibold text-gray-800">🔗 Paste Link</span>
-                                </label>
-                                {videoAddMode === `link_${index}` && (
-                                  <div className="mt-3 ml-7 flex flex-col gap-2">
-                                    <input 
-                                      type="url"
-                                      placeholder="Paste video link here..."
-                                      value={videoUploadLink[topic] || ''}
-                                      onChange={(e) => {
-                                        setVideoUploadLink(prev => ({
-                                          ...prev,
-                                          [topic]: e.target.value
-                                        }));
-                                      }}
-                                      className="p-2 border border-purple-300 rounded bg-white text-sm"
-                                    />
-                                    <button 
-                                      onClick={() => {
-                                        if(videoUploadLink[topic]) {
-                                          setTopicVideos(prev => ({
-                                            ...prev,
-                                            [topic]: { type: 'link', url: videoUploadLink[topic] }
-                                          }));
-                                          setVideoAddMode(null);
-                                          setVideoUploadLink(prev => ({ ...prev, [topic]: '' }));
-                                        }
-                                      }}
-                                      disabled={!videoUploadLink[topic]?.trim()}
-                                      className="bg-purple-600 text-white px-3 py-2 rounded font-semibold text-sm hover:bg-purple-700 disabled:bg-gray-300 transition"
-                                    >
-                                      Add Link
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                          <div className="p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {module.topics.map((topic, topicIndex) => (
+                                <div key={topicIndex} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg p-2">
+                                  <span className="bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                                    {topicIndex + 1}
+                                  </span>
+                                  <span className="truncate">{topic}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-2 text-xs text-gray-500">
+                              {module.topics.length} topics
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -793,87 +919,115 @@ function CoursesPage() {
           return (
             <div
               key={index}
-              className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-200 hover:scale-105 transition duration-300 relative overflow-hidden flex flex-col h-80"
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
+              onClick={() => handleViewDetails(course)}
             >
-              {/* Selection overlay & Border */}
-              {isSelectionMode && (
-                <div 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleCourseSelection(course.id);
-                  }}
-                  className={`absolute inset-0 z-50 cursor-pointer transition-all duration-300 ${selectedForDeletion.includes(course.id) ? 'ring-4 ring-red-500 ring-inset rounded-xl bg-red-500/5' : 'hover:bg-black/5'}`}
-                >
-                  {selectedForDeletion.includes(course.id) ? (
-                    <div className="absolute top-3 right-3 bg-red-600 text-white rounded-full p-1 shadow-lg animate-bounce z-[60]">
-                      <FaCheckCircle className="text-xl" />
-                    </div>
-                  ) : (
-                    <div className="absolute top-3 right-3 bg-red-50 text-red-300 rounded-full p-1 border border-red-100 z-[60]">
-                      <FaCheckCircle className="text-xl" />
-                    </div>
-                  )}
+              {/* Course Header with Icon */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 relative">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0" style={{
+                    backgroundImage: `radial-gradient(circle at 20% 50%, white 0%, transparent 50%), 
+                                     radial-gradient(circle at 80% 50%, white 0%, transparent 50%)`,
+                    backgroundSize: '20px 20px'
+                  }}></div>
                 </div>
-              )}
-
-              {/* Background faded icon border */}
-              <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10">
-                <Icon />
+                
+                {/* Course Icon */}
+                <div className="relative z-10 flex justify-center">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-4">
+                    <Icon className="text-white text-4xl" />
+                  </div>
+                </div>
+                
+                {/* Selection Overlay */}
+                {isSelectionMode && (
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCourseSelection(course.id);
+                    }}
+                    className="absolute top-3 right-3 z-20"
+                  >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                      selectedForDeletion.includes(course.id) 
+                        ? 'bg-red-500 border-red-500' 
+                        : 'bg-white/30 border-white'
+                    }`}>
+                      {selectedForDeletion.includes(course.id) && (
+                        <FaCheckCircle className="text-white text-xs" />
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="relative z-10 flex flex-col h-full">
-                {/* Top Row */}
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-4xl">
-                    <Icon />
-                  </div>
-
-                  {course.locked && (
-                    <FaLock className="text-gray-400" />
-                  )}
-                </div>
-
-                {/* Title */}
-                <h3 className="text-lg font-semibold mb-1">
+              {/* Course Content */}
+              <div className="p-6">
+                {/* Course Title */}
+                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
                   {course.title}
                 </h3>
 
-                {/* Level + Duration */}
-                <p className="text-sm text-gray-600 mb-3">
-                  {course.level} • {course.duration}
-                </p>
+                {/* Course Meta */}
+                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                  <span className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    {course.level}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    {course.duration}
+                  </span>
+                </div>
+
+                {/* Topics Count */}
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold text-gray-900">{course.topics?.length || 0}</span> topics
+                  </p>
+                </div>
 
                 {/* Progress Bar */}
-                {!course.locked && (
+                {!course.locked && course.progress !== undefined && (
                   <div className="mb-4">
-                    <div className="w-full bg-gray-200 h-2 rounded">
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <span>{course.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-green-500 h-2 rounded"
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${course.progress}%` }}
                       ></div>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {course.progress}% completed
-                    </p>
                   </div>
                 )}
 
-                {/* Spacer to push button to bottom */}
-                <div className="flex-grow"></div>
-
-                {/* Button */}
-                {course.locked ? (
-                  <button className="w-full bg-gray-200 text-gray-600 py-2 rounded">
-                    Locked
-                  </button>
-                ) : (
+                {/* Action Buttons */}
+                <div className="flex gap-2">
                   <button 
-                    onClick={() => handleViewDetails(course)}
-                    className="w-full border border-gray-900 py-2 rounded hover:bg-gray-900 hover:text-white transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewDetails(course);
+                    }}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 text-sm font-semibold"
                   >
                     View Details
                   </button>
-                )}
+                  
+                  {!isSelectionMode && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCourseSelection(course.id);
+                      }}
+                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <FaTrash className="text-red-500" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );

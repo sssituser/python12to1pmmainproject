@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.response import Response
 
 # IMPORT VIEWS
 from .views.auth_views import *
@@ -8,7 +9,7 @@ from .views.profile_views import *
 from .views.leave_views import *
 from .views.exam_views import *
 from .views.playground_views import *
-from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet
+from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, CreateSampleApplicationsView
 from .views.html_views import playground_questions_html_api
 from .views.css_views import playground_questions_css_api
 from .views.javascript_views import playground_questions_javascript_api
@@ -32,6 +33,7 @@ from .views import python_views
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='jobs')
 router.register(r'applied-jobs', AppliedJobViewSet)
+router.register(r'faculty-applications', FacultyApplicationsViewSet, basename='faculty-applications')
 router.register(r'admin/jobs', AdminJobViewSet, basename='admin-jobs')
 router.register(r'courses', CourseViewSet, basename='courses')
 
@@ -54,7 +56,6 @@ urlpatterns = [
     path('faculty/student/<int:pk>/active/', python_views.toggle_student_active),
     
 
-
     # ================= PROFILE =================
     path('profile/', profile_view, name='profile'),
     path('profile/update/', update_profile, name='update_profile'),
@@ -68,7 +69,6 @@ urlpatterns = [
     path('leave-requests/<int:pk>/reject/', reject_leave_request),
     path('leave-requests/<int:pk>/delete/', delete_leave_request),
     path('leave-requests/my-requests/', my_leave_requests),
-
 
 
 
@@ -111,6 +111,7 @@ urlpatterns = [
     path('student-stats/', python_views.student_stats_api),
     path('student/<int:id>/', student_detail),
     path('students/', python_views.student_stats_api),
+    path('students/<int:student_id>/toggle-status/', python_views.toggle_student_status),
     path('admin/create-credentials/', python_views.admin_create_credentials_api),
     path('admin/exam-settings/', python_views.exam_settings_api, name='exam_settings'),
 
@@ -127,5 +128,12 @@ urlpatterns = [
     path('login-email-history/', get_login_email_history, name='login_email_history'),
     path('auto-deletion-info/', get_auto_deletion_info, name='auto_deletion_info'),
 
+    # ================= TEST ENDPOINT =================
+    path('test-create-applications/', lambda request: Response({"message": "Test endpoint working"}), name='test_create_applications'),
+    path('create-sample-applications/', CreateSampleApplicationsView.as_view(), name='create_sample_applications'),
+
 ]
+
+# ================= ROUTER URLS =================
+urlpatterns += router.urls
 

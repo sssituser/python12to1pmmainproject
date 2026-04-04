@@ -18,11 +18,18 @@ from ..serializers import StudentProfileSerializer
 @permission_classes([IsAuthenticated])
 def profile_view(request):
 
-    profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        print(f"DEBUG: Found existing profile for user {request.user.username}: {profile}")
+    except StudentProfile.DoesNotExist:
+        profile = StudentProfile.objects.create(user=request.user)
+        print(f"DEBUG: Created new profile for user {request.user.username}: {profile}")
+    
     serializer = StudentProfileSerializer(profile, context={"request": request})
     data = serializer.data
     data["name"] = request.user.get_full_name() or request.user.username
     data["email"] = request.user.email
+    print(f"DEBUG: Serialized profile data: {data}")
     return Response(data)
 
 
@@ -36,8 +43,16 @@ def profile_view(request):
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def update_profile(request):
 
-    profile, _ = StudentProfile.objects.get_or_create(user=request.user)
+    try:
+        profile = StudentProfile.objects.get(user=request.user)
+        print(f"DEBUG: Found existing profile for update: {profile}")
+    except StudentProfile.DoesNotExist:
+        profile = StudentProfile.objects.create(user=request.user)
+        print(f"DEBUG: Created new profile for update: {profile}")
+    
     user = request.user
+    print(f"DEBUG: Received data: {request.data}")
+    
     name = request.data.get("name")
     email = request.data.get("email")
     if name:
@@ -117,6 +132,7 @@ def update_profile(request):
         "age",
         "state",
         "phone",
+        "parent_phone",
         "college",
         "year",
         "cgpa",
@@ -126,6 +142,7 @@ def update_profile(request):
         "linkedin",
         "profile_image",
         "resume",
+        "course",
     }
 
     for key in list(data.keys()):
@@ -134,10 +151,29 @@ def update_profile(request):
         else:
             data[key] = normalize_json_field(data[key])
 
+    # Handle course field before serializer
+    if "course" in data and data["course"]:
+        from myapp.models import Course
+        course_name = data["course"]
+        course_obj, created = Course.objects.get_or_create(
+            title=course_name,
+            defaults={
+                'level': 'Beginner',
+                'duration': 'Self-paced',
+                'topics': [f'Introduction to {course_name}'],
+                'progress': 0,
+                'locked': False
+            }
+        )
+        if created:
+            print(f"DEBUG: Created new course from profile update: {course_name}")
+        data["course"] = course_obj.id  # Set to course ID for serializer
+
     serializer = StudentProfileSerializer(profile, data=data, partial=True)
 
     if serializer.is_valid():
         serializer.save()
+        
         if raw_education is not None and education_data is not None:
             profile.education = education_data
             profile.save(update_fields=["education"])

@@ -6,8 +6,6 @@ import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [editMode, setEditMode] = useState(false);
-  const [ats, setAts] = useState(null);
-  const [jobDesc, setJobDesc] = useState("");
   const localStorageKey = "sssit-profile";
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -16,6 +14,8 @@ export default function Profile() {
     name: "",
     email: "",
     phone: "",
+    parentPhone: "",
+    studentId: "",
     state: "",
     cgpa: "",
     github: "",
@@ -26,7 +26,8 @@ export default function Profile() {
     resumeUrl: "",
     skills: [],
     projects: [],
-    education: []
+    education: [],
+    course: ""
   });
 
   const [profileImagePreview, setProfileImagePreview] = useState("");
@@ -49,7 +50,7 @@ export default function Profile() {
 
   const getAuthHeaders = (token) => ({ Authorization: `Bearer ${token}` });
 
-  // 🔄 Fetch
+  // Fetch
   useEffect(() => {
     const token = getStoredToken("access");
     if (!token) {
@@ -61,10 +62,17 @@ export default function Profile() {
       headers: getAuthHeaders(token)
     })
       .then(res => {
+        console.log("DEBUG: Raw API response:", res.data);
+        console.log("DEBUG: Available fields in API response:", Object.keys(res.data));
+        console.log("DEBUG: student_id value:", res.data.student_id);
+        console.log("DEBUG: parent_phone value:", res.data.parent_phone);
+        
         const nextData = {
           name: res.data.name || "",
           email: res.data.email || "",
           phone: res.data.phone || "",
+          parentPhone: res.data.parent_phone || res.data.parentPhone || "",
+          studentId: res.data.student_id || res.data.studentId || "",
           state: res.data.state || "",
           cgpa: res.data.cgpa || "",
           github: res.data.github || "",
@@ -75,8 +83,10 @@ export default function Profile() {
           resumeUrl: res.data.resume || res.data.resumeUrl || "",
           skills: Array.isArray(res.data.skills) ? res.data.skills : [],
           projects: Array.isArray(res.data.projects) ? res.data.projects : [],
-          education: Array.isArray(res.data.education) ? res.data.education : []
+          education: Array.isArray(res.data.education) ? res.data.education : [],
+          course: res.data.course_title || ""
         };
+        console.log("DEBUG: Form data after mapping:", nextData);
         setFormData(nextData);
         localStorage.setItem(localStorageKey, JSON.stringify(nextData));
         setLoading(false);
@@ -169,25 +179,6 @@ const addSkill = () => {
       ...formData,
       [type]: currentArray.filter((_, idx) => idx !== i)
     });
-  };
-
-  // 🤖 ATS
-  const checkATS = () => {
-    const jd = jobDesc.toLowerCase();
-    let score = 50;
-
-    const skills = Array.isArray(formData.skills) ? formData.skills : [];
-    const projects = Array.isArray(formData.projects) ? formData.projects : [];
-
-    skills.forEach(s => {
-      if (jd.includes(s.toLowerCase())) score += 5;
-    });
-
-    if (projects.length) score += 10;
-    if (formData.github) score += 10;
-    if (formData.linkedin) score += 5;
-
-    setAts(Math.min(score, 100));
   };
 
   // ✅ Submit
@@ -284,10 +275,46 @@ const addSkill = () => {
         return;
       }
 
+      if (key === "studentId") {
+        data.append("student_id", value);
+        return;
+      }
+
+      if (key === "parentPhone") {
+        // Only send parent_phone if it has a value
+        if (value && value.trim() !== "") {
+          data.append("parent_phone", value);
+        }
+        return;
+      }
+
+      if (key === "phone") {
+        // Only send phone if it has a value
+        if (value && value.trim() !== "") {
+          data.append("phone", value);
+        }
+        return;
+      }
+
+      if (key === "state") {
+        // Only send state if it has a value
+        if (value && value.trim() !== "") {
+          data.append("state", value);
+        }
+        return;
+      }
+
+      if (key === "course") {
+        data.append("course", value);
+        return;
+      }
+
       if (value !== undefined && value !== null) {
         data.append(key, value);
       }
     });
+
+    console.log("DEBUG: Form data being sent:", Object.fromEntries(data.entries()));
 
     try {
       await axios.put("http://127.0.0.1:8000/api/profile/update/", data, {
@@ -297,10 +324,13 @@ const addSkill = () => {
       const refreshed = await axios.get("http://127.0.0.1:8000/api/profile/", {
         headers: getAuthHeaders(token)
       });
+      console.log("DEBUG: Refreshed API response after save:", refreshed.data);
       const refreshedData = {
         name: refreshed.data.name || "",
         email: refreshed.data.email || "",
         phone: refreshed.data.phone || "",
+        parentPhone: refreshed.data.parent_phone || refreshed.data.parentPhone || "",
+        studentId: refreshed.data.student_id || refreshed.data.studentId || "",
         state: refreshed.data.state || "",
         cgpa: refreshed.data.cgpa || "",
         github: refreshed.data.github || "",
@@ -311,7 +341,8 @@ const addSkill = () => {
         resumeUrl: refreshed.data.resume || refreshed.data.resumeUrl || formData.resumeUrl || "",
         skills: Array.isArray(refreshed.data.skills) ? refreshed.data.skills : [],
         projects: Array.isArray(refreshed.data.projects) ? refreshed.data.projects : [],
-        education: Array.isArray(refreshed.data.education) ? refreshed.data.education : []
+        education: Array.isArray(refreshed.data.education) ? refreshed.data.education : [],
+        course: refreshed.data.course_title || ""
       };
       setFormData(refreshedData);
       localStorage.setItem(localStorageKey, JSON.stringify(refreshedData));
@@ -319,6 +350,17 @@ const addSkill = () => {
       addNotification("Profile Updated", "Your profile was saved successfully.");
       toast.success("Profile Saved ✅");
       setEditMode(false);
+      
+      // Notify Navbar to refresh profile image
+      localStorage.setItem("profileImageUpdated", Date.now().toString());
+      
+      // Also update the profile image in localStorage for immediate effect
+      if (refreshedData.profileImageUrl) {
+        const imageUrl = refreshedData.profileImageUrl.startsWith('http') 
+          ? refreshedData.profileImageUrl 
+          : `http://127.0.0.1:8000${refreshedData.profileImageUrl}`;
+        localStorage.setItem("userProfileImage", imageUrl);
+      }
     } catch (err) {
       if (err.response?.status === 401) {
         clearSession("Unauthorized. Please log in again.");
@@ -375,7 +417,7 @@ const addSkill = () => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["name", "email", "phone", "state"].map(field => (
+              {["name", "email", "phone"].map(field => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
                     {field}
@@ -394,6 +436,48 @@ const addSkill = () => {
                 </div>
               ))}
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                {editMode ? (
+                  <input
+                    name="studentId"
+                    value={formData.studentId}
+                    onChange={handleChange}
+                    placeholder="Student ID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.studentId || "-"}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Parent's Mobile</label>
+                {editMode ? (
+                  <input
+                    name="parentPhone"
+                    value={formData.parentPhone}
+                    onChange={handleChange}
+                    placeholder="Parent's Mobile Number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.parentPhone || "-"}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                {editMode ? (
+                  <input
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="State"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.state || "-"}</p>
+                )}
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">CGPA</label>
                 {editMode ? (
                   <input
@@ -405,6 +489,21 @@ const addSkill = () => {
                   />
                 ) : (
                   <p className="text-gray-700">{formData.cgpa || "-"}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                {editMode ? (
+                  <input
+                    name="course"
+                    value={formData.course}
+                    onChange={handleChange}
+                    placeholder="Enter your course name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                ) : (
+                  <p className="text-gray-700">{formData.course || "-"}</p>
                 )}
               </div>
 
@@ -487,57 +586,78 @@ const addSkill = () => {
           </div>
 
           {/* SKILLS */}
-          <div className="space-y-3">
-          {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
-          formData.skills.map((s, i) => {
-          const skillName = typeof s === "string" ? s : s?.name || "Skill";
-          const level = typeof s === "object" ? s?.level || 50 : 50;
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills</h3>
 
-          return (
-          <div key={i} className="p-3 border rounded-lg bg-gray-50">
+            {editMode && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  placeholder="Add a skill"
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <button
+                  onClick={addSkill}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                >
+                  Add Skill
+                </button>
+              </div>
+            )}
 
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-1">
-            <span className="font-medium">{skillName}</span>
-            <span className="text-sm text-gray-600">{level}%</span>
-          </div>
+            <div className="space-y-3">
+              {(Array.isArray(formData.skills) && formData.skills.length > 0) ? (
+                formData.skills.map((s, i) => {
+                  const skillName = typeof s === "string" ? s : s?.name || "Skill";
+                  const level = typeof s === "object" ? s?.level || 50 : 50;
 
-          {/* PROGRESS BAR */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${level}%` }}
-            ></div>
-          </div>
+                  return (
+                    <div key={i} className="p-3 border rounded-lg bg-gray-50">
 
-          {/* EDIT MODE SLIDER */}
-          {editMode && (
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={level}
-                onChange={(e) => updateSkillLevel(i, e.target.value)}
-                className="w-full"
-              />
+                      {/* HEADER */}
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium">{skillName}</span>
+                        <span className="text-sm text-gray-600">{level}%</span>
+                      </div>
 
-              <button
-                onClick={() => removeItem("skills", i)}
-                className="text-red-600 font-bold"
-              >
-                ✕
-              </button>
+                      {/* PROGRESS BAR */}
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all"
+                          style={{ width: `${level}%` }}
+                        ></div>
+                      </div>
+
+                      {/* EDIT MODE SLIDER */}
+                      {editMode && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={level}
+                            onChange={(e) => updateSkillLevel(i, e.target.value)}
+                            className="w-full"
+                          />
+
+                          <button
+                            onClick={() => removeItem("skills", i)}
+                            className="text-red-600 font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-gray-500">No skills added</p>
+              )}
             </div>
-          )}
-
-        </div>
-      );
-    })
-  ) : (
-    <p className="text-gray-500">No skills added</p>
-  )}
-</div>
+          </div>
 
           {/* PROJECTS */}
           <div className="border-t border-gray-200 pt-6">
@@ -629,35 +749,6 @@ const addSkill = () => {
                 <p className="text-gray-500">No education added</p>
               )}
             </div>
-          </div>
-
-          {/* ATS CHECKER */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">ATS Score Checker</h3>
-            <textarea
-              placeholder="Paste Job Description here"
-              value={jobDesc}
-              onChange={(e) => setJobDesc(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-3"
-              rows="4"
-            />
-
-            <button
-              onClick={checkATS}
-              className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition"
-            >
-              Check ATS Score
-            </button>
-
-            {ats && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-lg font-semibold text-gray-900">
-                  ATS Score: <span className={ats >= 70 ? "text-green-600" : ats >= 50 ? "text-yellow-600" : "text-red-600"}>
-                    {ats}%
-                  </span>
-                </p>
-              </div>
-            )}
           </div>
 
         </div>

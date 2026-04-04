@@ -1,14 +1,9 @@
 from django.contrib import admin
 
-from .models import EmailConfiguration, Job
+from .models import Job
 
-
-@admin.register(EmailConfiguration)
-class EmailConfigurationAdmin(admin.ModelAdmin):
-    list_display = ('provider_name', 'email_host_user', 'email_host', 'email_port', 'is_active', 'updated_at')
-    list_filter = ('is_active', 'email_use_tls', 'email_use_ssl')
-    search_fields = ('provider_name', 'email_host_user', 'email_host')
-
-
-admin.site.register(Job)
-
+@admin.register(Job)
+class JobAdmin(admin.ModelAdmin):
+    list_display = ('company', 'job_title', 'location', 'deadline', 'status')
+    list_filter = ('status', 'job_type', 'experience')
+    search_fields = ('company', 'job_title', 'location')

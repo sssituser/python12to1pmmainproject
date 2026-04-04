@@ -125,6 +125,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 class StudentProfileSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True,read_only=True)
     projects = ProjectSerializer(many=True,read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
 
     class Meta:
         model = StudentProfile
@@ -243,6 +244,7 @@ class CodingQuestionSerializer(serializers.ModelSerializer):
 
 class ExamSerializer(serializers.ModelSerializer):
     attempt = ExamAttemptSerializer(read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
 
     start_time = serializers.TimeField(format="%I:%M %p")
     end_time = serializers.TimeField(format="%I:%M %p")
@@ -263,6 +265,8 @@ class ExamSerializer(serializers.ModelSerializer):
             'score',
             'total_marks',
             'exam_type',
+            'course',
+            'course_title',
             'attempt',
             'mcq_questions',
             'coding_questions',
