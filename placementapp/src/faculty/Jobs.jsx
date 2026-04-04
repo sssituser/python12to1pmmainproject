@@ -19,6 +19,7 @@ function Jobs() {
     eligibility: "",
     description: "",
     responsibilities: "",
+    external_application_link: "",
     deadline: ""
   });
 
@@ -92,6 +93,7 @@ function createJob(e) {
   eligibility: form.eligibility,
   description: form.description,
   responsibilities: form.responsibilities,
+  external_application_link: form.external_application_link,
   deadline: form.deadline
 };
 
@@ -125,6 +127,7 @@ fetch(url, {
           eligibility: "",
           description: "",
           responsibilities: "",
+          external_application_link: "",
           deadline: ""
         });
 
@@ -276,10 +279,17 @@ fetch(url, {
                 onChange={handleChange} />
             </div>
 
+            <div className="col-md-6 mb-2">
+              <input name="external_application_link" placeholder="External Application Link (Optional)"
+                className="form-control"
+                value={form.external_application_link}
+                onChange={handleChange} />
+            </div>
+
           </div>
 
           <button type="submit" className="btn btn-success mt-2">
-            {form.id ? "UPDATE JOB ✏️" : "POST JOB 🚀"}
+            {form.id ? "UPDATE JOB " : "POST JOB "}
           </button>
 
         </form>

@@ -7,6 +7,7 @@ const { id } = useParams();
 const navigate = useNavigate();
 const [job, setJob] = useState(null);
 const [applied, setApplied] = useState(false);
+const [checkingStatus, setCheckingStatus] = useState(true);
 
 
 // Fetch job details
@@ -23,10 +24,36 @@ useEffect(() => {
   .then(data => {
     console.log("JOB DETAILS:", data);   // 👈 DEBUG
     setJob(data);
+    // Check if already applied
+    checkIfApplied(id);
   })
   .catch(err => console.log(err));
 
 }, [id]);
+
+
+// Check if student has already applied for this job
+function checkIfApplied(jobId) {
+  const token = localStorage.getItem("access");
+
+  fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const appliedJobs = Array.isArray(data) ? data : (data.results || []);
+    const hasApplied = appliedJobs.some(job => job.job === parseInt(jobId));
+    setApplied(hasApplied);
+    setCheckingStatus(false);
+    console.log("Already applied for this job:", hasApplied);
+  })
+  .catch(err => {
+    console.log(err);
+    setCheckingStatus(false);
+  });
+}
 
 
 // Apply Job Function
@@ -53,6 +80,8 @@ function applyJob(jobId){
     if(status === 201){
       console.log("Job Applied Successfully ✅");
       setApplied(true);   // ✅ disable button
+      // Refresh applied jobs to update status
+      checkIfApplied(jobId);
     } 
     else {
       console.log("Already applied ⚠️");
@@ -177,14 +206,37 @@ return (
         <p><strong>Role :</strong> {job.job_title}</p>
         <p><strong>Location :</strong> {job.location}</p>
         <p><strong>Deadline :</strong> {job.deadline || "N/A"}</p>
+        {job.external_application_link && (
+          <p><strong>External Apply :</strong> 
+            <a 
+              href={job.external_application_link} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary"
+            >
+              Apply Here 🌐
+            </a>
+          </p>
+        )}
 
         <hr />
 
         {job.status !== "Closed" && job.status !== "Timed Out" && (
 
-  applied ? (
+  checkingStatus ? (
+    <button className="btn btn-light w-100 mb-2" disabled>
+      Checking Status...
+    </button>
+  ) : applied ? (
     <button className="btn btn-secondary w-100 mb-2" disabled>
       Applied ✅
+    </button>
+  ) : job.external_application_link ? (
+    <button
+      className="btn btn-primary w-100 mb-2"
+      onClick={() => window.open(job.external_application_link, '_blank')}
+    >
+      Apply Externally 🌐
     </button>
   ) : (
     <button

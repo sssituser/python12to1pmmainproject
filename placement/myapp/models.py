@@ -45,6 +45,7 @@ class StudentProfile(models.Model):
     age = models.IntegerField(null=True, blank=True)
     state = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=15, blank=True)
+    parent_phone = models.CharField(max_length=15, blank=True)
     college = models.CharField(max_length=200, blank=True)
     year = models.CharField(max_length=50, blank=True)
     cgpa = models.FloatField(null=True, blank=True)
@@ -55,6 +56,7 @@ class StudentProfile(models.Model):
     education = models.JSONField(blank=True, null=True, default=list)
     profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
+    course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='student_profiles')
 
     def __str__(self):
         return self.user.username
@@ -111,9 +113,14 @@ class AppliedJob(models.Model):
     user = models.ForeignKey('myapp.User', on_delete=models.CASCADE)
     job = models.ForeignKey(Job,on_delete=models.CASCADE)
     applied_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='pending', choices=[
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected')
+    ])
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} - {self.job.job_title}"
 
 
 class JobApplication(models.Model):
@@ -317,6 +324,7 @@ class Exam(models.Model):
         ('both', 'MCQ + Coding'),
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exams')
+    course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams')
     title = models.CharField(max_length=200)
     start_date = models.DateField()
     start_time = models.TimeField()

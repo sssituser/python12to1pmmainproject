@@ -17,6 +17,7 @@ function Register() {
     password: "",
     confirmPassword: "",
     role: "Student",
+    course: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -150,6 +151,20 @@ function Register() {
               />
               {errors.email && (
                 <p className="text-red-500 text-sm">{errors.email}</p>
+              )}
+
+              {/* CUSTOM COURSE INPUT */}
+              <input
+                type="text"
+                placeholder="Enter your course name"
+                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, course: e.target.value })
+                }
+                value={formData.course}
+              />
+              {errors.course && (
+                <p className="text-red-500 text-sm">{errors.course}</p>
               )}
 
               <button

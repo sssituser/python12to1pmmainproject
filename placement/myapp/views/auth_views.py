@@ -6,8 +6,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from myapp.models import OTP
+from myapp.models import OTP, StudentProfile, Course
 from myapp.email_utils import send_login_email
+from django.conf import settings
+from django.core.mail import send_mail
 from django.utils import timezone
 
 User = get_user_model()
@@ -257,8 +259,9 @@ def register(request):
     password = request.data.get("password")
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
+    course = request.data.get("course", "")
 
-    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}")
+    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}")
 
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
@@ -285,6 +288,29 @@ def register(request):
         )
         user.role = role
         user.save()
+        
+        # Create StudentProfile with course for students
+        if role == 'student' and course:
+            from myapp.models import StudentProfile, Course
+            
+            # Create course if it doesn't exist
+            course_obj, created = Course.objects.get_or_create(
+                title=course,
+                defaults={
+                    'level': 'Beginner',
+                    'duration': 'Self-paced',
+                    'topics': [f'Introduction to {course}'],
+                    'progress': 0,
+                    'locked': False
+                }
+            )
+            if created:
+                print(f"DEBUG: Created new course: {course}")
+            else:
+                print(f"DEBUG: Using existing course: {course}")
+            
+            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
+            print(f"DEBUG: Created student profile for {username} with course: {course}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification
