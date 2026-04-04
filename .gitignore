@@ -1,7 +1,7 @@
 # Python cache
 __pycache__/
 *.pyc
-
+*.log
 # Django
 db.sqlite3
 
@@ -10,5 +10,8 @@ venv/
 
 .env*.mp4
 
+.env
+node_modules/
+dist/
 .env
 
