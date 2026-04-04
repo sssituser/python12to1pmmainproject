@@ -10,10 +10,24 @@ import { useNavigate, useParams } from "react-router-dom";
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
 
+// Subject-wise rules (marks and pass criteria)
+const SUBJECT_RULES = {
+  python:   { displayName: "Python",   maxQuestions: 25, passMarks: 20, durationMinutes: 50 },
+  java:     { displayName: "Java",     maxQuestions: 25, passMarks: 20, durationMinutes: 50 },
+  oracle:   { displayName: "Oracle",   maxQuestions: 30, passMarks: 20, durationMinutes: 55 },
+  django:   { displayName: "Django",   maxQuestions: 25, passMarks: 20, durationMinutes: 50 },
+  react:    { displayName: "React",    maxQuestions: 25, passMarks: 20, durationMinutes: 50 },
+  ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap"], durationMinutes: 120 },
+};
+
 const DailyExam = () => {
 
   const { subject } = useParams();
-  const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : 'Python';
+  const subjectKey = (subject || "python").toLowerCase();
+  const isUiSubject = subjectKey === "ui";
+  const subjectRule = SUBJECT_RULES[subjectKey] || SUBJECT_RULES["python"];
+  const uiSectionCount = isUiSubject ? (subjectRule.sections?.length || 0) : 0;
+  const subjectName = subjectRule.displayName || (subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : 'Python');
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -35,6 +49,9 @@ const DailyExam = () => {
   const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
   const [faceCount, setFaceCount] = useState(1);
   const [examFailed, setExamFailed] = useState(false);
+  const [uiUnlockedSections, setUiUnlockedSections] = useState(isUiSubject ? 1 : 10); // large default for non-UI
+  const [currentSectionQuestions, setCurrentSectionQuestions] = useState([]);
+  const [uiCurrentSection, setUiCurrentSection] = useState(0); // 0-based, for UI only
 
   const examSubmittedRef = useRef(false);
   const violationStartTimeRef = useRef(null);
@@ -161,23 +178,87 @@ const DailyExam = () => {
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
-        const res = await fetch("/api/playground-questions/" + (subject || 'python') + "/");
-        const json = await res.json();
-        const data = json.data || json;
 
-        if (Array.isArray(data) && data.length > 0) {
-          const mappedQuestions = data.map((q, idx) => ({
-             ...q,
-             id: idx + 1,
-             marks: q.marks || 2,
-             options: Array.isArray(q.options) ? q.options : [],
-             correct: q.correct !== undefined ? q.correct : (Array.isArray(q.options) && q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0),
+        const mapQuestionList = (data, startIndex = 0, sectionLabel = null, limit = 999) => {
+          if (!Array.isArray(data)) return [];
+          return data.slice(0, limit).map((q, idx) => ({
+            ...q,
+            id: startIndex + idx + 1,
+            marks: 2, // Each question carries 2 marks
+            section: sectionLabel,
+            options: Array.isArray(q.options) ? q.options : [],
+            correct: q.correct !== undefined
+              ? q.correct
+              : (Array.isArray(q.options) && q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0),
           }));
-          setQuestions(mappedQuestions);
-          setExamDuration(45);
-          setTimeLeft(45 * 60);
+        };
+
+        let assembledQuestions = [];
+
+        if (subjectKey === "ui") {
+          const uiSections = subjectRule.sections || ["html", "css", "javascript", "bootstrap", "react"];
+          const sectionNames = [
+            "Section-A (HTML)",
+            "Section-B (CSS)",
+            "Section-C (JavaScript)",
+            "Section-D (Bootstrap)",
+            "Section-E (React)"
+          ];
+          let offset = 0;
+
+          for (let i = 0; i < uiSections.length; i++) {
+            const secKey = uiSections[i];
+            try {
+              const res = await fetch(`/api/playground-questions/${secKey}/`);
+              const json = await res.json();
+              const data = json.data || json;
+              let chunk = mapQuestionList(data, offset, sectionNames[i] || secKey.toUpperCase(), 20);
+              // Pad if fewer than 20
+              if (chunk.length < 20 && chunk.length > 0) {
+                const needed = 20 - chunk.length;
+                const pad = [];
+                for (let k = 0; k < needed; k++) {
+                  const src = chunk[k % chunk.length];
+                  pad.push({ ...src, id: offset + chunk.length + k + 1 });
+                }
+                chunk = [...chunk, ...pad];
+              }
+              assembledQuestions = assembledQuestions.concat(chunk);
+              offset += chunk.length;
+            } catch (err) {
+              console.error(`Failed to fetch ${secKey} questions:`, err);
+            }
+          }
+        } else {
+          const res = await fetch("/api/playground-questions/" + (subjectKey || 'python') + "/");
+          const json = await res.json();
+          const data = json.data || json;
+          const limit = subjectRule.maxQuestions || 20;
+          assembledQuestions = mapQuestionList(data, 0, null, limit);
+          // Pad up to limit if fewer received
+          if (assembledQuestions.length < limit && assembledQuestions.length > 0) {
+            const needed = limit - assembledQuestions.length;
+            const pad = [];
+            for (let k = 0; k < needed; k++) {
+              const src = assembledQuestions[k % assembledQuestions.length];
+              pad.push({ ...src, id: assembledQuestions.length + k + 1 });
+            }
+            assembledQuestions = [...assembledQuestions, ...pad];
+          }
+        }
+
+        if (assembledQuestions.length > 0) {
+          const totalQ = assembledQuestions.length;
+          const totalMarks = totalQ * 2;
+          const passMarks = subjectRule.passMarks || 20;
+          const passPercent = totalMarks > 0 ? (passMarks / totalMarks) * 100 : 50;
+          const duration = subjectRule.durationMinutes || 45;
+
+          setQuestions(assembledQuestions);
+          setExamDuration(duration);
+          setTimeLeft(duration * 60);
           setPassingRule("percentage");
-          setPassingValue(50);
+          setPassingValue(passPercent);
         }
       } catch (err) {
         console.error("Failed to fetch practice questions:", err);
@@ -209,6 +290,42 @@ const DailyExam = () => {
       handleSubmitExam("Time expired");
     }
   }, [timeLeft, examStarted, examSubmitted]);
+
+  // Auto-unlock next UI section once the current one is fully answered
+  useEffect(() => {
+    if (!isUiSubject || !answers || answers.length === 0 || uiSectionCount === 0) return;
+    const sectionSize = 20;
+    let maxUnlocked = uiUnlockedSections;
+    for (let i = 0; i < uiSectionCount; i++) {
+      const start = i * sectionSize;
+      const end = start + sectionSize;
+      if (end > answers.length) break;
+      const slice = answers.slice(start, end);
+      const complete = slice.length === sectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
+      if (complete) {
+        maxUnlocked = Math.max(maxUnlocked, i + 1);
+      } else {
+        break;
+      }
+    }
+    if (maxUnlocked !== uiUnlockedSections) {
+      setUiUnlockedSections(maxUnlocked);
+    }
+  }, [answers, isUiSubject, uiUnlockedSections, uiSectionCount]);
+
+  // Keep current question within visible slice for UI sections
+  useEffect(() => {
+    if (!isUiSubject) return;
+    const sectionSize = 20;
+    const start = uiCurrentSection * sectionSize;
+    const end = start + sectionSize;
+    if (currentQuestion >= sectionSize) {
+      setCurrentQuestion(sectionSize - 1);
+    }
+    if (uiCurrentSection + 1 > uiUnlockedSections) {
+      setUiCurrentSection(uiUnlockedSections - 1);
+    }
+  }, [isUiSubject, uiUnlockedSections, uiCurrentSection, currentQuestion]);
 
   // Prevent browser refresh and back button during exam
   useEffect(() => {
@@ -501,6 +618,10 @@ useEffect(() => {
     setMarkedForReview(new Array(qLen).fill(false));
     setVisitedQuestions(new Array(qLen).fill(false));
     setCurrentQuestion(0);
+    if (isUiSubject) {
+      setUiCurrentSection(0);
+      setUiUnlockedSections(1);
+    }
     // TimeLeft is already set by fetchQuestionsFromBackend based on examDuration
     setExamSubmitted(false);
     examSubmittedRef.current = false;
@@ -524,26 +645,60 @@ useEffect(() => {
 
   const handleAnswerSelect = (qIndex, optionIndex) => {
     const newAnswers = [...answers];
-    newAnswers[qIndex] = optionIndex;
+    const targetIndex = isUiSubject ? uiSectionStart + qIndex : qIndex;
+    newAnswers[targetIndex] = optionIndex;
     setAnswers(newAnswers);
   };
 
   const toggleMarkForReview = (index) => {
-    const updated = [...markedForReview];
-    updated[index] = !updated[index];
+    const target = isUiSubject ? uiSectionStart + index : index;
+    // Ensure array length matches questions length to avoid undefined accesses
+    const updated = markedForReview.length === questions.length
+      ? [...markedForReview]
+      : Array.from({ length: questions.length }, (_, i) => markedForReview[i] || false);
+    updated[target] = !updated[target];
     setMarkedForReview(updated);
   };
 
   const goToQuestion = (index) => {
+    if (isUiSubject) {
+      const sectionSize = 20;
+      if (index < 0 || index >= sectionSize) return;
+    } else {
+      if (index < 0 || index >= questions.length) return;
+    }
     const visited = [...visitedQuestions];
-    visited[index] = true;
+    const globalIndex = isUiSubject ? uiCurrentSection * 20 + index : index;
+    visited[globalIndex] = true;
     setVisitedQuestions(visited);
     setCurrentQuestion(index);
   };
 
   const nextQuestion = () => {
+    if (isUiSubject) {
+      const sectionSize = 20;
+      if (currentQuestion < sectionSize - 1) {
+        goToQuestion(currentQuestion + 1);
+      }
+      return;
+    }
     if (currentQuestion < questions.length - 1) {
       goToQuestion(currentQuestion + 1);
+    }
+  };
+
+  const unlockNextSection = () => {
+    if (!isUiSubject) return;
+    const sectionSize = 20;
+    const start = uiCurrentSection * sectionSize;
+    const end = start + sectionSize;
+    const slice = answers.slice(start, end);
+    const allAnswered = slice.length === sectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
+    if (!allAnswered) return;
+    if (uiUnlockedSections < uiSectionCount) {
+      setUiUnlockedSections((prev) => prev + 1);
+      setUiCurrentSection((prev) => prev + 1);
+      setCurrentQuestion(0);
     }
   };
 
@@ -630,6 +785,7 @@ useEffect(() => {
       score: finalScore,
       marks: finalScore,
       total_marks: maxPossibleMarks,
+      totalMarks: maxPossibleMarks, // align with results table expectation
       passed: passed,
       time_taken: (examDuration * 60) - timeLeft,
       start_time: now,
@@ -643,7 +799,7 @@ useEffect(() => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: subjectName + " Daily Exam",
+      examTitle: `${subjectName} Exam`,
       submissionReason: reason
     };
 
@@ -732,13 +888,13 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              {subjectName} Daily Assessment
+              {subjectName} Exam
             </h2>
             <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
               {!isLoadingQuestions && questions.length === 0 
                 ? <span className="text-red-500 font-bold">No assessment paper currently available.</span>
-                : `${questions.length || 20} Questions • ${examDuration} Minutes`}
+                : `${questions.length || subjectRule.maxQuestions || 20} Questions • ${examDuration} Minutes`}
               <br/>
               <span className="text-[10px] uppercase font-black tracking-widest text-blue-600 mt-2 inline-block">Proctored Session</span>
             </p>
@@ -777,6 +933,16 @@ useEffect(() => {
       </div>
     );
   }
+
+  const sectionSize = 20;
+  const uiSectionStart = isUiSubject ? uiCurrentSection * sectionSize : 0;
+  const uiSectionEnd = isUiSubject ? uiSectionStart + sectionSize : questions.length;
+  const displayQuestions = isUiSubject ? questions.slice(uiSectionStart, uiSectionEnd) : questions;
+  const activeQuestion = displayQuestions[currentQuestion] || displayQuestions[displayQuestions.length - 1] || questions[currentQuestion];
+  const sectionDisplayNames = ["HTML", "CSS", "JavaScript", "Bootstrap"];
+  const currentSectionTitle = isUiSubject ? `${(sectionDisplayNames[uiCurrentSection] || `Section ${uiCurrentSection + 1}`)} Exam` : `${subjectName} Exam`;
+  // Show per-section numbering 1-20, but keep global labels elsewhere
+  const questionNumberLabel = isUiSubject ? (currentQuestion + 1) : (currentQuestion + 1);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
@@ -822,65 +988,62 @@ useEffect(() => {
              </div>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-             <span className="text-blue-600">{subjectName}</span> Daily Assessment
+             <span className="text-blue-600">{subjectName} Exam</span>
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-6 items-start">
           <div className="col-span-3 space-y-6">
-            <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden flex flex-col min-h-[440px]">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10"></div>
+          <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100 relative overflow-hidden flex flex-col min-h-[440px]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10"></div>
                 
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2.5">
-                  <span className="bg-blue-600 text-white h-6 w-6 rounded-lg flex items-center justify-center text-[10px] font-black shadow-md shadow-blue-200">
-                    {currentQuestion + 1}
-                  </span>
-                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1">
-                    Daily Assessment
-                  </span>
-                </div>
-                <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
-                  <span className="text-[10px] font-black text-gray-800">{questions[currentQuestion]?.marks || 2}</span>
-                </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1">
+                    {currentSectionTitle}
+                </span>
+              </div>
+              <div className="px-3 py-1 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mr-2">Marks:</span>
+                <span className="text-[10px] font-black text-gray-800">{activeQuestion?.marks || 2}</span>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="mb-8">
+                <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
+                    {activeQuestion?.question}
+                </h3>
+                <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
               </div>
 
-              <div className="flex-1">
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 leading-snug mb-3">
-                    {questions[currentQuestion].question}
-                  </h3>
-                  <div className="h-0.5 w-8 bg-blue-600/40 rounded-full"></div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {questions[currentQuestion].options.map((option, index) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(activeQuestion?.options || []).map((option, index) => (
                     <label 
                       key={index} 
                       className={`group relative flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${
-                        answers[currentQuestion] === index 
+                        answers[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] === index 
                         ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100' 
                         : 'bg-white border-gray-50 hover:border-blue-100 hover:bg-blue-50/20'
                       }`}
                     >
                       <div className="flex flex-row items-center w-full gap-3">
                         <div className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                           answers[currentQuestion] === index 
+                           answers[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] === index 
                            ? 'border-white bg-white/25' 
                            : 'border-gray-200 group-hover:border-blue-300'
                         }`}>
-                           {answers[currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                           {answers[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] === index && <div className="w-2 h-2 bg-white rounded-full"></div>}
                         </div>
                         <input
                           type="radio"
-                          name={`q-${currentQuestion}`}
-                          checked={answers[currentQuestion] === index}
+                          name={`q-${isUiSubject ? uiSectionStart + currentQuestion : currentQuestion}`}
+                          checked={answers[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] === index}
                           onChange={() => handleAnswerSelect(currentQuestion, index)}
                           className="hidden"
                         />
-                        <span className={`text-sm font-bold tracking-tight ${answers[currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
-                           {option}
+                        <span className={`text-sm font-bold tracking-tight break-words flex-1 ${answers[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] === index ? 'text-white' : 'text-gray-700'}`}>
+                           {option || 'Option'}
                         </span>
                       </div>
                     </label>
@@ -892,13 +1055,13 @@ useEffect(() => {
                 <button
                   onClick={() => toggleMarkForReview(currentQuestion)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                    markedForReview[currentQuestion] 
+                    markedForReview[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] 
                     ? 'bg-amber-100 text-amber-600' 
                     : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
                   }`}
                 >
                   <FontAwesomeIcon icon={faFlag} className="text-[10px]" />
-                  {markedForReview[currentQuestion] ? 'Flagged' : 'Mark Review'}
+                  {markedForReview[isUiSubject ? uiSectionStart + currentQuestion : currentQuestion] ? 'Flagged' : 'Mark Review'}
                 </button>
                 
                 <div className="flex gap-2">
@@ -910,21 +1073,46 @@ useEffect(() => {
                        ←
                      </button>
                    )}
-                   {currentQuestion < questions.length - 1 ? (
-                     <button 
-                      onClick={nextQuestion} 
-                      className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
-                     >
-                       Next Question
-                     </button>
-                   ) : (
-                     <button 
-                      onClick={() => handleSubmitExam("Manual submission")} 
-                      className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
-                     >
-                       Finish Exam
-                     </button>
-                   )}
+                   {isUiSubject ? (
+                      currentQuestion < (displayQuestions.length - 1) ? (
+                        <button 
+                         onClick={nextQuestion} 
+                         className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
+                        >
+                          Next Question
+                        </button>
+                      ) : uiUnlockedSections < uiSectionCount ? (
+                        <button 
+                         onClick={unlockNextSection} 
+                         className="bg-orange-500 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 shadow-md shadow-orange-100 transition-all active:scale-95"
+                        >
+                          Next Section
+                        </button>
+                      ) : (
+                        <button 
+                         onClick={() => handleSubmitExam("Manual submission")} 
+                         className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
+                        >
+                          Finish Exam
+                        </button>
+                      )
+                    ) : (
+                      currentQuestion < (displayQuestions.length - 1) ? (
+                        <button 
+                         onClick={nextQuestion} 
+                         className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95"
+                        >
+                          Next Question
+                        </button>
+                      ) : (
+                        <button 
+                         onClick={() => handleSubmitExam("Manual submission")} 
+                         className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95"
+                        >
+                          Finish Exam
+                        </button>
+                      )
+                    )}
                 </div>
               </div>
             </div>
@@ -936,18 +1124,19 @@ useEffect(() => {
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
                   <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
-                    {questions.length > 0 ? Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100) : 0}%
+                    {displayQuestions.length > 0 ? Math.round(((answers.slice(uiSectionStart, uiSectionStart + displayQuestions.length).filter(a => a !== null).length) / displayQuestions.length) * 100) : 0}%
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-4 gap-2">
-                  {questions.map((_, index) => {
+                  {displayQuestions.map((_, index) => {
+                    const globalIndex = isUiSubject ? uiSectionStart + index : index;
                     let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
                     if (currentQuestion === index) {
                       statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
-                    } else if (markedForReview[index]) {
+                    } else if (markedForReview[globalIndex]) {
                       statusColor = "bg-amber-500 text-white border-amber-500 shadow-sm";
-                    } else if (answers[index] !== null && answers[index] !== undefined && answers[index] !== "") {
+                    } else if (answers[globalIndex] !== null && answers[globalIndex] !== undefined && answers[globalIndex] !== "") {
                       statusColor = "bg-green-500 text-white border-green-500 shadow-sm";
                     }
 
@@ -957,7 +1146,7 @@ useEffect(() => {
                         onClick={() => goToQuestion(index)}
                         className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
                       >
-                        {index + 1}
+                        {isUiSubject ? uiSectionStart + index + 1 : index + 1}
                       </button>
                     );
                   })}

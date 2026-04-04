@@ -1,28 +1,25 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPython,
-  faHtml5,
-  faCss3Alt,
-  faJsSquare,
-  faBootstrap,
-  faJava
-} from "@fortawesome/free-brands-svg-icons";
-import { faDatabase, faCode } from "@fortawesome/free-solid-svg-icons";
+import { faPython, faJava, faReact } from "@fortawesome/free-brands-svg-icons";
+import { faDatabase, faCode, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 
 const subjects = [
   { name: "Python", key: "python", icon: faPython, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
   { name: "Oracle", key: "oracle", icon: faDatabase, textStyle: "text-red-500", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(239,68,68,0.2)]" },
-  { name: "HTML", key: "html", icon: faHtml5, textStyle: "text-orange-500", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(249,115,22,0.2)]" },
-  { name: "CSS", key: "css", icon: faCss3Alt, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
-  { name: "JavaScript", key: "javascript", icon: faJsSquare, textStyle: "text-yellow-500", bgStyle: "bg-yellow-50", hoverBorder: "hover:border-yellow-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(234,179,8,0.2)]" },
-  { name: "Bootstrap", key: "bootstrap", icon: faBootstrap, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
-  //{ name: "Java", key: "java", icon: faJava, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
+  { name: "Django", key: "django", icon: faCode, textStyle: "text-emerald-600", bgStyle: "bg-emerald-50", hoverBorder: "hover:border-emerald-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(16,185,129,0.2)]" },
+  { name: "Java", key: "java", icon: faJava, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
+  { name: "React", key: "react", icon: faReact, textStyle: "text-cyan-600", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(8,145,178,0.2)]" },
+  { name: "UI", key: "ui", icon: faLayerGroup, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
 ];
 
 function DailyExamSubjects() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Clear any previous exam result flag so we don't instantly bounce back to results
+    localStorage.removeItem("examResult");
+  }, []);
 
   const handleSelectSubject = (subjectKey) => {
     navigate(`/dashboard/daily-exam/${subjectKey}`);
@@ -42,15 +39,15 @@ function DailyExamSubjects() {
           </h2>
           <div className="h-1.5 w-24 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full mb-6"></div>
           <p className="text-gray-500 font-medium leading-relaxed max-w-2xl mx-auto text-lg">
-            Choose your technical domain. Each assessment delivers 20 curated questions dynamically shuffled to validate your proficiency.
+            Choose your technical domain. Each assessment delivers curated questions dynamically shuffled to validate your proficiency.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {subjects.map((subject) => (
-            <button
+            <Link
               key={subject.key}
-              onClick={() => handleSelectSubject(subject.key)}
+              to={`/dashboard/daily-exam/${subject.key}`}
               className={`group relative flex items-center justify-between w-full p-6 bg-white rounded-3xl border border-gray-100 hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden shadow-sm ${subject.hoverShadow} ${subject.hoverBorder}`}
             >
               <div className="flex items-center gap-5">
@@ -76,7 +73,7 @@ function DailyExamSubjects() {
                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                  </svg>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
 
