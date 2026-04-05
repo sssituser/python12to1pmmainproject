@@ -12,63 +12,35 @@ let globalStreamsToClean = [];
 
 // Subject-wise rules (marks and pass criteria)
 const SUBJECT_RULES = {
-  python:   { displayName: "Python",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  java:     { displayName: "Java",     maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  oracle:   { displayName: "Oracle",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  django:   { displayName: "Django",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  react:    { displayName: "React",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  agentic_ai_claude: { displayName: "Agentic AI (Claude)", maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap", "react"], durationMinutes: 120 },
-  backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120 },
+  python:   { displayName: "Python",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  java:     { displayName: "Java",     maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  oracle:   { displayName: "Oracle",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  django:   { displayName: "Django",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  react:    { displayName: "React",    maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_claude: { displayName: "Agentic AI (Claude)", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap"], durationMinutes: 120, sectionSize: 20 },
+  backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120, sectionSize: 20 },
 };
 // Default for unknown subjects
-const DEFAULT_RULE = { maxQuestions: 30, passMarks: 20, durationMinutes: 75 };
+const DEFAULT_RULE = { maxQuestions: 25, passMarks: 20, durationMinutes: 75 };
 
 // Course to subject map (keep in sync with DailyExamSubjects)
 const courseMappings = {
-  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
   "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-  "mern": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mern stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mean": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
+  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
+  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
   "mean stack": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
-  "mevn": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
   "mevn stack": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
-  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
-  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
-  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
-  "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "flutter": ["flutter_react_native", "android", "ui"],
-  "react native": ["flutter_react_native", "react", "ui"],
   "dotnet full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
   ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dot net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "microsoft technologies": ["dotnet", "dotnet_mvc", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "c# full stack": ["c_sharp", "asp_net_mvc", "backend", "web_apis", "database_basics", "ui"],
-  "dotnet": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
+  "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
+  "ui full stack": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
+  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
 };
 
 const knownSubjectKeys = [
@@ -126,50 +98,34 @@ const knownSubjectKeys = [
 ];
 
 const getAllowedSubjects = (courseName = "") => {
-  const normalized = courseName
+  const normalized = String(courseName || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strict Mapping First
+  if (courseMappings[normalized]) return courseMappings[normalized];
+
+  // Fuzzy Match against keys
   const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key)
+    normalized.includes(key) || key.includes(normalized)
   );
   if (matchedKey) return courseMappings[matchedKey];
 
   // Synonym boost (helps when course name doesn't directly match subjects)
   const synonymMap = {
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    hacking: ["ethical_hacking", "penetration_testing"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power query": ["power_query"],
-    dax: ["dax"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-    devsecops: ["devops", "network_security", "penetration_testing"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    app: ["flutter_react_native", "android", "ios_swift", "ui"],
-    application: ["flutter_react_native", "android", "ios_swift", "ui"],
-    flutter: ["flutter_react_native", "android", "ui"],
-    reactnative: ["flutter_react_native", "react", "ui"],
+    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
     dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dot net": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    csharp: ["c_sharp", "asp_net_mvc", "backend"],
+    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
   };
 
-  // Fallback: token-based fuzzy match against known subject keys
   const tokens = normalized.split(" ").filter((t) => t.length > 2);
   const allowed = new Set();
 
@@ -179,13 +135,6 @@ const getAllowedSubjects = (courseName = "") => {
     }
   });
 
-  tokens.forEach((tok) => {
-    knownSubjectKeys.forEach((key) => {
-      if (key.toLowerCase().includes(tok) || tok.includes(key.toLowerCase())) {
-        allowed.add(key);
-      }
-    });
-  });
   return Array.from(allowed);
 };
 
@@ -507,7 +456,7 @@ const DailyExam = () => {
              return shuffled;
            };
            
-           const maxQ = customJson.data.maxQuestions || 30;
+           const maxQ = customJson.data.maxQuestions || 25;
            const displayLimit = Math.min(customJson.data.questions.length, maxQ);
            const allShuffled = shuffleArray(customJson.data.questions);
            const dailyQuestions = allShuffled.slice(0, displayLimit);
@@ -575,10 +524,11 @@ const DailyExam = () => {
               const res = await fetch(`/api/playground-questions/${secKey}/`);
               const json = await res.json();
               const data = json.data || json;
-              let chunk = mapQuestionList(data, offset, sectionLabels[i] || secKey.toUpperCase(), 20);
-              // Pad if fewer than 20
-              if (chunk.length < 20 && chunk.length > 0) {
-                const needed = 20 - chunk.length;
+              const currentSectionSize = subjectRule.sectionSize || 20;
+              let chunk = mapQuestionList(data, offset, sectionLabels[i] || secKey.toUpperCase(), currentSectionSize);
+              // Pad if fewer than targeted size
+              if (chunk.length < currentSectionSize && chunk.length > 0) {
+                const needed = currentSectionSize - chunk.length;
                 const pad = [];
                 for (let k = 0; k < needed; k++) {
                   const src = chunk[k % chunk.length];
@@ -596,7 +546,7 @@ const DailyExam = () => {
           const res = await fetch("/api/playground-questions/" + (subjectKey || 'python') + "/");
           const json = await res.json();
           const data = json.data || json;
-          const limit = subjectRule.maxQuestions || 20;
+          const limit = subjectRule.maxQuestions || 25;
           assembledQuestions = mapQuestionList(data, 0, null, limit);
           // Pad up to limit if fewer received
           if (assembledQuestions.length < limit && assembledQuestions.length > 0) {
@@ -1052,11 +1002,11 @@ useEffect(() => {
 
   const unlockNextSection = () => {
     if (!isSectionedSubject) return;
-    const sectionSize = 20;
-    const start = uiCurrentSection * sectionSize;
-    const end = start + sectionSize;
+    const currentSectionSize = subjectRule.sectionSize || 20;
+    const start = uiCurrentSection * currentSectionSize;
+    const end = start + currentSectionSize;
     const slice = answers.slice(start, end);
-    const allAnswered = slice.length === sectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
+    const allAnswered = slice.length === currentSectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
     if (!allAnswered) return;
     if (uiUnlockedSections < sectionCount) {
       setUiUnlockedSections((prev) => prev + 1);
@@ -1321,12 +1271,12 @@ useEffect(() => {
     );
   }
 
-  const sectionSize = 20;
-  const uiSectionStart = isSectionedSubject ? uiCurrentSection * sectionSize : 0;
-  const uiSectionEnd = isSectionedSubject ? uiSectionStart + sectionSize : questions.length;
+  const currentSectionSize = isSectionedSubject ? (subjectRule.sectionSize || 20) : questions.length;
+  const uiSectionStart = isSectionedSubject ? uiCurrentSection * currentSectionSize : 0;
+  const uiSectionEnd = isSectionedSubject ? uiSectionStart + currentSectionSize : questions.length;
   const displayQuestions = isSectionedSubject ? questions.slice(uiSectionStart, uiSectionEnd) : questions;
   const activeQuestion = displayQuestions[currentQuestion] || displayQuestions[displayQuestions.length - 1] || questions[currentQuestion];
-  const sectionDisplayNames = subjectKey === "ui" ? ["HTML", "CSS", "JavaScript", "Bootstrap", "React"] : ["Node.js", "Express.js"];
+  const sectionDisplayNames = subjectKey === "ui" ? ["HTML", "CSS", "JavaScript", "Bootstrap"] : ["Node.js", "Express.js"];
   const currentSectionTitle = isSectionedSubject ? `${(sectionDisplayNames[uiCurrentSection] || `Section ${uiCurrentSection + 1}`)} Exam` : `${subjectName} Exam`;
   // Show per-section numbering 1-20, but keep global labels elsewhere
   const questionNumberLabel = isSectionedSubject ? (currentQuestion + 1) : (currentQuestion + 1);
