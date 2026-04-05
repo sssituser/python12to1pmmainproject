@@ -80,7 +80,7 @@ function Login() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/verify_otp/",
-        { username: otpUsername.trim(), otp: otpCode.trim() },
+        { username: otpUsername.trim(), otp: otpCode.trim(), role: "student" },
         { headers: { "Content-Type": "application/json" } }
       );
 
@@ -169,7 +169,7 @@ function Login() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        { studentId: form.studentId, password: form.password },
+        { studentId: form.studentId, password: form.password, role: "student" },
         {
           headers: {
             'Content-Type': 'application/json',

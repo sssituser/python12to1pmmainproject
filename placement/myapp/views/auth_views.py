@@ -81,6 +81,8 @@ def login(request):
     elif username:
         user = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
+    required_role = request.data.get("role")
+
     if user:
         # 🔐 Verify password FIRST before checking active status
         password_valid = user.check_password(password)
@@ -88,6 +90,17 @@ def login(request):
 
         if not password_valid:
             return Response({"detail": "Invalid credentials"}, status=401)
+            
+        # 🛡️ Role separation check
+        if required_role:
+            user_role = (user.role or "student").lower().strip()
+            req_role = required_role.lower().strip()
+            
+            if req_role == "student" and user_role != "student":
+                return Response({"detail": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
+            
+            if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+                return Response({"detail": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
 
         # ⚡ AUTO-ACTIVATE FACULTY ON CORRECT LOGIN (Fix for stuck accounts)
         if user.role == 'faculty' and not user.is_active:
@@ -217,6 +230,7 @@ def send_otp(request):
 def verify_otp(request):
     identifier = request.data.get("username")
     otp = request.data.get("otp")
+    role = request.data.get("role")
 
     record = OTP.objects.filter(Q(username=identifier) | Q(email=identifier), otp=otp).last()
 
@@ -224,6 +238,17 @@ def verify_otp(request):
         user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
         if not user:
             return Response({"error": "Invalid OTP"}, status=400)
+            
+        # 🛡️ Role separation check
+        if role:
+            user_role = (user.role or "student").lower().strip()
+            req_role = role.lower().strip()
+            
+            if req_role == "student" and user_role != "student":
+                return Response({"error": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
+            
+            if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+                return Response({"error": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
         # ✅ ACTIVATE USER ON SUCCESSFUL OTP
         if not user.is_active:
             user.is_active = True

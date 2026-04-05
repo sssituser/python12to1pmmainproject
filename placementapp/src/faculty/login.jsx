@@ -38,7 +38,7 @@ function FacultyLogin() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        form,
+        { ...form, role: "faculty" },
         {
           headers: {
             'Content-Type': 'application/json',
