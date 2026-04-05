@@ -98,11 +98,8 @@ function CoursesPage() {
         const token = localStorage.getItem('access');
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         
-        // For faculty users, skip API call and use localStorage directly
-        if (user.role === "faculty") {
-          console.log("Faculty user detected - using localStorage only");
-        } else if (token) {
-          // For non-faculty users with token, try to fetch from API first
+        // For all users with token, try to fetch from API first
+        if (token) {
           const response = await fetch('http://127.0.0.1:8000/api/courses/', {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -218,7 +215,17 @@ function CoursesPage() {
     }
     
     // Generate modules with topics for the course
-    const modules = generateModulesForCourse(newCourseName);
+    let modules = [];
+    if (manualTopicsList.length > 0) {
+      // If manual topics were provided, put them in a single module
+      modules = [{
+        title: "Selected Topics",
+        topics: manualTopicsList
+      }];
+    } else {
+      // Otherwise use auto-generation
+      modules = generateModulesForCourse(newCourseName);
+    }
     
     // Flatten all topics from all modules for backward compatibility
     const allTopics = modules.reduce((topics, module) => {
@@ -253,10 +260,8 @@ function CoursesPage() {
     try {
       // Try to save to backend API first (skip for faculty users)
       const token = localStorage.getItem('access');
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
+        // Try API for all users
         const response = await fetch('http://127.0.0.1:8000/api/courses/', {
           method: 'POST',
           headers: {
@@ -276,8 +281,6 @@ function CoursesPage() {
         } else {
           console.log("Backend save failed, falling back to localStorage");
         }
-      } else {
-        console.log("Faculty user - skipping backend API call");
       }
     } catch (error) {
       console.log("API save failed, using localStorage only:", error);
@@ -398,13 +401,12 @@ function CoursesPage() {
   };
 
   const performRemoval = async (idsToRemove) => {
-    // Try to delete from backend API first (skip for faculty users)
+    // Try to delete from backend API
     try {
       const token = localStorage.getItem('access');
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
+        // Try API for all users
         const deletePromises = idsToRemove.map(id => 
           fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
             method: 'DELETE',
@@ -426,8 +428,6 @@ function CoursesPage() {
         if (failedDeletes.length > 0) {
           console.log(`Failed to delete ${failedDeletes.length} courses from backend, removing from local storage only`);
         }
-      } else {
-        console.log("Faculty user - skipping backend API deletion");
       }
     } catch (error) {
       console.log("Backend deletion failed, removing from localStorage only:", error);
@@ -873,12 +873,12 @@ function CoursesPage() {
               </button>
               
               <button
-                onClick={addNewCourse}
-                disabled={!newCourseName.trim() || manualTopicsList.length === 0}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
-              >
-                Create Complete Course
-              </button>
+                 onClick={addNewCourse}
+                 disabled={!newCourseName.trim()}
+                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
+               >
+                 Create Complete Course
+               </button>
             </div>
           </div>
         </div>

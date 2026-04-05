@@ -105,9 +105,9 @@ function AppliedJobs() {
 
         <input
           type="text"
-          placeholder="🔍 Search by job, company, user"
+          placeholder="Search applied jobs..."
           className="form-control mb-4 shadow-sm"
-          style={{ borderRadius: "10px" }}
+          style={{ borderRadius: "10px", width: "300px" }}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -116,41 +116,51 @@ function AppliedJobs() {
           <table className="table table-hover align-middle">
             <thead className="table-dark">
               <tr>
-                <th>Job</th>
-                <th>Company</th>
-                <th>Student</th>
-                <th>Applied Date</th>
+                <th className="px-4 py-3 text-center" style={{ width: "80px" }}>S.No</th>
+                <th className="px-4 py-3 text-start">Job Title</th>
+                <th className="px-4 py-3 text-center">Company</th>
+                <th className="px-4 py-3 text-center">Applied Date</th>
+                <th className="px-4 py-3 text-center">Status</th>
               </tr>
             </thead>
 
             <tbody>
               {filteredJobs.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center text-muted py-4">
+                  <td colSpan="5" className="text-center text-muted py-4">
                     No Applied Jobs 😕
                   </td>
                 </tr>
               ) : (
-                filteredJobs.map((j) => (
+                filteredJobs.map((j, index) => (
                   <tr key={j.id}>
-                    <td>{j.job_details?.job_title || "N/A"}</td>
+                    <td className="text-center text-muted fw-bold">{index + 1}</td>
+                    <td className="px-4 fw-bold text-dark">
+                      {j.job_details?.job_title || "N/A"}
+                    </td>
 
-                    <td>
+                    <td className="text-center">
                       <span className="badge bg-primary px-3 py-2">
                         {j.job_details?.company || "N/A"}
                       </span>
                     </td>
 
-                    <td>
-                      <span className="text-success fw-bold">
-                        👤 {j.username || "N/A"}
-                      </span>
+                    <td className="text-center text-muted small">
+                      {j.applied_date
+                        ? new Date(j.applied_date).toLocaleDateString('en-GB')
+                        : "N/A"}
                     </td>
 
-                    <td>
-                      {j.applied_date
-                        ? new Date(j.applied_date).toLocaleString()
-                        : "N/A"}
+                    <td className="text-center">
+                      <span className={`badge px-3 py-2 rounded-pill ${
+                        j.status === 'accepted' ? 'bg-success' :
+                        j.status === 'rejected' ? 'bg-danger' :
+                        'bg-info'
+                      }`}>
+                        {j.status && j.status !== 'pending' 
+                          ? j.status.charAt(0).toUpperCase() + j.status.slice(1) 
+                          : 'Applied'}
+                      </span>
                     </td>
                   </tr>
                 ))

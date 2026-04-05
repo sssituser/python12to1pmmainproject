@@ -19,7 +19,21 @@ function DailyExamSubjects() {
   useEffect(() => {
     // Clear any previous exam result flag so we don't instantly bounce back to results
     localStorage.removeItem("examResult");
-  }, []);
+
+    // Intercept the browser back button ("windows arrow button left side")
+    // to ensure it always goes directly back to the playground.
+    const handlePopState = (e) => {
+      e.preventDefault();
+      navigate('/dashboard/playground', { replace: true });
+    };
+
+    window.history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [navigate]);
 
   const handleSelectSubject = (subjectKey) => {
     navigate(`/dashboard/daily-exam/${subjectKey}`);
@@ -30,7 +44,18 @@ function DailyExamSubjects() {
       
       <div className="relative z-10 max-w-6xl w-full">
         
-        <div className="text-center mb-16">
+        {/* TOP LEFT BACK BUTTON */}
+        <div className="absolute top-0 left-0 pt-2 z-20">
+          <button
+            onClick={() => navigate("/dashboard/playground")}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-all bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 group"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform">←</span>
+            Back to Playground
+          </button>
+        </div>
+
+        <div className="text-center mb-16 mt-16 sm:mt-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 mb-6 transform transition-transform hover:scale-110 hover:rotate-3 duration-300">
             <FontAwesomeIcon icon={faCode} className="text-3xl text-white" />
           </div>

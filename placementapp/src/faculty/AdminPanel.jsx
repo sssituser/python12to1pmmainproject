@@ -14,6 +14,25 @@ function AdminPanel() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState("");
   const [activeTab, setActiveTab] = useState("create"); // "create" or "manage"
+  const [course, setCourse] = useState("");
+  const [phone, setPhone] = useState("");
+  const [availableCourses, setAvailableCourses] = useState([]);
+
+  // Fetch available courses for dropdown
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/courses/");
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableCourses(Array.isArray(data) ? data : (data.data || []));
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses", err);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   // Fetch students for management
   const fetchStudents = async () => {
@@ -93,7 +112,7 @@ function AdminPanel() {
       const response = await fetch("http://127.0.0.1:8000/api/admin/create-credentials/", {
         method: "POST",
         headers,
-        body: JSON.stringify({ username, email, password, role }),
+        body: JSON.stringify({ username, email, password, role, course, phone }),
       });
 
       const data = await response.json();
@@ -105,6 +124,8 @@ function AdminPanel() {
         setEmail("");
         setPassword("");
         setRole("student");
+        setCourse("");
+        setPhone("");
       }
     } catch (err) {
       setError("Server error while creating credentials.");
@@ -199,6 +220,44 @@ function AdminPanel() {
               </select>
             </div>
 
+            {role === "student" && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Student Course</label>
+                  <select
+                    value={course}
+                    onChange={(e) => setCourse(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#020617] p-3 text-white focus:border-indigo-500 outline-none"
+                    required
+                  >
+                    <option value="">-- Select Course --</option>
+                    {availableCourses.length > 0 ? (
+                      availableCourses.map((c) => (
+                        <option key={c.id} value={c.title}>{c.title}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Python Full Stack">Python Full Stack</option>
+                        <option value="Java Full Stack">Java Full Stack</option>
+                        <option value="Web Development">Web Development</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Mobile Number (Optional)</label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-[#020617] p-3 text-white focus:border-indigo-500 outline-none"
+                    placeholder="e.g., 9876543210"
+                  />
+                </div>
+              </>
+            )}
+
             <button
               type="submit"
               disabled={saving}
@@ -236,6 +295,7 @@ function AdminPanel() {
                     <tr className="border-b border-white/10">
                       <th className="pb-3 text-sm font-medium text-gray-400">Student ID</th>
                       <th className="pb-3 text-sm font-medium text-gray-400">Name</th>
+                      <th className="pb-3 text-sm font-medium text-gray-400">Course</th>
                       <th className="pb-3 text-sm font-medium text-gray-400">Email</th>
                       <th className="pb-3 text-sm font-medium text-gray-400">Status</th>
                       <th className="pb-3 text-sm font-medium text-gray-400">Actions</th>
@@ -246,6 +306,7 @@ function AdminPanel() {
                       <tr key={student.id} className="border-b border-white/5">
                         <td className="py-3 text-sm">{student.student_id || student.id}</td>
                         <td className="py-3 text-sm">{student.name || student.username}</td>
+                        <td className="py-3 text-sm text-indigo-400">{student.course_title || "Not assigned"}</td>
                         <td className="py-3 text-sm text-gray-400">{student.email}</td>
                         <td className="py-3">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

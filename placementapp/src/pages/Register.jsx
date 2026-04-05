@@ -18,15 +18,41 @@ function Register() {
     confirmPassword: "",
     role: "Student",
     course: "",
+    phone_number: "",
   });
 
   const [errors, setErrors] = useState({});
+  const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+
+  // Fetch courses from backend
+  useState(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoadingCourses(true);
+        const res = await fetch("http://127.0.0.1:8000/api/courses/");
+        if (res.ok) {
+          const data = await res.json();
+          // The API returns { success: true, data: [...] } or just [...]
+          const courseList = Array.isArray(data) ? data : (data.data || []);
+          setCourses(courseList);
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses", err);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   // ---------------- VALIDATION ----------------
   const validateStep1 = () => {
     let err = {};
     if (!formData.username) err.username = "Username required";
     if (!formData.email.includes("@")) err.email = "Enter valid email";
+    if (!formData.phone_number) err.phone_number = "Phone number required";
+    if (!formData.course) err.course = "Please select a course";
     return err;
   };
 
@@ -108,10 +134,26 @@ function Register() {
         </p>
 
         <div className="space-y-4">
-          <div className={`p-4 rounded-lg ${step >= 1 ? "bg-slate-800" : "bg-slate-700"}`}>
+          <div 
+            onClick={() => setStep(1)}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${step === 1 ? "bg-slate-800 ring-2 ring-blue-400" : "bg-slate-700 hover:bg-slate-600"}`}
+          >
             Step 1: Basic Details
           </div>
-          <div className={`p-4 rounded-lg ${step >= 2 ? "bg-slate-800" : "bg-slate-700"}`}>
+          <div 
+            onClick={() => {
+              // Only allow switching to step 2 if step 1 is valid
+              const err = validateStep1();
+              if (Object.keys(err).length === 0) {
+                setStep(2);
+                setErrors({});
+              } else {
+                setErrors(err);
+                toast.error("Please complete Step 1 first");
+              }
+            }}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${step === 2 ? "bg-slate-800 ring-2 ring-blue-400" : "bg-slate-700 hover:bg-slate-600"}`}
+          >
             Step 2: Security Setup
           </div>
         </div>
@@ -133,6 +175,7 @@ function Register() {
                 type="text"
                 placeholder="Username"
                 className="form-control py-3 mb-2 focus:ring-2 focus:ring-blue-500"
+                value={formData.username}
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
                 }
@@ -145,6 +188,7 @@ function Register() {
                 type="email"
                 placeholder="Email"
                 className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+                value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
@@ -153,18 +197,43 @@ function Register() {
                 <p className="text-red-500 text-sm">{errors.email}</p>
               )}
 
-              {/* CUSTOM COURSE INPUT */}
-              <input
-                type="text"
-                placeholder="Enter your course name"
-                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+              {/* COURSE SELECTION */}
+              <select
+                className="form-select py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+                value={formData.course}
                 onChange={(e) =>
                   setFormData({ ...formData, course: e.target.value })
                 }
-                value={formData.course}
-              />
+              >
+                <option value="">-- Select Your Course --</option>
+                {courses.length > 0 ? (
+                  courses.map((c) => (
+                    <option key={c.id} value={c.title}>{c.title}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Python Full Stack">Python Full Stack</option>
+                    <option value="Java Full Stack">Java Full Stack</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="Data Science">Data Science</option>
+                  </>
+                )}
+              </select>
               {errors.course && (
-                <p className="text-red-500 text-sm">{errors.course}</p>
+                <p className="text-red-500 text-sm mt-1">{errors.course}</p>
+              )}
+              
+              <input
+                type="text"
+                placeholder="Phone Number"
+                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
+                onChange={(e) =>
+                  setFormData({ ...formData, phone_number: e.target.value })
+                }
+                value={formData.phone_number}
+              />
+              {errors.phone_number && (
+                <p className="text-red-500 text-sm">{errors.phone_number}</p>
               )}
 
               <button
@@ -185,6 +254,7 @@ function Register() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
@@ -201,11 +271,12 @@ function Register() {
               )}
 
               {/* CONFIRM PASSWORD */}
-              <div className="relative mb-3">
+              <div className="relative mb-4">
                 <input
                   type={showConfirm ? "text" : "password"}
                   placeholder="Confirm Password"
                   className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  value={formData.confirmPassword}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -229,18 +300,19 @@ function Register() {
               {/* ROLE */}
               <select
                 className="form-select py-3 mb-3 focus:ring-2 focus:ring-blue-500"
+                value={formData.role}
                 onChange={(e) =>
                   setFormData({ ...formData, role: e.target.value })
                 }
               >
-                <option>Student</option>
-                <option>Faculty</option>
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
               </select>
 
               {/* FACULTY INFO */}
               {formData.role === "Faculty" && (
                 <p className="text-sm text-orange-600 mb-3">
-                  🔐 Faculty accounts require OTP verification
+                  Faculty accounts require OTP verification
                 </p>
               )}
 

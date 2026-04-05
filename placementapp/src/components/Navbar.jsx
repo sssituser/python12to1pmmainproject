@@ -67,7 +67,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      window.location.href = "/";
       return null;
     }
   };
@@ -181,7 +181,22 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+
+    // Close dropdowns on outside click
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".notification-area")) {
+        setNotificationsOpen(false);
+      }
+      if (!event.target.closest(".profile-area")) {
+        setOpenProfile(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const logout = () => {
@@ -238,7 +253,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       {/* RIGHT */}
       <div className="flex items-center gap-4">
         {/* NOTIFICATIONS */}
-        <div className="relative">
+        <div className="relative notification-area">
           <button
             onClick={() => {
               setNotificationsOpen((prev) => !prev);
@@ -286,7 +301,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
         </div>
 
         {/* PROFILE */}
-        <div className="relative">
+        <div className="relative profile-area">
           <button
             onClick={() => setOpenProfile(!openProfile)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-200 transition"

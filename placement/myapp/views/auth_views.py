@@ -260,8 +260,9 @@ def register(request):
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
     course = request.data.get("course", "")
+    phone_number = request.data.get("phone_number", "")
 
-    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}")
+    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}, phone={phone_number}")
 
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
@@ -309,8 +310,12 @@ def register(request):
             else:
                 print(f"DEBUG: Using existing course: {course}")
             
-            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
-            print(f"DEBUG: Created student profile for {username} with course: {course}")
+            student_profile = StudentProfile.objects.create(
+                user=user, 
+                course=course_obj,
+                phone=phone_number
+            )
+            print(f"DEBUG: Created student profile for {username} with course: {course} and phone: {phone_number}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification

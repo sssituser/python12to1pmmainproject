@@ -104,6 +104,7 @@ class Job(models.Model):
     eligibility = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True, null=True)
     responsibilities = models.TextField(blank=True, null=True)
+    external_application_link = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

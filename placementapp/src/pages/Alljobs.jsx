@@ -13,12 +13,12 @@ function AllJobs() {
   // ==============================
   // APPLY JOB
   // ==============================
-  async function applyJob(jobId) {
+  async function applyJob(jobId, externalLink = null) {
     const token = localStorage.getItem("access");
 
     // 🔐 Block if not logged in
     if (!token) {
-    alert("Please login first 🔐");
+    alert("Please login first ");
       return;
     }
 
@@ -45,8 +45,18 @@ function AllJobs() {
             job.id === jobId ? { ...job, status: "Applied" } : job
           )
         );
+
+        // ✅ Open external link if provided
+        if (externalLink) {
+          window.open(externalLink, "_blank");
+        }
       } else {
         console.log(data?.detail || data?.error || "Already Applied ⚠️");
+        
+        // Even if already applied, if they click again, maybe they want to see the link
+        if (externalLink) {
+          window.open(externalLink, "_blank");
+        }
       }
     } catch (err) {
       console.log(err);
@@ -139,37 +149,38 @@ function AllJobs() {
 
       <input
         className="form-control mb-3"
-        placeholder="Search..."
+        placeholder="Search jobs..."
+        style={{ width: "300px" }}
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
-          setPage(1);
         }}
       />
 
-      <table className="table table-bordered">
-        <thead>
+      {/* Jobs List */}
+      <table className="table table-bordered table-hover shadow-sm">
+        <thead className="table-dark">
           <tr>
-            <th>Company</th>
-            <th>Job Title</th>
-            <th>Description</th>
-            <th>Skills</th>
-            <th>Deadline</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th className="text-center align-middle">Company</th>
+            <th className="text-center align-middle">Job Title</th>
+            <th className="text-center align-middle">Description</th>
+            <th className="text-center align-middle">Skills</th>
+            <th className="text-center align-middle">Deadline</th>
+            <th className="text-center align-middle">Location</th>
+            <th className="text-center align-middle">Status</th>
+            <th className="text-center align-middle">Action</th>
           </tr>
         </thead>
 
         <tbody>
-          {records.length === 0 ? (
+          {filteredJobs.length === 0 ? (
             <tr>
               <td colSpan="8" className="text-center">
                 No Jobs
               </td>
             </tr>
           ) : (
-            records.map((job) => (
+            filteredJobs.map((job) => (
               <tr key={job.id}>
                 <td>{job.company}</td>
                 <td>{job.job_title}</td>
@@ -188,55 +199,37 @@ function AllJobs() {
                   )}
                 </td>
 
-                <td>
-                  <button
-                    className="btn btn-sm btn-primary me-2"
-                    onClick={() =>
-                      navigate(`/dashboard/jobs/${job.id}`)
-                    }
-                  >
-                    <FaEye />
-                  </button>
-
-                  {job.status === "Applied" ? (
-                    <button className="btn btn-secondary btn-sm" disabled>
-                      Applied
-                    </button>
-                  ) : (
+                <td className="text-center align-middle">
+                  <div className="d-flex flex-column gap-2 align-items-center justify-content-center" style={{ minWidth: "100px" }}>
                     <button
-                      className="btn btn-success btn-sm"
-                      onClick={() => applyJob(job.id)}
+                      className="btn btn-sm btn-primary w-100 py-2 font-weight-bold"
+                      onClick={() =>
+                        navigate(`/dashboard/jobs/${job.id}`)
+                      }
                     >
-                      Apply
+                      VIEW
                     </button>
-                  )}
+
+                    {job.status === "Applied" ? (
+                      <button className="btn btn-secondary btn-sm w-100 py-2 font-weight-bold" disabled>
+                        APPLIED
+                      </button>
+                    ) : (
+                      <button
+                        className={`btn btn-sm w-100 py-2 font-weight-bold ${job.status === 'Closed' ? 'btn-secondary shadow-sm' : 'btn-success shadow'}`}
+                        onClick={() => job.status !== 'Closed' && applyJob(job.id, job.external_application_link)}
+                        disabled={job.status === 'Closed'}
+                      >
+                        {job.status === 'Closed' ? 'CLOSED' : 'APPLY'}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))
           )}
         </tbody>
       </table>
-
-      {/* Pagination */}
-      <div className="d-flex justify-content-between">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-        >
-          <FaArrowLeft />
-        </button>
-
-        <span>
-          Page {page} / {totalPages || 1}
-        </span>
-
-        <button
-          disabled={page === totalPages || totalPages === 0}
-          onClick={() => setPage(page + 1)}
-        >
-          <FaArrowRight />
-        </button>
-      </div>
     </div>
   );
 }

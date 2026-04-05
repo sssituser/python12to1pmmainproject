@@ -16,8 +16,12 @@ import Navbar from "../components/Navbar"; // adjust path if needed
 
 function FacultyLayout() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hoverOpen, setHoverOpen] = useState(false);
   const location = useLocation();
+
+  const open = sidebarOpen || hoverOpen;
+  
   let currentUser = null;
   try {
     currentUser = JSON.parse(localStorage.getItem("user") || "null");
@@ -53,16 +57,16 @@ function FacultyLayout() {
 
       {/* SIDEBAR */}
       <div
-        onMouseEnter={() => setSidebarOpen(true)}
-        onMouseLeave={() => setSidebarOpen(false)}
+        onMouseEnter={() => setHoverOpen(true)}
+        onMouseLeave={() => setHoverOpen(false)}
         className={`bg-slate-900 text-gray-300 min-h-screen flex flex-col justify-between transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-20"
+          open ? "w-64" : "w-20"
         }`}
       >
         {/* HEADER */}
         <div>
           <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700">
-            {sidebarOpen ? "Faculty Panel" : "FP"}
+            {open ? "Faculty Panel" : "FP"}
           </div>
 
           {/* MENU */}
@@ -80,7 +84,7 @@ function FacultyLayout() {
                 }
               >
                 {item.icon}
-                {sidebarOpen && item.name}
+                {open && item.name}
               </NavLink>
             ))}
           </div>
@@ -91,7 +95,7 @@ function FacultyLayout() {
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left transition hover:bg-slate-800 hover:text-white"
             >
               <LogOut size={18} />
-              {sidebarOpen && "Logout"}
+              {open && "Logout"}
             </button>
           </div>
         </div>

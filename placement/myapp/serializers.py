@@ -78,10 +78,22 @@ class PythonQuestionSerializer(serializers.ModelSerializer):
 
 class ExamAttemptSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    random_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ExamAttempt
         fields = "__all__"
+
+    def get_random_id(self, obj):
+        # Automatically use Student ID from profile if available
+        if obj.user:
+            try:
+                profile = StudentProfile.objects.get(user=obj.user)
+                if profile.student_id:
+                    return str(profile.student_id)
+            except StudentProfile.DoesNotExist:
+                pass
+        return obj.random_id or ""
 
 
 # ===============================

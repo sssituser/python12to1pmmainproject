@@ -14,10 +14,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-function Sidebar() {
-  const [open, setOpen] = useState(false);
+function Sidebar({ sidebarOpen }) {
+  const [hoverOpen, setHoverOpen] = useState(false);
   const [jobsOpen, setJobsOpen] = useState(false);
   const [playOpen, setPlayOpen] = useState(false);
+
+  // Consider it open if either manually toggled OR hovered
+  const open = sidebarOpen || hoverOpen;
 
   const navigate = useNavigate();
 
@@ -33,9 +36,9 @@ function Sidebar() {
 
   return (
     <div
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => setHoverOpen(true)}
       onMouseLeave={() => {
-        setOpen(false);
+        setHoverOpen(false);
         setJobsOpen(false);
         setPlayOpen(false);
       }}

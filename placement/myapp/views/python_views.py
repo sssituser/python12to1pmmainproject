@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob
+from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from ..email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
@@ -312,9 +312,9 @@ def exam_reports_api(request):
     exam_type = request.GET.get('exam_type', 'all')
     
     if exam_type == 'all':
-        attempts = ExamAttempt.objects.all()
+        attempts = ExamAttempt.objects.filter(user__role='student')
     else:
-        attempts = ExamAttempt.objects.filter(exam_type=exam_type)
+        attempts = ExamAttempt.objects.filter(user__role='student', exam_type=exam_type)
     
     if username:
         attempts = attempts.filter(user__username__iexact=username)
@@ -500,10 +500,19 @@ def save_exam_report_api(request):
         start_time = data.get('start_time') or data.get('startTime') or now
         end_time = data.get('end_time') or data.get('endTime') or now
 
-        # random id
-        random_id_val = data.get('random_id') or data.get('randomId') or ''
-        if not random_id_val and isinstance(data.get('user'), dict):
-            random_id_val = data['user'].get('randomId') or ''
+        # Prioritize permanent Student ID from profile over any random ID from frontend
+        random_id_val = ""
+        try:
+            profile = StudentProfile.objects.get(user=user)
+            if profile.student_id:
+                random_id_val = str(profile.student_id)
+        except StudentProfile.DoesNotExist:
+            pass
+
+        if not random_id_val:
+            random_id_val = data.get('random_id') or data.get('randomId') or ''
+            if not random_id_val and isinstance(data.get('user'), dict):
+                random_id_val = data['user'].get('randomId') or ''
 
         # Priority: Check if explicitly flagged as cheated/violated first
         raw_status = str(data.get('status', '')).strip()
@@ -746,7 +755,8 @@ def weekly_exam_reports_api(request):
 
     username = request.GET.get('username')
     attempts = ExamAttempt.objects.filter(
-        Q(exam_type='weekly') | Q(exam_title__icontains='weekly')
+        Q(exam_type='weekly') | Q(exam_title__icontains='weekly'),
+        user__role='student'
     )
     
     if username:
@@ -791,7 +801,8 @@ def monthly_exam_reports_api(request):
 
     username = request.GET.get('username')
     attempts = ExamAttempt.objects.filter(
-        Q(exam_type='monthly') | Q(exam_title__icontains='monthly')
+        Q(exam_type='monthly') | Q(exam_title__icontains='monthly'),
+        user__role='student'
     )
     
     if username:
@@ -1123,10 +1134,10 @@ def dashboard_stats_api(request):
     Consolidated statistics for the faculty dashboard.
     """
     try:
-        total_students = User.objects.filter(is_staff=False).count()
-        active_students = User.objects.filter(is_staff=False, is_active=True).count()
+        total_students = User.objects.filter(role='student').count()
+        active_students = User.objects.filter(role='student', is_active=True).count()
         total_courses = Course.objects.count()
-        placed_students = AppliedJob.objects.values('user').distinct().count()
+        placed_students = AppliedJob.objects.filter(user__role='student').values('user').distinct().count()
         active_jobs = Job.objects.count()
         pending_leaves = LeaveRequest.objects.filter(status='Pending').count()
         
@@ -1148,7 +1159,7 @@ def toggle_student_status(request, student_id):
     Toggle student active/inactive status
     """
     try:
-        student = get_object_or_404(User, id=student_id, is_staff=False)
+        student = get_object_or_404(User, id=student_id, role='student')
         
         # Check if user has permission (faculty or admin)
         user = request.user
@@ -1174,18 +1185,21 @@ def toggle_student_status(request, student_id):
 
 # ---------------- STUDENT STATS (FACULTY) ----------------
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def student_stats_api(request):
     try:
-        students = User.objects.filter(is_staff=False)
+        students = User.objects.filter(role='student')
         data = []
         cutoff = timezone.now() - timedelta(days=30)
 
         for student in students:
+            profile = StudentProfile.objects.filter(user=student).first()
             latest = ExamAttempt.objects.filter(user=student).order_by('-exam_date').first()
             progress = 0
             status_val = "Inactive" if not student.is_active else "Active"
 
             if latest:
+                # Prioritize 'Pass'/'Fail' if they have written an exam
                 status_val = latest.status or status_val
                 progress = round((latest.marks_obtained / latest.total_marks) * 100) if latest.total_marks > 0 else 0
             else:
@@ -1196,9 +1210,20 @@ def student_stats_api(request):
             data.append({
                 "id": student.id,
                 "name": student.username,
+                "student_id": profile.student_id if profile else None,
+                "phone": profile.phone if profile else None,
+                "course_title": (
+                    profile.course.title if profile and profile.course else (
+                        CourseEnrollment.objects.filter(user=student).first().course.title 
+                        if CourseEnrollment.objects.filter(user=student).exists() 
+                        else "Not assigned"
+                    )
+                ),
                 "status": status_val,
                 "progress": progress,
                 "is_active": student.is_active,
+                "role": student.role,
+                "is_staff": student.is_staff,
                 "last_login": student.last_login.isoformat() if student.last_login else None,
                 "date_joined": student.date_joined.isoformat() if student.date_joined else None,
             })
@@ -1218,6 +1243,8 @@ def admin_create_credentials_api(request):
     password = request.data.get('password')
     email = request.data.get('email', '')
     role = request.data.get('role', 'student')
+    course = request.data.get('course', '')
+    phone = request.data.get('phone', '')
 
     if not username or not password:
         return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1229,6 +1256,22 @@ def admin_create_credentials_api(request):
     user.role = role
     user.is_active = True
     user.save(update_fields=['role', 'is_active'])
+
+    # Auto-create StudentProfile if it's a student
+    if role == 'student':
+        course_obj = None
+        if course:
+            course_obj, _ = Course.objects.get_or_create(
+                title=course,
+                defaults={'level': 'Beginner', 'duration': 'Self-paced', 'topics': [], 'progress': 0, 'locked': False}
+            )
+        
+        from ..models import StudentProfile
+        StudentProfile.objects.create(
+            user=user,
+            course=course_obj,
+            phone=phone
+        )
 
     return Response({
         'success': True,
