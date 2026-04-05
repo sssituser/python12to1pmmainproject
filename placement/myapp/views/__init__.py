@@ -54,10 +54,14 @@ from . import git_github_views
 from . import google_cloud_views
 from . import iam_views
 from . import ios_swift_views
+from . import power_query_views
+from . import claude_views
 from . import kubernetes_basics_views
 from . import machine_learning_views
 from . import microsoft_azure_views
 from . import mongodb_views
+from . import DAX_views
+from . import gpt_views
 from . import ms_office_views
 from . import ms_word_views
 from . import network_security_views

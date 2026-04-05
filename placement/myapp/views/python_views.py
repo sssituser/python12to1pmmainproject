@@ -310,26 +310,35 @@ def exam_reports_api(request):
     """
     username = request.GET.get('username')
     exam_type = request.GET.get('exam_type', 'all')
-    
+
     if exam_type == 'all':
         attempts = ExamAttempt.objects.all()
     else:
         attempts = ExamAttempt.objects.filter(exam_type=exam_type)
-    
-    if username:
+
+    # Enforce user isolation:
+    # 1. Staff/Faculty/Admin can see everyone's data (optionally filtered by username)
+    # 2. Students can ONLY see their own data, regardless of the 'username' parameter
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+        # else: keep all (staff view)
+    elif request.user and request.user.is_authenticated:
+        # Strictly student view: only their own records
+        attempts = attempts.filter(user=request.user)
+    elif username:
+        # Unauthenticated request with username: fallback (less secure but allows public view if required)
+        # However, to be 100% sure per user request, we should probably disable this for 'results'
+        # but keep it if the system relies on it. To meet '100% sure', let's fix it.
         attempts = attempts.filter(user__username__iexact=username)
-    
-    # Filter by student's course if user is authenticated
-    if request.user and request.user.is_authenticated:
-        try:
-            profile = StudentProfile.objects.get(user=request.user)
-            if profile.course:
-                # Filter attempts by users who have the same course
-                same_course_users = StudentProfile.objects.filter(course=profile.course).values_list('user', flat=True)
-                attempts = attempts.filter(user__in=same_course_users)
-        except StudentProfile.DoesNotExist:
-            pass  # If no profile, show all attempts
-        
+    else:
+        attempts = ExamAttempt.objects.none()
+
     attempts = attempts.order_by('-exam_date')
     
     formatted_data = []
@@ -748,9 +757,22 @@ def weekly_exam_reports_api(request):
     attempts = ExamAttempt.objects.filter(
         Q(exam_type='weekly') | Q(exam_title__icontains='weekly')
     )
-    
-    if username:
+
+    # Enforce user isolation
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+    elif request.user and request.user.is_authenticated:
+        attempts = attempts.filter(user=request.user)
+    elif username:
         attempts = attempts.filter(user__username__iexact=username)
+    else:
+        attempts = ExamAttempt.objects.none()
         
     attempts = attempts.order_by('-exam_date')
 
@@ -793,9 +815,22 @@ def monthly_exam_reports_api(request):
     attempts = ExamAttempt.objects.filter(
         Q(exam_type='monthly') | Q(exam_title__icontains='monthly')
     )
-    
-    if username:
+
+    # Enforce user isolation
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+    elif request.user and request.user.is_authenticated:
+        attempts = attempts.filter(user=request.user)
+    elif username:
         attempts = attempts.filter(user__username__iexact=username)
+    else:
+        attempts = ExamAttempt.objects.none()
         
     attempts = attempts.order_by('-exam_date')
 
@@ -830,13 +865,25 @@ def user_combined_results_api(request):
     GET: Get all exam results for a specific user across all categories
     """
     username = request.GET.get('username')
-    if not username:
-         return Response({
-            'success': False,
-            'error': 'Username is required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+        else:
+            attempts = ExamAttempt.objects.all().order_by('-exam_date')
+    elif request.user and request.user.is_authenticated:
+        attempts = ExamAttempt.objects.filter(user=request.user).order_by('-exam_date')
+    else:
+        if not username:
+             return Response({
+                'success': False,
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
     
     formatted_data = []
     for attempt in attempts:

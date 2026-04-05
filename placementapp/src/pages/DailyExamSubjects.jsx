@@ -51,11 +51,15 @@ const subjects = [
   { name: "Data Visualization", key: "data_visualization", icon: faChartLine, textStyle: "text-pink-500", bgStyle: "bg-pink-50", hoverBorder: "hover:border-pink-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(236,72,153,0.2)]" },
   { name: "Machine Learning", key: "machine_learning", icon: faBrain, textStyle: "text-purple-700", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(126,34,206,0.2)]" },
   { name: "AI Concepts", key: "ai_concepts", icon: faRobot, textStyle: "text-cyan-700", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(14,116,144,0.2)]" },
+  { name: "Agentic AI (Claude)", key: "agentic_ai_claude", icon: faRobot, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+  { name: "Agentic AI (GPT)", key: "agentic_ai_gpt", icon: faRobot, textStyle: "text-teal-700", bgStyle: "bg-teal-50", hoverBorder: "hover:border-teal-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(13,148,136,0.2)]" },
 
   // POWER BI
   { name: "Data Modeling", key: "datamodeling", icon: faDbIcon, textStyle: "text-orange-600", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40_rgba(234,88,12,0.2)]" },
   { name: "Dashboards", key: "dashboards", icon: faDesktop, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
   { name: "Reports", key: "reports", icon: faChartPie, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
+  { name: "Power Query", key: "power_query", icon: faTable, textStyle: "text-amber-700", bgStyle: "bg-amber-50", hoverBorder: "hover:border-amber-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(217,119,6,0.2)]" },
+  { name: "DAX", key: "dax", icon: faChartLine, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
 
   // CLOUD
   { name: "Cloud Basics", key: "cloud_basics", icon: faCloudArrowUp, textStyle: "text-sky-600", bgStyle: "bg-sky-50", hoverBorder: "hover:border-sky-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(2,132,199,0.2)]" },
@@ -108,10 +112,18 @@ const courseMappings = {
   "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
   "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
   "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
+  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
   "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
   "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
   "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
   "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
   "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
   "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
   "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
@@ -149,6 +161,18 @@ const getAllowedSubjects = (courseName = "") => {
     cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
     security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
     hacking: ["ethical_hacking", "penetration_testing"],
+    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power query": ["power_query"],
+    dax: ["dax"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
     cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
     devsecops: ["devops", "network_security", "penetration_testing"],
     mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
@@ -195,6 +219,35 @@ function DailyExamSubjects() {
   const [topicsAllowed, setTopicsAllowed] = useState([]);
   const userRole = (storedUser.role || "").toLowerCase();
   const isStudent = userRole === "student";
+
+  // Always refresh course from profile on mount so newly registered courses reflect immediately
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!isStudent || !token) return;
+
+    const syncCourseFromProfile = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const resolvedCourse = data?.course_title || data?.course || "";
+        const resolvedCourseId = data?.course || null;
+        if (resolvedCourse && resolvedCourse !== studentCourse) {
+          setStudentCourse(resolvedCourse);
+          const updatedUser = { ...storedUser, course: resolvedCourse };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+        if (resolvedCourseId) setCourseId(resolvedCourseId);
+      } catch (err) {
+        console.error("Failed to sync course from profile:", err);
+      }
+    };
+
+    syncCourseFromProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudent]);
 
   useEffect(() => {
     // If course is missing in local storage, resolve it from profile so every student is constrained properly

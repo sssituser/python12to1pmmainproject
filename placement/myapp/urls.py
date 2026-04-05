@@ -8,8 +8,9 @@ from .views import html_views, css_views, javascript_views, bootstrap_views, ora
 from .views import Hibernate_views, JDBC_views, Pandas_views, Reports_views, Spring_views, ai_concepts_views, android_views, api_testing_views, asp_net_mvc_views, augmented_reality_views
 from .views import big_data_tools_views, c_data_structures_views, c_sharp_views, ci_cd_views, cloud_basics_views, computer_fundamentals_views, dashboards_views, data_handling_views, data_modeling_views, data_visualization_views
 from .views import database_basics_views, deep_learning_views, deployment_views, docker_views, ec2_s3_views, ethereum_views, ethical_hacking_views, etl_pipelines_views, excel_views, express_js_views
-from .views import flutter_react_native_views, generative_ai_views, git_github_views, google_cloud_views, iam_views, ios_swift_views, kubernetes_basics_views, machine_learning_views, microsoft_azure_views, mongodb_views
+from .views import flutter_react_native_views, generative_ai_views, claude_views, gpt_views, git_github_views, google_cloud_views, iam_views, ios_swift_views, kubernetes_basics_views, machine_learning_views, microsoft_azure_views, mongodb_views
 from .views import ms_office_views, ms_word_views, network_security_views, node_js_views, numpy_views, oops_cpp_views, penetration_testing_views, powerpoint_views, programming_basics_views, python_data_science_views, dotnet_views, dotnet_mvc_views
+from .views import power_query_views, DAX_views
 from .views import qa_processes_views, selenium_views, smart_contracts_views, virtual_reality_views, web3_views, web_apis_views
 
 router = routers.DefaultRouter()
@@ -70,6 +71,10 @@ urlpatterns = [
     path('playground-questions/express_js/', express_js_views.playground_questions_expressjs_api),
     path('playground-questions/flutter_react_native/', flutter_react_native_views.playground_questions_flutterreactnative_api),
     path('playground-questions/generative_ai/', generative_ai_views.playground_questions_generativeai_api),
+    path('playground-questions/power_query/', power_query_views.playground_questions_power_query_api),
+    path('playground-questions/dax/', DAX_views.playground_questions_dax_api),
+    path('playground-questions/agentic_ai_claude/', claude_views.playground_questions_agentic_ai_claude_api),
+    path('playground-questions/agentic_ai_gpt/', gpt_views.playground_questions_agentic_ai_gpt_api),
     path('playground-questions/git_github/', git_github_views.playground_questions_gitgithub_api),
     path('playground-questions/google_cloud/', google_cloud_views.playground_questions_gcp_api),
     path('playground-questions/hibernate/', Hibernate_views.playground_questions_hibernate_api),

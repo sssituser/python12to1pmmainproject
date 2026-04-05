@@ -17,6 +17,8 @@ const SUBJECT_RULES = {
   oracle:   { displayName: "Oracle",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
   django:   { displayName: "Django",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
   react:    { displayName: "React",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_claude: { displayName: "Agentic AI (Claude)", maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
   ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap", "react"], durationMinutes: 120 },
   backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120 },
 };
@@ -37,10 +39,18 @@ const courseMappings = {
   "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
   "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
   "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
+  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
   "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
   "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
   "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
   "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
   "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
   "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
   "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
@@ -92,7 +102,27 @@ const knownSubjectKeys = [
   "backend",
   "ui",
   "dotnet",
-  "dotnet_mvc"
+  "dotnet_mvc",
+  "agentic_ai_claude",
+  "agentic_ai_gpt",
+  "generative_ai",
+  "ai_concepts",
+  "power_query",
+  "dax",
+  "dashboards",
+  "data_visualization",
+  "reports",
+  "oracle",
+  "python_data_science",
+  "python",
+  "c_sharp",
+  "dotnet",
+  "backend",
+  "java",
+  "mongodb",
+  "excel",
+  "numpy",
+  "pandas"
 ];
 
 const getAllowedSubjects = (courseName = "") => {
@@ -111,6 +141,18 @@ const getAllowedSubjects = (courseName = "") => {
     cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
     security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
     hacking: ["ethical_hacking", "penetration_testing"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power query": ["power_query"],
+    dax: ["dax"],
     cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
     devsecops: ["devops", "network_security", "penetration_testing"],
     mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
@@ -215,6 +257,36 @@ const DailyExam = () => {
   const [warningCount, setWarningCount] = useState(0);
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarningModal, setShowWarningModal] = useState(false);
+
+  // Always refresh course from profile on mount so newly registered courses reflect immediately
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!isStudent || !token) return;
+
+    const syncCourseFromProfile = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const resolvedCourse = (data?.course_title || data?.course || "").trim();
+        const resolvedCourseId = data?.course || null;
+        if (resolvedCourse && resolvedCourse !== studentCourse) {
+          setStudentCourse(resolvedCourse);
+          const updatedUser = { ...storedUser, course: resolvedCourse };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+        if (resolvedCourseId) setCourseId(resolvedCourseId);
+        setCourseResolved(true);
+      } catch (err) {
+        console.error("Failed to sync course from profile:", err);
+      }
+    };
+
+    syncCourseFromProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudent]);
 
   // Ensure we know the student's course (fallback to profile if it wasn't cached)
   useEffect(() => {
