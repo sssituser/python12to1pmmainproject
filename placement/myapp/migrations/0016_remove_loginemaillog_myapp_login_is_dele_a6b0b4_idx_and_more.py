@@ -10,10 +10,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name='loginemaillog',
-            name='myapp_login_is_dele_a6b0b4_idx',
-        ),
+#        migrations.RemoveIndex(
+#            model_name='loginemaillog',
+#            name='myapp_login_is_dele_a6b0b4_idx',
+#        ),
         migrations.RemoveField(
             model_name='job',
             name='external_application_link',

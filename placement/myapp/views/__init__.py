@@ -37,6 +37,8 @@ from . import computer_fundamentals_views
 from . import dashboards_views
 from . import data_handling_views
 from . import data_modeling_views
+from . import ui_views
+from . import backend_views
 from . import data_visualization_views
 from . import database_basics_views
 from . import deep_learning_views
