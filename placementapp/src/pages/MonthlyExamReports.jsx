@@ -55,21 +55,15 @@ function MonthlyExamReports() {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
          const title = (exam.examTitle || exam.title || "").toLowerCase();
          
-         // 1. Strict Category Match
          const isMonthly = type === 'monthly' || title.includes('monthly');
          if (!isMonthly) return;
          
-         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-time';
-         const key = `${title}-${dateStr}`;
-         const score = exam.score || 0;
+         // 🛡️ UNIQUE ID DEDUPLICATION: Use the database ID to ensure
+         // every unique attempt is preserved and shown.
+         const key = exam.id || (exam.random_id + exam.examDate);
          
          if (!seenKeys.has(key)) {
            seenKeys.set(key, exam);
-         } else {
-           const existing = seenKeys.get(key);
-           if (score > (existing.score || 0) || (score === (existing.score || 0) && (exam.id || 0) > (existing.id || 0))) {
-             seenKeys.set(key, exam);
-           }
          }
       });
 

@@ -756,7 +756,17 @@ useEffect(() => {
     } catch(e) {
       console.error(e);
     }
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    // Get actual student ID from profile instead of random
+    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
+    
+    // Debug logging to verify student ID
+    console.log("WeeklyExam - Profile studentId:", profileData.studentId);
+    console.log("WeeklyExam - User studentId:", userData.studentId);
+    console.log("WeeklyExam - User ID:", userData.id);
+    console.log("WeeklyExam - Final randomId being used:", randomId);
+    
     const now = new Date().toISOString();
 
     let correctCount = 0;
@@ -809,7 +819,8 @@ useEffect(() => {
       },
       examDate: new Date().toISOString(),
       examTitle: "Weekly Exam",
-      submissionReason: reason
+      submissionReason: reason,
+      random_id: String(randomId) // Add missing random_id field
     };
 
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
@@ -854,8 +865,54 @@ useEffect(() => {
     }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    
+    // Validate and ensure questions data is properly stored
+    console.log("🔍 Weekly Exam - Validating result data before storage:");
+    console.log("Questions count:", result.questions?.length || 0);
+    console.log("Answers count:", result.answers?.length || 0);
+    console.log("Student ID:", result.random_id);
+    console.log("Exam Title:", result.examTitle);
+    
+    // Ensure questions and answers are arrays, not strings
+    if (typeof result.questions === 'string') {
+      try {
+        result.questions = JSON.parse(result.questions);
+        console.log("✅ Parsed stringified questions");
+      } catch (e) {
+        console.error("❌ Failed to parse questions:", e);
+        result.questions = [];
+      }
+    }
+    
+    if (typeof result.answers === 'string') {
+      try {
+        result.answers = JSON.parse(result.answers);
+        console.log("✅ Parsed stringified answers");
+      } catch (e) {
+        console.error("❌ Failed to parse answers:", e);
+        result.answers = [];
+      }
+    }
+    
+    // Final validation
+    const isValid = Array.isArray(result.questions) && Array.isArray(result.answers) && 
+                   result.questions.length > 0 && result.answers.length > 0;
+    
+    if (isValid) {
+      console.log("✅ Weekly Exam data validation passed");
+    } else {
+      console.error("❌ Weekly Exam data validation failed");
+      console.log("Final questions type:", Array.isArray(result.questions));
+      console.log("Final answers type:", Array.isArray(result.answers));
+    }
+    
     allResults.unshift(result);
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'weekly', result: result } 
+    }));
     localStorage.setItem("examResult", JSON.stringify(result));
 
     sessionStorage.removeItem('weeklyExamState');
@@ -1376,12 +1433,12 @@ useEffect(() => {
                   <div className="flex items-center justify-between mb-6">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
                     <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
-                      {Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100)}%
+                      {Math.round(((Array.isArray(answers) ? answers.filter(a => a !== null).length : 0) / (Array.isArray(questions) ? questions.length : 1)) * 100)}%
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-4 gap-2">
-                    {questions.map((_, index) => {
+                    {Array.isArray(questions) ? questions.map((_, index) => {
                       let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
                       if (currentQuestion === index) {
                         statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
@@ -1394,13 +1451,13 @@ useEffect(() => {
                       return (
                         <button
                           key={index}
-                          onClick={() => goToQuestion(index)}
-                          className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
+                          className={`w-10 h-10 rounded-lg border-2 transition-all ${statusColor}`}
+                          onClick={() => setCurrentQuestion(index)}
                         >
                           {index + 1}
                         </button>
                       );
-                    })}
+                    }) : null}
                   </div>
                 </div>
                 
@@ -1410,7 +1467,7 @@ useEffect(() => {
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
                        </div>
-                       <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                       <span className="text-xs font-black text-gray-800">{Array.isArray(answers) ? answers.filter(a => a !== null).length : 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2.5">

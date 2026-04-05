@@ -55,23 +55,17 @@ function WeeklyExamReports() {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
          const title = (exam.examTitle || exam.title || "").toLowerCase();
          
-         // 1. Strict Category Match - Filter by 'weekly' type but check title as backup
          const isWeekly = type === 'weekly' || title.includes('weekly');
          const isExcluded = title.includes('monthly');
          
          if (!isWeekly || isExcluded) return;
          
-         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-time';
-         const key = `${title}-${dateStr}`;
-         const score = exam.score || 0;
+         // 🛡️ UNIQUE ATTEMPT DEDUPLICATION: Use the database ID to 
+         // ensure every unique attempt is shown in the history.
+         const key = exam.id || (exam.random_id + exam.examDate);
          
          if (!seenKeys.has(key)) {
            seenKeys.set(key, exam);
-         } else {
-           const existing = seenKeys.get(key);
-           if (score > (existing.score || 0) || (score === (existing.score || 0) && (exam.id || 0) > (existing.id || 0))) {
-             seenKeys.set(key, exam);
-           }
          }
       });
 

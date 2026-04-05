@@ -311,24 +311,37 @@ def exam_reports_api(request):
     username = request.GET.get('username')
     exam_type = request.GET.get('exam_type', 'all')
 
+    # Base queryset for student reports
     if exam_type == 'all':
-        attempts = ExamAttempt.objects.filter(user__role='student')
+        attempts = ExamAttempt.objects.filter(Q(user__role='student') | Q(user__role=''))
     else:
         attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
-    if username:
+    # Priority: If logged in, prioritize user's own data
+    if request.user and request.user.is_authenticated:
+        # If student is logged in, they see their own data
+        if getattr(request.user, 'role', '').lower() == 'student':
+             attempts = ExamAttempt.objects.filter(user=request.user)
+        else:
+             # Even if role isn't 'student', if they took an exam under this username, show it
+             if username:
+                attempts = attempts.filter(user__username__iexact=username)
+             else:
+                attempts = attempts.filter(user=request.user)
+    elif username:
         attempts = attempts.filter(user__username__iexact=username)
     
-    # Filter by student's course if user is authenticated
-    if request.user and request.user.is_authenticated:
+    # Filter by student's course if user is authenticated and it's a general query
+    if request.user and request.user.is_authenticated and not username:
         try:
             profile = StudentProfile.objects.get(user=request.user)
             if profile.course:
-                # Filter attempts by users who have the same course
+                # Filter attempts by users who have the same course, but include self
                 same_course_users = StudentProfile.objects.filter(course=profile.course).values_list('user', flat=True)
-                attempts = attempts.filter(user__in=same_course_users)
+                # Ensure current user is in the list
+                attempts = attempts.filter(user__in=list(same_course_users) + [request.user.id])
         except StudentProfile.DoesNotExist:
-            pass  # If no profile, show all attempts
+            pass
         
     attempts = attempts.order_by('-exam_date')
     
@@ -547,13 +560,13 @@ def save_exam_report_api(request):
             else:
                 final_status = 'Fail'
 
-        # 🛡️ PREVENT DUPLICATE SUBMISSIONS (Within 2 minutes for same exam and score)
-        two_minutes_ago = timezone.now() - timezone.timedelta(minutes=2)
+        # 🛡️ PREVENT ACCIDENTAL DOUBLE-SUBMISSIONS (Only ignore repeat within 10 seconds)
+        ten_seconds_ago = timezone.now() - timezone.timedelta(seconds=10)
         exists = ExamAttempt.objects.filter(
             user=user,
             exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
             score=data.get('score', 0),
-            exam_date__gte=two_minutes_ago
+            exam_date__gte=ten_seconds_ago
         ).exists()
 
         if exists:
@@ -904,7 +917,10 @@ def user_combined_results_api(request):
         else:
             attempts = ExamAttempt.objects.all().order_by('-exam_date')
     elif request.user and request.user.is_authenticated:
-        attempts = ExamAttempt.objects.filter(user=request.user).order_by('-exam_date')
+        # Include attempts specifically tied to this user OR matching their username (for consistency)
+        attempts = ExamAttempt.objects.filter(
+            Q(user=request.user) | Q(user__username__iexact=request.user.username)
+        ).order_by('-exam_date')
     else:
         if not username:
              return Response({

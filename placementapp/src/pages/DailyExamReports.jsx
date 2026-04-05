@@ -53,24 +53,14 @@ function DailyExamReports() {
       
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
-         const title = (exam.examTitle || exam.title || "").toLowerCase();
+         if (type !== 'daily' && type !== '') return;
          
-         // 1. Strict Category Match
-         if (type !== 'daily') return;
-         
-         // 2. Identify the attempt signature
-         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-date';
-         const key = `${title}-${dateStr}`;
-         const score = exam.score || 0;
+         // 🛡️ UNIQUE ATTEMPT KEY: Use ID or combinations of unique metadata
+         // to ensure every attempt shows up separately.
+         const key = exam.id || (exam.random_id + exam.examDate);
          
          if (!seenKeys.has(key)) {
            seenKeys.set(key, exam);
-         } else {
-           // Compare and keep the one with the higher score
-           const existing = seenKeys.get(key);
-           if (score > (existing.score || 0) || (score === (existing.score || 0) && (exam.id || 0) > (existing.id || 0))) {
-             seenKeys.set(key, exam);
-           }
          }
       });
 

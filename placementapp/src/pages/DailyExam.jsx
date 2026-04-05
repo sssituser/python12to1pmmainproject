@@ -1054,25 +1054,54 @@ useEffect(() => {
       user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
     } catch (e) { }
 
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    // Get actual student ID from profile instead of random
+    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
     const now = new Date().toISOString();
 
     let correctCount = 0;
     let earnedMarks = 0;
     let maxPossibleMarks = 0;
 
+    console.log("🔍 Daily Exam - Calculating results:");
+    console.log("Total questions:", questions.length);
+    console.log("Total answers:", answers.length);
+    console.log("Questions array:", questions);
+    console.log("Answers array:", answers);
+
     answers.forEach((ans, index) => {
       const q = questions[index];
-      if (!q) return;
+      if (!q) {
+        console.log(`❌ Question ${index} not found`);
+        return;
+      }
 
       const qMarks = parseInt(q.marks) || 2;
       maxPossibleMarks += qMarks;
 
+      console.log(`📝 Question ${index}:`, {
+        question: q.question?.substring(0, 50) + '...',
+        userAnswer: ans,
+        correctAnswer: q.correct,
+        isCorrect: ans === q.correct,
+        marks: qMarks
+      });
+
       if (ans === q.correct) {
         correctCount++;
         earnedMarks += qMarks;
+        console.log(`✅ Correct! Total correct: ${correctCount}`);
+      } else {
+        console.log(`❌ Incorrect. Total correct: ${correctCount}`);
       }
     });
+
+    console.log("📊 Final Results:");
+    console.log("Correct Count:", correctCount);
+    console.log("Incorrect Count:", questions.length - correctCount);
+    console.log("Earned Marks:", earnedMarks);
+    console.log("Max Possible Marks:", maxPossibleMarks);
 
     const totalQ = questions.length;
     const finalScore = earnedMarks;
@@ -1106,8 +1135,8 @@ useEffect(() => {
       end_time: new Date().toISOString(),
       status: finalStatus,
       random_id: String(randomId),
-      answers: JSON.stringify(answers),
-      questions: JSON.stringify(questions),
+      answers: answers,
+      questions: questions,
       reason: reason
     };
 
@@ -1134,17 +1163,76 @@ useEffect(() => {
       examTitle: payload.exam_title,
       examType: payload.exam_type,
       timeTaken: payload.time_taken,
+      correctAnswers: correctCount,
+      incorrectAnswers: totalQ - correctCount,
+      totalQuestions: totalQ,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
         firstName: user.firstName || user.username,
         randomId
       },
-      examDate: payload.end_time
+      examDate: payload.end_time,
+      answers: answers, // Use actual array, not stringified
+      questions: questions // Use actual array, not stringified
     };
 
+    console.log("🔍 Daily Exam - Final result object being stored:");
+    console.log("Result.correctAnswers:", result.correctAnswers);
+    console.log("Result.incorrectAnswers:", result.incorrectAnswers);
+    console.log("Result.totalQuestions:", result.totalQuestions);
+    console.log("Result.score:", result.score);
+    console.log("Result.random_id:", result.random_id);
+
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    
+    // Validate and ensure questions data is properly stored
+    console.log("🔍 Daily Exam - Validating result data before storage:");
+    console.log("Questions count:", result.questions?.length || 0);
+    console.log("Answers count:", result.answers?.length || 0);
+    console.log("Student ID:", result.random_id);
+    console.log("Exam Title:", result.examTitle);
+    
+    // Ensure questions and answers are arrays, not strings (backup check)
+    if (typeof result.questions === 'string') {
+      try {
+        result.questions = JSON.parse(result.questions);
+        console.log("✅ Parsed stringified questions");
+      } catch (e) {
+        console.error("❌ Failed to parse questions:", e);
+        result.questions = [];
+      }
+    }
+    
+    if (typeof result.answers === 'string') {
+      try {
+        result.answers = JSON.parse(result.answers);
+        console.log("✅ Parsed stringified answers");
+      } catch (e) {
+        console.error("❌ Failed to parse answers:", e);
+        result.answers = [];
+      }
+    }
+    
+    // Final validation
+    const isValid = Array.isArray(result.questions) && Array.isArray(result.answers) && 
+                   result.questions.length > 0 && result.answers.length > 0;
+    
+    if (isValid) {
+      console.log("✅ Daily Exam data validation passed");
+    } else {
+      console.error("❌ Daily Exam data validation failed");
+      console.log("Final questions type:", Array.isArray(result.questions));
+      console.log("Final answers type:", Array.isArray(result.answers));
+    }
+    
     allResults.unshift(result);
+    localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'daily', result: result } 
+    }));
 
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));

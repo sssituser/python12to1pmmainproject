@@ -24,7 +24,28 @@ function PlaygroundResults() {
     
     const t = title.toLowerCase();
     
-    // Handle specific exam types first
+    // Priority 1: Multi-word specialized subjects
+    if (t.includes("machine") && t.includes("learning")) return "Machine Learning Exam";
+    if (t.includes("deep") && t.includes("learning")) return "Deep Learning Exam";
+    if (t.includes("data") && t.includes("science")) return "Data Science Exam";
+    if (t.includes("data") && t.includes("modeling")) return "Data Modeling Exam";
+    if (t.includes("data") && (t.includes("visualization") || t.includes("visualisation"))) return "Data Visualization Exam";
+    if (t.includes("ai") && t.includes("concepts")) return "AI Concepts Exam";
+    if (t.includes("computer") && t.includes("fundamentals")) return "Computer Fundamentals Exam";
+    if (t.includes("google") && t.includes("cloud")) return "Google Cloud Exam";
+    if (t.includes("augmented") && t.includes("reality")) return "Augmented Reality Exam";
+    if (t.includes("virtual") && t.includes("reality")) return "Virtual Reality Exam";
+    if (t.includes("cloud") && t.includes("basics")) return "Cloud Basics Exam";
+    if (t.includes("big") && t.includes("data")) return "Big Data Exam";
+    if (t.includes("web") && t.includes("api")) return "Web APIs Exam";
+    
+    // Priority 2: Pattern-specific exams
+    if (t.includes("deployment")) return "Deployment Exam";
+    if (t.includes("qa") && t.includes("processes")) return "QA Processes Exam";
+    if (t.includes("otp")) return "OTP Exam";
+    if (t.includes("ci") && t.includes("cd")) return "CI/CD Exam";
+
+    // Priority 3: Core subjects (only if specific multi-word patterns didn't match)
     if (t.includes("python")) return "Python Exam";
     if (t.includes("java")) return "Java Exam";
     if (t.includes("oracle")) return "Oracle Exam";
@@ -34,46 +55,40 @@ function PlaygroundResults() {
     if (t.includes("selenium")) return "Selenium Exam";
     if (t.includes("docker")) return "Docker Exam";
     if (t.includes("kubernetes")) return "Kubernetes Exam";
-    if (t.includes("ci") && t.includes("cd")) return "CI/CD Exam";
-    if (t.includes("machine") && t.includes("learning")) return "Machine Learning Exam";
-    if (t.includes("deep") && t.includes("learning")) return "Deep Learning Exam";
-    if (t.includes("data") && t.includes("science")) return "Data Science Exam";
-    if (t.includes("data") && t.includes("modeling")) return "Data Modeling Exam";
-    if (t.includes("data") && t.includes("visualization")) return "Data Visualization Exam";
-    if (t.includes("augmented") && t.includes("reality")) return "Augmented Reality Exam";
-    if (t.includes("virtual") && t.includes("reality")) return "Virtual Reality Exam";
     if (t.includes("web") && t.includes("3")) return "Web3 Exam";
-    if (t.includes("web") && t.includes("api")) return "Web APIs Exam";
-    if (t.includes("cloud") && t.includes("basics")) return "Cloud Basics Exam";
-    if (t.includes("google") && t.includes("cloud")) return "Google Cloud Exam";
-    if (t.includes("big") && t.includes("data")) return "Big Data Exam";
     if (t.includes("pandas")) return "Pandas Exam";
-    if (t.includes("ai") && t.includes("concepts")) return "AI Concepts Exam";
-    if (t.includes("computer") && t.includes("fundamentals")) return "Computer Fundamentals Exam";
-    if (t.includes("deployment")) return "Deployment Exam";
-    if (t.includes("qa") && t.includes("processes")) return "QA Processes Exam";
-    if (t.includes("otp")) return "OTP Exam";
     
-    // Handle weekly/monthly patterns
+    // Default categories
     if (t.includes("weekly")) return "Weekly Exam";
     if (t.includes("monthly")) return "Monthly Exam";
-    
-    // Handle generic patterns
     if (t.includes("test")) return "Test Exam";
-    if (t.includes("exam")) return title; // Return original if it already contains "exam"
     
-    // Default case - capitalize first letter
+    // If it already says "Exam", keep it as is
+    if (t.includes("exam")) return title;
+    
+    // Catch-all
     return title.charAt(0).toUpperCase() + title.slice(1) + " Exam";
   };
 
   useEffect(() => {
+    const ensureParsed = (obj) => {
+      if (!obj) return obj;
+      if (typeof obj.questions === 'string') {
+        try { obj.questions = JSON.parse(obj.questions); } catch (e) {}
+      }
+      if (typeof obj.answers === 'string') {
+        try { obj.answers = JSON.parse(obj.answers); } catch (e) {}
+      }
+      return obj;
+    };
+
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
 
       let localResults = [];
       try {
-        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]").map(ensureParsed);
       } catch (e) {}
       
       const userStr = localStorage.getItem("user");
@@ -87,7 +102,6 @@ function PlaygroundResults() {
       const targetUsername = username || currentUser?.username;
 
       if (!targetUsername) {
-        // Remove duplicates from localResults before setting
         const uniqueResults = removeDuplicateResults(localResults);
         setAllResults(uniqueResults);
         setIsLoading(false);
@@ -99,29 +113,23 @@ function PlaygroundResults() {
         const json = await response.json();
 
         if (json.success) {
-          // Merge local storage results (to capture unsynced/new exams) with backend results
-          let backendResults = json.data || [];
+          let backendResults = (json.data || []).map(ensureParsed);
           
-          // First, remove duplicates from local results
           const uniqueLocalResults = removeDuplicateResults(localResults);
           
+          // 🛡️ SHOW ALL ATTEMPTS: Ensure every attempt is shown.
+          // Deduplication only filters by exact database ID to avoid double-counting.
           const seen = new Set();
-          const merged = [];
+          const finalResults = [];
           
-          // We put localResults first so that most recent locally saved exam takes priority visually
-          for (const res of [...uniqueLocalResults, ...backendResults]) {
-             const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
-             if (key && !seen.has(key)) {
-                seen.add(key);
-                merged.push(res);
-             } else if (!key) {
-                // If it really lacks a key, just add it to avoid losing data
-                merged.push(res);
-             }
-          }
+          [...uniqueLocalResults, ...backendResults].forEach(res => {
+            const key = res.id || res.random_id || (res.start_time + res.examDate + JSON.stringify(res));
+            if (!seen.has(key)) {
+              seen.add(key);
+              finalResults.push(res);
+            }
+          });
           
-          // Remove any remaining duplicates from merged results
-          const finalResults = removeDuplicateResults(merged);
           setAllResults(finalResults);
         } else {
           setError(json.error || "Failed to fetch results");
@@ -138,16 +146,26 @@ function PlaygroundResults() {
 
     fetchResults();
 
-    // Still check for one-time results/failures from localStorage
     const examFailure = localStorage.getItem("examFailure");
     if (examFailure) {
-      const failedResult = JSON.parse(examFailure);
+      const failedResult = ensureParsed(JSON.parse(examFailure));
       setAllResults(prev => {
         const uniqueResults = removeDuplicateResults([failedResult, ...prev]);
         return uniqueResults;
       });
       localStorage.removeItem("examFailure");
     }
+
+    const handleExamDataUpdate = (event) => {
+      console.log("🔄 PlaygroundResults - Auto-updating data for:", event.detail.examType);
+      fetchResults();
+    };
+
+    window.addEventListener('examDataUpdated', handleExamDataUpdate);
+
+    return () => {
+      window.removeEventListener('examDataUpdated', handleExamDataUpdate);
+    };
   }, []);
 
   // Helper function to remove duplicate results based on unique identifiers
@@ -180,12 +198,18 @@ function PlaygroundResults() {
 
   const handleViewDetails = (result, index) => {
     // Store the complete result data to ensure accuracy
+    console.log("PlaygroundResults - Storing result data:", result);
+    console.log("PlaygroundResults - Result questions:", result.questions);
+    console.log("PlaygroundResults - Questions length:", result.questions?.length);
+    console.log("PlaygroundResults - Questions type:", typeof result.questions);
+    console.log("PlaygroundResults - Is Array.isArray(questions):", Array.isArray(result.questions));
+    
     localStorage.setItem("selectedExamResult", JSON.stringify(result));
     // Use unique ID instead of index for reliable navigation
     const uniqueId = result.random_id || result.examDate || result.start_time || index;
     navigate(`/dashboard/playground/detailed-results/${uniqueId}`, { 
         state: { 
-          examTitle: formatExamTitle(result.examTitle),
+          examTitle: result.examTitle || result.exam_title || result.title || "Exam",
           resultData: result // Pass complete data as fallback
         } 
     });
@@ -345,10 +369,10 @@ function PlaygroundResults() {
           <tbody>
             {allResults.map((result, index) => {
 
-              const totalQuestions = result.totalQuestions || result.questions?.length || 0;
+              const totalQuestions = result.totalQuestions || result.total_questions || result.questions?.length || 0;
               const totalMarks = result.totalMarks || result.total_marks || (totalQuestions ? totalQuestions * 2 : 40);
               const passingScore = getPassingScore(result.examTitle);
-              const scoreValue = result.score || (result.correctAnswers || 0) * 2;
+              const scoreValue = result.score || result.marks_obtained || ( (result.correctAnswers || result.correct_answers || 0) * 2 );
               const passed = scoreValue >= passingScore;
 
               return (
@@ -360,7 +384,7 @@ function PlaygroundResults() {
                       "Unknown"}
                   </td>
                   <td className="px-4 py-3 text-start">
-                    {formatExamTitle(result.examTitle)}
+                    {result.examTitle || result.exam_title || result.title || "Exam"}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {new Date(

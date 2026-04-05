@@ -66,40 +66,61 @@ function DetailedResults() {
   };
 
   useEffect(() => {
+    console.log("🔍 DetailedResults - Starting data retrieval process");
+    console.log("🔍 DetailedResults - URL parameter index:", index);
+    
+    // Helper to ensure questions and answers are parsed if they are strings
+    const ensureParsed = (obj) => {
+      if (!obj) return obj;
+      if (typeof obj.questions === 'string') {
+        try { obj.questions = JSON.parse(obj.questions); } catch (e) {
+          console.error("Failed to parse stringified questions:", e);
+        }
+      }
+      if (typeof obj.answers === 'string') {
+        try { obj.answers = JSON.parse(obj.answers); } catch (e) {
+          console.error("Failed to parse stringified answers:", e);
+        }
+      }
+      // Ensure metrics are consistent (already added calculatedCorrect etc elsewhere)
+      return obj;
+    };
+
     // 1. Try to get the specific selected result first
     const selected = localStorage.getItem("selectedExamResult");
     if (selected) {
-      const parsedResult = JSON.parse(selected);
+      const parsedResult = ensureParsed(JSON.parse(selected));
+      console.log("🔍 DetailedResults - Loaded from selectedExamResult:", parsedResult);
       setResult(parsedResult);
       return;
     }
 
-    // 2. Fallback to state-based data (passed from PlaygroundResults)
+    // 2. Fallback to state-based data
     const locationState = location.state;
     if (locationState?.resultData) {
-      setResult(locationState.resultData);
+      setResult(ensureParsed(locationState.resultData));
       return;
     }
 
-    // 3. Fallback to index-based lookup (legacy/compatibility)
-    const results = JSON.parse(
-      localStorage.getItem("allExamResults") || "[]"
-    );
+    // 3. Fallback to index-based lookup
+    const rawResults = localStorage.getItem("allExamResults");
+    if (rawResults) {
+      const results = JSON.parse(rawResults).map(ensureParsed);
+      const foundResult = results.find(r => 
+        r.random_id === index || 
+        r.examDate === index || 
+        r.start_time === index
+      );
 
-    // Try to find result by unique ID first
-    const foundResult = results.find(r => 
-      r.random_id === index || 
-      r.examDate === index || 
-      r.start_time === index
-    );
-
-    if (foundResult) {
-      setResult(foundResult);
-    } else if (results[index]) {
-      setResult(results[index]);
+      if (foundResult) {
+        setResult(foundResult);
+      } else if (results[index]) {
+        setResult(results[index]);
+      } else {
+        setResult(null);
+      }
     } else {
-      console.error("DetailedResults - No result found for ID/index:", index);
-      setResult(null);
+       setResult(null);
     }
   }, [index, location.state]);
 
@@ -108,7 +129,7 @@ function DetailedResults() {
   };
 
   // ─── Shared exam calculations (computed at component scope) ───
-  const totalQuestions = result?.totalQuestions || result?.questions?.length || 20;
+  const totalQuestions = result?.totalQuestions || result?.total_questions || result?.questions?.length || 20;
   const totalMarks = result?.totalMarks || result?.total_marks || (totalQuestions * 2);
   const passingScore = getPassingScore(result?.examTitle);
 
@@ -118,6 +139,9 @@ function DetailedResults() {
     : (result ? ((result.score || (result.correctAnswers || 0) * 2) >= passingScore) : false);
 
   const passingScoreText = result && result.passed !== undefined ? "Faculty Rule Applied" : `${passingScore} marks`;
+
+  const calculatedCorrect = result?.correctAnswers ?? result?.correct_answers ?? 0;
+  const calculatedIncorrect = result?.incorrectAnswers ?? result?.incorrect_answers ?? 0;
 
   const handleDownload = () => {
     if (!result) {
@@ -161,7 +185,7 @@ function DetailedResults() {
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Exam: ${formatExamTitle(result.examTitle)}`, 20, 100);
+    doc.text(`Exam: ${result.examTitle || result.exam_title || result.title || "Exam"}`, 20, 100);
     doc.text(`Date: ${examDate}`, 20, 110);
     doc.text(`Score: ${result.score || (result.correctAnswers || 0) * 2}/${totalMarks}`, 20, 120);
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
@@ -172,7 +196,7 @@ function DetailedResults() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Correct Answers: ${result.correctAnswers || 0}/${totalQuestions}`, 20, 160);
     doc.text(`Incorrect Answers: ${result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}/${totalQuestions}`, 20, 170);
-    doc.text(`Not Attempted: ${result.answers?.filter(a => a === null || a === undefined).length || 0}/${totalQuestions}`, 20, 180);
+    doc.text(`Not Attempted: ${Array.isArray(result.answers) ? result.answers.filter(a => a === null || a === undefined).length : 0}/${totalQuestions}`, 20, 180);
     doc.text(`Percentage: ${(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%`, 20, 190);
     
     doc.setFontSize(10);
@@ -226,7 +250,7 @@ function DetailedResults() {
           <div className="p-4 sm:p-6">
             <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-8 h-[2px] bg-indigo-500"></span>
-              {formatExamTitle(result?.examTitle) || "Student Assessment Summary"}
+              {(result?.examTitle || result?.exam_title || result?.title || "Assessment Summary")}
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
@@ -239,13 +263,13 @@ function DetailedResults() {
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Student ID</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {result.user?.randomId || "N/A"}
+                  {result.user?.randomId || result.random_id || result.user?.id || "N/A"}
                 </p>
               </div> 
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Exam</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {formatExamTitle(result.examTitle)}
+                  {result.examTitle || result.exam_title || result.title || "Exam"}
                 </p>
               </div> 
               <div className="space-y-1 text-right md:text-left">
@@ -272,9 +296,9 @@ function DetailedResults() {
           <div className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-green-600 font-black text-xs uppercase tracking-widest mb-2">Accurate</p>
-            <p className="text-5xl font-black text-gray-900 mb-1">{result.correctAnswers || 0}</p>
+            <p className="text-5xl font-black text-gray-900 mb-1">{calculatedCorrect}</p>
             <p className="text-sm font-bold text-gray-400 italic">
-               {(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}% Success
+               {totalQuestions > 0 ? ((calculatedCorrect / totalQuestions) * 100).toFixed(1) : 0}% Success
             </p>
           </div>
 
@@ -282,7 +306,7 @@ function DetailedResults() {
              <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-red-600 font-black text-xs uppercase tracking-widest mb-2">Incorrect</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
-               {result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}
+               {calculatedIncorrect}
             </p>
             <p className="text-sm font-bold text-gray-400 italic">Missed Potential</p>
           </div>
@@ -291,7 +315,7 @@ function DetailedResults() {
              <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-gray-500 font-black text-xs uppercase tracking-widest mb-2">Skipped</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
-               {result.answers?.filter(a => a === null || a === undefined).length || 0}
+               {Array.isArray(result.answers) ? result.answers.filter(a => a === null || a === undefined).length : 0}
             </p>
             <p className="text-sm font-bold text-gray-400 italic">Not Analyzed</p>
           </div>
@@ -307,7 +331,7 @@ function DetailedResults() {
              <div className="h-[2px] flex-grow mx-8 bg-gray-100 hidden sm:block"></div>
           </div>
 
-          {result && result.questions && result.questions.length > 0 ? (
+          {result && Array.isArray(result.questions) && result.questions.length > 0 ? (
             <div className="space-y-6">
               {result.questions.map((question, questionIndex) => {
                 const questionText = question?.question || `Assessment Item ${questionIndex + 1}`;
@@ -421,15 +445,40 @@ function DetailedResults() {
                               </div>
                             );
                           })}
-                       </div>
-                    </div>
+                        </div>
+                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
             <div className="text-center py-20 bg-white rounded-[3rem] border border-dashed border-gray-200">
-              <p className="text-gray-400 font-bold">Comprehensive analysis data not found for this report.</p>
+              <div className="mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">📋</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-600 mb-2">Question Analysis Not Available</h3>
+              <p className="text-gray-400 mb-4">This exam result doesn't include detailed question breakdown.</p>
+              
+              {/* Show helpful info based on what data is available */}
+              {result && (
+                <div className="bg-gray-50 p-4 rounded-lg text-left max-w-md mx-auto text-sm">
+                  <p className="font-semibold mb-2">Available Data:</p>
+                  <ul className="text-gray-600 space-y-1">
+                    <li>• Score: {result.score || 0}/{result.totalMarks || 0}</li>
+                    <li>• Correct Answers: {result.correctAnswers || 0}</li>
+                    <li>• Incorrect Answers: {result.incorrectAnswers || 0}</li>
+                    <li>• Total Questions: {result.totalQuestions || 0}</li>
+                    <li>• Student ID: {result.user?.randomId || result.random_id || 'N/A'}</li>
+                    <li>• Exam Date: {new Date(result.examDate || Date.now()).toLocaleDateString()}</li>
+                  </ul>
+                </div>
+              )}
+              
+              <div className="mt-4 text-xs text-gray-400">
+                <p>Note: New exams will include complete question analysis.</p>
+              </div>
             </div>
           )}
         </div>
