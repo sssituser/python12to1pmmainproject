@@ -15,6 +15,7 @@ from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, Fac
 from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
+from .views.playground_dispatcher import playground_questions_dispatcher
 
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
@@ -86,6 +87,7 @@ urlpatterns = [
     
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
+    path('playground-questions/<str:subject>/', playground_questions_dispatcher, name='playground-questions-subject'),
     path('playground-questions/python/', playground_questions_api, name='playground-questions-python'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
