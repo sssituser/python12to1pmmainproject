@@ -12,6 +12,7 @@ function Register() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [formData, setFormData] = useState({
+    username: "",
     studentId: "",
     email: "",
     password: "",
@@ -49,6 +50,7 @@ function Register() {
   // ---------------- VALIDATION ----------------
   const validateStep1 = () => {
     let err = {};
+    if (!formData.username) err.username = "Username required";
     if (!formData.studentId) err.studentId = "Student ID required";
     if (!formData.email.includes("@")) err.email = "Enter valid email";
     if (!formData.phone_number) err.phone_number = "Phone number required";
@@ -95,6 +97,10 @@ function Register() {
 
       // ROLE BASED FLOW
       if (formData.role === "Student") {
+        // 🛡️ CLEAR OLD CACHED EXAM DATA
+        localStorage.removeItem("allExamResults");
+        localStorage.removeItem("recentExam");
+        
         toast.success("Account created! Please login.");
         navigate("/");
       }
@@ -173,8 +179,21 @@ function Register() {
             <>
               <input
                 type="text"
-                placeholder="Student ID"
+                placeholder="Username"
                 className="form-control py-3 mb-2 focus:ring-2 focus:ring-blue-500"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+              />
+              {errors.username && (
+                <p className="text-red-500 text-sm">{errors.username}</p>
+              )}
+
+              <input
+                type="text"
+                placeholder="Student ID"
+                className="form-control py-3 mb-2 mt-3 focus:ring-2 focus:ring-blue-500"
                 value={formData.studentId}
                 onChange={(e) =>
                   setFormData({ ...formData, studentId: e.target.value })

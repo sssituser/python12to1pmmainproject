@@ -208,7 +208,6 @@ function ExamManager() {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
             >
-              <option value="Daily">Daily Exam</option>
               <option value="Weekly">Weekly Exam</option>
               <option value="Monthly">Monthly Exam</option>
             </select>

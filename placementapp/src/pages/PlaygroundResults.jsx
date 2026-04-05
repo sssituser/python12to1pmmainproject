@@ -20,9 +20,11 @@ function PlaygroundResults() {
   };
 
   const formatExamTitle = (title = "") => {
-    if (!title) return "Exam";
-    
+    return title || "Exam";
+  };
+  const old_formatExamTitle = (title = "") => {
     const t = title.toLowerCase();
+
     
     // Priority 1: Multi-word specialized subjects
     if (t.includes("machine") && t.includes("learning")) return "Machine Learning Exam";
@@ -46,11 +48,13 @@ function PlaygroundResults() {
     if (t.includes("ci") && t.includes("cd")) return "CI/CD Exam";
 
     // Priority 3: Core subjects (only if specific multi-word patterns didn't match)
+
     if (t.includes("python")) return "Python Exam";
     if (t.includes("java")) return "Java Exam";
     if (t.includes("oracle")) return "Oracle Exam";
     if (t.includes("ui")) return "UI Exam";
     if (t.includes("django")) return "Django Exam";
+
     if (t.includes("spring")) return "Spring Exam";
     if (t.includes("selenium")) return "Selenium Exam";
     if (t.includes("docker")) return "Docker Exam";
@@ -68,6 +72,9 @@ function PlaygroundResults() {
     
     // Catch-all
     return title.charAt(0).toUpperCase() + title.slice(1) + " Exam";
+
+    return title || "Exam";
+
   };
 
   useEffect(() => {
@@ -122,8 +129,9 @@ function PlaygroundResults() {
           const seen = new Set();
           const finalResults = [];
           
+
           [...uniqueLocalResults, ...backendResults].forEach(res => {
-            const key = res.id || res.random_id || (res.start_time + res.examDate + JSON.stringify(res));
+            const key = res.id || res.random_id || (res.user && res.user.randomId) || (res.start_time + res.examDate + JSON.stringify(res));
             if (!seen.has(key)) {
               seen.add(key);
               finalResults.push(res);

@@ -18,52 +18,7 @@ function DetailedResults() {
     if (t.includes("weekly") || t.includes("monthly")) return 35;
     return 20;
   };
-  const formatExamTitle = (title = "") => {
-    if (!title) return "Exam";
-    
-    const t = title.toLowerCase();
-    
-    // Handle specific exam types first
-    if (t.includes("python")) return "Python Exam";
-    if (t.includes("java")) return "Java Exam";
-    if (t.includes("oracle")) return "Oracle Exam";
-    if (t.includes("ui")) return "UI Exam";
-    if (t.includes("django")) return "Django Exam";
-    if (t.includes("spring")) return "Spring Exam";
-    if (t.includes("selenium")) return "Selenium Exam";
-    if (t.includes("docker")) return "Docker Exam";
-    if (t.includes("kubernetes")) return "Kubernetes Exam";
-    if (t.includes("ci") && t.includes("cd")) return "CI/CD Exam";
-    if (t.includes("machine") && t.includes("learning")) return "Machine Learning Exam";
-    if (t.includes("deep") && t.includes("learning")) return "Deep Learning Exam";
-    if (t.includes("data") && t.includes("science")) return "Data Science Exam";
-    if (t.includes("data") && t.includes("modeling")) return "Data Modeling Exam";
-    if (t.includes("data") && t.includes("visualization")) return "Data Visualization Exam";
-    if (t.includes("augmented") && t.includes("reality")) return "Augmented Reality Exam";
-    if (t.includes("virtual") && t.includes("reality")) return "Virtual Reality Exam";
-    if (t.includes("web") && t.includes("3")) return "Web3 Exam";
-    if (t.includes("web") && t.includes("api")) return "Web APIs Exam";
-    if (t.includes("cloud") && t.includes("basics")) return "Cloud Basics Exam";
-    if (t.includes("google") && t.includes("cloud")) return "Google Cloud Exam";
-    if (t.includes("big") && t.includes("data")) return "Big Data Exam";
-    if (t.includes("pandas")) return "Pandas Exam";
-    if (t.includes("ai") && t.includes("concepts")) return "AI Concepts Exam";
-    if (t.includes("computer") && t.includes("fundamentals")) return "Computer Fundamentals Exam";
-    if (t.includes("deployment")) return "Deployment Exam";
-    if (t.includes("qa") && t.includes("processes")) return "QA Processes Exam";
-    if (t.includes("otp")) return "OTP Exam";
-    
-    // Handle weekly/monthly patterns
-    if (t.includes("weekly")) return "Weekly Exam";
-    if (t.includes("monthly")) return "Monthly Exam";
-    
-    // Handle generic patterns
-    if (t.includes("test")) return "Test Exam";
-    if (t.includes("exam")) return title; // Return original if it already contains "exam"
-    
-    // Default case - capitalize first letter
-    return title.charAt(0).toUpperCase() + title.slice(1) + " Exam";
-  };
+  const formatExamTitle = (title = "") => { return title || "Exam"; };
 
   useEffect(() => {
     console.log("🔍 DetailedResults - Starting data retrieval process");
@@ -125,13 +80,42 @@ function DetailedResults() {
   }, [index, location.state]);
 
   const handleBack = () => {
-    navigate("/dashboard/playground-results");
+    const titleFromState = location.state?.examTitle || "";
+    if (titleFromState.includes('Weekly')) {
+      navigate("/dashboard/weekly-exams");
+    } else if (titleFromState.includes('Monthly')) {
+      navigate("/dashboard/monthly-exams");
+    } else {
+      navigate("/dashboard/playground-results");
+    }
   };
 
+  // --- Pure Data Sanitation Sweep (No State Mutation) ---
+  let parsedQuestions = [];
+  if (result && result.questions) {
+    let q = result.questions;
+    if (typeof q === 'string') {
+      try { q = JSON.parse(q); } catch (e) { q = []; }
+    }
+    if (typeof q === 'string') {
+      try { q = JSON.parse(q); } catch (e) { q = []; }
+    }
+    parsedQuestions = Array.isArray(q) ? q : (typeof q === 'object' && q !== null ? Object.values(q) : []);
+  }
+
+  let parsedAnswers = [];
+  if (result && result.answers) {
+    let a = result.answers;
+    if (typeof a === 'string') {
+      try { a = JSON.parse(a); } catch (e) { a = []; }
+    }
+    parsedAnswers = Array.isArray(a) ? a : (typeof a === 'object' && a !== null ? Object.values(a) : []);
+  }
+
   // ─── Shared exam calculations (computed at component scope) ───
-  const totalQuestions = result?.totalQuestions || result?.total_questions || result?.questions?.length || 20;
+  const totalQuestions = result?.totalQuestions || parsedQuestions.length || 20;
   const totalMarks = result?.totalMarks || result?.total_marks || (totalQuestions * 2);
-  const passingScore = getPassingScore(result?.examTitle);
+  const passingScore = getPassingScore(result?.examTitle || result?.title || result?.exam_title);
 
   // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
   const passed = result && result.passed !== undefined 
@@ -170,6 +154,8 @@ function DetailedResults() {
       || (profileCache.name && profileCache.name.includes("@") ? profileCache.name : null)
       || "N/A";
 
+    const studentId = result.user?.studentId || result.user?.student_id || profileCache?.studentId || storedProfile?.student_id || "N/A";
+
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
@@ -180,7 +166,7 @@ function DetailedResults() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${studentName}`, 20, 50);
     doc.text(`Email: ${email}`, 20, 60);
-    doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
+    doc.text(`ID: ${studentId}`, 20, 70);
     
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
@@ -263,7 +249,11 @@ function DetailedResults() {
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Student ID</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {result.user?.randomId || result.random_id || result.user?.id || "N/A"}
+                  {result.user?.studentId || result.user?.student_id || (() => {
+                    try { return JSON.parse(localStorage.getItem("sssit-profile") || "{}").studentId; } catch { return null; }
+                  })() || (() => {
+                    try { return JSON.parse(localStorage.getItem("user") || "{}").student_id; } catch { return null; }
+                  })() || "N/A"}
                 </p>
               </div> 
               <div className="space-y-1">
@@ -315,7 +305,9 @@ function DetailedResults() {
              <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-gray-500 font-black text-xs uppercase tracking-widest mb-2">Skipped</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
-               {Array.isArray(result.answers) ? result.answers.filter(a => a === null || a === undefined).length : 0}
+               {Array.isArray(parsedAnswers) 
+                  ? parsedAnswers.filter(a => a === null || a === undefined).length 
+                  : Math.max(0, totalQuestions - Object.keys(result.answers || {}).length)}
             </p>
             <p className="text-sm font-bold text-gray-400 italic">Not Analyzed</p>
           </div>
@@ -326,18 +318,18 @@ function DetailedResults() {
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-2 px-4">
              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
-               Question Breakdown <span className="text-indigo-500 ml-2">{result.questions?.length || 0} ITEMS</span>
+               Question Breakdown <span className="text-indigo-500 ml-2">{parsedQuestions.length} ITEMS</span>
              </h3>
              <div className="h-[2px] flex-grow mx-8 bg-gray-100 hidden sm:block"></div>
           </div>
 
-          {result && Array.isArray(result.questions) && result.questions.length > 0 ? (
+          {parsedQuestions.length > 0 ? (
             <div className="space-y-6">
-              {result.questions.map((question, questionIndex) => {
+              {parsedQuestions.map((question, questionIndex) => {
                 const questionText = question?.question || `Assessment Item ${questionIndex + 1}`;
                 const options = Array.isArray(question?.options) ? question.options : [];
                 const correctAnswerIndex = question?.correct ?? 0;
-                const userAnswerIndex = Array.isArray(result?.answers) ? result.answers[questionIndex] : null;
+                const userAnswerIndex = result?.answers ? result.answers[questionIndex] : null;
                 const isCorrect = userAnswerIndex === correctAnswerIndex;
                 const notAttempted = userAnswerIndex === null || userAnswerIndex === undefined;
                 const isCoding = question?.type === 'coding' || !options || options.length === 0;

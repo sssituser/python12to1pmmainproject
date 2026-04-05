@@ -186,7 +186,10 @@ function Login() {
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
 
-      // STORE USER INFO
+      // 🛡️ CLEAR OLD CACHED EXAM DATA (ensures fresh session)
+      localStorage.removeItem("allExamResults");
+      localStorage.removeItem("recentExam");
+      localStorage.removeItem("examFailure");
       const normalizedRole = (res.data.user?.role || "student").toString().trim().toLowerCase();
       localStorage.setItem(
         "user",
@@ -258,11 +261,11 @@ function Login() {
             Student Login
           </h2>
 
-          {/* STUDENT ID */}
+          {/* USERNAME OR STUDENT ID */}
           <input
             type="text"
             name="studentId"
-            placeholder="Student ID"
+            placeholder="Username or Student ID"
             value={form.studentId}
             onChange={handleChange}
             className="w-full mb-4 px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"

@@ -143,9 +143,46 @@ function StudentReport() {
                                         <td colSpan="4" className="px-6 py-8 text-center text-gray-500 italic">No exams recorded yet.</td>
                                     </tr>
                                 ) : (
-                                    exams.map((exam, idx) => (
+                                    exams.map((exam, idx) => {
+                                        // Dynamically rename Weekly and Monthly exams to match Student UI
+                                        const type = (exam.examType || exam.exam_type || "").toLowerCase();
+                                        const title = (exam.examTitle || exam.title || exam.exam_title || "").toLowerCase();
+                                        const isWeekly = type === 'weekly' || title.includes('weekly');
+                                        const isMonthly = type === 'monthly' || title.includes('monthly');
+                                        
+                                        let displayTitle = exam.examTitle || "Exam";
+                                        
+                                        if (isWeekly) {
+                                            // Count how many weekly exams are appearing AFTER this one in the array to determin its index
+                                            // Array from backend is newest-first.
+                                            const totalWeekly = exams.filter(e => {
+                                                const tStr = (e.examTitle || '').toLowerCase();
+                                                return e.examType === 'weekly' || tStr.includes('weekly');
+                                            }).length;
+                                            
+                                            // Find index of THIS specific exam inside the filtered weekly array
+                                            const weeklyExamsList = exams.filter(e => {
+                                                const tStr = (e.examTitle || '').toLowerCase();
+                                                return e.examType === 'weekly' || tStr.includes('weekly');
+                                            });
+                                            const weeklyIndex = weeklyExamsList.indexOf(exam);
+                                            displayTitle = `Weekly Exam ${totalWeekly - weeklyIndex}`;
+                                        } else if (isMonthly) {
+                                            const totalMonthly = exams.filter(e => {
+                                                const tStr = (e.examTitle || '').toLowerCase();
+                                                return e.examType === 'monthly' || tStr.includes('monthly');
+                                            }).length;
+                                            const monthlyExamsList = exams.filter(e => {
+                                                const tStr = (e.examTitle || '').toLowerCase();
+                                                return e.examType === 'monthly' || tStr.includes('monthly');
+                                            });
+                                            const monthlyIndex = monthlyExamsList.indexOf(exam);
+                                            displayTitle = `Monthly Exam ${totalMonthly - monthlyIndex}`;
+                                        }
+                                        
+                                        return (
                                         <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 font-bold text-gray-700">{exam.examTitle}</td>
+                                            <td className="px-6 py-4 font-bold text-gray-700">{displayTitle}</td>
                                             <td className="px-6 py-4">
                                                 <span className="font-mono">{exam.score ?? 0}/{exam.totalMarks ?? 0}</span>
                                             </td>
@@ -162,7 +199,8 @@ function StudentReport() {
                                                 {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
                                             </td>
                                         </tr>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

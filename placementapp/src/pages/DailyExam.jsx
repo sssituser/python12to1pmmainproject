@@ -1243,7 +1243,7 @@ useEffect(() => {
     // Remove the locked back-button state, then navigate to results replacing the exam in history
     window.history.go(-1);
     setTimeout(() => {
-      navigate("/dashboard/playground-results", { replace: true });
+      navigate("/dashboard/daily-exams", { replace: true });
     }, 100);
   };
 
