@@ -87,5 +87,25 @@ def playground_questions_web3_api(request):
         {"id": 78, "question": "What is 'Snapshot' in DAOs?", "options": ["An off-chain voting platform used by many crypto projects", "A quick photo", "A type of backup", "None"], "correct": 0},
         {"id": 79, "question": "What is 'Social Token'?", "options": ["A cryptocurrency based on an individual or community's reputation", "A like on Facebook", "A credit for games", "None"], "correct": 0},
         {"id": 80, "question": "What is 'Phishing' in Web3?", "options": ["Scam to steal seed phrases or private keys through fake websites", "Catching fish", "A type of sport", "None"], "correct": 0},
+        {"id": 81, "question": "What is 'Smart Contract Wallet'?", "options": ["Application for managing crypto assets and interacting with dApps", "A wallet for smart contracts", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Hardware Wallet'?", "options": ["Physical device for storing crypto keys offline", "A wallet made of hardware", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Paper Wallet'?", "options": ["Physical document containing private keys", "A wallet made of paper", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Cold Storage'?", "options": ["Offline storage not connected to internet", "Storage in cold place", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Hot Storage'?", "options": ["Online storage connected to internet", "Storage in hot place", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'MetaMask'?", "options": ["Browser extension for Ethereum wallet access", "A mask for metamaterials", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Trust Wallet'?", "options": ["Wallet requiring multiple signatures for transactions", "A trustworthy wallet", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Multi-sig Wallet'?", "options": ["Wallet requiring multiple parties to sign transactions", "A wallet with many signatures", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'DEX' (Decentralized Exchange)?", "options": ["Peer-to-peer crypto trading platform", "A stock exchange", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'CEX' (Centralized Exchange)?", "options": ["Traditional crypto exchange with central authority", "A centralized exchange", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Liquidity Pool'?", "options": ["Collection of funds for trading in DeFi", "A pool of liquid assets", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Yield Farming'?", "options": ["Earning rewards by providing liquidity", "Farming crops for yield", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Staking'?", "options": ["Locking crypto to support network security", "Planting stakes", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Gas' in Ethereum?", "options": ["Fee for computational operations", "Fuel for transactions", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Block Explorer'?", "options": ["Tool for viewing blockchain transactions", "A block explorer", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Oracle' in blockchain?", "options": ["Service providing external data to smart contracts", "A fortune teller", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Layer 2' Solution?", "options": ["Scaling solution built on Ethereum", "Second layer of blockchain", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Sidechain'?", "options": ["Separate blockchain connected to main chain", "A chain on the side", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Bridge' in crypto?", "options": ["Protocol connecting different blockchains", "A physical bridge", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'NFT Marketplace'?", "options": ["Platform for trading non-fungible tokens", "A market for NFTs", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

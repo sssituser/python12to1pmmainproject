@@ -88,5 +88,25 @@ def playground_questions_aiconcepts_api(request):
         {"id": 78, "question": "What is the 'Chinese Room' argument?", "options": ["A thought experiment about machine intelligence and understanding", "A physical room in China", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "Which of these is an AI framework?", "options": ["TensorFlow", "PyTorch", "Hugging Face", "All of the above"], "correct": 3},
         {"id": 80, "question": "Which of these is a popular tool for building GenAI applications?", "options": ["LangChain", "LlamaIndex", "Both A and B", "Neither"], "correct": 2},
+        {"id": 81, "question": "What is 'Neural Network'?", "options": ["Computing system inspired by biological neural networks", "Network of nerves", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Deep Learning'?", "options": ["Machine learning with artificial neural networks", "Learning deeply", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Computer Vision'?", "options": ["AI field for visual data processing", "Computer vision problems", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Natural Language Processing'?", "options": ["AI field for human language processing", "Language processing", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Reinforcement Learning'?", "options": ["Learning through rewards and punishments", "Learning by reinforcement", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Supervised Learning'?", "options": ["Learning with labeled data", "Learning with supervision", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Unsupervised Learning'?", "options": ["Learning with unlabeled data", "Learning without supervision", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Transfer Learning'?", "options": ["Using pre-trained models for new tasks", "Learning transfer", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Feature Engineering'?", "options": ["Creating features for machine learning", "Engineering features", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Overfitting'?", "options": ["Model performing well on training data but poorly on test data", "Fitting too much", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Underfitting'?", "options": ["Model performing poorly on both training and test data", "Fitting too little", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Cross Validation'?", "options": ["Technique for evaluating model performance", "Validating cross", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Ensemble Learning'?", "options": ["Combining multiple models for better performance", "Learning ensemble", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Random Forest'?", "options": ["Ensemble learning method using decision trees", "Forest with random trees", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Support Vector Machine'?", "options": ["Classification and regression algorithm", "Support vector machine", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'K-Means Clustering'?", "options": ["Unsupervised clustering algorithm", "Clustering with K means", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Principal Component Analysis'?", "options": ["Dimensionality reduction technique", "Principal components", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Gradient Descent'?", "options": ["Optimization algorithm for ML models", "Descent gradient", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Backpropagation'?", "options": ["Algorithm for training neural networks", "Backward propagation", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Convolutional Neural Network'?", "options": ["Neural network for image processing", "Convolution network", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -87,5 +87,25 @@ def playground_questions_virtualreality_api(request):
         {"id": 78, "question": "What is 'Inside-out' vs 'Outside-in' tracking for VR?", "options": ["On-headset sensors vs external sensors positioned around a room", "They are identical", "None", "None"], "correct": 0},
         {"id": 79, "question": "What's 'Pancake Lenses'?", "options": ["New thinner, flatter VR lenses allowing for more compact headset designs", "Lenses made for cooking", "A types of food", "None"], "correct": 0},
         {"id": 80, "question": "Why is VR a growing industry for training and therapy?", "options": ["Safe, repeatable, and realistic environments for practice without risk", "It's cheap to buy", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is '6DOF' vs '3DOF' tracking?", "options": ["6 degrees of freedom vs 3 degrees (more natural movement)", "They are the same", "None", "None"], "correct": 0},
+        {"id": 82, "question": "What is 'Eye Tracking' in VR?", "options": ["Following gaze to control interfaces", "Tracking eye movement", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Hand Tracking'?", "options": ["Following hand position for interaction", "Tracking hand movement", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Haptic Feedback'?", "options": ["Vibration and touch responses in VR controllers", "Sound feedback", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Room-Scale' VR?", "options": ["VR that tracks physical room movement", "VR room size", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Spatial Audio'?", "options": ["3D positional sound in VR environments", "Audio in space", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'VR Sickness'?", "options": ["Motion sickness from VR headset use", "Being sick in VR", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Passthrough' VR?", "options": ["See-through view of real world through headset", "Passing through VR", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Foveated Rendering'?", "options": ["High-detail rendering where user looks", "Focused rendering", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Mixed Reality' (MR)?", "options": ["Combining VR/AR with real world view", "Mixed reality", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Cloud Rendering'?", "options": ["Processing VR graphics in the cloud", "VR in clouds", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'WebXR'?", "options": ["Web standard for VR/AR experiences", "A type of website", "A secure query log", "None"], "correct": 0},
+        {"id": 93, "question": "What is 'Light Field Display'?", "options": ["Technology projecting images directly to eyes", "Light field display", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Varifocal'?", "options": ["Adjustable focus lenses in VR headsets", "Variable focus", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Inside-Out' vs 'Outside-In' tracking?", "options": ["On-headset sensors vs external sensors positioned around a room", "They are identical", "None", "None"], "correct": 0},
+        {"id": 96, "question": "What is 'Haptic Feedback'?", "options": ["Vibration and touch responses in VR controllers", "Sound feedback", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Room-Scale' VR?", "options": ["VR that tracks physical room movement", "VR room size", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Spatial Audio'?", "options": ["3D positional sound in VR environments", "Audio in space", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'VR Sickness'?", "options": ["Motion sickness from VR headset use", "Being sick in VR", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Passthrough' VR?", "options": ["See-through view of real world through headset", "Passing through VR", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

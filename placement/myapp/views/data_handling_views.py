@@ -89,4 +89,4 @@ def playground_questions_datahandling_api(request):
         {"id": 79, "question": "Which of these is used for presenting data?", "options": ["Power BI", "Tableau", "Excel Charts", "All of the above"], "correct": 3},
         {"id": 80, "question": "What is the primary benefit of good Data Handling?", "options": ["Providing clear, accurate information specifically for better understanding and decisions", "Having more TV channels", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

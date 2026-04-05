@@ -87,5 +87,25 @@ def playground_questions_k8sbasics_api(request):
         {"id": 78, "question": "Can one Pod contain more than one container?", "options": ["Yes, if they share common resources like local network/storage", "No", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What is 'Container Port' importance in Pod manifest?", "options": ["Specifying which port the container should listen on within its sandbox", "A port for harbor", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is K8s essential for modern cloud-native apps?", "options": ["Automates scaling, reliability, and deployment at massive scales with ease", "Faster internet speed", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Kubernetes Dashboard'?", "options": ["Web UI for managing Kubernetes clusters", "Dashboard for K8s", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'kubectl'?", "options": ["Command-line tool for Kubernetes", "Kubernetes control", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Helm'?", "options": ["Package manager for Kubernetes applications", "Tool for K8s", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Kustomize'?", "options": ["Template configuration for Kubernetes", "Customizing K8s", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Operator' in Kubernetes?", "options": ["Custom controller for managing applications", "Kubernetes operator", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'CRD' (Custom Resource Definition)?", "options": ["Extension of Kubernetes API", "Custom resource definition", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Service Mesh'?", "options": ["Infrastructure for service-to-service communication", "Mesh for services", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Ingress' in Kubernetes?", "options": ["Managing external access to services", "Entry point for traffic", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Network Policy'?", "options": ["Controlling traffic flow between pods", "Policy for networking", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Persistent Volume'?", "options": ["Storage that persists beyond pod lifetime", "Volume that persists", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'ConfigMap'?", "options": ["Configuration data for applications", "Map of configuration", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Secret'?", "options": ["Sensitive configuration data", "Hidden configuration", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Horizontal Pod Autoscaler'?", "options": ["Automatically adjusting pod count", "Scaling pods horizontally", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Vertical Pod Autoscaler'?", "options": ["Automatically adjusting pod resources", "Scaling pods vertically", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'StatefulSet'?", "options": ["Controller for stateful applications", "Set with state", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'DaemonSet'?", "options": ["Controller for background tasks", "Set of daemons", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Job' in Kubernetes?", "options": ["Controller for batch processing", "Task controller", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'CronJob'?", "options": ["Scheduled job controller", "Time-based job", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Pod Disruption Budget'?", "options": ["Policy for voluntary disruptions", "Budget for disruptions", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Resource Quota'?", "options": ["Limiting resource usage per namespace", "Quota for resources", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -88,4 +88,4 @@ def playground_questions_iosswift_api(request):
         {"id": 79, "question": "What is 'Universal Link'?", "options": ["Links that open your app specifically instead of a browser when tapped", "A link for everyone", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Swift preferred over Objective-C?", "options": ["Safety, readability, and modern syntax specifically to increase performance", "It has more colors", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -89,4 +89,4 @@ def playground_questions_msoffice_api(request):
         {"id": 79, "question": "Which of these is a typical Office file extension?", "options": [".docx", ".xlsx", ".pptx", "All of the above"], "correct": 3},
         {"id": 80, "question": "What is the primary benefit of the MS Office suite?", "options": ["Integrated tools for almost all business and personal productivity tasks", "Having more social media followers", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

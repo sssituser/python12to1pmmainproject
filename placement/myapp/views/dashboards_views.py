@@ -89,4 +89,4 @@ def playground_questions_dashboards_api(request):
         {"id": 79, "question": "What's 'Export to PowerPoint' benefit?", "options": ["Quickly creating presentation slides from dashboard snapshots", "Running faster", "Both", "None"], "correct": 0},
         {"id": 80, "question": "What is the primary role of Power BI Dashboards compared to reports?", "options": ["Providing high-level executive summaries of important metrics", "Providing deep technical details", "Both", "None"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

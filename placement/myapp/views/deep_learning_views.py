@@ -86,6 +86,26 @@ def playground_questions_deeplearning_api(request):
         {"id": 77, "question": "What is 'Normalization' specifically for data?", "options": ["Scaling data specifically to a range (like 0 to 1) for better training", "Being normal", "Neither", "Both"], "correct": 0},
         {"id": 78, "question": "What's 'Standardization'?", "options": ["Transforming data specifically to have zero mean and unit variance", "Setting a rule", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents 'Colab' by Google?", "options": ["A free specifically online platform using Jupyter notebooks with GPU support", "A types of drink", "Neither", "Both"], "correct": 0},
-        {"id": 80, "question": "Why is Deep Learning so effective for complex tasks?", "options": ["Ability to handle huge data specifically and automatically learn hierarchical features", "Because of many files", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "Why is Deep Learning so effective for complex tasks?", "options": ["Ability to handle huge data and automatically learn hierarchical features", "Because of many files", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Neural Network'?", "options": ["Computing system inspired by biological brains", "Network of neurons", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Backpropagation'?", "options": ["Algorithm for training neural networks", "Propagating backwards", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Gradient Descent'?", "options": ["Optimization algorithm for finding minimum", "Descending gradients", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Activation Function'?", "options": ["Function introducing non-linearity", "Activating functions", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Convolutional Neural Network' (CNN)?", "options": ["Network for image processing", "Convolution network", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Recurrent Neural Network' (RNN)?", "options": ["Network for sequential data", "Recurrent network", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Transformer' architecture?", "options": ["Neural network using attention mechanism", "Transformer model", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Transfer Learning'?", "options": ["Using pre-trained models for new tasks", "Learning transfers", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Fine-tuning'?", "options": ["Adapting pre-trained models to specific tasks", "Fine adjustments", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Data Augmentation'?", "options": ["Creating training data variations", "Augmenting data", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Batch Normalization'?", "options": ["Normalizing within each batch", "Normalizing batches", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Dropout'?", "options": ["Regularization technique to prevent overfitting", "Dropping out", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Early Stopping'?", "options": ["Stopping training when validation stops improving", "Stopping early", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Learning Rate'?", "options": ["Step size for gradient updates", "Rate of learning", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Momentum' in optimization?", "options": ["Accelerating gradient descent", "Speed of learning", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Adam Optimizer'?", "options": ["Adaptive learning rate optimization", "Adam optimization", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Loss Function'?", "options": ["Measures model prediction error", "Function for loss", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Cross-Entropy Loss'?", "options": ["Loss function for classification", "Entropy loss", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Mean Squared Error'?", "options": ["Average of squared prediction errors", "Error measurement", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Model Evaluation'?", "options": ["Assessing model performance", "Evaluating models", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

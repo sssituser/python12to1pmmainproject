@@ -87,5 +87,25 @@ def playground_questions_nodejs_api(request):
         {"id": 78, "question": "How to delete a file in Node.js?", "options": ["fs.unlink()", "fs.delete()", "fs.remove()", "None"], "correct": 0},
         {"id": 79, "question": "How to rename a file?", "options": ["fs.rename()", "fs.move()", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is 'Event-driven' programming?", "options": ["A paradigm where flow is determined by events such as user actions or sensor outputs", "Writing about events", "None", "None"], "correct": 0},
+        {"id": 81, "question": "What is 'Stream' in Node.js?", "options": ["A way to handle asynchronous data in pieces", "A type of database", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Transform' stream?", "options": ["A Duplex stream where the output is computed from the input", "A stream for changing UI", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What does 'fs.createWriteStream()' do?", "options": ["Creates a writable stream for a file", "Reads a file", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "Which module allows creating child processes?", "options": ["child_process", "spawn", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'OS' module primarily used for?", "options": ["Getting system info like memory, CPUs, and uptime", "Designing the OS", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Path' module's 'extname()' used for?", "options": ["Getting the file extension", "Changing the name", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "How to create a buffer from a string?", "options": ["Buffer.from('string')", "Buffer.create()", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What's the meaning of 'Heap' in Node.js memory?", "options": ["Where objects and variables are stored", "A pile of code", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What does 'process.nextTick()' do?", "options": ["Schedules a callback to run immediately after the current operation", "Wait for next day", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Global' object in Node.js?", "options": ["The global namespace equivalent to 'window' in browsers", "A world map", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is '__dirname'?", "options": ["Path to the current directory of the script", "A hidden file", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is '__filename'?", "options": ["Absolute path to the current script file", "The file size", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "Which command checks for outdated packages?", "options": ["npm outdated", "npm check", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'NVM' used for?", "options": ["Managing multiple versions of Node.js", "Node Variable Manager", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "How to handle uncaught exceptions?", "options": ["process.on('uncaughtException', callback)", "The app crashes automatically", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Cluster' module used for?", "options": ["Utilizing multiple CPU cores by running multiple processes", "Group of users", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "Which module provides compression?", "options": ["zlib", "compress", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Assert' module for?", "options": ["Writing unit tests and performing validations", "Naming files", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'v8' module used for?", "options": ["Exposing V8 engine specific APIs and tools", "A car engine", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is the result of 'console.time()'?", "options": ["Starts a timer to measure operation duration", "Displays time", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 20))})

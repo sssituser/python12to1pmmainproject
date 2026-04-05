@@ -86,6 +86,26 @@ def playground_questions_augmentedreality_api(request):
         {"id": 77, "question": "What represents specific 'Remote Assistance'?", "options": ["An expert guiding specifically someone in a different location using an AR view", "Talking on Skype", "Neither", "Both"], "correct": 0},
         {"id": 78, "question": "What counts as 'Consumer AR'?", "options": ["AR apps specifically designed for everyday entertainment or information for anyone", "A shopping trip", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents 'Vulkan' or 'Metal' in AR context?", "options": ["Low-level specifically graphics APIs used for high-performance AR rendering", "Types of heavy metal", "Neither", "Both"], "correct": 0},
-        {"id": 80, "question": "Why is AR transforming the futuro of work?", "options": ["By bridging specifically the gap between digital data and physical action", "Because it uses more internet", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "Why is AR transforming the future of work?", "options": ["By bridging specifically the gap between digital data and physical action", "Because it uses more internet", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'SLAM' (Simultaneous Localization and Mapping)?", "options": ["Technology for tracking camera position and building maps in real-time", "A cleaning method", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Computer Vision' in AR?", "options": ["Enabling devices to understand and interpret visual information", "Making computers see", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Hand Tracking' in AR?", "options": ["Following hand position and gestures for interaction", "Tracking hand movement", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Eye Tracking' in AR?", "options": ["Following gaze to control interfaces", "Tracking eye movement", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Plane Detection' in AR?", "options": ["Identifying flat surfaces for placing virtual objects", "Finding flat areas", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Occlusion' in AR?", "options": ["Understanding when virtual objects are blocked by real-world objects", "Understanding blockage", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Light Estimation' in AR?", "options": ["Calculating how real-world lighting affects virtual objects", "Estimating light", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Persistent Tracking' in AR?", "options": ["Maintaining object positions and states across sessions", "Remembering positions", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Cloud Anchors' in AR?", "options": ["Virtual reference points fixed in real-world space", "Cloud storage", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'World Tracking' in AR?", "options": ["Mapping virtual content to real-world coordinates", "Following locations", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Spatial Audio' in AR?", "options": ["3D positional sound in AR environments", "Audio in space", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Haptic Feedback' in AR?", "options": ["Vibration and touch responses in AR controllers", "Sound feedback", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Multi-user' Collaboration' in AR?", "options": ["Multiple users interacting with same AR space simultaneously", "Working together", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'AR Cloud'?", "options": ["Cloud-based processing and storage for AR applications", "AR in clouds", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'WebAR'?", "options": ["AR experiences delivered through web browsers without apps", "AR on websites", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is '6DOF' vs '3DOF' tracking?", "options": ["6 degrees of freedom vs 3 degrees (more natural movement)", "They are the same", "None", "None"], "correct": 0},
+        {"id": 97, "question": "What is 'Passthrough' AR?", "options": ["See-through view of real world through headset", "Passing through AR", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Foveated Rendering'?", "options": ["High-detail rendering where user looks", "Focused rendering", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Mixed Reality' (MR)?", "options": ["Combining VR/AR with real world view", "Mixed reality", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Neural Rendering'?", "options": ["Using AI to generate and optimize AR graphics", "AI for graphics", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -88,4 +88,4 @@ def playground_questions_networksecurity_api(request):
         {"id": 79, "question": "What is 'Incident Response'?", "options": ["A planned reaction to a security breach or cyberattack", "Answering a call", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is network security a continuous process?", "options": ["Threats and vulnerabilities are constantly evolving and changing", "Because code is long", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

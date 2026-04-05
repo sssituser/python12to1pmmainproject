@@ -975,13 +975,63 @@ def playground_questions_api(request):
         {"id": 48, "question": "What will this list comprehension produce?\nprint([x for x in range(5) if x % 2 == 0])", "options": ["[0, 2, 4]", "[1, 3]", "[0, 1, 2, 3, 4]", "[2, 4]"], "correct": 0},
         {"id": 49, "question": "What does this code output?\nd = {'a': 1, 'b': 2}\nprint(d.get('c', 3))", "options": ["1", "2", "3", "None"], "correct": 2},
         {"id": 50, "question": "What is the output of the following snippet?\ncount = 0\nfor i in range(3):\n    count += i\nprint(count)", "options": ["3", "6", "0", "2"], "correct": 0},
+        {"id": 51, "question": "What is a Python decorator?", "options": ["A function that modifies another function", "A design pattern", "A class decorator", "None"], "correct": 0},
+        {"id": 52, "question": "What is the purpose of __init__ method?", "options": ["Initialize object attributes", "Destroy object", "Return value", "None"], "correct": 0},
+        {"id": 53, "question": "What is the difference between list and tuple?", "options": ["List is mutable, tuple is immutable", "Tuple is mutable, list is immutable", "Both are mutable", "Both are immutable"], "correct": 0},
+        {"id": 54, "question": "What is the output of print(type(None))?", "options": ["NoneType", "None", "null", "NoneType class"], "correct": 0},
+        {"id": 55, "question": "What is the use of *args in Python?", "options": ["Pass variable number of positional arguments", "Pass keyword arguments", "Multiply arguments", "None"], "correct": 0},
+        {"id": 56, "question": "What is the use of **kwargs in Python?", "options": ["Pass variable number of keyword arguments", "Pass positional arguments", "Power operation", "None"], "correct": 0},
+        {"id": 57, "question": "What is the output of print(bool(0))?", "options": ["False", "True", "0", "Error"], "correct": 0},
+        {"id": 58, "question": "What is the output of print(bool([]))?", "options": ["False", "True", "[]", "Error"], "correct": 0},
+        {"id": 59, "question": "What is the output of print(bool([1, 2]))?", "options": ["True", "False", "[1, 2]", "Error"], "correct": 0},
+        {"id": 60, "question": "What is the output of print(10 // 3)?", "options": ["3", "3.33", "3.0", "Error"], "correct": 0},
+        {"id": 61, "question": "What is the output of print(10 % 3)?", "options": ["1", "3", "0", "Error"], "correct": 0},
+        {"id": 62, "question": "What is the output of print(2 ** 3 ** 2)?", "options": ["512", "64", "36", "Error"], "correct": 0},
+        {"id": 63, "question": "What is the output of print('Hello' * 3)?", "options": ["HelloHelloHello", "Hello 3", "Hello Hello Hello", "Error"], "correct": 0},
+        {"id": 64, "question": "What is the output of print([1, 2, 3] + [4, 5])?", "options": ["[1, 2, 3, 4, 5]", "[1, 2, 3, [4, 5]]", "[[1, 2, 3], [4, 5]]", "Error"], "correct": 0},
+        {"id": 65, "question": "What is the output of print(len('Python'))?", "options": ["6", "7", "5", "Error"], "correct": 0},
+        {"id": 66, "question": "What is the output of print('Python'[2])?", "options": ["t", "y", "h", "Error"], "correct": 0},
+        {"id": 67, "question": "What is the output of print('Python'[-1])?", "options": ["n", "P", "o", "Error"], "correct": 0},
+        {"id": 68, "question": "What is the output of print('Python'[2:4])?", "options": ["th", "yt", "yth", "Error"], "correct": 0},
+        {"id": 69, "question": "What is the output of print('Python'[:3])?", "options": ["Pyt", "yth", "hon", "Error"], "correct": 0},
+        {"id": 70, "question": "What is the output of print('Python'[3:])?", "options": ["hon", "yth", "Pyt", "Error"], "correct": 0},
+        {"id": 71, "question": "What is the output of print('Python'[::-1])?", "options": ["nohtyP", "Python", "nohty", "Error"], "correct": 0},
+        {"id": 72, "question": "What is the output of print(set([1, 2, 2, 3]))?", "options": ["{1, 2, 3}", "[1, 2, 2, 3]", "{1, 2}", "Error"], "correct": 0},
+        {"id": 73, "question": "What is the output of print(dict(a=1, b=2))?", "options": ["{'a': 1, 'b': 2}", "{'a': 1, 'b': 2}", "{'a': 1, 'b': 2}", "Error"], "correct": 0},
+        {"id": 74, "question": "What is the output of print(list((1, 2, 3)))?", "options": ["[1, 2, 3]", "(1, 2, 3)", "[1, 2, 3, ]", "Error"], "correct": 0},
+        {"id": 75, "question": "What is the output of print(tuple([1, 2, 3]))?", "options": ["(1, 2, 3)", "[1, 2, 3]", "(1, 2, 3, )", "Error"], "correct": 0},
+        {"id": 76, "question": "What is the output of print(str(123))?", "options": ["123", "123", "'123'", "Error"], "correct": 0},
+        {"id": 77, "question": "What is the output of print(int('123'))?", "options": ["123", "123", "Error", "None"], "correct": 0},
+        {"id": 78, "question": "What is the output of print(float('123.45'))?", "options": ["123.45", "123.45", "Error", "None"], "correct": 0},
+        {"id": 79, "question": "What is the output of print(bool(''))?", "options": ["False", "True", "''", "Error"], "correct": 0},
+        {"id": 80, "question": "What is the output of print(bool('Hello'))?", "options": ["True", "False", "Hello", "Error"], "correct": 0},
+        {"id": 81, "question": "What is the output of print(abs(-5))?", "options": ["5", "-5", "0", "Error"], "correct": 0},
+        {"id": 82, "question": "What is the output of print(max([1, 2, 3]))?", "options": ["3", "1", "2", "Error"], "correct": 0},
+        {"id": 83, "question": "What is the output of print(min([1, 2, 3]))?", "options": ["1", "2", "3", "Error"], "correct": 0},
+        {"id": 84, "question": "What is the output of print(sum([1, 2, 3]))?", "options": ["6", "3", "1", "Error"], "correct": 0},
+        {"id": 85, "question": "What is the output of print(sorted([3, 1, 2]))?", "options": ["[1, 2, 3]", "[3, 1, 2]", "[2, 1, 3]", "Error"], "correct": 0},
+        {"id": 86, "question": "What is the output of print(reversed([1, 2, 3]))?", "options": ["<list_reverseiterator object>", "[3, 2, 1]", "[1, 2, 3]", "Error"], "correct": 0},
+        {"id": 87, "question": "What is the output of print(enumerate(['a', 'b']))?", "options": ["<enumerate object>", "[(0, 'a'), (1, 'b')]", "['a', 'b']", "Error"], "correct": 0},
+        {"id": 88, "question": "What is the output of print(zip([1, 2], ['a', 'b']))?", "options": ["<zip object>", "[(1, 'a'), (2, 'b')]", "[(1, 2), ('a', 'b')]", "Error"], "correct": 0},
+        {"id": 89, "question": "What is the output of print(range(5))?", "options": ["range(0, 5)", "[0, 1, 2, 3, 4]", "range(5)", "Error"], "correct": 0},
+        {"id": 90, "question": "What is the output of print(list(range(5)))?", "options": ["[0, 1, 2, 3, 4]", "range(0, 5)", "[1, 2, 3, 4, 5]", "Error"], "correct": 0},
+        {"id": 91, "question": "What is the output of print(chr(65))?", "options": ["A", "65", "a", "Error"], "correct": 0},
+        {"id": 92, "question": "What is the output of print(ord('A'))?", "options": ["65", "A", "97", "Error"], "correct": 0},
+        {"id": 93, "question": "What is the output of print(hex(255))?", "options": ["0xff", "255", "ff", "Error"], "correct": 0},
+        {"id": 94, "question": "What is the output of print(oct(8))?", "options": ["0o10", "8", "10", "Error"], "correct": 0},
+        {"id": 95, "question": "What is the output of print(bin(5))?", "options": ["0b101", "5", "101", "Error"], "correct": 0},
+        {"id": 96, "question": "What is the output of print(round(3.14159, 2))?", "options": ["3.14", "3.14159", "3.1", "Error"], "correct": 0},
+        {"id": 97, "question": "What is the output of print(pow(2, 3))?", "options": ["8", "6", "9", "Error"], "correct": 0},
+        {"id": 98, "question": "What is the output of print(divmod(10, 3))?", "options": ["(3, 1)", "(1, 3)", "3", "Error"], "correct": 0},
+        {"id": 99, "question": "What is the output of print(all([True, True, False]))?", "options": ["False", "True", "Error", "None"], "correct": 0},
+        {"id": 100, "question": "What is the output of print(any([False, False, True]))?", "options": ["True", "False", "Error", "None"], "correct": 0}
     ]
 
-    theoretical_questions = questions_pool[:45]
-    practical_questions = questions_pool[45:50]
+    theoretical_questions = questions_pool[:70]
+    practical_questions = questions_pool[70:100]
     
-    # Return 30 questions total (25 theory + 5 practical)
-    selected_questions = random.sample(theoretical_questions, 25) + practical_questions
+    # Return 100 questions total (70 theory + 30 practical)
+    selected_questions = random.sample(theoretical_questions, 70) + practical_questions
     random.shuffle(selected_questions)
     
     return Response({

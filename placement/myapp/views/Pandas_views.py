@@ -89,4 +89,4 @@ def playground_questions_pandas_api(request):
         {"id": 79, "question": "What is 'df.agg({'col': 'mean'})' for?", "options": ["Aggregating columns with specific functions", "Deleting a record", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary benefit of vectorization in Pandas?", "options": ["Simpler code and significantly faster execution than regular loops", "Designing graphics", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

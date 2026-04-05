@@ -89,4 +89,4 @@ def playground_questions_aspnetmvc_api(request):
         {"id": 79, "question": "What is 'ModelMetadata'?", "options": ["Data about the model (e.g. constraints, display name) used for UI", "A list of files", "None of the above", "None"], "correct": 0},
         {"id": 80, "question": "Which command is used to update the database to the latest migration?", "options": ["dotnet build", "dotnet ef database update", "dotnet run", "None"], "correct": 1},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

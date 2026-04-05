@@ -88,5 +88,25 @@ def playground_questions_webapis_api(request):
         {"id": 78, "question": "Which protocol is primarily used by the Web?", "options": ["HTTP", "FTP", "SSH", "Telnet"], "correct": 0},
         {"id": 79, "question": "What is 'JSONP' (JSON with Padding)?", "options": ["An old technique to bypass cross-domain restrictions in browsers", "A newer format", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Which of these is used for secure transmission of API data?", "options": ["HTTPS", "HTTP", "FTP", "None"], "correct": 0},
+        {"id": 81, "question": "What is 'API Gateway'?", "options": ["Single entry point for multiple microservices", "A gate for APIs", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Rate Limiting'?", "options": ["Controlling API request frequency", "Limiting speed", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'API Versioning'?", "options": ["Managing different versions of API simultaneously", "Version control for APIs", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Webhook'?", "options": ["HTTP callback triggered by specific events", "A fishing hook", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'CORS' (Cross-Origin Resource Sharing)?", "options": ["Security feature allowing cross-domain requests", "A types of wine", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'JWT' (JSON Web Token)?", "options": ["Compact token for API authentication", "A type of web token", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'OAuth 2.0'?", "options": ["Authorization framework for third-party access", "A version of OAuth", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'GraphQL'?", "options": ["Query language for APIs with flexible data fetching", "A graph query language", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'REST' API?", "options": ["Architectural style using HTTP methods", "A restful API", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'SOAP' API?", "options": ["Protocol using XML for structured messaging", "A cleaning protocol", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'API Documentation'?", "options": ["Technical guide for API usage", "Instructions for APIs", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Postman'?", "options": ["API testing and development tool", "A mail delivery service", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Swagger'?", "options": ["Tool for API documentation", "A type of clothing", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'OpenAPI'?", "options": ["Specification for REST APIs", "An open API", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'API Testing'?", "options": ["Verifying API functionality and performance", "Testing APIs", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Load Balancing'?", "options": ["Distributing API traffic across multiple servers", "Balancing loads", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Caching'?", "options": ["Storing responses to reduce database load", "Hiding data", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'CDN' (Content Delivery Network)?", "options": ["Distributed servers for fast content delivery", "A network for content", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'API Monitoring'?", "options": ["Tracking API performance and availability", "Watching APIs", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'API Analytics'?", "options": ["Analyzing API usage patterns and metrics", "Studying APIs", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

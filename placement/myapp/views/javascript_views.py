@@ -57,15 +57,56 @@ def playground_questions_javascript_api(request):
         {"id": 48, "question": "What will this output?\nconsole.log(typeof null === 'object');", "options": ["true", "false", "undefined", "TypeError"], "correct": 0},
         {"id": 49, "question": "What is the output of the following JS code?\nsetTimeout(() => console.log('A'), 0);\nconsole.log('B');", "options": ["A then B", "B then A", "A only", "B only"], "correct": 1},
         {"id": 50, "question": "What does this snippet return?\nfunction add(a, b) {\n  return a + b;\n}\nconsole.log(add(2, '2'));", "options": ["4", "'22'", "NaN", "Error"], "correct": 1},
+        {"id": 51, "question": "What is 'destructuring assignment' in JavaScript?", "options": ["Breaking down complex structures", "Extracting values from arrays or objects into distinct variables", "Destroying data", "None"], "correct": 1},
+        {"id": 52, "question": "What is the 'spread operator' used for?", "options": ["Spreading data", "Expanding iterable elements", "Both", "None"], "correct": 1},
+        {"id": 53, "question": "What is 'rest parameter' in functions?", "options": ["Parameter for rest", "Represents an indefinite number of arguments as an array", "Both", "None"], "correct": 1},
+        {"id": 54, "question": "What is 'arrow function' syntax?", "options": ["=> syntax for functions", "Function with arrow", "Both", "None"], "correct": 0},
+        {"id": 55, "question": "What is 'template literal'?", "options": ["Template for code", "String literals allowing embedded expressions", "Both", "None"], "correct": 1},
+        {"id": 56, "question": "What is 'Symbol' in JavaScript?", "options": ["A symbol for math", "A unique and immutable primitive value", "Both", "None"], "correct": 1},
+        {"id": 57, "question": "What is 'Map' object?", "options": ["A geographic map", "A collection of keyed data items", "Both", "None"], "correct": 1},
+        {"id": 58, "question": "What is 'Set' object?", "options": ["A TV set", "A collection of unique values", "Both", "None"], "correct": 1},
+        {"id": 59, "question": "What is 'WeakMap'?", "options": ["A weak map", "A Map with object keys that don't prevent garbage collection", "Both", "None"], "correct": 1},
+        {"id": 60, "question": "What is 'WeakSet'?", "options": ["A weak set", "A Set with object values that don't prevent garbage collection", "Both", "None"], "correct": 1},
+        {"id": 61, "question": "What is 'Proxy' object?", "options": ["A network proxy", "An object that wraps another object and intercepts operations", "Both", "None"], "correct": 1},
+        {"id": 62, "question": "What is 'Reflect' object?", "options": ["A mirror", "A built-in object that provides methods for interceptable JavaScript operations", "Both", "None"], "correct": 1},
+        {"id": 63, "question": "What is 'Generator' function?", "options": ["A function that generates code", "A function that can be paused and resumed", "Both", "None"], "correct": 1},
+        {"id": 64, "question": "What is 'yield' keyword?", "options": ["A keyword for generators", "Pauses and resumes a generator function", "Both", "None"], "correct": 1},
+        {"id": 65, "question": "What is 'async/await'?", "options": ["Asynchronous programming syntax", "Synchronous programming", "Both", "None"], "correct": 0},
+        {"id": 66, "question": "What is 'Event Loop'?", "options": ["A loop for events", "A mechanism that handles asynchronous operations", "Both", "None"], "correct": 1},
+        {"id": 67, "question": "What is 'Callback Hell'?", "options": ["A scary place", "Nested callbacks making code hard to read", "Both", "None"], "correct": 1},
+        {"id": 68, "question": "What is 'Promise.all'?", "options": ["All promises", "Returns a promise that resolves when all promises resolve", "Both", "None"], "correct": 1},
+        {"id": 69, "question": "What is 'Promise.race'?", "options": ["A race condition", "Returns a promise that resolves when first promise resolves", "Both", "None"], "correct": 1},
+        {"id": 70, "question": "What is 'Object.assign'?", "options": ["Assigning objects", "Copies all enumerable properties from one object to another", "Both", "None"], "correct": 1},
+        {"id": 71, "question": "What is 'Object.create'?", "options": ["Creating objects", "Creates a new object with specified prototype", "Both", "None"], "correct": 1},
+        {"id": 72, "question": "What is 'bind' method?", "options": ["Binding data", "Creates a new function with 'this' bound to a specific value", "Both", "None"], "correct": 1},
+        {"id": 73, "question": "What is 'call' method?", "options": ["Calling functions", "Calls a function with specified 'this' and arguments", "Both", "None"], "correct": 1},
+        {"id": 74, "question": "What is 'apply' method?", "options": ["Applying functions", "Calls a function with specified 'this' and array of arguments", "Both", "None"], "correct": 1},
+        {"id": 75, "question": "What is 'closure'?", "options": ["A closed function", "A function with access to outer function scope", "Both", "None"], "correct": 1},
+        {"id": 76, "question": "What is 'IIFE'?", "options": ["Immediately Invoked Function Expression", "A function that runs immediately", "Both", "None"], "correct": 0},
+        {"id": 77, "question": "What is 'module pattern'?", "Options": ["A design pattern", "Encapsulating code in modules", "Both", "None"], "correct": 1},
+        {"id": 78, "question": "What is 'currying'?", "options": ["Food preparation", "Transforming a function with multiple arguments into functions with single arguments", "Both", "None"], "correct": 1},
+        {"id": 79, "question": "What is 'memoization'?", "options": ["Writing memos", "Caching function results", "Both", "None"], "correct": 1},
+        {"id": 80, "question": "What is 'debouncing'?", "options": ["Bouncing data", "Limiting function calls to once per time period", "Both", "None"], "correct": 1},
+        {"id": 81, "question": "What is 'throttling'?", "options": ["Speed control", "Limiting function execution rate", "Both", "None"], "correct": 1},
+        {"id": 82, "question": "What is 'localStorage'?", "options": ["Local storage", "Client-side storage for data", "Both", "None"], "correct": 1},
+        {"id": 83, "question": "What is 'sessionStorage'?", "options": ["Session storage", "Client-side storage for session data", "Both", "None"], "correct": 1},
+        {"id": 84, "question": "What is 'IndexedDB'?", "options": ["Indexed database", "Client-side transactional database", "Both", "None"], "correct": 1},
+        {"id": 85, "question": "What is 'Web Workers'?", "options": ["Web developers", "Scripts that run in background threads", "Both", "None"], "correct": 1},
+        {"id": 86, "question": "What is 'Service Worker'?", "Options": ["A worker for services", "A script that runs in background and manages network requests", "Both", "None"], "correct": 1},
+        {"id": 87, "question": "What is 'WebSockets'?", "options": ["Web sockets", "A protocol for real-time communication", "Both", "None"], "correct": 1},
+        {"id": 88, "question": "What is 'Fetch API'?", "options": ["Fetching data", "Modern interface for HTTP requests", "Both", "None"], "correct": 1},
+        {"id": 89, "question": "What is 'Intersection Observer'?", "options": ["Observing intersections", "API for observing element visibility", "Both", "None"], "correct": 1},
+        {"id": 90, "question": "What is 'Mutation Observer'?", "options": ["Observing mutations", "API for observing DOM changes", "Both", "None"], "correct": 1},
+        {"id": 91, "question": "What is 'Resize Observer'?", "options": ["Observing resizes", "API for observing element size changes", "Both", "None"], "correct": 1},
+        {"id": 92, "question": "What is 'Performance Observer'?", "options": ["Observing performance", "API for observing performance metrics", "Both", "None"], "correct": 1},
+        {"id": 93, "question": "What is 'Web Components'?", "options": ["Web components", "Custom elements and shadow DOM", "Both", "None"], "correct": 1},
+        {"id": 94, "question": "What is 'Custom Elements'?", "options": ["Custom elements", "Creating new HTML elements", "Both", "None"], "correct": 1},
+        {"id": 95, "question": "What is 'Shadow DOM'?", "options": ["Shadow DOM", "Encapsulated DOM trees", "Both", "None"], "correct": 1},
+        {"id": 96, "question": "What is 'HTML Templates'?", "options": ["HTML templates", "Reusable HTML markup", "Both", "None"], "correct": 1},
+        {"id": 97, "question": "What is 'WebAssembly'?", "options": ["Web assembly", "Binary instruction format for web", "Both", "None"], "correct": 1},
+        {"id": 98, "question": "What is 'BigInt'?", "options": ["Big integers", "Numeric primitive for arbitrarily large integers", "Both", "None"], "correct": 1},
+        {"id": 99, "question": "What is 'Optional Chaining'?", "options": ["Optional chaining", "Accessing nested object properties safely", "Both", "None"], "correct": 1},
+        {"id": 100, "question": "What is 'Nullish Coalescing'?", "options": ["Nullish coalescing", "Providing default values for null/undefined", "Both", "None"], "correct": 1}
     ]
 
-    theoretical_questions = questions_pool[:45]
-    practical_questions = questions_pool[45:50]
-    
-    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
-    random.shuffle(selected_questions)
-    
-    return Response({
-        'success': True,
-        'data': selected_questions
-    })
+    return Response({'success': True, 'data': random.sample(questions_pool, 25)})

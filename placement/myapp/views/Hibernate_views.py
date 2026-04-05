@@ -89,4 +89,4 @@ def playground_questions_hibernate_api(request):
         {"id": 79, "question": "What is 'Hibernate Statistics'?", "options": ["A security log", "A tool providing internal metrics like session hits, query times to analyze perf", "None", "None"], "correct": 1},
         {"id": 80, "question": "Which annotation connects a persistent property to its table column?", "options": ["@Target", "@Column", "@Header", "@Label"], "correct": 1},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

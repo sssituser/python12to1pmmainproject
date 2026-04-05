@@ -88,4 +88,4 @@ def playground_questions_etlpipes_api(request):
         {"id": 79, "question": "What's the meaning of 'Cloud-Native' ETL?", "options": ["Building pipelines specifically designed for cloud environments", "Using a physical cloud", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is ETL important for business decision making?", "options": ["Providing specifically high-quality and integrated data for accurate analysis", "Because it uses more RAM", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

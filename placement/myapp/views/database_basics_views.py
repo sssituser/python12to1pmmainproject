@@ -87,5 +87,25 @@ def playground_questions_dbbasics_api(request):
         {"id": 78, "question": "What's 'Auto-Refresh' for database dashboards?", "options": ["Automatically updating graphs as the underlying database data changes", "Cleaning the computer", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "Which file extension is commonly used for SQL backup files?", "options": [".sql", ".bak", "Both A and B", "Neither"], "correct": 2},
         {"id": 80, "question": "Why is Database management essential for every modern application?", "options": ["Ensuring secure, accurate and high-performance storage and retrieval of information", "Having more social media followers", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Database Normalization'?", "options": ["Organizing data to reduce redundancy", "Making data normal", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Database Indexing'?", "options": ["Creating data structures for faster queries", "Indexing data", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Database Transaction'?", "options": ["Unit of work performed on database", "Transaction in database", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'ACID Properties'?", "options": ["Atomicity, Consistency, Isolation, Durability", "Database properties", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Database Schema'?", "options": ["Structure of database", "Database structure", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Primary Key'?", "options": ["Unique identifier for records", "Key for primary data", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Foreign Key'?", "options": ["Key linking tables", "External key", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Database View'?", "options": ["Virtual table based on query", "View of database", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Stored Procedure'?", "options": ["Precompiled SQL code stored in database", "Procedure for storing data", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Database Trigger'?", "options": ["Automatic action on data changes", "Trigger for database", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Database Cursor'?", "options": ["Pointer to query results", "Cursor in database", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Database Connection Pool'?", "options": ["Cache of database connections", "Pool of connections", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Database Partitioning'?", "options": ["Dividing data across multiple storage", "Partitioning database", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Database Replication'?", "options": ["Copying data across databases", "Replicating database", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Database Sharding'?", "options": ["Horizontal partitioning of data", "Breaking database into shards", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Database Backup'?", "options": ["Copy of database for recovery", "Backing up database", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Database Recovery'?", "options": ["Restoring database from backup", "Recovering database", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Database Migration'?", "options": ["Moving data between database versions", "Migrating database", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Database Audit'?", "options": ["Reviewing database changes", "Auditing database", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Database Performance Tuning'?", "options": ["Optimizing database for speed", "Tuning database performance", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

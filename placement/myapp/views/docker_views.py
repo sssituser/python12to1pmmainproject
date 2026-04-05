@@ -88,5 +88,25 @@ def playground_questions_docker_api(request):
         {"id": 78, "question": "How can you debug a failing Docker build?", "options": ["By checking the output logs of each layer", "Guessing", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "Which symbol is used for Docker logo?", "options": ["A whale carrying containers", "A ship with boxes", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Docker essential for modern Microservices?", "options": ["Simplifies environment management and ensures consistent software behavior", "Faster internet speed", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Docker Swarm'?", "options": ["Native clustering and orchestration solution for Docker", "A group of Docker containers", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Docker Compose'?", "options": ["Tool for defining and running multi-container applications", "Writing Docker files", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Dockerfile'?", "options": ["Text file with instructions to build Docker image", "File for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Docker Hub'?", "options": ["Cloud service for sharing and storing Docker images", "A hub for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Docker Registry'?", "options": ["Storage and distribution system for Docker images", "Registry for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Docker Volume'?", "options": ["Persistent storage for Docker containers", "Volume for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Docker Network'?", "options": ["Communication system between containers", "Network for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Docker Multi-stage Build'?", "options": ["Building images in stages to reduce size", "Building Docker in stages", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Docker Health Check'?", "options": ["Monitoring container health status", "Checking Docker health", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Docker Restart Policy'?", "options": ["Behavior when container exits", "Restarting Docker containers", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Docker Resource Limits'?", "options": ["Restricting container resource usage", "Limiting Docker resources", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Docker Environment Variables'?", "options": ["Configuration values passed to containers", "Environment in Docker", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Docker Entrypoint'?", "options": ["Command executed when container starts", "Entry point for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Docker CMD'?", "options": ["Default command for container", "Command for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Docker USER'?", "options": ["User that runs commands in container", "User for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Docker WORKDIR'?", "options": ["Working directory for commands", "Working directory in Docker", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Docker COPY' vs 'ADD'?", "options": ["COPY copies files; ADD can copy and extract archives", "Both copy files", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Docker EXPOSE'?", "options": ["Informing about network ports", "Exposing Docker ports", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Docker ARG'?", "options": ["Build-time variables", "Arguments for Docker", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Docker ONBUILD'?", "options": ["Trigger for downstream builds", "Building on Docker", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

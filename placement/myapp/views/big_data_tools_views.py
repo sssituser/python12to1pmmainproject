@@ -87,5 +87,25 @@ def playground_questions_bigdatatools_api(request):
         {"id": 78, "question": "What represents specific 'Data Scientist' role?", "options": ["Professional specifically who cleans, analyzes and interprets complex data", "A types of doctor", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents specific 'Data Engineer' role?", "options": ["Professional specifically who builds and maintains data architecture/pipelines", "A person who builds bridges", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Big Data important for modern enterprises?", "options": ["Enables data-driven specifically decision making and competitive advantage", "Because it is popular", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Data Lake'?", "options": ["Centralized repository for storing raw structured and unstructured data", "A lake with data", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'ETL' in Big Data?", "options": ["Extract, Transform, Load process for data warehousing", "Electronic Transfer Load", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Data Warehouse'?", "options": ["Central repository of integrated data from multiple sources", "A storage building", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Hadoop Distributed File System' (HDFS)?", "options": ["Distributed file system designed for storing very large files", "A file system", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'MapReduce'?", "options": ["Programming model for processing large datasets in parallel", "A map reduction tool", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Apache Spark'?", "options": ["Unified analytics engine for large-scale data processing", "A firework tool", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Apache Kafka'?", "options": ["Distributed streaming platform for real-time data feeds", "A writer", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Apache Flink'?", "options": ["Stream processing framework for distributed computations", "A link tool", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Data Pipeline'?", "options": ["Series of data processing steps", "A pipe for data", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Schema Registry' in data governance?", "options": ["Central repository for managing data schemas", "A list of schemas", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Master Data Management' (MDM)?", "options": ["Process of creating single trusted view of data", "Managing master data", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Data Quality'?", "options": ["Degree to which data meets requirements for its intended use", "How good data is", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Data Governance'?", "options": ["Overall management of data availability, usability, security, and compliance", "Ruling data", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Data Lineage'?", "options": ["Tracking data's origin and movement through systems", "Family history of data", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Data Virtualization'?", "options": ["Creating virtual versions of data for testing", "Making data virtual", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Streaming Analytics'?", "options": ["Real-time processing and analysis of data streams", "Watching data streams", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Batch Processing'?", "options": ["Processing data in large groups rather than individually", "Processing in batches", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Real-time Analytics'?", "options": ["Immediate analysis of data as it arrives", "Fast analytics", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Predictive Analytics'?", "options": ["Using historical data to predict future outcomes", "Guessing analytics", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Prescriptive Analytics'?", "options": ["Recommending actions based on data analysis", "Writing prescriptions", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

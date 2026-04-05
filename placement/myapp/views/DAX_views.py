@@ -96,5 +96,5 @@ def playground_questions_dax_api(request):
     """
     return Response({
         "success": True,
-        "data": random.sample(DAX_QUESTIONS, 30)
+        "data": random.sample(DAX_QUESTIONS, 25)
     })

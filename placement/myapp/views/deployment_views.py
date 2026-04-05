@@ -88,5 +88,25 @@ def playground_questions_deployment_api(request):
         {"id": 78, "question": "What is 'DotEnv' file (.env) used for?", "options": ["Managing environment-specific configurations locally and in deployment", "A list of strings", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What is 'App Service' (Azure) / 'App Engine' (GCP)?", "options": ["Fully managed platforms for deploying web apps without server trouble", "A speed test", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What's the overall goal of modern deployment strategies?", "options": ["Ensuring fast, reliable, and frequent software releases with minimal risk", "Buying more servers", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Blue-Green Deployment'?", "options": ["Zero-downtime deployment strategy", "Deployment with colors", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Canary Deployment'?", "options": ["Gradual rollout to subset of users", "Bird deployment", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Rolling Deployment'?", "options": ["Gradual replacement of instances", "Rolling deployment", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Feature Flag'?", "options": ["Toggle for enabling/disabling features", "Flag for features", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Infrastructure as Code' (IaC)?", "options": ["Managing infrastructure through code", "Code for infrastructure", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'GitOps'?", "options": ["Git-based operations", "Operations with Git", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'DevSecOps'?", "options": ["Integrating security into DevOps", "Security in DevOps", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Site Reliability Engineering' (SRE)?", "options": ["Applying engineering to reliability", "Reliability engineering", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Observability'?", "options": ["Ability to understand system from external signals", "Observing systems", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Pipeline as Code'?", "options": ["Defining pipelines in code", "Code for pipelines", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Chaos Engineering'?", "options": ["Testing resilience through controlled failures", "Engineering chaos", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Value Stream Mapping'?", "options": ["Visualizing workflow steps", "Mapping value streams", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Continuous Improvement'?", "options": ["Ongoing process optimization", "Improving continuously", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'DevOps Culture'?", "options": ["Collaborative environment for development and operations", "Culture for DevOps", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'A/B Testing' in deployment?", "options": ["Comparing two versions", "Testing letters", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Load Balancing'?", "options": ["Distributing traffic across servers", "Balancing loads", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Auto Scaling'?", "options": ["Automatically adjusting resources based on demand", "Scaling automatically", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Health Check'?", "options": ["Monitoring application health status", "Checking health", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Configuration Management'?", "options": ["Managing application configurations", "Managing configs", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Deployment Pipeline'?", "options": ["Automated process for software delivery", "Pipeline for deployment", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

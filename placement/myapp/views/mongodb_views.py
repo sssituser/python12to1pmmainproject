@@ -88,4 +88,4 @@ def playground_questions_mongodb_api(request):
         {"id": 79, "question": "What is 'Compass' in MongoDB context?", "options": ["Official GUI specifically for exploring and managing MongoDB data visually", "A tool for directions", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is MongoDB popular for modern app development?", "options": ["Flexibility of schema-less documents specifically and easy horizontal scaling", "It uses more electricity", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

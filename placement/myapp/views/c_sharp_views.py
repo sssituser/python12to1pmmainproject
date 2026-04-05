@@ -89,4 +89,4 @@ def playground_questions_c_sharp_api(request):
         {"id": 79, "question": "What is 'Silverlight'?", "options": ["A deprecated web framework similar to Flash", "A type of light", "None", "None"], "correct": 0},
         {"id": 80, "question": "What is 'Xamarin' primarily for?", "options": ["Mobile development only", "Cross-platform mobile app development (iOS, Android) using C#/.NET", "None of the above", "None"], "correct": 1},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

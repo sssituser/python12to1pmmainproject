@@ -87,5 +87,25 @@ def playground_questions_apitesting_api(request):
         {"id": 78, "question": "What represents 'Status-Line' in HTTP response?", "options": ["Contains the specifically HTTP version, status code, and reason phrase", "A line of people", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents the 'Cookie' header?", "options": ["Sending specifically stored session data back to the server with requests", "A snacks description", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is API Testing critical in modern software?", "options": ["Because specifically APIs are the foundation of integrated and mobile apps", "Because it is easier than UI testing", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'API Contract Testing'?", "options": ["Testing API against its specification", "Testing contracts", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'API Performance Testing'?", "options": ["Testing API speed and responsiveness", "Testing API performance", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'API Load Testing'?", "options": ["Testing API under heavy load", "Loading API", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'API Stress Testing'?", "options": ["Testing API beyond normal load", "Stressing API", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'API Security Testing'?", "options": ["Testing API security vulnerabilities", "Security testing", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'API Documentation Testing'?", "options": ["Testing API documentation accuracy", "Document testing", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'API Integration Testing'?", "options": ["Testing API integration with other systems", "Integration testing", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'API End-to-End Testing'?", "options": ["Testing complete API workflows", "End testing", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'API Regression Testing'?", "options": ["Testing API after changes", "Regression testing", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'API Monitoring'?", "options": ["Monitoring API performance and availability", "API watching", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'API Mocking'?", "options": ["Creating fake API responses", "Making fun of API", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'API Virtualization'?", "options": ["Creating virtual API services", "Virtual API", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'API Versioning'?", "options": ["Managing multiple API versions", "API version control", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'API Rate Limiting'?", "options": ["Limiting API request frequency", "API speed limits", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'API Throttling'?", "options": ["Controlling API request rate", "API throttling", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'API Caching'?", "options": ["Storing API responses", "API cache", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'API Pagination'?", "options": ["Splitting large API responses", "API pages", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'API Filtering'?", "options": ["Filtering API response data", "API filters", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'API Sorting'?", "options": ["Sorting API response data", "API sorting", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'API Searching'?", "options": ["Searching API data", "API search", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

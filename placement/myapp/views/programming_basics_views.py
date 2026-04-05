@@ -89,4 +89,4 @@ def playground_questions_probasics_api(request):
         {"id": 79, "question": "Is computer programming a team sport?", "options": ["Yes, modern development usually happens in teams using collaboration tools", "No, it is for individuals only", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary result of good programming?", "options": ["Reliable, secure apps that solve real problems efficiently", "Having more social media followers", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

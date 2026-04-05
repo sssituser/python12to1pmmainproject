@@ -51,14 +51,11 @@ def login(request):
     # Handle student ID login
     if studentId:
         try:
-            # Smart Lookup: Try numeric ID, then username, then name
+            # 1. Profile Lookup (Primary for Students)
             student_profile = None
-            
-            # 1. Try exact numeric student_id (if input is numeric)
             if str(studentId).isdigit():
                 student_profile = StudentProfile.objects.filter(student_id=int(studentId)).first()
             
-            # 2. Try lookup by user__username or user__first_name if not found by numeric ID
             if not student_profile:
                 student_profile = StudentProfile.objects.filter(
                     Q(user__username__iexact=studentId) | 
@@ -67,19 +64,19 @@ def login(request):
             
             if student_profile:
                 user = student_profile.user
-                print(f"DEBUG: Found user via Student ID/Name: {user.username}")
+                print(f"DEBUG: Found user via StudentProfile: {user.username}")
             else:
-                # Fallback: try to find user with student_id as username directly
-                user = User.objects.filter(username__iexact=studentId, role='student').first()
+                # 2. GLOBAL FALLBACK: Check User table directly (Fix for legacy/incomplete profiles)
+                user = User.objects.filter(Q(username__iexact=studentId) | Q(email__iexact=studentId)).first()
                 if user:
-                    print(f"DEBUG: Found user with student ID as username: {user.username}")
+                     print(f"DEBUG: Found user via Direct User Lookup: {user.username}")
         except Exception as e:
             print(f"DEBUG: Student lookup error: {e}")
             pass
     
-    # Handle regular username/email login
+    # Handle regular username/email login (alternate input name)
     elif username:
-        user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+        user = User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username)).first()
 
     required_role = request.data.get("role")
 
@@ -324,8 +321,7 @@ def change_password(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    username = request.data.get("username")
-    studentId = request.data.get("studentId")
+    username = request.data.get("username") or request.data.get("studentId")
     password = request.data.get("password")
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
@@ -380,8 +376,13 @@ def register(request):
             else:
                 print(f"DEBUG: Using existing course: {course}")
             
-            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
-            print(f"DEBUG: Created student profile for {username} with course: {course}")
+            # Numeric sync for optimized lookups
+            sp_kwargs = {"user": user, "course": course_obj}
+            if str(username).isdigit():
+                sp_kwargs["student_id"] = int(username)
+                
+            student_profile = StudentProfile.objects.create(**sp_kwargs)
+            print(f"DEBUG: Created student profile for {username} with course: {course} and ID: {sp_kwargs.get('student_id')}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification

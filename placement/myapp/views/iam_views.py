@@ -89,4 +89,4 @@ def playground_questions_iam_api(request):
         {"id": 79, "question": "What's the meaning of 'IAM Managed Policy'?", "options": ["Reusable standalone policy (either by AWS or customer)", "Managed by a person", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary way to manage fine-grained access in AWS?", "options": ["Using IAM roles and policies based on users' specific responsibilities", "Sharing root account", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

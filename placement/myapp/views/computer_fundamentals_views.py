@@ -89,4 +89,4 @@ def playground_questions_computerfundamentals_api(request):
         {"id": 79, "question": "What's 'Multi-core' CPU?", "options": ["Having multiple 'brains' on a single chip for multitasking", "A very large ball", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary benefit of computers in modern life?", "options": ["Speed, accuracy, and automation of tasks and information", "Having more TV channels", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})
