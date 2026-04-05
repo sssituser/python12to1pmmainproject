@@ -18,31 +18,53 @@ function DetailedResults() {
     if (t.includes("weekly") || t.includes("monthly")) return 35;
     return 20;
   };
-  const formatExamTitle = (title) => {
-    if (!title) return "Exam";
-    // Return original title from backend instead of overly aggressive truncations
-    return title;
+  const formatExamTitle = (title = "") => {
+    const t = title.toLowerCase();
+    if (t.includes("python")) return "Python Exam";
+    if (t.includes("java")) return "Java Exam";
+    if (t.includes("oracle")) return "Oracle Exam";
+    if (t.includes("ui")) return "UI Exam";
+    if (t.includes("django")) return "Django Exam";
+    return title || "Exam";
   };
 
   useEffect(() => {
     // 1. Try to get the specific selected result first
     const selected = localStorage.getItem("selectedExamResult");
     if (selected) {
-      setResult(JSON.parse(selected));
+      const parsedResult = JSON.parse(selected);
+      setResult(parsedResult);
       return;
     }
 
-    // 2. Fallback to index-based lookup (legacy/compatibility)
+    // 2. Fallback to state-based data (passed from PlaygroundResults)
+    const locationState = location.state;
+    if (locationState?.resultData) {
+      setResult(locationState.resultData);
+      return;
+    }
+
+    // 3. Fallback to index-based lookup (legacy/compatibility)
     const results = JSON.parse(
       localStorage.getItem("allExamResults") || "[]"
     );
 
-    if (results[index]) {
+    // Try to find result by unique ID first
+    const foundResult = results.find(r => 
+      r.random_id === index || 
+      r.examDate === index || 
+      r.start_time === index
+    );
+
+    if (foundResult) {
+      setResult(foundResult);
+    } else if (results[index]) {
       setResult(results[index]);
     } else {
-      console.error("DetailedResults - No result found at index:", index);
+      console.error("DetailedResults - No result found for ID/index:", index);
+      setResult(null);
     }
-  }, [index]);
+  }, [index, location.state]);
 
   const handleBack = () => {
     const titleFromState = location.state?.examTitle || "";

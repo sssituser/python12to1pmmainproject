@@ -20,9 +20,13 @@ function PlaygroundResults() {
   };
 
   const formatExamTitle = (title = "") => {
-    if (!title) return "Exam";
-    // Just return the clean title without overly aggressive regex or length constraints
-    return title;
+    const t = title.toLowerCase();
+    if (t.includes("python")) return "Python Exam";
+    if (t.includes("java")) return "Java Exam";
+    if (t.includes("oracle")) return "Oracle Exam";
+    if (t.includes("ui")) return "UI Exam";
+    if (t.includes("django")) return "Django Exam";
+    return title || "Exam";
   };
 
   useEffect(() => {
@@ -46,7 +50,9 @@ function PlaygroundResults() {
       const targetUsername = username || currentUser?.username;
 
       if (!targetUsername) {
-        setAllResults(localResults);
+        // Remove duplicates from localResults before setting
+        const uniqueResults = removeDuplicateResults(localResults);
+        setAllResults(uniqueResults);
         setIsLoading(false);
         return;
       }
@@ -57,31 +63,16 @@ function PlaygroundResults() {
 
         if (json.success) {
           // Merge local storage results (to capture unsynced/new exams) with backend results
-          let localResults = [];
-          try {
-             localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-          } catch(e) {}
-          
           let backendResults = json.data || [];
+          
+          // First, remove duplicates from local results
+          const uniqueLocalResults = removeDuplicateResults(localResults);
           
           const seen = new Set();
           const merged = [];
           
           // We put localResults first so the most recent locally saved exam takes priority visually
           for (const res of [...localResults, ...backendResults]) {
-             
-             // 🛡️ STRICT CATEGORY FILTER: Hide 'weekly' & 'monthly' exams from the Playground
-             const type = (res.examType || res.exam_type || "").toLowerCase();
-             const titleStr = (res.examTitle || res.title || res.exam_title || "").toLowerCase();
-             
-             // User isolation filter
-             const examUsername = res.user?.username || res.username || "";
-             const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !targetUsername || examUsername.toLowerCase() === targetUsername.toLowerCase();
-             
-             if (type === 'weekly' || type === 'monthly' || titleStr.includes('weekly') || titleStr.includes('monthly') || !isOwnExam) {
-               continue; // SKIP this exam, do not show it in Playground
-             }
-
              const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
              if (key && !seen.has(key)) {
                 seen.add(key);
@@ -92,7 +83,9 @@ function PlaygroundResults() {
              }
           }
           
-          setAllResults(merged);
+          // Remove any remaining duplicates from merged results
+          const finalResults = removeDuplicateResults(merged);
+          setAllResults(finalResults);
         } else {
           setError(json.error || "Failed to fetch results");
           setAllResults([]);
@@ -112,10 +105,30 @@ function PlaygroundResults() {
     const examFailure = localStorage.getItem("examFailure");
     if (examFailure) {
       const failedResult = JSON.parse(examFailure);
-      setAllResults(prev => [failedResult, ...prev]);
+      setAllResults(prev => {
+        const uniqueResults = removeDuplicateResults([failedResult, ...prev]);
+        return uniqueResults;
+      });
       localStorage.removeItem("examFailure");
     }
   }, []);
+
+  // Helper function to remove duplicate results based on unique identifiers
+  const removeDuplicateResults = (results) => {
+    const seen = new Set();
+    const unique = [];
+    
+    for (const result of results) {
+      const key = result.random_id || (result.user && result.user.randomId) || result.examDate || result.start_time || JSON.stringify(result);
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(result);
+      }
+    }
+    
+    return unique;
+  };
 
   // TAKE NEW EXAM
   const handleTakeNewExam = () => {
@@ -129,9 +142,15 @@ function PlaygroundResults() {
   };
 
   const handleViewDetails = (result, index) => {
+    // Store the complete result data to ensure accuracy
     localStorage.setItem("selectedExamResult", JSON.stringify(result));
-    navigate(`/dashboard/playground/detailed-results/${index}`, { 
-        state: { examTitle: formatExamTitle(result.examTitle) } 
+    // Use unique ID instead of index for reliable navigation
+    const uniqueId = result.random_id || result.examDate || result.start_time || index;
+    navigate(`/dashboard/playground/detailed-results/${uniqueId}`, { 
+        state: { 
+          examTitle: formatExamTitle(result.examTitle),
+          resultData: result // Pass complete data as fallback
+        } 
     });
   };
 
@@ -274,15 +293,15 @@ function PlaygroundResults() {
       </h3>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px] border">
-          <thead className="bg-[#212529] text-white">
+        <table className="w-full table-auto border-collapse border border-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-center font-bold min-w-[60px] border-r border-gray-700">S.No</th>
-              <th className="px-4 py-4 text-start font-bold min-w-[250px] border-r border-gray-700">Student</th>
-              <th className="px-4 py-4 text-start font-bold min-w-[200px] border-r border-gray-700">Exam Name</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[100px] border-r border-gray-700">Date</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[80px] border-r border-gray-700">Score</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[150px]">Reports</th>
+              <th className="px-4 py-3 text-center font-bold border-r border-gray-300">S.No</th>
+              <th className="px-4 py-3 text-left font-bold border-r border-gray-300">Student</th>
+              <th className="px-4 py-3 text-left font-bold border-r border-gray-300">Exam Name</th>
+              <th className="px-4 py-3 text-center font-bold border-r border-gray-300">Date</th>
+              <th className="px-4 py-3 text-center font-bold border-r border-gray-300">Score</th>
+              <th className="px-4 py-3 text-center font-bold border-r border-gray-300">Reports</th>
             </tr>
           </thead>
 
@@ -297,26 +316,24 @@ function PlaygroundResults() {
 
               return (
                 <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[60px]">
-                    {index + 1}
-                  </td>
-                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[250px]">
+                  <td className="px-4 py-3 text-center">{index + 1}</td>
+                  <td className="px-4 py-3 text-start">
                     {result.user?.firstName ||
                       result.user?.username ||
                       "Unknown"}
                   </td>
-                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[200px]">
+                  <td className="px-4 py-3 text-start">
                     {formatExamTitle(result.examTitle)}
                   </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[100px]">
+                  <td className="px-4 py-3 text-center">
                     {new Date(
                       result.examDate
                     ).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[80px]">
+                  <td className="px-4 py-3 text-center">
                     {scoreValue}/{totalMarks}
                   </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[150px]">
+                  <td className="px-4 py-3 text-center">
                     <div className="flex justify-center gap-4">
                       <button
                         onClick={() =>
