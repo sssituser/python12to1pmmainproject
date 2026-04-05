@@ -1140,41 +1140,58 @@ useEffect(() => {
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
     const finalStatus = isTerminated ? "Cheated" : "completed";
 
-    const result = {
-      status: finalStatus,
-      correctAnswers: correctCount,
-      incorrectAnswers: totalQ - correctCount,
-      totalQuestions: totalQ,
-      score: finalScore,
-      marks: finalScore,
+    const payload = {
+      username: user.username || "Unknown",
+      exam_title: `Daily ${subjectName} Exam`,
+      exam_type: "daily",
+      score: earnedMarks,
+      total_questions: totalQ,
+      correct_answers: correctCount,
+      incorrect_answers: totalQ - correctCount,
+      marks_obtained: earnedMarks,
       total_marks: maxPossibleMarks,
-      totalMarks: maxPossibleMarks, // align with results table expectation
       passed: passed,
       time_taken: (examDuration * 60) - timeLeft,
       start_time: now,
-      answers,
-      questions,
-      timeTaken: (examDuration * 60) - timeLeft,
+      end_time: new Date().toISOString(),
+      status: finalStatus,
+      random_id: String(randomId),
+      answers: JSON.stringify(answers),
+      questions: JSON.stringify(questions),
+      reason: reason
+    };
+
+    let synced = false;
+    try {
+      const res = await fetch("/api/save-exam-report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        synced = true;
+        console.log("✅ Daily exam result synced successfully!");
+      } else {
+        console.error("❌ Failed to sync to server, saved locally.");
+      }
+    } catch (err) {
+      console.error("Backend error during sync:", err);
+    }
+
+    const result = {
+      ...payload,
+      synced,
+      examTitle: payload.exam_title,
+      examType: payload.exam_type,
+      timeTaken: payload.time_taken,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
         firstName: user.firstName || user.username,
         randomId
       },
-      examDate: new Date().toISOString(),
-      examTitle: `${subjectName} Exam`,
-      submissionReason: reason
+      examDate: payload.end_time
     };
-
-    try {
-      await fetch("/api/save-exam-report/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result)
-      });
-    } catch (err) {
-      console.error("Backend error:", err);
-    }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
     allResults.unshift(result);

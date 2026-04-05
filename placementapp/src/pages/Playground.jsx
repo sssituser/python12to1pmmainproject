@@ -38,6 +38,8 @@ function Playground() {
       }
     };
     fetchSettings();
+    // Clear any stale exam result flag when entering the playground
+    localStorage.removeItem("examResult");
   }, []);
 
   return (

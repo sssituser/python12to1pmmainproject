@@ -547,6 +547,22 @@ def save_exam_report_api(request):
             else:
                 final_status = 'Fail'
 
+        # 🛡️ PREVENT DUPLICATE SUBMISSIONS (Within 2 minutes for same exam and score)
+        two_minutes_ago = timezone.now() - timezone.timedelta(minutes=2)
+        exists = ExamAttempt.objects.filter(
+            user=user,
+            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+            score=data.get('score', 0),
+            exam_date__gte=two_minutes_ago
+        ).exists()
+
+        if exists:
+            return Response({
+                'success': True,
+                'message': 'Duplicate attempt ignored',
+                'saved_username': user.username
+            })
+
         attempt = ExamAttempt.objects.create(
             user=user,
             exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
@@ -866,12 +882,22 @@ def user_combined_results_api(request):
     """
     GET: Get all exam results for a specific user across all categories
     """
+    # Debugging logs for authentication issues
+    print(f"DEBUG: user_combined_results_api called")
+    print(f"DEBUG: User: {request.user}")
+    print(f"DEBUG: Authenticated: {request.user.is_authenticated}")
+    if request.user.is_authenticated:
+        print(f"DEBUG: Role: {getattr(request.user, 'role', 'No Role Field')}")
+        print(f"DEBUG: Is Staff: {request.user.is_staff}")
+
     username = request.GET.get('username')
     is_staff_or_faculty = request.user and request.user.is_authenticated and (
         request.user.is_staff or 
         getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
     )
 
+    exam_type = request.GET.get('exam_type')
+    
     if is_staff_or_faculty:
         if username:
             attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
@@ -883,19 +909,35 @@ def user_combined_results_api(request):
         if not username:
              return Response({
                 'success': False,
-                'error': 'Username is required'
+                'error': 'Username is required for guest access'
             }, status=status.HTTP_400_BAD_REQUEST)
         attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+
+    if exam_type:
+        attempts = attempts.filter(exam_type__iexact=exam_type)
+    
+    # Strictly deduplicate across IDs to prevent any "repeated" records UI bugs
+    attempts = attempts.distinct()
     
     formatted_data = []
     for attempt in attempts:
+        # Resolve course name from student profile
+        course_name = ""
+        try:
+            profile = StudentProfile.objects.filter(user=attempt.user).first()
+            if profile and profile.course:
+                course_name = profile.course.title
+        except Exception:
+            pass
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
                 'username': attempt.user.username,
                 'randomId': attempt.random_id or 'N/A',
                 'email': attempt.user.email,
-                'firstName': attempt.user.first_name or attempt.user.username
+                'firstName': attempt.user.first_name or attempt.user.username,
+                'course': course_name
             },
             'examTitle': attempt.exam_title,
             'examType': attempt.exam_type,
