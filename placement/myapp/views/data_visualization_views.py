@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def playground_questions_datavis_api(request):
+def playground_questions_data_visualization_api(request):
     questions_pool = [
         {"id": 1, "question": "What is Data Visualization?", "options": ["Drawing as art", "The graphical representation of information and data", "A type of table", "None"], "correct": 1},
         {"id": 2, "question": "Which of these is a Python library for data visualization?", "options": ["Matplotlib", "Seaborn", "Plotly", "All of the above"], "correct": 3},

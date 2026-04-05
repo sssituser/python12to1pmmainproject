@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def playground_questions_csharp_api(request):
+def playground_questions_c_sharp_api(request):
     questions_pool = [
         {"id": 1, "question": "What is C#?", "options": ["A types of car", "A modern, object-oriented programming language developed by Microsoft", "A type of table", "None"], "correct": 1},
         {"id": 2, "question": "What is 'Namespace' in C#?", "options": ["A name for a project", "A way to organize related classes and resources together", "A type of chart", "None"], "correct": 1},

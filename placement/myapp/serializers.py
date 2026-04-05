@@ -323,7 +323,7 @@ class CourseStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics']
+        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics', 'modules', 'custom_videos', 'created_at']
 
 
 class CourseFacultySerializer(serializers.ModelSerializer):
@@ -331,7 +331,7 @@ class CourseFacultySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'topics']
+        fields = ['id', 'title', 'level', 'duration', 'topics', 'modules', 'custom_videos', 'created_at']
 
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
@@ -339,7 +339,13 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'progress']
+        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'modules', 'custom_videos', 'progress']
+
+    def validate_modules(self, value):
+        """Ensure modules is always a list"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Modules must be a list")
+        return value
 
     def validate_topics(self, value):
         """Ensure topics is always a list"""

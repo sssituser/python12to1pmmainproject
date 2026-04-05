@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def playground_questions_cdata_api(request):
+def playground_questions_c_data_structures_api(request):
     questions_pool = [
         {"id": 1, "question": "Who is the father of C language?", "options": ["Bjarne Stroustrup", "Dennis Ritchie", "James Gosling", "Guido van Rossum"], "correct": 1},
         {"id": 2, "question": "What is the result of 'printf(\"%d\", 5/2)' in C?", "options": ["2.5", "2", "3", "Error"], "correct": 1},
