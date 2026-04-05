@@ -175,7 +175,7 @@ function Register() {
                 type="text"
                 placeholder="Student ID"
                 className="form-control py-3 mb-2 focus:ring-2 focus:ring-blue-500"
-                value={formData.username}
+                value={formData.studentId}
                 onChange={(e) =>
                   setFormData({ ...formData, studentId: e.target.value })
                 }
@@ -214,8 +214,10 @@ function Register() {
                   <>
                     <option value="Python Full Stack">Python Full Stack</option>
                     <option value="Java Full Stack">Java Full Stack</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Data Science">Data Science</option>
+                    <option value=".net Full Stack">.net Full Stack</option>
+                    <option value="Mern Full Stack">Mern Full Stack</option>
+                    <option value="Data Science and Agentic AI">Data Science and Agentic AI</option>
+                    <option value="UI Full Stack">UI Full Stack</option>
                   </>
                 )}
               </select>

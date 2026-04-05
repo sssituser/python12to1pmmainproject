@@ -493,6 +493,46 @@ const DailyExam = () => {
       try {
         setIsLoadingQuestions(true);
 
+        // 1. Try to fetch custom exam settings for DAILY and the specific COURSE
+        const customRes = await fetch(`/api/admin/exam-settings/?category=Daily&course=${studentCourse}`);
+        const customJson = await customRes.json();
+
+        if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
+           const shuffleArray = (array) => {
+             const shuffled = [...array];
+             for (let i = shuffled.length - 1; i > 0; i--) {
+               const j = Math.floor(Math.random() * (i + 1));
+               [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+             }
+             return shuffled;
+           };
+           
+           const maxQ = customJson.data.maxQuestions || 30;
+           const displayLimit = Math.min(customJson.data.questions.length, maxQ);
+           const allShuffled = shuffleArray(customJson.data.questions);
+           const dailyQuestions = allShuffled.slice(0, displayLimit);
+           
+           const dur = customJson.data.duration || 45;
+           setExamDuration(dur);
+           setTimeLeft(dur * 60);
+           setPassingRule(customJson.data.passingRule || "percentage");
+           setPassingValue(customJson.data.passingValue !== undefined ? customJson.data.passingValue : 50);
+
+           const mappedQuestions = dailyQuestions.map((q, idx) => ({
+              ...q, 
+              id: idx + 1,
+              marks: 2,
+              question: q.question,
+              options: q.options || [],
+              type: q.question_type || 'mcq',
+              correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
+           }));
+           
+           setQuestions(mappedQuestions);
+           return; // 🚀 Exit early since we found custom questions
+        }
+
+        // 2. Fallback to existing Playground/Subject Logic if no custom questions
         const mapQuestionList = (data, startIndex = 0, sectionLabel = null, limit = 999) => {
           if (!Array.isArray(data)) return [];
           return data.slice(0, limit).map((q, idx) => ({

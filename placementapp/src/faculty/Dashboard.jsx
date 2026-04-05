@@ -474,7 +474,7 @@ function Dashboard() {
                           <td className="text-center py-3 px-4">
                             <div className="flex items-center justify-center gap-3">
                               <button 
-                                onClick={() => navigate('/faculty/stats')}
+                                onClick={() => navigate(`/faculty/student-report/${student.studentName}`)}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1 group"
                               >
                                 <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -535,59 +535,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Additional Stats Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h6>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">New Students</span>
-              <span className="text-sm font-semibold text-blue-600">+12</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completed Courses</span>
-              <span className="text-sm font-semibold text-green-600">+8</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Job Applications</span>
-              <span className="text-sm font-semibold text-purple-600">+25</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Performance</h6>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Pass Rate</span>
-              <span className="text-sm font-semibold text-green-600">85%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Avg. Score</span>
-              <span className="text-sm font-semibold text-blue-600">78%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completion Rate</span>
-              <span className="text-sm font-semibold text-purple-600">92%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h6>
-          <div className="space-y-2">
-            <button className="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-              Add New Course
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-              View All Students
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors">
-              Manage Jobs
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

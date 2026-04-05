@@ -174,6 +174,9 @@ return (
           <p><strong>Role :</strong> {job.job_title}</p>
           <p><strong>Location :</strong> {job.location}</p>
           <p><strong>Deadline :</strong> {job.deadline || "N/A"}</p>
+          <p><strong>Job Type :</strong> {job.job_type || "N/A"}</p>
+          <p><strong>Experience :</strong> {job.experience || "N/A"}</p>
+          <p><strong>Salary :</strong> {job.salary || "N/A"}</p>
 
           <hr />
 

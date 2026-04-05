@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Alert, Spinner } from "react-bootstrap";
 import axios from "axios";
+import autoTable from "jspdf-autotable";
 
 function ExamFailureDashboard() {
   const [reports, setReports] = useState([]);
@@ -10,9 +11,19 @@ function ExamFailureDashboard() {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("failed");
   const [activePeriod, setActivePeriod] = useState("all");
+  const [activeCourse, setActiveCourse] = useState("all");
   const [selectedReport, setSelectedReport] = useState(null);
   const [detailedData, setDetailedData] = useState(null);
   const [fetchingDetails, setFetchingDetails] = useState(false);
+
+  const COURSES = [
+    "Python Full Stack",
+    "Java Full Stack",
+    ".net Full Stack",
+    "Mern Full Stack",
+    "Data Science and Agentic AI",
+    "UI Full Stack"
+  ];
 
   useEffect(() => {
     fetchReports();
@@ -241,7 +252,10 @@ function ExamFailureDashboard() {
         percentage,
         normalizedStatus: (item.status || "").toLowerCase(),
         examDate: item.examDate || item.created_at || new Date().toISOString(),
-        user: item.user || { username: item.studentName || item.username || "Unknown" },
+        user: item.user || { 
+          username: item.studentName || item.username || "Unknown",
+          course: item.course || "" 
+        },
         examTitle: item.examTitle || item.exam_name || item.title || "Unknown Exam",
         score,
         totalMarks,
@@ -257,7 +271,14 @@ function ExamFailureDashboard() {
     const filtered = processedReports.filter((item) => {
       const title = (item.examTitle || "").toLowerCase();
       const type = (item.examType || "").toLowerCase();
+      const studentCourse = (item.user?.course || "").toLowerCase();
+      const selectedCourseNorm = activeCourse.toLowerCase();
       
+      // Course Filtering
+      if (activeCourse !== "all" && studentCourse !== selectedCourseNorm) {
+        return false;
+      }
+
       if (activePeriod === "all") return true;
 
       // Check if it's a daily exam
@@ -276,7 +297,7 @@ function ExamFailureDashboard() {
     });
     
     return filtered;
-  }, [processedReports, activePeriod]);
+  }, [processedReports, activePeriod, activeCourse]);
 
   const summary = useMemo(() => {
     if (periodReports.length === 0) {
@@ -360,57 +381,102 @@ function ExamFailureDashboard() {
 
     try {
       const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text("Exam Failure Dashboard Report", 14, 20);
+      const pageWidth = doc.internal.pageSize.getWidth();
       
-      // Add timestamp
-      const timestamp = new Date().toLocaleString();
+      // 1. Institutional Header
+      doc.setFillColor(30, 41, 59); // Slate-800
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("SSSIT", 14, 18);
+      
       doc.setFontSize(10);
-      doc.text(`Generated: ${timestamp}`, 14, 28);
+      doc.setFont("helvetica", "normal");
+      doc.text("Computer Education & ISO Certified Training", 14, 25);
       
-      doc.setFontSize(11);
-      doc.text(`Scope: ${activePeriod === "all" ? "All Exams" : activePeriod === "daily" ? "Daily Exam" : activePeriod === "weekly" ? "Weekly Exam" : "Monthly Exam"}`, 14, 30);
-      doc.text(`Filter: ${activeFilter === "cheated" ? "Cheated" : activeFilter === "low-score" ? "Low score" : "Failed"}`, 14, 36);
-      doc.text(`Records: ${filteredReports.length}`, 14, 42);
+      doc.setFontSize(14);
+      doc.text("EXAM PERFORMANCE ANALYSIS REPORT", pageWidth - 14, 18, { align: "right" });
+      doc.setFontSize(9);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth - 14, 25, { align: "right" });
 
+      // 2. Report Parameters
+      doc.setTextColor(30, 41, 59);
       doc.setFontSize(12);
-      doc.text("Summary", 14, 54);
-      doc.setFontSize(10);
-      doc.text(`Failed: ${summary.failed}`, 14, 62);
-      doc.text(`Cheated: ${summary.cheated}`, 14, 69);
-      doc.text(`Low score: ${summary.lowScore}`, 14, 76);
-      doc.text(`Total ${activePeriod === "all" ? "all" : activePeriod === "daily" ? "daily" : activePeriod === "weekly" ? "weekly" : "monthly"} exams: ${summary.total}`, 14, 83);
-
-      let y = 101;
-      doc.setFontSize(11);
-      doc.text("Detailed Records", 14, y);
-      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.text("Report Parameters", 14, 52);
       
-      filteredReports.slice(0, 30).forEach((report, index) => {
-        const student = report.user?.username || "Unknown";
-        const exam = report.examTitle || "N/A";
-        const status = report.status || "N/A";
-        const percent = `${report.percentage || 0}%`;
-        const score = `${report.score || 0}/${report.totalMarks || 0}`;
-        const line = `${index + 1}. ${student} | ${exam} | ${score} (${percent}) | ${status}`;
-        
-        if (y > 280) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.setFontSize(9);
-        doc.text(line, 14, y);
-        y += 7;
+      autoTable(doc, {
+        startY: 56,
+        theme: 'plain',
+        margin: { left: 14 },
+        body: [
+          ["Filter Scope:", activePeriod === "all" ? "All Exams" : activePeriod === "daily" ? "Daily Exam" : activePeriod === "weekly" ? "Weekly Exam" : "Monthly Exam"],
+          ["Anomaly Filter:", activeFilter === "cheated" ? "Suspicious Activity" : activeFilter === "low-score" ? "Low score" : "Failed Attempts"],
+          ["Total Records:", filteredReports.length.toString()]
+        ],
+        styles: { fontSize: 10, cellPadding: 1 }
       });
+
+      // 3. Summary Statistics
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Summary Metrics", 14, doc.lastAutoTable.finalY + 12);
       
-      // Add footer
-      doc.setFontSize(8);
-      doc.text("Report generated from Faculty Exam Failure Dashboard", 14, 285);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 16,
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229] }, // Indigo-600
+        head: [['Metric Category', 'Count']],
+        body: [
+          ['Failed Attempts', summary.failed],
+          ['Suspicious Activity', summary.cheated],
+          ['Low Score Alerts (<40%)', summary.lowScore],
+          ['Total Volume', summary.total]
+        ],
+        margin: { left: 14, right: 120 } // Keep summary table narrow
+      });
+
+      // 4. Detailed Records Table
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Detailed Record Logs", 14, doc.lastAutoTable.finalY + 15);
+
+      const tableData = filteredReports.map((report, index) => [
+        index + 1,
+        report.user?.username || "Unknown",
+        report.examTitle || "N/A",
+        `${report.score || 0}/${report.totalMarks || 0} (${report.percentage || 0}%)`,
+        (report.status || "N/A").toUpperCase(),
+        new Date(report.examDate).toLocaleDateString()
+      ]);
+
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['#', 'Student Name', 'Exam Title', 'Score (%)', 'Status', 'Date']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 41, 59] }, // Slate-800
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          4: { fontStyle: 'bold' }
+        },
+        didDrawPage: function (data) {
+          // Footer
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          const str = "Page " + doc.internal.getNumberOfPages();
+          doc.text(str, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+          doc.text("SSSIT Official Placement & Exam Monitoring System", 14, doc.internal.pageSize.getHeight() - 10);
+        }
+      });
       
       doc.save(`exam-failure-report-${activePeriod}-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      alert("Failed to generate PDF. Please ensure all data is loaded.");
     }
   };
 
@@ -474,14 +540,26 @@ function ExamFailureDashboard() {
             </p>
           </div>
 
-          <div className="d-flex flex-wrap gap-2 align-items-center">
-            <button
-              type="button"
-              className={`btn btn-sm ${activePeriod === "all" ? "btn-primary" : "btn-outline-primary"}`}
-              onClick={() => setActivePeriod("all")}
-            >
-              Show All
-            </button>
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+              <select 
+                className="form-select form-select-sm" 
+                style={{ width: 'auto', minWidth: '180px' }}
+                value={activeCourse}
+                onChange={(e) => setActiveCourse(e.target.value)}
+              >
+                <option value="all">All Course Tracks</option>
+                {COURSES.map(course => (
+                  <option key={course} value={course}>{course}</option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className={`btn btn-sm ${activePeriod === "all" ? "btn-primary" : "btn-outline-primary"}`}
+                onClick={() => setActivePeriod("all")}
+              >
+                Show All
+              </button>
             <button
               type="button"
               className={`btn btn-sm ${activePeriod === "daily" ? "btn-primary" : "btn-outline-primary"}`}
@@ -549,7 +627,7 @@ function ExamFailureDashboard() {
               style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
               onClick={() => setActiveFilter(activeFilter === "cheated" ? "all" : "cheated")}
             >
-              <small className="text-uppercase text-black-50">Cheated</small>
+              <small className="text-uppercase text-black-50">Suspicious Activity</small>
               <h3 className="mt-2 mb-0">{summary.cheated}</h3>
             </div>
           </div>

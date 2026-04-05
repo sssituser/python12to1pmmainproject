@@ -77,6 +77,10 @@ function FacultyLayout() {
     return currentUser.username?.[0] || "U";
   };
 
+  const [loading, setLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const open = sidebarOpen || hoverOpen;
+
   if (loading) {
     return (
       <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
@@ -151,7 +155,7 @@ function FacultyLayout() {
                   getInitials()
                 )}
               </div>
-              {sidebarOpen && (
+              {open && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">
                     {getDisplayName()}

@@ -177,7 +177,16 @@ const MonthlyExam = () => {
         setIsLoadingQuestions(true);
 
         // Fetch custom exam settings loaded manually by Faculty
-        const customRes = await fetch("/api/admin/exam-settings/?category=Monthly");
+        const userStr = localStorage.getItem("user");
+        let studentCourse = "";
+        try {
+          const user = userStr ? JSON.parse(userStr) : {};
+          studentCourse = user.course || "";
+        } catch (e) {
+          console.error("Error parsing user for course:", e);
+        }
+
+        const customRes = await fetch(`/api/admin/exam-settings/?category=Monthly&course=${studentCourse}`);
         const customJson = await customRes.json();
 
         // 1. Prioritize Custom Questions from Exam Manager

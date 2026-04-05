@@ -184,8 +184,8 @@ function AllJobs() {
               <tr key={job.id}>
                 <td>{job.company}</td>
                 <td>{job.job_title}</td>
-                <td>{job.description || "N/A"}</td>
-                <td>{job.primary_skills}</td>
+                <td className="text-center">{job.description || "N/A"}</td>
+                <td className="text-center">{job.primary_skills || "N/A"}</td>
                 <td>{job.deadline}</td>
                 <td>{job.location}</td>
 
