@@ -1009,9 +1009,12 @@ def exam_settings_api(request):
             data = {}
             
         category = request.GET.get('category')
+        course = request.GET.get('course', '')
+        storage_key = f"{course}_{category}" if course else category
+        
         if category:
             # Return specific category config
-            return Response({'success': True, 'data': data.get(category, {'maxQuestions': 50, 'questions': []})})
+            return Response({'success': True, 'data': data.get(storage_key, {'maxQuestions': 50, 'questions': []})})
             
         return Response({'success': True, 'data': data})
 
@@ -1024,6 +1027,9 @@ def exam_settings_api(request):
                     existing_data = json.loads(content)
             
         category = request.data.get('category', 'Weekly')
+        course = request.data.get('course', '')
+        storage_key = f"{course}_{category}" if course else category
+        
         new_questions = request.data.get('questions', None)
         new_max = request.data.get('maxQuestions', None)
         new_rule = request.data.get('passingRule', None)
@@ -1031,7 +1037,7 @@ def exam_settings_api(request):
         new_duration = request.data.get('duration', None)
 
         # Get existing category data to merge into
-        existing_category = existing_data.get(category, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
+        existing_category = existing_data.get(storage_key, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
 
         # Only overwrite fields if explicitly sent
         if new_max is not None:
@@ -1050,12 +1056,12 @@ def exam_settings_api(request):
         if new_questions is not None:
             existing_category['questions'] = new_questions
 
-        existing_data[category] = existing_category
+        existing_data[storage_key] = existing_category
         
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, indent=4)
             
-        return Response({'success': True, 'message': f'{category} Settings saved successfully!'})
+        return Response({'success': True, 'message': f'Settings for {course} {category} saved successfully!'})
 
 
 

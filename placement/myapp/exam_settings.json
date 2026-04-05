@@ -5,5 +5,61 @@
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45
+    },
+    "Python Full Stack_Weekly": {
+        "maxQuestions": 50,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "zcbnmb,nmmn,mbvxcfdfnm,",
+                "options": [
+                    "zcbxvnbm,m.",
+                    "xvzcbxvnbmn,m",
+                    "xzcbvnbmv",
+                    "fzgvcbmn,b"
+                ],
+                "answer": "xvzcbxvnbmn,m",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775394955465
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
+    },
+    ".net Full Stack_Weekly": {
+        "maxQuestions": 50,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "adsfdgfhgjkjlkhgfdg",
+                "options": [
+                    "ghfjgkh,.",
+                    "fdsdfghnbm",
+                    "fxzgcxhvcjbn,",
+                    "ZCXVcbvnbmn "
+                ],
+                "answer": "fdsdfghnbm",
+                "marks": 2,
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "id": 1775394969343
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     }
 }

@@ -51,17 +51,30 @@ def login(request):
     # Handle student ID login
     if studentId:
         try:
-            # Look up user by student ID through StudentProfile
-            student_profile = StudentProfile.objects.filter(student_id=studentId).first()
+            # Smart Lookup: Try numeric ID, then username, then name
+            student_profile = None
+            
+            # 1. Try exact numeric student_id (if input is numeric)
+            if str(studentId).isdigit():
+                student_profile = StudentProfile.objects.filter(student_id=int(studentId)).first()
+            
+            # 2. Try lookup by user__username or user__first_name if not found by numeric ID
+            if not student_profile:
+                student_profile = StudentProfile.objects.filter(
+                    Q(user__username__iexact=studentId) | 
+                    Q(user__first_name__iexact=studentId)
+                ).first()
+            
             if student_profile:
                 user = student_profile.user
-                print(f"DEBUG: Found user via student ID: {user.username}")
+                print(f"DEBUG: Found user via Student ID/Name: {user.username}")
             else:
-                # Fallback: try to find user with student_id as username
-                user = User.objects.filter(username=studentId, role='student').first()
+                # Fallback: try to find user with student_id as username directly
+                user = User.objects.filter(username__iexact=studentId, role='student').first()
                 if user:
                     print(f"DEBUG: Found user with student ID as username: {user.username}")
-        except (ValueError, StudentProfile.DoesNotExist):
+        except Exception as e:
+            print(f"DEBUG: Student lookup error: {e}")
             pass
     
     # Handle regular username/email login
@@ -377,12 +390,16 @@ def register(request):
 
     # Student flow (immediate login)
     tokens = get_tokens(user)
+    student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+    course_title = student_profile.course.title if student_profile and student_profile.course else course
+    
     return Response({
         **tokens,
         "user": {
             "username": user.username,
             "email": user.email,
             "role": user.role,
+            "course": course_title if user.role == 'student' else ""
         },
         "message": "Registration successful"
     })
