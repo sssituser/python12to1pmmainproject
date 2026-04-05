@@ -30,6 +30,9 @@ export default function Profile() {
     course: ""
   });
 
+  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [loadingLeaveRequests, setLoadingLeaveRequests] = useState(false);
+
   const [profileImagePreview, setProfileImagePreview] = useState("");
   const [skill, setSkill] = useState("");
   const [project, setProject] = useState({ title: "", desc: "", link: "" });
@@ -50,6 +53,24 @@ export default function Profile() {
 
   const getAuthHeaders = (token) => ({ Authorization: `Bearer ${token}` });
 
+  // Fetch leave requests
+  const fetchLeaveRequests = (token) => {
+    setLoadingLeaveRequests(true);
+    axios.get("http://127.0.0.1:8000/api/leave-requests/my-requests/", {
+      headers: getAuthHeaders(token)
+    })
+      .then(res => {
+        console.log("DEBUG: Leave requests data:", res.data);
+        setLeaveRequests(Array.isArray(res.data) ? res.data : []);
+        setLoadingLeaveRequests(false);
+      })
+      .catch(err => {
+        console.error("Error fetching leave requests:", err);
+        setLeaveRequests([]);
+        setLoadingLeaveRequests(false);
+      });
+  };
+
   // Fetch
   useEffect(() => {
     const token = getStoredToken("access");
@@ -58,6 +79,7 @@ export default function Profile() {
       return;
     }
 
+    // Fetch profile data
     axios.get("http://127.0.0.1:8000/api/profile/", {
       headers: getAuthHeaders(token)
     })
@@ -107,6 +129,26 @@ export default function Profile() {
         }
         setLoading(false);
       });
+
+    // Fetch leave requests
+    fetchLeaveRequests(token);
+
+    // Listen for leave request updates
+    const handleLeaveRequestUpdate = () => {
+      console.log("Leave request update detected, refreshing...");
+      fetchLeaveRequests(token);
+    };
+
+    window.addEventListener("leaveRequestUpdated", handleLeaveRequestUpdate);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "leaveRequestUpdated") {
+        handleLeaveRequestUpdate();
+      }
+    });
+
+    return () => {
+      window.removeEventListener("leaveRequestUpdated", handleLeaveRequestUpdate);
+    };
   }, []);
 
   // 📝 change
@@ -749,6 +791,48 @@ const addSkill = () => {
                 <p className="text-gray-500">No education added</p>
               )}
             </div>
+          </div>
+
+          {/* LEAVE REQUESTS */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Leave Requests</h3>
+            
+            {loadingLeaveRequests ? (
+              <div className="text-center py-4">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <p className="text-gray-500 mt-2">Loading leave requests...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {leaveRequests.length > 0 ? (
+                  leaveRequests.map((leave, index) => (
+                    <div key={leave.id || index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{leave.leave_type_display || leave.leave_type}</h4>
+                          <p className="text-sm text-gray-600">
+                            {new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          leave.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                          leave.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {leave.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 text-sm">{leave.reason}</p>
+                      {leave.approved_by && (
+                        <p className="text-xs text-gray-500 mt-2">Approved by: {leave.approved_by}</p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No leave requests found</p>
+                )}
+              </div>
+            )}
           </div>
 
         </div>

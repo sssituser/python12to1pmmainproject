@@ -70,6 +70,7 @@ function CoursesPage() {
   // State for manual topic management in new course
   const [manualTopicEntry, setManualTopicEntry] = useState("");
   const [manualTopicsList, setManualTopicsList] = useState([]);
+  const [selectedModuleForTopics, setSelectedModuleForTopics] = useState("");
   const [showAddVideosMenu, setShowAddVideosMenu] = useState(false);
   const [videoAddMode, setVideoAddMode] = useState(null);
   const [expandedVideoTopic, setExpandedVideoTopic] = useState(null);
@@ -98,11 +99,8 @@ function CoursesPage() {
         const token = localStorage.getItem('access');
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         
-        // For faculty users, skip API call and use localStorage directly
-        if (user.role === "faculty") {
-          console.log("Faculty user detected - using localStorage only");
-        } else if (token) {
-          // For non-faculty users with token, try to fetch from API first
+        if (token) {
+          // Try to fetch from API first
           const response = await fetch('http://127.0.0.1:8000/api/courses/', {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -139,7 +137,7 @@ function CoursesPage() {
         console.log("API fetch failed, falling back to localStorage:", error);
       }
 
-      // Fallback to localStorage (used for faculty users and when API fails)
+      // Fallback to localStorage
       const savedCourses = localStorage.getItem('courses');
       
       if (savedCourses) {
@@ -212,17 +210,93 @@ function CoursesPage() {
     setManualTopicsList(manualTopicsList.filter((_, i) => i !== index));
   };
 
+  const addManualTopicsToCourse = () => {
+    if (manualTopicsList.length === 0) return;
+    
+    const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
+    if (courseIndex !== -1) {
+      const updatedCourses = [...courses];
+      
+      // Add all manual topics to the course (backward compatibility)
+      manualTopicsList.forEach(topic => {
+        if (!updatedCourses[courseIndex].topics.includes(topic)) {
+          updatedCourses[courseIndex].topics.push(topic);
+        }
+      });
+      
+      // Update modules structure if it exists
+      if (updatedCourses[courseIndex].modules && updatedCourses[courseIndex].modules.length > 0) {
+        if (selectedModuleForTopics) {
+          // Add to selected module
+          const moduleIndex = updatedCourses[courseIndex].modules.findIndex(
+            m => m.title === selectedModuleForTopics
+          );
+          if (moduleIndex !== -1) {
+            manualTopicsList.forEach(topic => {
+              updatedCourses[courseIndex].modules[moduleIndex].topics.push({
+                title: topic,
+                video: null
+              });
+            });
+          }
+        } else {
+          // Add to first module by default
+          manualTopicsList.forEach(topic => {
+            updatedCourses[courseIndex].modules[0].topics.push({
+              title: topic,
+              video: null
+            });
+          });
+        }
+      }
+      
+      setCourses(updatedCourses);
+      setSelectedCourse({...updatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+      
+      // Clear manual topics list and reset module selection
+      setManualTopicsList([]);
+      setManualTopicEntry("");
+      setSelectedModuleForTopics("");
+      
+      console.log(`Added ${manualTopicsList.length} topics to course${selectedModuleForTopics ? ` in module: ${selectedModuleForTopics}` : ''}`);
+    }
+  };
+
   const addNewCourse = async () => {
     if (!newCourseName.trim()) {
       return;
     }
     
-    // Generate modules with topics for the course
+    // Generate modules with topics for course
     const modules = generateModulesForCourse(newCourseName);
     
-    // Flatten all topics from all modules for backward compatibility
+    // Add manual topics to selected module if specified
+    if (manualTopicsList.length > 0 && selectedModuleForTopics) {
+      const moduleIndex = modules.findIndex(m => m.title === selectedModuleForTopics);
+      if (moduleIndex !== -1) {
+        manualTopicsList.forEach(topic => {
+          modules[moduleIndex].topics.push({
+            title: topic,
+            video: null
+          });
+        });
+      }
+    } else if (manualTopicsList.length > 0) {
+      // Add to first module by default
+      manualTopicsList.forEach(topic => {
+        modules[0].topics.push({
+          title: topic,
+          video: null
+        });
+      });
+    }
+    
+    // Flatten all topic titles from all modules for backward compatibility
     const allTopics = modules.reduce((topics, module) => {
-      return topics.concat(module.topics);
+      const moduleTopics = module.topics.map(topic => topic.title);
+      return topics.concat(moduleTopics);
     }, []);
     
     const newCourse = {
@@ -251,12 +325,10 @@ function CoursesPage() {
     };
     
     try {
-      // Try to save to backend API first (skip for faculty users)
+      // Save to backend API
       const token = localStorage.getItem('access');
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
         const response = await fetch('http://127.0.0.1:8000/api/courses/', {
           method: 'POST',
           headers: {
@@ -268,22 +340,22 @@ function CoursesPage() {
 
         if (response.ok) {
           const savedCourse = await response.json();
-          // Use the ID from the backend response
+          // Use ID from backend response
           newCourse.id = savedCourse.id;
           console.log("Course saved to backend successfully");
-        } else if (response.status === 401) {
-          console.log("Unauthorized - falling back to localStorage only");
         } else {
-          console.log("Backend save failed, falling back to localStorage");
+          const errorData = await response.json();
+          console.error("Backend save failed:", errorData);
+          // Still add to local state even if backend fails
         }
       } else {
-        console.log("Faculty user - skipping backend API call");
+        console.log("No token - saving to localStorage only");
       }
     } catch (error) {
-      console.log("API save failed, using localStorage only:", error);
+      console.error("API save failed, using localStorage only:", error);
     }
     
-    // Add the new course to the courses array (with backend ID or local ID)
+    // Add to local state
     const localId = courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1;
     newCourse.id = newCourse.id || localId;
     
@@ -304,7 +376,12 @@ function CoursesPage() {
     setVideoUploadLink({});
     setVideoAddMode(null);
     
-    // Navigate to the newly created course topics page after a short delay
+    // Clear manual topic state
+    setManualTopicsList([]);
+    setManualTopicEntry("");
+    setSelectedModuleForTopics("");
+    
+    // Navigate to newly created course topics page after a short delay
     setTimeout(() => {
       const courseName = newCourse.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
       navigate(`/faculty/Course/${courseName}`);
@@ -322,6 +399,11 @@ function CoursesPage() {
     setVideoUploadFile({});
     setVideoUploadLink({});
     setVideoAddMode(null);
+    
+    // Clear manual topic state
+    setManualTopicsList([]);
+    setManualTopicEntry("");
+    setSelectedModuleForTopics("");
   };
 
   // Handle explicit saving of custom changed videos per topic dynamically
@@ -398,13 +480,11 @@ function CoursesPage() {
   };
 
   const performRemoval = async (idsToRemove) => {
-    // Try to delete from backend API first (skip for faculty users)
+    // Try to delete from backend API
     try {
       const token = localStorage.getItem('access');
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
         const deletePromises = idsToRemove.map(id => 
           fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
             method: 'DELETE',
@@ -427,7 +507,7 @@ function CoursesPage() {
           console.log(`Failed to delete ${failedDeletes.length} courses from backend, removing from local storage only`);
         }
       } else {
-        console.log("Faculty user - skipping backend API deletion");
+        console.log("No token - removing from localStorage only");
       }
     } catch (error) {
       console.log("Backend deletion failed, removing from localStorage only:", error);
@@ -558,6 +638,94 @@ function CoursesPage() {
             </button>
           </div>
 
+          {/* Manual Topic Entry Section */}
+          <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 mb-4">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <span>📝</span> Quick Add Multiple Topics
+            </h4>
+            
+            {/* Module Selection */}
+            {selectedCourse && selectedCourse.modules && selectedCourse.modules.length > 0 && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Module (Optional):
+                </label>
+                <select
+                  value={selectedModuleForTopics}
+                  onChange={(e) => setSelectedModuleForTopics(e.target.value)}
+                  className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Add to first module (default)</option>
+                  {selectedCourse.modules.map((module, index) => (
+                    <option key={index} value={module.title}>
+                      {module.title} ({module.topics.length} topics)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div className="flex gap-3 mb-3">
+              <input
+                type="text"
+                value={manualTopicEntry}
+                onChange={(e) => setManualTopicEntry(e.target.value)}
+                placeholder="Enter topic name..."
+                className="flex-1 p-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleAddManualTopic}
+                disabled={!manualTopicEntry.trim()}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold transition-all duration-300 shadow"
+              >
+                Add Topic
+              </button>
+            </div>
+            
+            {/* Manual Topics List */}
+            {manualTopicsList.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Topics to add:</h5>
+                <div className="flex flex-wrap gap-2">
+                  {manualTopicsList.map((topic, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300 text-sm"
+                    >
+                      {topic}
+                      <button
+                        onClick={() => removeManualTopic(index)}
+                        className="text-red-500 hover:text-red-700 ml-2"
+                        title="Remove topic"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                {manualTopicsList.length > 0 && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => addManualTopicsToCourse()}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-all duration-300 shadow"
+                    >
+                      Add All Topics to Course
+                    </button>
+                    <button
+                      onClick={() => {
+                        setManualTopicsList([]);
+                        setManualTopicEntry("");
+                      }}
+                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold transition-all duration-300 shadow"
+                    >
+                      Clear List
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Video Source Configuration Panel for the New Topic */}
           {showTopicVideoOptions && newTopic.trim() && (
             <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-2 transition-all animate-fadeIn">
@@ -625,25 +793,25 @@ function CoursesPage() {
                           <span className="bg-gray-200 text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">
                             {topicIndex + 1}
                           </span>
-                          <p className="text-lg font-medium text-gray-800">{topic}</p>
+                          <p className="text-lg font-medium text-gray-800">{typeof topic === 'string' ? topic : topic.title}</p>
                         </div>
                         <div className="flex gap-3">
                           <button
-                            onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                            onClick={() => handleWatchClick(selectedCourse.title, typeof topic === 'string' ? topic : topic.title)}
                             className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                             title="Watch Video"
                           >
                             <FaPlay className="text-lg" />
                           </button>
                           <button
-                            onClick={() => setEditingVideoForTopic(editingVideoForTopic === topic ? null : topic)}
+                            onClick={() => setEditingVideoForTopic(editingVideoForTopic === (typeof topic === 'string' ? topic : topic.title) ? null : (typeof topic === 'string' ? topic : topic.title))}
                             className="text-purple-600 hover:text-purple-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                             title="Change video option"
                           >
                             <FaEdit className="text-lg" />
                           </button>
                           <button
-                            onClick={() => removeTopic(topic)}
+                            onClick={() => removeTopic(typeof topic === 'string' ? topic : topic.title)}
                             className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                             title="Remove Topic"
                           >
@@ -653,10 +821,10 @@ function CoursesPage() {
                       </div>
 
                       {/* Change Video Options Panel */}
-                      {editingVideoForTopic === topic && (
+                      {editingVideoForTopic === (typeof topic === 'string' ? topic : topic.title) && (
                         <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-3 transition-all animate-fadeIn shadow-sm">
                           <h5 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
-                            <span>🎬</span> Change Video Source for "{topic}"
+                            <span>🎬</span> Change Video Source for "{typeof topic === 'string' ? topic : topic.title}"
                           </h5>
                           <div className="flex flex-col gap-4">
                             <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
@@ -705,24 +873,24 @@ function CoursesPage() {
               {selectedCourse.topics.map((topic, index) => (
                 <div key={index} className="flex flex-col">
                   <div className="flex justify-between items-center mb-1">
-                    <p className="text-lg font-medium">{topic}</p>
+                    <p className="text-lg font-medium">{typeof topic === 'string' ? topic : topic.title}</p>
                     <div className="flex gap-4">
                       <button
-                        onClick={() => handleWatchClick(selectedCourse.title, topic)}
+                        onClick={() => handleWatchClick(selectedCourse.title, typeof topic === 'string' ? topic : topic.title)}
                         className="text-blue-600 hover:text-blue-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                         title="Watch Video"
                       >
                         <FaPlay className="text-xl" />
                       </button>
                       <button
-                        onClick={() => setEditingVideoForTopic(editingVideoForTopic === topic ? null : topic)}
+                        onClick={() => setEditingVideoForTopic(editingVideoForTopic === (typeof topic === 'string' ? topic : topic.title) ? null : (typeof topic === 'string' ? topic : topic.title))}
                         className="text-purple-600 hover:text-purple-800 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                         title="Change video option"
                       >
                         <FaEdit className="text-xl" />
                       </button>
                       <button
-                        onClick={() => removeTopic(topic)}
+                        onClick={() => removeTopic(typeof topic === 'string' ? topic : topic.title)}
                         className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center transform hover:scale-125 transition-all duration-300"
                         title="Remove Topic"
                       >
@@ -732,10 +900,10 @@ function CoursesPage() {
                   </div>
 
                   {/* Change Video Options Panel */}
-                  {editingVideoForTopic === topic && (
+                  {editingVideoForTopic === (typeof topic === 'string' ? topic : topic.title) && (
                     <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 mt-2 transition-all animate-fadeIn shadow-sm">
                       <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
-                        <span>🎬</span> Change Video Source for "{topic}"
+                        <span>🎬</span> Change Video Source for "{typeof topic === 'string' ? topic : topic.title}"
                       </h4>
                       <div className="flex flex-col gap-4">
                         <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-purple-100 rounded-lg transition">
@@ -844,7 +1012,12 @@ function CoursesPage() {
                                   <span className="bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
                                     {topicIndex + 1}
                                   </span>
-                                  <span className="truncate">{topic}</span>
+                                  <span className="truncate">{topic.title}</span>
+                                  {topic.video && (
+                                    <span className="ml-auto text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                      📹 Video
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -854,6 +1027,88 @@ function CoursesPage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Topic Addition Section */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Additional Topics (Optional)</label>
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span>📝</span> Quick Add Multiple Topics
+                  </h4>
+                  
+                  {/* Module Selection for New Course */}
+                  {generatedModules.length > 0 && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Select Module (Optional):
+                      </label>
+                      <select
+                        value={selectedModuleForTopics}
+                        onChange={(e) => setSelectedModuleForTopics(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Add to first module (default)</option>
+                        {generatedModules.map((module, index) => (
+                          <option key={index} value={module.title}>
+                            {module.title} ({module.topics.length} topics)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3 mb-3">
+                    <input
+                      type="text"
+                      value={manualTopicEntry}
+                      onChange={(e) => setManualTopicEntry(e.target.value)}
+                      placeholder="Enter topic name..."
+                      className="flex-1 p-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={handleAddManualTopic}
+                      disabled={!manualTopicEntry.trim()}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 font-semibold transition-all duration-300 shadow"
+                    >
+                      Add Topic
+                    </button>
+                  </div>
+                  
+                  {/* Manual Topics List */}
+                  {manualTopicsList.length > 0 && (
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium text-gray-700 mb-2">Additional topics to add:</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {manualTopicsList.map((topic, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-gray-300 text-sm"
+                          >
+                            {topic}
+                            <button
+                              onClick={() => removeManualTopic(index)}
+                              className="text-red-500 hover:text-red-700 ml-2"
+                              title="Remove topic"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      {manualTopicsList.length > 0 && (
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => setManualTopicsList([])}
+                            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold transition-all duration-300 shadow"
+                          >
+                            Clear List
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -874,7 +1129,7 @@ function CoursesPage() {
               
               <button
                 onClick={addNewCourse}
-                disabled={!newCourseName.trim() || manualTopicsList.length === 0}
+                disabled={!newCourseName.trim()}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
               >
                 Create Complete Course

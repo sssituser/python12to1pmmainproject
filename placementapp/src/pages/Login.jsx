@@ -9,7 +9,7 @@ function Login() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    username: "",
+    studentId: "",
     password: "",
   });
 
@@ -155,7 +155,7 @@ function Login() {
   // LOGIN FUNCTION (FIXED)
   // ==============================
   const handleLogin = async () => {
-    if (!form.username || !form.password) {
+    if (!form.studentId || !form.password) {
       toast.error("Fill all fields");
       return;
     }
@@ -165,7 +165,7 @@ function Login() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        form,
+        { studentId: form.studentId, password: form.password },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -178,23 +178,24 @@ function Login() {
         throw new Error("Login failed - no access token");
       }
 
-      // ✅ STORE TOKENS
+      // STORE TOKENS
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
 
-      // ✅ STORE USER INFO
+      // STORE USER INFO
       const normalizedRole = (res.data.user?.role || "student").toString().trim().toLowerCase();
       localStorage.setItem(
         "user",
         JSON.stringify({
-          username: res.data.user?.username || form.username,
+          username: res.data.user?.username || form.studentId,
+          studentId: res.data.user?.studentId || form.studentId,
           role: normalizedRole,
         })
       );
 
       toast.success("Login successful ");
 
-      // ✅ REDIRECT BASED ON ROLE
+      // REDIRECT BASED ON ROLE
       const redirectTo = normalizedRole === "faculty" ? "/faculty/dashboard" : "/dashboard";
       navigate(redirectTo, { replace: true });
 
@@ -252,12 +253,12 @@ function Login() {
             Student Login
           </h2>
 
-          {/* USERNAME */}
+          {/* STUDENT ID */}
           <input
             type="text"
-            name="username"
-            placeholder="Username"
-            value={form.username}
+            name="studentId"
+            placeholder="Student ID"
+            value={form.studentId}
             onChange={handleChange}
             className="w-full mb-4 px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
           />
@@ -288,7 +289,7 @@ function Login() {
                 <span
                   onClick={() => {
                     setMode("forgot");
-                    setForgotUsername(form.username);
+                    setForgotUsername(form.studentId);
                     setNewPassword("");
                     setConfirmPassword("");
                   }}
@@ -299,7 +300,7 @@ function Login() {
                 <span
                   onClick={() => {
                     setMode("otp");
-                    setOtpUsername(form.username);
+                    setOtpUsername(form.studentId);
                     setOtpCode("");
                     setOtpSent(false);
                   }}

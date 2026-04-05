@@ -41,11 +41,32 @@ def get_browser_info(request):
 @permission_classes([AllowAny])   # 🔥 IMPORTANT FIX
 def login(request):
     username = request.data.get("username")
+    studentId = request.data.get("studentId")
     password = request.data.get("password")
 
-    print(f"DEBUG LOGIN: username={username}, password={password}")
+    print(f"DEBUG LOGIN: username={username}, studentId={studentId}, password={password}")
 
-    user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+    user = None
+    
+    # Handle student ID login
+    if studentId:
+        try:
+            # Look up user by student ID through StudentProfile
+            student_profile = StudentProfile.objects.filter(student_id=studentId).first()
+            if student_profile:
+                user = student_profile.user
+                print(f"DEBUG: Found user via student ID: {user.username}")
+            else:
+                # Fallback: try to find user with student_id as username
+                user = User.objects.filter(username=studentId, role='student').first()
+                if user:
+                    print(f"DEBUG: Found user with student ID as username: {user.username}")
+        except (ValueError, StudentProfile.DoesNotExist):
+            pass
+    
+    # Handle regular username/email login
+    elif username:
+        user = User.objects.filter(Q(username=username) | Q(email=username)).first()
 
     if user:
         # 🔐 Verify password FIRST before checking active status
@@ -117,6 +138,16 @@ def login(request):
             },
             "email_sent": email_sent
         }
+        
+        # Add studentId to response for students
+        if user.role == 'student':
+            try:
+                student_profile = StudentProfile.objects.filter(user=user).first()
+                if student_profile and student_profile.student_id:
+                    response_data["user"]["studentId"] = student_profile.student_id
+            except:
+                pass
+        
         print(f"DEBUG: Response data successful for {user.username}")
         return Response(response_data)
     else:
@@ -246,7 +277,6 @@ def change_password(request):
     # 💾 Update & Save
     user.set_password(new_password)
     user.save()
-    
     print(f"DEBUG: Password changed for user {user.username}")
     return Response({"success": True, "message": "Password changed successfully!"})
 
@@ -256,15 +286,20 @@ def change_password(request):
 @permission_classes([AllowAny])
 def register(request):
     username = request.data.get("username")
+    studentId = request.data.get("studentId")
     password = request.data.get("password")
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
     course = request.data.get("course", "")
 
-    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}")
+    print(f"DEBUG REGISTER: username={username}, studentId={studentId}, password={password}, email={email}, role={role}, course={course}")
+
+    # For students, use studentId as username if provided
+    if role == 'student' and studentId:
+        username = studentId
 
     if not username or not password:
-        return Response({"error": "Username and password required"}, status=400)
+        return Response({"error": "Student ID and password required"}, status=400)
 
     existing_user = User.objects.filter(username=username).first()
     if existing_user:
@@ -309,8 +344,18 @@ def register(request):
             else:
                 print(f"DEBUG: Using existing course: {course}")
             
-            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
-            print(f"DEBUG: Created student profile for {username} with course: {course}")
+            # Create student profile with student_id
+            try:
+                student_id_int = int(studentId) if studentId else None
+            except (ValueError, TypeError):
+                student_id_int = None
+            
+            student_profile = StudentProfile.objects.create(
+                user=user, 
+                course=course_obj,
+                student_id=student_id_int
+            )
+            print(f"DEBUG: Created student profile for {username} with student_id={student_id_int} and course: {course}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification

@@ -51,7 +51,7 @@ function Dashboard() {
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      window.location.href = "/faculty/login";
       return null;
     }
   };

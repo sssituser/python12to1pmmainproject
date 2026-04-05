@@ -6,7 +6,7 @@ from django.core.mail import get_connection, EmailMessage
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from myapp.models import EmailConfiguration, LeaveRequest, User
 from myapp.serializers import LeaveRequestSerializer
 from myapp.email_utils import send_leave_request_email
@@ -365,7 +365,7 @@ def get_all_leave_requests(request):
 # CREATE LEAVE
 # -----------------------------------------------------------
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def create_leave_request(request):
 
     print("=== LEAVE REQUEST DEBUG ===")
@@ -373,9 +373,26 @@ def create_leave_request(request):
     print("Request method:", request.method)
     print("Request headers:", request.headers)
     print("Content type:", request.content_type)
+    print("Authenticated user:", request.user)
     
     try:
         payload = request.data.copy()
+        
+        # Try to get student_id from user's profile
+        try:
+            from myapp.models import StudentProfile
+            student_profile = StudentProfile.objects.filter(user=request.user).first()
+            if student_profile and student_profile.student_id:
+                payload["student_id"] = str(student_profile.student_id)
+        except:
+            pass
+        
+        # Use user's name and email if not provided
+        if not payload.get("name"):
+            payload["name"] = request.user.first_name or request.user.username or "Unknown"
+        if not payload.get("email"):
+            payload["email"] = request.user.email
+        
         resolved_email = _resolve_submitter_email(request, payload)
 
         if resolved_email and resolved_email != _normalize_email(request.data.get("email")):
@@ -393,6 +410,8 @@ def create_leave_request(request):
         if serializer.is_valid():
             print("Serializer is valid")
             print("Validated data:", serializer.validated_data)
+            # Set the user after validation
+            serializer.validated_data['user'] = request.user
             leave = serializer.save()
             print("Leave saved:", leave)
             # Send leave submission email (background).
@@ -518,15 +537,32 @@ def delete_leave_request(request, pk):
 # -----------------------------------------------------------
 # MY LEAVE REQUESTS
 # -----------------------------------------------------------
-@api_view(['GET','PUT'])
-@permission_classes([AllowAny])
+# MY LEAVE REQUESTS (STUDENT SPECIFIC)
+# -----------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def my_leave_requests(request):
-
-    leaves = LeaveRequest.objects.all().order_by('-created_at')
+    """Get leave requests for the authenticated student"""
+    
+    # Get leave requests for this user
+    leaves = LeaveRequest.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Also try to get leave requests by student_id as fallback
+    user_student_id = None
+    try:
+        from myapp.models import StudentProfile
+        student_profile = StudentProfile.objects.filter(user=request.user).first()
+        if student_profile and student_profile.student_id:
+            user_student_id = str(student_profile.student_id)
+            # Include leave requests by student_id as well
+        leaves_by_id = LeaveRequest.objects.filter(student_id=user_student_id).order_by('-created_at')
+        # Combine both queries and remove duplicates
+        leave_ids = set(leaves.values_list('id', flat=True))
+        additional_leaves = leaves_by_id.exclude(id__in=leave_ids)
+        leaves = leaves.union(additional_leaves)
+    except:
+        pass
+    
     serializer = LeaveRequestSerializer(leaves, many=True)
-
-    return Response({
-        "success": True,
-        "data": serializer.data,
-        "count": leaves.count()
-    })
+    
+    return Response(serializer.data)

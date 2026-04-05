@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.response import Response
+from django.http import JsonResponse
 
 # IMPORT VIEWS
 from .views.auth_views import *
@@ -60,6 +61,25 @@ urlpatterns = [
     path('profile/', profile_view, name='profile'),
     path('profile/update/', update_profile, name='update_profile'),
     path('profile/upload-resume/', upload_resume, name='upload_resume'),
+    
+    # ================= FACULTY PROFILE =================
+    path('faculty/profile/', faculty_profile_view, name='faculty_profile'),
+    path('faculty/profile/update/', faculty_profile_update, name='faculty_profile_update'),
+    path('faculty/profile/avatar/upload/', faculty_avatar_upload, name='faculty_avatar_upload'),
+    path('faculty/profile/avatar/delete/', faculty_avatar_delete, name='faculty_avatar_delete'),
+    path('faculty/profile/<int:profile_id>/public/', faculty_profile_public, name='faculty_profile_public'),
+    path('faculty/profile/list/minimal/', faculty_list_minimal, name='faculty_list_minimal'),
+    path('faculty/profile/stats/', faculty_stats, name='faculty_stats'),
+    path('faculty/profile/achievements/add/', faculty_achievement_add, name='faculty_achievement_add'),
+    path('faculty/profile/achievements/<int:achievement_id>/', faculty_achievement_detail, name='faculty_achievement_detail'),
+    path('faculty/profile/research/add/', faculty_research_add, name='faculty_research_add'),
+    path('faculty/profile/research/<int:research_id>/', faculty_research_detail, name='faculty_research_detail'),
+    path('faculty/profile/course-history/add/', faculty_course_history_add, name='faculty_course_history_add'),
+    path('faculty/profile/course-history/<int:history_id>/', faculty_course_history_detail, name='faculty_course_history_detail'),
+    
+    # Test endpoint for debugging
+    path('test-faculty-profile/', lambda request: JsonResponse({'message': 'Test endpoint working'}), name='test_faculty_profile'),
+    path('test-faculty-minimal/', faculty_profile_minimal_test),
 
     # ================= LEAVE REQUEST =================
     path('leave-requests/', get_all_leave_requests),
