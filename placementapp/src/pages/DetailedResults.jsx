@@ -19,34 +19,89 @@ function DetailedResults() {
     return 20;
   };
   const formatExamTitle = (title = "") => {
+    if (!title) return "Exam";
+    
     const t = title.toLowerCase();
+    
+    // Handle specific exam types first
     if (t.includes("python")) return "Python Exam";
     if (t.includes("java")) return "Java Exam";
     if (t.includes("oracle")) return "Oracle Exam";
     if (t.includes("ui")) return "UI Exam";
     if (t.includes("django")) return "Django Exam";
-    return title || "Exam";
+    if (t.includes("spring")) return "Spring Exam";
+    if (t.includes("selenium")) return "Selenium Exam";
+    if (t.includes("docker")) return "Docker Exam";
+    if (t.includes("kubernetes")) return "Kubernetes Exam";
+    if (t.includes("ci") && t.includes("cd")) return "CI/CD Exam";
+    if (t.includes("machine") && t.includes("learning")) return "Machine Learning Exam";
+    if (t.includes("deep") && t.includes("learning")) return "Deep Learning Exam";
+    if (t.includes("data") && t.includes("science")) return "Data Science Exam";
+    if (t.includes("data") && t.includes("modeling")) return "Data Modeling Exam";
+    if (t.includes("data") && t.includes("visualization")) return "Data Visualization Exam";
+    if (t.includes("augmented") && t.includes("reality")) return "Augmented Reality Exam";
+    if (t.includes("virtual") && t.includes("reality")) return "Virtual Reality Exam";
+    if (t.includes("web") && t.includes("3")) return "Web3 Exam";
+    if (t.includes("web") && t.includes("api")) return "Web APIs Exam";
+    if (t.includes("cloud") && t.includes("basics")) return "Cloud Basics Exam";
+    if (t.includes("google") && t.includes("cloud")) return "Google Cloud Exam";
+    if (t.includes("big") && t.includes("data")) return "Big Data Exam";
+    if (t.includes("pandas")) return "Pandas Exam";
+    if (t.includes("ai") && t.includes("concepts")) return "AI Concepts Exam";
+    if (t.includes("computer") && t.includes("fundamentals")) return "Computer Fundamentals Exam";
+    if (t.includes("deployment")) return "Deployment Exam";
+    if (t.includes("qa") && t.includes("processes")) return "QA Processes Exam";
+    if (t.includes("otp")) return "OTP Exam";
+    
+    // Handle weekly/monthly patterns
+    if (t.includes("weekly")) return "Weekly Exam";
+    if (t.includes("monthly")) return "Monthly Exam";
+    
+    // Handle generic patterns
+    if (t.includes("test")) return "Test Exam";
+    if (t.includes("exam")) return title; // Return original if it already contains "exam"
+    
+    // Default case - capitalize first letter
+    return title.charAt(0).toUpperCase() + title.slice(1) + " Exam";
   };
 
   useEffect(() => {
     // 1. Try to get the specific selected result first
     const selected = localStorage.getItem("selectedExamResult");
     if (selected) {
-      setResult(JSON.parse(selected));
+      const parsedResult = JSON.parse(selected);
+      setResult(parsedResult);
       return;
     }
 
-    // 2. Fallback to index-based lookup (legacy/compatibility)
+    // 2. Fallback to state-based data (passed from PlaygroundResults)
+    const locationState = location.state;
+    if (locationState?.resultData) {
+      setResult(locationState.resultData);
+      return;
+    }
+
+    // 3. Fallback to index-based lookup (legacy/compatibility)
     const results = JSON.parse(
       localStorage.getItem("allExamResults") || "[]"
     );
 
-    if (results[index]) {
+    // Try to find result by unique ID first
+    const foundResult = results.find(r => 
+      r.random_id === index || 
+      r.examDate === index || 
+      r.start_time === index
+    );
+
+    if (foundResult) {
+      setResult(foundResult);
+    } else if (results[index]) {
       setResult(results[index]);
     } else {
-      console.error("DetailedResults - No result found at index:", index);
+      console.error("DetailedResults - No result found for ID/index:", index);
+      setResult(null);
     }
-  }, [index]);
+  }, [index, location.state]);
 
   const handleBack = () => {
     navigate("/dashboard/playground-results");
