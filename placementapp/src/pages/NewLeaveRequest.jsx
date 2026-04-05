@@ -668,6 +668,10 @@ function NewLeaveRequest() {
             autoClose: 2000
           });
           
+          // Trigger leave request update event
+          window.dispatchEvent(new Event("leaveRequestUpdated"));
+          localStorage.setItem("leaveRequestUpdated", Date.now().toString());
+          
           // Clear form
           setName('');
           setEmail('');

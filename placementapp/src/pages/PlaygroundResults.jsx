@@ -60,10 +60,30 @@ function PlaygroundResults() {
         const json = await response.json();
 
         if (json.success) {
-          // Only show results that exist in the backend database
-          setAllResults(json.data || []);
-          // Clear any old local cache to ensure it stays clean for next time
-          localStorage.removeItem("allExamResults");
+          // Merge local storage results (to capture unsynced/new exams) with backend results
+          let localResults = [];
+          try {
+             localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+          } catch(e) {}
+          
+          let backendResults = json.data || [];
+          
+          const seen = new Set();
+          const merged = [];
+          
+          // We put localResults first so the most recent locally saved exam takes priority visually
+          for (const res of [...localResults, ...backendResults]) {
+             const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
+             if (key && !seen.has(key)) {
+                seen.add(key);
+                merged.push(res);
+             } else if (!key) {
+                // If it really lacks a key, just add it to avoid losing data
+                merged.push(res);
+             }
+          }
+          
+          setAllResults(merged);
         } else {
           setError(json.error || "Failed to fetch results");
           setAllResults([]);

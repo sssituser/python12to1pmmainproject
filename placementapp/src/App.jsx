@@ -46,7 +46,7 @@ import FacultyJobs from "./faculty/Jobs";
 import Leaves from "./faculty/LeaveRequest";
 import FacultyLogin from "./faculty/login";
 import Stats from "./faculty/Stats";
-
+import FacultyProfile from "./faculty/Profile";
 
 /* 🔹 AUTH */
 import VerifyFaculty from "./pages/FacultyOtp";
@@ -205,6 +205,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="exam-failure" element={<ExamFailureDashboard />} />
           <Route path="stats" element={<Stats />} />
+          <Route path="profile" element={<FacultyProfile />} />
           <Route path="admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/faculty/dashboard" />} />
           <Route path="/faculty/login" element={<FacultyLogin />} />
           <Route path="jobs" element={<FacultyJobs />} />

@@ -50,7 +50,7 @@ function Stats() {
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
       localStorage.removeItem("user");
-      window.location.href = "/";
+      window.location.href = "/login";
       return null;
     }
   };

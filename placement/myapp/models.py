@@ -139,6 +139,7 @@ class JobApplication(models.Model):
 # ===============================
 
 class LeaveRequest(models.Model):
+    user = models.ForeignKey('myapp.User', on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(blank=True, null=True)
     student_id = models.CharField(max_length=50)
@@ -253,12 +254,12 @@ class ExamAttempt(models.Model):
     exam_type = models.CharField(max_length=50, default='daily')
 
     score = models.IntegerField(default=0)
-    total_questions = models.IntegerField(default=20)
+    total_questions = models.IntegerField(default=30)
     correct_answers = models.IntegerField(default=0)
     incorrect_answers = models.IntegerField(default=0)
 
     marks_obtained = models.IntegerField(default=0)
-    total_marks = models.IntegerField(default=40)
+    total_marks = models.IntegerField(default=60)
 
     time_taken = models.IntegerField()
 
@@ -431,6 +432,7 @@ class Course(models.Model):
     progress = models.IntegerField(default=0)  # Default progress percentage
     locked = models.BooleanField(default=False)
     topics = models.JSONField(default=list)  # Store topics as JSON array
+    modules = models.JSONField(null=True, blank=True, default=list)  # Added for hierarchical subjects/topics
     custom_videos = models.JSONField(default=dict, blank=True)  # Store custom videos
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -545,6 +547,190 @@ class LoginEmailLog(models.Model):
     def get_email_active_count(cls, email_address):
         """Get total count of non-deleted login emails sent to a specific email address (across all users)"""
         return cls.objects.filter(email_address=email_address, is_deleted=False).count()
+
+
+# ===============================
+# Faculty Profile
+# ===============================
+
+class FacultyProfile(models.Model):
+    user = models.OneToOneField('myapp.User', on_delete=models.CASCADE, related_name='faculty_profile')
+    
+    # Personal Information
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    bio = models.TextField(blank=True)
+    avatar = models.ImageField(upload_to="faculty_avatars/", blank=True, null=True)
+    location = models.CharField(max_length=200, blank=True)
+    join_date = models.DateField(null=True, blank=True)
+    languages = models.JSONField(blank=True, null=True, default=list)
+    
+    # Professional Information
+    department = models.CharField(max_length=200, blank=True)
+    designation = models.CharField(max_length=200, blank=True)
+    experience = models.CharField(max_length=100, blank=True)
+    specialization = models.JSONField(blank=True, null=True, default=list)
+    education = models.JSONField(blank=True, null=True, default=list)
+    certifications = models.JSONField(blank=True, null=True, default=list)
+    publications = models.JSONField(blank=True, null=True, default=list)
+    research_interests = models.JSONField(blank=True, null=True, default=list)
+    
+    # Social Links
+    linkedin = models.URLField(blank=True, null=True)
+    twitter = models.URLField(blank=True, null=True)
+    github = models.URLField(blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+    
+    # Statistics
+    courses_taught = models.IntegerField(default=0)
+    students_mentored = models.IntegerField(default=0)
+    publications_count = models.IntegerField(default=0)
+    experience_years = models.IntegerField(default=0)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'myapp_faculty_profile'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user'], name='myapp_facul_user_id_b78667_idx'),
+            models.Index(fields=['department'], name='myapp_facul_departm_f7f7f2_idx'),
+            models.Index(fields=['designation'], name='myapp_facul_designa_d374b2_idx'),
+            models.Index(fields=['-created_at'], name='myapp_facul_created_f87267_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.full_name} - {self.designation}"
+
+    @property
+    def full_name(self):
+        """Get full name from profile or user"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.user.first_name and self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+        elif self.user.username:
+            return self.user.username
+        return "Faculty Member"
+
+    @property
+    def email(self):
+        """Get email from user"""
+        return self.user.email if self.user else ""
+
+    def update_stats(self):
+        """Update statistics based on related data"""
+        try:
+            # Update courses taught count (only if relationship exists)
+            if hasattr(self, 'course_history') and self.course_history.exists():
+                self.courses_taught = self.course_history.count()
+            
+            # Update publications count (only if relationship exists)
+            if hasattr(self, 'research_projects') and self.research_projects.exists():
+                self.publications_count = self.research_projects.filter(
+                    research_type='publication'
+                ).count()
+            elif self.publications:
+                # Fallback to publications JSON field
+                self.publications_count = len(self.publications) if isinstance(self.publications, list) else 0
+            
+            # Calculate experience years based on join_date
+            if self.join_date:
+                from datetime import date
+                today = date.today()
+                years = today.year - self.join_date.year
+                if today.month < self.join_date.month or (today.month == self.join_date.month and today.day < self.join_date.day):
+                    years -= 1
+                self.experience_years = max(0, years)
+            
+            self.save(update_fields=['courses_taught', 'publications_count', 'experience_years'])
+        except Exception as e:
+            # Log error but don't fail the entire operation
+            print(f"Error updating stats for faculty profile {self.id}: {e}")
+            # Save at least the basic fields
+            self.save(update_fields=['courses_taught', 'publications_count', 'experience_years'])
+
+
+class FacultyAchievement(models.Model):
+    """Faculty achievements and awards"""
+    faculty_profile = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='achievements')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    awarding_organization = models.CharField(max_length=200, blank=True)
+    date_received = models.DateField(null=True, blank=True)
+    certificate = models.FileField(upload_to="faculty_certificates/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.faculty_profile.full_name}"
+    
+    class Meta:
+        db_table = 'myapp_faculty_achievement'
+        ordering = ['-date_received']
+
+
+class FacultyResearch(models.Model):
+    """Faculty research projects and publications"""
+    faculty_profile = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='research_projects')
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    research_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('publication', 'Publication'),
+            ('project', 'Research Project'),
+            ('thesis', 'Thesis'),
+            ('presentation', 'Presentation'),
+        ],
+        default='publication'
+    )
+    journal_or_conference = models.CharField(max_length=200, blank=True)
+    publication_date = models.DateField(null=True, blank=True)
+    doi = models.URLField(blank=True, null=True)
+    pdf_file = models.FileField(upload_to="faculty_research/", blank=True, null=True)
+    collaborators = models.JSONField(blank=True, null=True, default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.faculty_profile.full_name}"
+    
+    class Meta:
+        db_table = 'myapp_faculty_research'
+        ordering = ['-publication_date']
+
+
+class FacultyCourseHistory(models.Model):
+    """Track courses taught by faculty"""
+    faculty_profile = models.ForeignKey(FacultyProfile, on_delete=models.CASCADE, related_name='course_history')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    semester = models.CharField(max_length=50)
+    year = models.IntegerField()
+    role = models.CharField(
+        max_length=20,
+        choices=[
+            ('instructor', 'Instructor'),
+            ('co_instructor', 'Co-Instructor'),
+            ('assistant', 'Teaching Assistant'),
+            ('guest', 'Guest Lecturer'),
+        ],
+        default='instructor'
+    )
+    student_count = models.IntegerField(default=0)
+    average_rating = models.FloatField(null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.faculty_profile.full_name} - {self.course.title} ({self.year})"
+    
+    class Meta:
+        db_table = 'myapp_faculty_course_history'
+        ordering = ['-year', '-semester']
+        unique_together = ['faculty_profile', 'course', 'semester', 'year']
     
 
 

@@ -104,8 +104,12 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
     
     if (!token) return;
 
-    // For all users, use existing profile endpoint
-    makeAuthenticatedRequest("http://127.0.0.1:8000/api/profile/")
+    // Use faculty profile endpoint for faculty users
+    const profileEndpoint = user.role === "faculty" 
+      ? "http://127.0.0.1:8000/api/faculty/profile/"
+      : "http://127.0.0.1:8000/api/profile/";
+
+    makeAuthenticatedRequest(profileEndpoint)
     .then(res => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -113,18 +117,36 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       return res.json();
     })
     .then(data => {
-      if (data && data.profile_image) {
+      // Update profile image
+      if (data && data.avatar) {
+        const imageUrl = data.avatar.startsWith('http') 
+          ? data.avatar 
+          : `http://127.0.0.1:8000${data.avatar}`;
+        setProfileImage(imageUrl);
+      } else if (data && data.profile_image) {
+        // Fallback for student profile
         const imageUrl = data.profile_image.startsWith('http') 
           ? data.profile_image 
           : `http://127.0.0.1:8000${data.profile_image}`;
         setProfileImage(imageUrl);
       }
+
+      // Update user name from profile data
+      if (data) {
+        const updatedUser = {
+          ...user,
+          name: data.full_name || data.first_name || data.name || user.name || user.username || "User"
+        };
+        setUser(updatedUser);
+        // Update localStorage with new name
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
     })
     .catch(err => {
-      console.log("Failed to fetch profile image:", err);
+      console.log("Failed to fetch profile data:", err);
       // Don't show error for 401 as it's handled by makeAuthenticatedRequest
       if (err.message && !err.message.includes("401")) {
-        console.error("Profile image fetch error:", err);
+        console.error("Profile data fetch error:", err);
       }
     });
   };
@@ -235,7 +257,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
         {/* LOGO */}
         <div className="flex items-center gap-3 cursor-pointer">
           <img
-            src={user.logoUrl}
+            src="/sssit-logo.png"
             alt="Logo"
             className="h-9 object-contain"
           />
@@ -329,13 +351,13 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
             <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fadeIn">
               <button
                 onClick={() => {
-                  const path = user.role === "student" ? "/dashboard/profile" : "/faculty/dashboard";
+                  const path = user.role === "student" ? "/dashboard/profile" : "/faculty/profile";
                   navigate(path);
                   setOpenProfile(false);
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
               >
-                {user.role === "student" ? "Profile" : "Dashboard"}
+                {user.role === "student" ? "Profile" : "My Profile"}
               </button>
 
               <button

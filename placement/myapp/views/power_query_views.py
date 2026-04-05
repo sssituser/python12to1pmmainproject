@@ -1,0 +1,100 @@
+import random
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+# 80 Power Query-focused MCQs (4 options, 0-based correct index)
+POWER_QUERY_QUESTIONS = [
+    {"id": 1, "question": "Power Query runs primarily in which engine?", "options": ["M", "DAX", "SQL", "MDX"], "correct": 0},
+    {"id": 2, "question": "Which ribbon tab lets you remove columns quickly?", "options": ["Home", "View", "Add Column", "Transform"], "correct": 3},
+    {"id": 3, "question": "Applied Steps track:", "options": ["Visual layout", "Transformations in order", "DAX measures", "Gateway status"], "correct": 1},
+    {"id": 4, "question": "To split a column by delimiter you use:", "options": ["Split Column", "Group By", "Merge Queries", "Append Queries"], "correct": 0},
+    {"id": 5, "question": "M is:", "options": ["Row context language", "Functional, case-sensitive language", "SQL dialect", "No-code tool"], "correct": 1},
+    {"id": 6, "question": "Remove errors keeps:", "options": ["Only rows with errors", "Rows without errors", "Duplicates", "Nulls only"], "correct": 1},
+    {"id": 7, "question": "Which step should come first for performance?", "options": ["Remove columns", "Group By", "Add index", "Merge"], "correct": 0},
+    {"id": 8, "question": "To unpivot table headers into rows:", "options": ["Unpivot Columns", "Transpose", "Pivot Column", "Merge"], "correct": 1},
+    {"id": 9, "question": "Append is equivalent to:", "options": ["Union/stack", "Join", "Cross apply", "Cartesian"], "correct": 0},
+    {"id": 10, "question": "Merge is equivalent to:", "options": ["Union", "Join", "Transpose", "Pivot"], "correct": 1},
+    {"id": 11, "question": "Column profiling is found under:", "options": ["Home", "View", "Add Column", "Tools"], "correct": 1},
+    {"id": 12, "question": "Change Type to Date impacts:", "options": ["Data type only", "Data values and type", "Load mode", "Gateway"], "correct": 0},
+    {"id": 13, "question": "Which view shows preview only, not full data?", "options": ["Data view", "Model view", "Report view", "Power Query Editor"], "correct": 3},
+    {"id": 14, "question": "Fuzzy matching is available in:", "options": ["Append", "Merge", "Group By", "Split"], "correct": 1},
+    {"id": 15, "question": "Parameters are useful for:", "options": ["Dynamic paths/filters", "DAX calculations", "Bookmarks", "Themes"], "correct": 0},
+    {"id": 16, "question": "Relative path fixes in Power Query help when:", "options": ["Publishing to Service", "Running desktop only", "Exporting CSV", "Using DirectQuery"], "correct": 0},
+    {"id": 17, "question": "Buffering a table is done with:", "options": ["Table.Buffer", "List.Buffer", "Table.Cache", "Cache.Table"], "correct": 0},
+    {"id": 18, "question": "Best practice for column names:", "options": ["Spaces only", "Consistent, no special chars", "Random", "Uppercase only"], "correct": 1},
+    {"id": 19, "question": "Detect Data Type runs on:", "options": ["Whole table", "One column", "Model", "Report"], "correct": 0},
+    {"id": 20, "question": "To keep only top N rows:", "options": ["Remove Rows", "Reduce Rows > Keep Top Rows", "Group By", "Unpivot"], "correct": 1},
+    {"id": 21, "question": "Case sensitivity in M:", "options": ["Not sensitive", "Case-sensitive", "Only for functions", "Only for columns"], "correct": 1},
+    {"id": 22, "question": "Date transformations live under:", "options": ["Add Column > Date", "Transform > Date", "Both", "Neither"], "correct": 2},
+    {"id": 23, "question": "Query dependencies view helps you:", "options": ["See visuals", "See query lineage", "See DAX", "See gateways"], "correct": 1},
+    {"id": 24, "question": "Reference vs Duplicate difference:", "options": ["Both copy steps", "Reference shares source; duplicate copies all steps", "Opposite", "Reference copies data"], "correct": 1},
+    {"id": 25, "question": "To remove blank rows fast:", "options": ["Remove Empty", "Group By", "Merge", "Transpose"], "correct": 0},
+    {"id": 26, "question": "Custom Column uses:", "options": ["M expressions", "DAX", "SQL", "MDX"], "correct": 0},
+    {"id": 27, "question": "Invoke Custom Function is used after:", "options": ["Creating a function query", "Grouping", "Pivoting", "Merging"], "correct": 0},
+    {"id": 28, "question": "Binary combine for folders auto-creates:", "options": ["Parameters + sample file query", "Bookmarks", "Measures", "Dashboards"], "correct": 0},
+    {"id": 29, "question": "Column distribution shows:", "options": ["Min/max", "Count distinct/unique", "Relationships", "Themes"], "correct": 1},
+    {"id": 30, "question": "To convert rows to columns by key:", "options": ["Pivot Column", "Unpivot Columns", "Transpose", "Group By"], "correct": 0},
+    {"id": 31, "question": "Filling down works on:", "options": ["Null gaps", "Errors", "Numbers only", "Dates only"], "correct": 0},
+    {"id": 32, "question": "Best way to remove whitespace:", "options": ["Trim + Clean", "Replace Errors", "Null to blank", "Fuzzy match"], "correct": 0},
+    {"id": 33, "question": "Combine files from SharePoint requires:", "options": ["Gateway + proper URL", "DAX", "MDX", "RLS"], "correct": 0},
+    {"id": 34, "question": "To detect data category:", "options": ["Model view", "Power Query", "Report view", "Gateway"], "correct": 0},
+    {"id": 35, "question": "Query folding is:", "options": ["Pushing transformations to source", "Pivoting", "Caching", "Bookmarking"], "correct": 0},
+    {"id": 36, "question": "Which step can break folding?", "options": ["Filter early", "Add index", "Keep top rows", "Select columns"], "correct": 1},
+    {"id": 37, "question": "DirectQuery supports Power Query steps?", "options": ["None", "Some that fold", "All", "Only merges"], "correct": 1},
+    {"id": 38, "question": "Gateway needed for:", "options": ["On-prem data refresh", "Direct web data", "Local CSV", "Excel workbook"], "correct": 0},
+    {"id": 39, "question": "To group and aggregate:", "options": ["Group By", "Merge", "Append", "Pivot"], "correct": 0},
+    {"id": 40, "question": "Replace Values is located under:", "options": ["Transform", "Home", "Both", "Add Column"], "correct": 2},
+    {"id": 41, "question": "M language functions are documented in:", "options": ["powerquery.microsoft.com", "learn.microsoft.com", "github only", "Not documented"], "correct": 1},
+    {"id": 42, "question": "A custom function query signature starts with:", "options": ["let f = (params) =>", "measure = ", "CREATE FUNCTION", "def func()"], "correct": 0},
+    {"id": 43, "question": "Cross-join in Power Query is done via:", "options": ["Add column merge without key", "Append", "Group", "Unpivot"], "correct": 0},
+    {"id": 44, "question": "Table.ColumnNames() returns:", "options": ["Row values", "List of column names", "Data types", "Relations"], "correct": 1},
+    {"id": 45, "question": "Lists in M are:", "options": ["Ordered collections", "Unordered maps", "Tables", "Views"], "correct": 0},
+    {"id": 46, "question": "Record in M is:", "options": ["Dictionary of fields", "Table", "List", "Binary"], "correct": 0},
+    {"id": 47, "question": "To handle locale dates from CSV:", "options": ["Using Locale in Change Type", "Using DAX", "Only in Excel", "Not possible"], "correct": 0},
+    {"id": 48, "question": "Error handling function:", "options": ["try ... otherwise", "iferror", "case when", "catch"], "correct": 0},
+    {"id": 49, "question": "To extract year from date:", "options": ["Date.Year()", "YEAR()", "YEARM()", "MYear()"], "correct": 0},
+    {"id": 50, "question": "M shorthand for inline record:", "options": ["[Field=Value]", "{Field=Value}", "(Field=Value)", "<Field=Value>"], "correct": 0},
+    {"id": 51, "question": "Custom column referencing previous row requires:", "options": ["Index + merge", "DAX", "Pivot", "Gateway"], "correct": 0},
+    {"id": 52, "question": "Data type Whole Number corresponds to:", "options": ["Int64", "Double", "Decimal", "Currency"], "correct": 0},
+    {"id": 53, "question": "To keep query names clean you should:", "options": ["Use spaces freely", "Use meaningful names", "Use emojis", "Use GUIDs"], "correct": 1},
+    {"id": 54, "question": "Power Query can connect to:", "options": ["Only SQL", "Many sources including web/CSV/APIs", "Only Excel", "Only Dataverse"], "correct": 1},
+    {"id": 55, "question": "JSON input is parsed with:", "options": ["Json.Document()", "Json.Parse()", "FromJSON()", "Parse.Json()"], "correct": 0},
+    {"id": 56, "question": "Relative path navigation uses:", "options": ["Folder.Contents + parameters", "SQL views", "DAX", "R scripts"], "correct": 0},
+    {"id": 57, "question": "To expand a record column:", "options": ["Expand icon (two arrows)", "Merge", "Append", "Group"], "correct": 0},
+    {"id": 58, "question": "Binary.Combine is used when:", "options": ["Merging binaries", "Appending tables", "Pivoting", "Grouping"], "correct": 0},
+    {"id": 59, "question": "To refresh automatically in Service you need:", "options": ["Gateway for on-prem", "Nothing", "MDX", "RLS"], "correct": 0},
+    {"id": 60, "question": "Disable load is used to:", "options": ["Keep staging queries out of model", "Stop refresh", "Delete query", "Hide visuals"], "correct": 0},
+    {"id": 61, "question": "Reference from staging query helps:", "options": ["Reusability and folding", "Visualization", "RLS", "MDX"], "correct": 0},
+    {"id": 62, "question": "Detect data type should happen:", "options": ["Early after source", "After merges", "At end", "Never"], "correct": 0},
+    {"id": 63, "question": "Replace null with zero uses:", "options": ["Replace Values", "Custom Column", "Group By", "Transpose"], "correct": 0},
+    {"id": 64, "question": "To filter rows dynamically by parameter:", "options": ["Filter with parameter value", "DAX filter", "Bookmarks", "Themes"], "correct": 0},
+    {"id": 65, "question": "Power Query Editor advanced editor shows:", "options": ["M script", "DAX", "SQL", "MDX"], "correct": 0},
+    {"id": 66, "question": "Table schema changes can break:", "options": ["Applied Steps", "Measures", "Visuals", "Bookmarks"], "correct": 0},
+    {"id": 67, "question": "Primary key enforcement in PQ:", "options": ["Not enforced; ensure via logic", "Auto enforced", "SQL enforced", "Visual enforced"], "correct": 0},
+    {"id": 68, "question": "Locale decimal separator issues fixed by:", "options": ["Using locale in Change Type", "Gateway only", "DAX", "Not fixable"], "correct": 0},
+    {"id": 69, "question": "Query parameters can control:", "options": ["Source path, filters", "Themes", "Bookmarks", "RLS"], "correct": 0},
+    {"id": 70, "question": "To fold filters, apply them:", "options": ["Early on", "After unpivot", "After joins", "Never"], "correct": 0},
+    {"id": 71, "question": "Null vs empty string handling should be:", "options": ["Explicit", "Ignored", "Random", "Done in DAX only"], "correct": 0},
+    {"id": 72, "question": "Automatic type detection can be turned off in:", "options": ["Options > Current File", "Model view", "Report view", "Gateway"], "correct": 0},
+    {"id": 73, "question": "To reuse logic across queries:", "options": ["Functions or referenced queries", "Copy-paste steps", "DAX", "Bookmarks"], "correct": 0},
+    {"id": 74, "question": "Power Query handles time zones via:", "options": ["DateTimeZone functions", "DAX", "Gateway only", "Not supported"], "correct": 0},
+    {"id": 75, "question": "Column quality bar shows:", "options": ["Valid/error/empty percentages", "Row counts", "Data types", "Folding"], "correct": 0},
+    {"id": 76, "question": "To test folding you can:", "options": ["View Native Query", "Use DAX Studio", "Use bookmarks", "Check visuals"], "correct": 0},
+    {"id": 77, "question": "Incremental refresh setup depends on:", "options": ["Date/time columns and parameters", "DAX only", "Bookmarks", "Q&A"], "correct": 0},
+    {"id": 78, "question": "M let/in structure defines:", "options": ["Bindings then result", "Only comments", "RLS", "Gateway"], "correct": 0},
+    {"id": 79, "question": "Custom connectors extend Power Query for:", "options": ["New data sources", "Visual themes", "DAX", "MDX"], "correct": 0},
+    {"id": 80, "question": "Power Query is also used in:", "options": ["Excel Get & Transform", "PowerPoint", "Teams chat", "MDX cubes"], "correct": 0},
+]
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def playground_questions_power_query_api(request):
+    """
+    Serve 30 randomized Power Query questions.
+    """
+    return Response({
+        "success": True,
+        "data": random.sample(POWER_QUERY_QUESTIONS, 30)
+    })

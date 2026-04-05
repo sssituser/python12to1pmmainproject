@@ -126,6 +126,28 @@ function CoursesPage() {
     });
   };
 
+  // Fetch student course info
+  useEffect(() => {
+    const fetchStudentInfo = async () => {
+      const token = getStoredToken("access");
+      if (!token) return;
+
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/student/profile/", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data.success && response.data.course) {
+          setStudentCourse(response.data.course);
+        }
+      } catch (error) {
+        console.error('Error fetching student info:', error);
+      }
+    };
+
+    fetchStudentInfo();
+  }, []);
+
   // Filter courses when studentCourse changes (only after courses are loaded)
   useEffect(() => {
     if (studentCourse && courses.length > 0 && !loading) {

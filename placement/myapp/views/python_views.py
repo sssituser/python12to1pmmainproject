@@ -310,11 +310,11 @@ def exam_reports_api(request):
     """
     username = request.GET.get('username')
     exam_type = request.GET.get('exam_type', 'all')
-    
+
     if exam_type == 'all':
         attempts = ExamAttempt.objects.filter(user__role='student')
     else:
-        attempts = ExamAttempt.objects.filter(user__role='student', exam_type=exam_type)
+        attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
     if username:
         attempts = attempts.filter(user__username__iexact=username)
@@ -351,7 +351,7 @@ def exam_reports_api(request):
         # Priority: If it's already cheated or suspicious in DB, keep it
         if 'cheat' in normalized_status or 'suspicious' in normalized_status or 'violated' in normalized_status:
             final_status = 'Cheated'
-        elif percentage >= 50:
+        elif percentage >= 33.33:
             final_status = 'Pass'
         else:
             final_status = 'Fail'
@@ -377,7 +377,7 @@ def exam_reports_api(request):
         recommendations = "Keep up the good work!"
         
         if final_status == 'Fail':
-            failure_reason = f"Scored {percentage}%, which is below the 50% passing threshold. Student may need to review fundamental concepts."
+            failure_reason = f"Scored {percentage}%, which is below the 33.33% (20 marks out of 60) passing threshold. Student may need to review fundamental concepts."
             recommendations = "Assign remedial exercises and recommend a one-on-one doubt clearing session."
         elif final_status == 'Cheated':
             if suspicious_detected:
@@ -537,12 +537,12 @@ def save_exam_report_api(request):
             final_status = 'Fail'
         else:
             marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-            total_marks = data.get('total_marks') or data.get('totalMarks') or 40
+            total_marks = data.get('total_marks') or data.get('totalMarks') or 60
             
             # Calculate percentage for pass/fail decision
             percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
             
-            if percentage >= 50:
+            if percentage >= 33.33:
                 final_status = 'Pass'
             else:
                 final_status = 'Fail'
@@ -552,11 +552,11 @@ def save_exam_report_api(request):
             exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
             exam_type=data.get('exam_type') or data.get('examType', 'daily'),
             score=data.get('score', 0),
-            total_questions=data.get('total_questions') or data.get('totalQuestions', 20),
+            total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
             correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
             incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
             marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-            total_marks=data.get('total_marks') or data.get('totalMarks', 40),
+            total_marks=data.get('total_marks') or data.get('totalMarks', 60),
             time_taken=data.get('time_taken') or data.get('timeTaken', 0),
             start_time=start_time,
             end_time=end_time,
@@ -758,9 +758,22 @@ def weekly_exam_reports_api(request):
         Q(exam_type='weekly') | Q(exam_title__icontains='weekly'),
         user__role='student'
     )
-    
-    if username:
+
+    # Enforce user isolation
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+    elif request.user and request.user.is_authenticated:
+        attempts = attempts.filter(user=request.user)
+    elif username:
         attempts = attempts.filter(user__username__iexact=username)
+    else:
+        attempts = ExamAttempt.objects.none()
         
     attempts = attempts.order_by('-exam_date')
 
@@ -804,9 +817,22 @@ def monthly_exam_reports_api(request):
         Q(exam_type='monthly') | Q(exam_title__icontains='monthly'),
         user__role='student'
     )
-    
-    if username:
+
+    # Enforce user isolation
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+    elif request.user and request.user.is_authenticated:
+        attempts = attempts.filter(user=request.user)
+    elif username:
         attempts = attempts.filter(user__username__iexact=username)
+    else:
+        attempts = ExamAttempt.objects.none()
         
     attempts = attempts.order_by('-exam_date')
 
@@ -841,13 +867,25 @@ def user_combined_results_api(request):
     GET: Get all exam results for a specific user across all categories
     """
     username = request.GET.get('username')
-    if not username:
-         return Response({
-            'success': False,
-            'error': 'Username is required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
+        else:
+            attempts = ExamAttempt.objects.all().order_by('-exam_date')
+    elif request.user and request.user.is_authenticated:
+        attempts = ExamAttempt.objects.filter(user=request.user).order_by('-exam_date')
+    else:
+        if not username:
+             return Response({
+                'success': False,
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
     
     formatted_data = []
     for attempt in attempts:
@@ -942,7 +980,8 @@ def playground_questions_api(request):
     theoretical_questions = questions_pool[:45]
     practical_questions = questions_pool[45:50]
     
-    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
+    # Return 30 questions total (25 theory + 5 practical)
+    selected_questions = random.sample(theoretical_questions, 25) + practical_questions
     random.shuffle(selected_questions)
     
     return Response({

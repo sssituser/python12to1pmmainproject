@@ -1,0 +1,100 @@
+import random
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+# 80 DAX-focused MCQs (4 options, 0-based correct index)
+DAX_QUESTIONS = [
+    {"id": 1, "question": "DAX stands for:", "options": ["Data Analysis Expressions", "Data Analytics X", "Dynamic Analysis XML", "Data Aggregation eXchange"], "correct": 0},
+    {"id": 2, "question": "CALCULATE changes:", "options": ["Row context to filter context", "Filter context to row context", "Model schema", "Data type"], "correct": 0},
+    {"id": 3, "question": "ROW context exists in:", "options": ["Calculated columns and iterators", "Measures only", "Relationships", "Report view"], "correct": 0},
+    {"id": 4, "question": "FILTER() returns:", "options": ["Scalar", "Table", "Boolean", "Column"], "correct": 1},
+    {"id": 5, "question": "SUMX iterates over:", "options": ["Table expression", "Column only", "Model", "Visual"], "correct": 0},
+    {"id": 6, "question": "DIVIDE( numerator, denominator, alternate ) avoids:", "options": ["Blank outputs", "Divide-by-zero errors", "Formatting", "Relationships"], "correct": 1},
+    {"id": 7, "question": "RELATED works when:", "options": ["Relationships exist and direction allows", "Any time", "On disconnected tables", "On DirectQuery only"], "correct": 0},
+    {"id": 8, "question": "ALL() removes:", "options": ["Filter context for specified columns/tables", "Row context", "Relationships", "RLS"], "correct": 0},
+    {"id": 9, "question": "ALLEXCEPT keeps:", "options": ["All filters except specified columns", "No filters", "Only slicer filters", "Security filters"], "correct": 0},
+    {"id": 10, "question": "EARLIER is used in:", "options": ["Calculated columns needing nested row context", "Measures", "Relationship creation", "Gateway"], "correct": 0},
+    {"id": 11, "question": "USERELATIONSHIP activates:", "options": ["Inactive relationship in a calculation", "RLS", "Model refresh", "Q&A"], "correct": 0},
+    {"id": 12, "question": "CROSSFILTER modifies:", "options": ["Filter direction in a calc", "Data types", "Visual layout", "Gateway"], "correct": 0},
+    {"id": 13, "question": "HASONEVALUE checks:", "options": ["Single value in current context", "RLS roles", "Model size", "Gateway health"], "correct": 0},
+    {"id": 14, "question": "BLANK() is:", "options": ["Special value distinct from 0/null", "Zero", "Null only", "Text"], "correct": 0},
+    {"id": 15, "question": "DATESYTD requires:", "options": ["Date column marked as Date table", "Any text column", "Measures only", "Gateway"], "correct": 0},
+    {"id": 16, "question": "Time intelligence needs:", "options": ["Continuous date table", "Non-contiguous dates", "No relationships", "Inactive date"], "correct": 0},
+    {"id": 17, "question": "RANKX defaults to:", "options": ["Descending", "Ascending", "Alphabetical", "Random"], "correct": 0},
+    {"id": 18, "question": "VAR ... RETURN improves:", "options": ["Readability and performance", "RLS", "Gateway", "Model size"], "correct": 0},
+    {"id": 19, "question": "SELECTEDVALUE returns alternate when:", "options": ["Multiple values or none", "Single value", "Always", "Errors"], "correct": 0},
+    {"id": 20, "question": "Measures are evaluated in:", "options": ["Filter context at query time", "Row context at refresh", "Data view", "Power Query"], "correct": 0},
+    {"id": 21, "question": "Calculated columns are computed:", "options": ["During data refresh", "At query time", "In visuals only", "On demand"], "correct": 0},
+    {"id": 22, "question": "REMOVEFILTERS is similar to:", "options": ["ALL", "ALLEXCEPT", "FILTER", "KEEPFILTERS"], "correct": 0},
+    {"id": 23, "question": "KEEPFILTERS is used with:", "options": ["CALCULATE to preserve existing filters", "SUMX", "VAR", "EARLIER"], "correct": 0},
+    {"id": 24, "question": "IN operator simplifies:", "options": ["Multi-value filter conditions", "CALCULATE syntax", "Relationship creation", "Aggregation"], "correct": 0},
+    {"id": 25, "question": "TREATAS applies:", "options": ["Table as filter to target columns", "Formatting", "RLS", "Gateway"], "correct": 0},
+    {"id": 26, "question": "SUMMARIZECOLUMNS is preferred over:", "options": ["SUMMARIZE for measure tables", "CALCULATE", "SUMX", "GROUPBY"], "correct": 0},
+    {"id": 27, "question": "CONCATENATEX iterates over:", "options": ["Table", "Column only", "Visual", "Relationship"], "correct": 0},
+    {"id": 28, "question": "BLANK handling in comparisons needs:", "options": ["COALESCE or IF", "EARLIER", "RANKX", "USERELATIONSHIP"], "correct": 0},
+    {"id": 29, "question": "MAXX vs MAX difference:", "options": ["Iterator vs column aggregate", "Same", "Measure vs column", "Row vs filter"], "correct": 0},
+    {"id": 30, "question": "COUNTROWS works on:", "options": ["Tables", "Scalars", "Columns only", "Measures only"], "correct": 0},
+    {"id": 31, "question": "DISTINCT returns:", "options": ["Table of unique values", "Scalar", "Boolean", "None"], "correct": 0},
+    {"id": 32, "question": "Path functions help with:", "options": ["Parent-child hierarchies", "Date tables", "RLS", "Gateways"], "correct": 0},
+    {"id": 33, "question": "ISINSCOPE is used to detect:", "options": ["Current level in a hierarchy", "Gateway status", "RLS role", "Model size"], "correct": 0},
+    {"id": 34, "question": "Dynamic titles often use:", "options": ["SELECTEDVALUE + CONCATENATEX", "SUMX", "EARLIER", "CROSSFILTER"], "correct": 0},
+    {"id": 35, "question": "Performance Analyzer captures:", "options": ["DAX query and visuals time", "Gateway logs", "Power Query steps", "Model size"], "correct": 0},
+    {"id": 36, "question": "RLS filters are written as:", "options": ["DAX filter expressions on tables", "SQL", "M", "MDX"], "correct": 0},
+    {"id": 37, "question": "Virtual tables exist:", "options": ["Only during evaluation", "Stored physically", "In gateway", "As CSV"], "correct": 0},
+    {"id": 38, "question": "EVALUATE appears in:", "options": ["DAX Studio / Tabular Editor queries", "Power BI visuals", "Power Query", "Gateway"], "correct": 0},
+    {"id": 39, "question": "SUMMARIZE vs GROUPBY:", "options": ["GROUPBY requires explicit aggregation", "They are identical", "SUMMARIZE faster", "GROUPBY slower always"], "correct": 0},
+    {"id": 40, "question": "Context transition occurs when:", "options": ["CALCULATE inside row context", "SUMX", "FILTER", "RANKX"], "correct": 0},
+    {"id": 41, "question": "ALLSELECTED keeps:", "options": ["Report/visual filters except row/column context", "No filters", "Only slicers", "Only RLS"], "correct": 0},
+    {"id": 42, "question": "KPI measure should be:", "options": ["Numerical measure", "Calculated column", "Table", "Text"], "correct": 0},
+    {"id": 43, "question": "COALESCE returns:", "options": ["First non-blank", "Max value", "Min value", "Sum"], "correct": 0},
+    {"id": 44, "question": "FORMAT returns:", "options": ["Text", "Number", "Date", "Boolean"], "correct": 0},
+    {"id": 45, "question": "DATEDIFF supports:", "options": ["Second to Year intervals", "Milliseconds", "Weeks only", "Months only"], "correct": 0},
+    {"id": 46, "question": "INT vs TRUNC:", "options": ["INT rounds toward zero, TRUNC cuts decimals", "Same", "Opposite", "Neither"], "correct": 0},
+    {"id": 47, "question": "ROUND vs ROUNDUP:", "options": ["ROUND to nearest, ROUNDUP away from zero", "Same", "Opposite", "Only decimals"], "correct": 0},
+    {"id": 48, "question": "NATURALINNERJOIN requires:", "options": ["Same column names and compatible data", "Relationships", "Same row count", "Gateway"], "correct": 0},
+    {"id": 49, "question": "ISBLANK is useful for:", "options": ["Handling missing values", "RLS", "Gateways", "Power Query"], "correct": 0},
+    {"id": 50, "question": "DISTINCTCOUNT counts:", "options": ["Unique non-blank", "All including blanks", "Blanks only", "None"], "correct": 0},
+    {"id": 51, "question": "SWITCH(TRUE(),...) pattern enables:", "options": ["Ordered condition checks", "SUM", "MAX", "COUNT"], "correct": 0},
+    {"id": 52, "question": "CONTAINSSTRING is:", "options": ["Case-insensitive substring check", "Exact match", "Regex", "Numeric"], "correct": 0},
+    {"id": 53, "question": "DATEADD shifts dates by:", "options": ["Specified intervals", "Fiscal only", "Weeks only", "Hours only"], "correct": 0},
+    {"id": 54, "question": "CALENDAR requires:", "options": ["Start and end dates", "Date table", "Fiscal table", "None"], "correct": 0},
+    {"id": 55, "question": "CALENDARAUTO uses:", "options": ["Data in model to infer range", "Today only", "Parameter only", "Gateway"], "correct": 0},
+    {"id": 56, "question": "QUICK MEASURES generate:", "options": ["DAX templates", "Power Query steps", "SQL views", "R scripts"], "correct": 0},
+    {"id": 57, "question": "TOPN needs:", "options": ["N, table, order expression", "Only N", "Only table", "Only order"], "correct": 0},
+    {"id": 58, "question": "AVERAGEX differs from AVERAGE by:", "options": ["Iterating row expressions", "Same", "Column only", "Median"], "correct": 0},
+    {"id": 59, "question": "MEDIANX computes:", "options": ["Median over expression per row", "Average", "Mode", "Max"], "correct": 0},
+    {"id": 60, "question": "CURRENCY data type precision:", "options": ["Fixed 4 decimals", "Double precision", "None", "Integer"], "correct": 0},
+    {"id": 61, "question": "BLANK handling in math often needs:", "options": ["COALESCE/0", "NOT", "DIVIDE", "SWITCH"], "correct": 0},
+    {"id": 62, "question": "SUMMARIZECOLUMNS ignores:", "options": ["Row context", "Filter context", "RLS", "None"], "correct": 0},
+    {"id": 63, "question": "REMOVEFILTERS vs ALL difference:", "options": ["REMOVEFILTERS respects relationships in some cases", "Same", "Opposite", "None"], "correct": 0},
+    {"id": 64, "question": "VAR inside RETURN scope is:", "options": ["Available only within measure", "Global", "Stored", "Saved to model"], "correct": 0},
+    {"id": 65, "question": "DATEDIFF rounding:", "options": ["Truncates partial intervals", "Rounds", "Always up", "Always down"], "correct": 0},
+    {"id": 66, "question": "CALCULATETABLE returns:", "options": ["Table", "Scalar", "Boolean", "Measure"], "correct": 0},
+    {"id": 67, "question": "Cross-filter direction both is risky because:", "options": ["Can create ambiguity/perf issues", "Always best", "Blocks visuals", "Stops refresh"], "correct": 0},
+    {"id": 68, "question": "ISFILTERED detects:", "options": ["Any filter on a column", "Only slicers", "RLS", "Date tables"], "correct": 0},
+    {"id": 69, "question": "PATH functions require:", "options": ["Parent and child IDs", "Date", "Measure", "Gateway"], "correct": 0},
+    {"id": 70, "question": "GENERATE() performs:", "options": ["Table cross-apply", "Join", "Union", "Append"], "correct": 0},
+    {"id": 71, "question": "SUMMARIZE should avoid:", "options": ["Using measures directly", "Grouping", "Columns", "Dates"], "correct": 0},
+    {"id": 72, "question": "VALUES returns:", "options": ["Distinct values and BLANK", "All rows", "Scalar", "Boolean"], "correct": 0},
+    {"id": 73, "question": "ALLNOBLANKROW removes:", "options": ["Automatic blank row from relationships", "All blanks", "Zeroes", "Nulls"], "correct": 0},
+    {"id": 74, "question": "Disconnected tables are used for:", "options": ["What-if parameters and slicers", "Relationships", "Gateways", "RLS"], "correct": 0},
+    {"id": 75, "question": "ISBLANK with SELECTEDVALUE helps avoid:", "options": ["Blank titles/labels", "RLS", "Gateways", "Formatting"], "correct": 0},
+    {"id": 76, "question": "Dynamic format strings are supported on:", "options": ["Measures (composite models)", "Columns only", "Power Query", "Gateways"], "correct": 0},
+    {"id": 77, "question": "Composite models allow:", "options": ["Mixing Import and DirectQuery with DAX", "Only Import", "Only DirectQuery", "Only CSV"], "correct": 0},
+    {"id": 78, "question": "Row-level security evaluation occurs:", "options": ["At query time in filter context", "At refresh", "In Power Query", "In gateway only"], "correct": 0},
+    {"id": 79, "question": "Measure branching means:", "options": ["Building new measures from core measures", "Duplicating columns", "Creating tables", "Importing data"], "correct": 0},
+    {"id": 80, "question": "Calculation groups allow:", "options": ["Reusable calculation logic (time intel, formatting)", "Power Query transforms", "Gateways", "RLS"], "correct": 0},
+]
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def playground_questions_dax_api(request):
+    """
+    Serve 30 randomized DAX questions.
+    """
+    return Response({
+        "success": True,
+        "data": random.sample(DAX_QUESTIONS, 30)
+    })

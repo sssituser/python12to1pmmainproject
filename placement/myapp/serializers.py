@@ -25,6 +25,10 @@ from .models import (
     CourseTopic,
     CourseEnrollment,
     StudentTopicProgress,
+    FacultyProfile,
+    FacultyAchievement,
+    FacultyResearch,
+    FacultyCourseHistory,
 )
 
 
@@ -46,6 +50,7 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveRequest
         fields = "__all__"
+        read_only_fields = ['user']  # Make user field read-only in serializer
 
 
 # ===============================
@@ -330,7 +335,7 @@ class CourseStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics']
+        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics', 'modules', 'custom_videos', 'created_at']
 
 
 class CourseFacultySerializer(serializers.ModelSerializer):
@@ -338,7 +343,7 @@ class CourseFacultySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'topics']
+        fields = ['id', 'title', 'level', 'duration', 'topics', 'modules', 'custom_videos', 'created_at']
 
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
@@ -346,10 +351,194 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'progress']
+        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'modules', 'custom_videos', 'progress']
+
+    def validate_modules(self, value):
+        """Ensure modules is always a list"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Modules must be a list")
+        return value
 
     def validate_topics(self, value):
         """Ensure topics is always a list"""
         if not isinstance(value, list):
             raise serializers.ValidationError("Topics must be a list")
         return value
+
+
+# ===============================
+# FACULTY PROFILE
+# ===============================
+
+class FacultyAchievementSerializer(serializers.ModelSerializer):
+    """Serializer for faculty achievements"""
+    
+    class Meta:
+        model = FacultyAchievement
+        fields = [
+            'id', 'title', 'description', 'awarding_organization',
+            'date_received', 'certificate', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+
+class FacultyResearchSerializer(serializers.ModelSerializer):
+    """Serializer for faculty research projects and publications"""
+    
+    class Meta:
+        model = FacultyResearch
+        fields = [
+            'id', 'title', 'description', 'research_type',
+            'journal_or_conference', 'publication_date', 'doi',
+            'pdf_file', 'collaborators', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+
+class FacultyCourseHistorySerializer(serializers.ModelSerializer):
+    """Serializer for faculty course history"""
+    
+    course_title = serializers.CharField(source='course.title', read_only=True)
+    
+    class Meta:
+        model = FacultyCourseHistory
+        fields = [
+            'id', 'course', 'course_title', 'semester', 'year', 'role',
+            'student_count', 'average_rating', 'feedback', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+
+class FacultyProfileSerializer(serializers.ModelSerializer):
+    """Main serializer for faculty profile"""
+    
+    # Temporarily comment out nested serializers to isolate the issue
+    # achievements = FacultyAchievementSerializer(many=True, read_only=True)
+    # research_projects = FacultyResearchSerializer(many=True, read_only=True)
+    # course_history = FacultyCourseHistorySerializer(many=True, read_only=True)
+    
+    full_name = serializers.ReadOnlyField()
+    email = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = FacultyProfile
+        fields = [
+            'id', 'user', 'first_name', 'last_name', 'phone', 'bio', 'avatar',
+            'location', 'join_date', 'languages', 'department', 'designation',
+            'experience', 'specialization', 'education', 'certifications',
+            'publications', 'research_interests', 'linkedin', 'twitter',
+            'github', 'website', 'courses_taught', 'students_mentored',
+            'publications_count', 'experience_years', 'created_at', 'updated_at',
+            'is_active', 'full_name', 'email'
+        ]
+        read_only_fields = ['user', 'created_at', 'updated_at', 'courses_taught', 
+                           'students_mentored', 'publications_count', 'experience_years']
+    
+    def validate_avatar(self, value):
+        """Validate avatar image size and format"""
+        if value:
+            # Limit file size to 5MB
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Avatar image size should not exceed 5MB.")
+            
+            # Validate file format
+            allowed_formats = ['JPEG', 'PNG', 'JPG', 'WEBP']
+            if value.image.format not in allowed_formats:
+                raise serializers.ValidationError(
+                    f"Avatar image format must be one of: {', '.join(allowed_formats)}"
+                )
+        return value
+    
+    def validate_phone(self, value):
+        """Validate phone number format"""
+        if value and not value.replace('+', '').replace('-', '').replace(' ', '').isdigit():
+            raise serializers.ValidationError("Phone number must contain only digits, +, -, and spaces.")
+        return value
+    
+    def create(self, validated_data):
+        """Create faculty profile with nested data"""
+        # Extract nested data
+        achievements_data = validated_data.pop('achievements_data', [])
+        research_data = validated_data.pop('research_data', [])
+        course_history_data = validated_data.pop('course_history_data', [])
+        
+        # Create faculty profile
+        profile = FacultyProfile.objects.create(**validated_data)
+        
+        # Create nested objects
+        for achievement_data in achievements_data:
+            FacultyAchievement.objects.create(faculty_profile=profile, **achievement_data)
+        
+        for research_data in research_data:
+            FacultyResearch.objects.create(faculty_profile=profile, **research_data)
+        
+        for history_data in course_history_data:
+            FacultyCourseHistory.objects.create(faculty_profile=profile, **history_data)
+        
+        # Update statistics
+        profile.update_stats()
+        
+        return profile
+    
+    def update(self, instance, validated_data):
+        """Update faculty profile with nested data"""
+        # Extract nested data
+        achievements_data = validated_data.pop('achievements_data', None)
+        research_data = validated_data.pop('research_data', None)
+        course_history_data = validated_data.pop('course_history_data', None)
+        
+        # Update main profile
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update achievements if provided
+        if achievements_data is not None:
+            instance.achievements.all().delete()
+            for achievement_data in achievements_data:
+                FacultyAchievement.objects.create(faculty_profile=instance, **achievement_data)
+        
+        # Update research projects if provided
+        if research_data is not None:
+            instance.research_projects.all().delete()
+            for research_data in research_data:
+                FacultyResearch.objects.create(faculty_profile=instance, **research_data)
+        
+        # Update course history if provided
+        if course_history_data is not None:
+            instance.course_history.all().delete()
+            for history_data in course_history_data:
+                FacultyCourseHistory.objects.create(faculty_profile=instance, **history_data)
+        
+        # Update statistics
+        instance.update_stats()
+        
+        return instance
+
+
+class FacultyProfilePublicSerializer(serializers.ModelSerializer):
+    """Public serializer for faculty profile (limited fields)"""
+    
+    full_name = serializers.ReadOnlyField()
+    department = serializers.ReadOnlyField()
+    designation = serializers.ReadOnlyField()
+    avatar = serializers.ImageField(read_only=True)
+    
+    class Meta:
+        model = FacultyProfile
+        fields = [
+            'id', 'full_name', 'department', 'designation', 'avatar',
+            'bio', 'specialization', 'research_interests', 'publications_count',
+            'courses_taught', 'experience_years'
+        ]
+
+
+class FacultyProfileMinimalSerializer(serializers.ModelSerializer):
+    """Minimal serializer for dropdowns and lists"""
+    
+    full_name = serializers.ReadOnlyField()
+    designation = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = FacultyProfile
+        fields = ['id', 'full_name', 'designation', 'department']

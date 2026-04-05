@@ -10,11 +10,11 @@ def report_detail_view(request, id):
 
     data = {
         "id": obj.id,
-        "name": obj.student_name,
+        "name": obj.user.username,
         "score": obj.score,
-        "total": 30,
+        "total": obj.total_marks or 60,
         "exam": obj.exam_type,
-        "date": obj.date,
+        "date": obj.exam_date,
     }
 
     return Response(data)
