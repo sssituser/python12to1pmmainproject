@@ -12,10 +12,10 @@ from .views.leave_views import get_all_leave_requests, create_leave_request, get
 from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions
 from .views.playground_views import create_playground, get_playground, delete_playground
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, CreateSampleApplicationsView
-from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api
+from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api, user_combined_results_api
+from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
-from .views.playground_dispatcher import playground_questions_dispatcher
 
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
@@ -81,13 +81,24 @@ urlpatterns = [
     path('exam-reports/weekly/', weekly_exam_reports_api),
     path('exam-reports/monthly/', monthly_exam_reports_api),
     path('exam-reports/daily/', exam_reports_api),  # Daily exam reports
+    path('all-exam-results/', exam_reports_api),  # For Dashboard.jsx compatibility
     path('exam-questions/', exam_questions_api),
     path('exam-settings/', exam_settings_api),
     path('leaderboard/', leaderboard_api),
     
+    # Dashboard and Student URLs
+    path('dashboard-stats/', dashboard_stats_api),
+    path('students/', students_api),
+    path('student-stats/', student_stats_api),
+    path('student/<int:id>/', student_detail),
+    path('user-combined-results/', user_combined_results_api),
+    
+    # Admin URLs
+    path('admin/jobs/', JobViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('admin/exam-settings/', exam_settings_api),
+    
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
-    path('playground-questions/<str:subject>/', playground_questions_dispatcher, name='playground-questions-subject'),
     path('playground-questions/python/', playground_questions_api, name='playground-questions-python'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),

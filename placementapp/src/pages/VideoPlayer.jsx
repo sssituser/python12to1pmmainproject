@@ -205,12 +205,14 @@ const VideoPlayer = () => {
           <div className="flex justify-end w-full mb-4 mt-2 shrink-0">
             <button
               onClick={() => {
+                const searchParams = new URLSearchParams(window.location.search);
+                const subject = searchParams.get('subject');
                 const courseName = courseTitle.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-                if (isFaculty) {
-                  navigate(`/faculty/Course/${courseName}`);
-                } else {
-                  navigate(`/dashboard/course/${courseName}`);
-                }
+                
+                const returnPath = isFaculty ? `/faculty/Course/${courseName}` : `/dashboard/course/${courseName}`;
+                const subjectQuery = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+                
+                navigate(`${returnPath}${subjectQuery}`);
               }}
               className="group flex items-center gap-2 text-purple-700 bg-white hover:bg-gray-50 font-bold px-6 py-3 rounded-full shadow-[0_4px_14px_0_rgba(255,255,255,0.39)] hover:shadow-[0_6px_20px_rgba(255,255,255,0.23)] hover:-translate-y-0.5 transition-all duration-300 z-50 relative"
             >

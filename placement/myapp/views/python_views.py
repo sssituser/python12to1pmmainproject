@@ -42,6 +42,99 @@ from ..serializers import (
     UserSerializer,
 )
 
+# ==================== USER COMBINED RESULTS API ====================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_combined_results_api(request):
+    """
+    API endpoint to fetch combined exam results for a specific user.
+    Used by PlaygroundResults.jsx component.
+    """
+    try:
+        username = request.GET.get('username')
+        
+        if not username:
+            return Response({
+                'success': False,
+                'error': 'Username parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get user by username
+        try:
+            target_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': f'User "{username}" not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get exam attempts for this user
+        exam_attempts = ExamAttempt.objects.filter(user=target_user).order_by('-start_time')
+        
+        # Get applied jobs for this user
+        applied_jobs = AppliedJob.objects.filter(user=target_user).order_by('-applied_date')
+        
+        # Format exam results
+        exam_results = []
+        for attempt in exam_attempts:
+            exam_results.append({
+                'id': attempt.id,
+                'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
+                'score': attempt.score or 0,
+                'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
+                'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+                'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+                'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
+                'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
+                'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
+                'user': {
+                    'username': target_user.username,
+                    'id': target_user.id
+                }
+            })
+        
+        # Format job applications
+        job_applications = []
+        for job in applied_jobs:
+            job_applications.append({
+                'id': job.id,
+                'jobTitle': job.job.title if job.job else 'Unknown Job',
+                'company': job.job.company if job.job else 'Unknown Company',
+                'appliedDate': job.applied_date.strftime('%Y-%m-%d %H:%M:%S') if job.applied_date else '',
+                'status': job.status,
+                'randomId': f"job_{job.id}_{job.applied_date.timestamp()}" if job.applied_date else f"job_{job.id}",
+                'user': {
+                    'username': target_user.username,
+                    'id': target_user.id
+                }
+            })
+        
+        # Combine all results
+        all_results = exam_results + job_applications
+        
+        return Response({
+            'success': True,
+            'data': all_results,
+            'user': {
+                'username': target_user.username,
+                'id': target_user.id,
+                'email': target_user.email
+            },
+            'stats': {
+                'totalExams': len(exam_results),
+                'totalApplications': len(job_applications),
+                'passedExams': len([e for e in exam_results if e['status'] == 'Pass']),
+                'failedExams': len([e for e in exam_results if e['status'] == 'Fail'])
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # ==================== LEAVE REQUEST API ====================
 
 @api_view(['GET', 'POST'])

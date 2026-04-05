@@ -101,7 +101,7 @@ function Dashboard() {
             console.log("Students data from API:", data);
             
             // Transform real student data to match table structure
-            const transformedStudents = data.map((student, index) => ({
+            const transformedStudents = data.students.map((student, index) => ({
               sno: index + 1,
               studentId: student.student_id || student.id || `STU${String(index + 1).padStart(3, '0')}`,
               studentName: student.name || student.user?.name || student.user?.username || student.username || 'Unknown',
@@ -136,8 +136,8 @@ function Dashboard() {
             console.log("Student stats from API:", data);
             
             // If student-stats returns array of students, use it
-            if (Array.isArray(data)) {
-              const transformedStudents = data.map((student, index) => ({
+            if (data.students && Array.isArray(data.students)) {
+              const transformedStudents = data.students.map((student, index) => ({
                 sno: index + 1,
                 studentId: student.student_id || student.id || `STU${String(index + 1).padStart(3, '0')}`,
                 studentName: student.name || student.user?.name || student.user?.username || student.username || 'Unknown',
@@ -302,16 +302,6 @@ function Dashboard() {
 
   if (loading) return <p className="p-3">Loading dashboard...</p>;
 
-  const passReports = examReports.filter((item) => item.status?.toLowerCase() === "pass");
-  const failReports = examReports.filter((item) => item.status?.toLowerCase() === "fail");
-  const cheatingReports = examReports.filter((item) => item.status?.toLowerCase().includes("cheat"));
-  const selectedReports =
-    selectedCategory === "Pass"
-      ? passReports
-      : selectedCategory === "Cheated"
-      ? cheatingReports
-      : failReports;
-
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h4 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h4>
@@ -371,260 +361,6 @@ function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Chart Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-        <h6 className="text-lg font-semibold text-gray-800 mb-6">Placement Overview</h6>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={[
-              { name: "Total Students", value: stats?.total_students || 0, fill: "#3B82F6" },
-              { name: "Placed Students", value: stats?.placed_students || 0, fill: "#10B981" },
-              { name: "Active Jobs", value: stats?.total_jobs || 0, fill: "#8B5CF6" },
-              { name: "Pending Reviews", value: stats?.pending_reviews || 0, fill: "#F59E0B" },
-            ]}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="name" 
-              tick={{ fill: '#6B7280', fontSize: 12 }}
-              axisLine={{ stroke: '#E5E7EB' }}
-            />
-            <YAxis 
-              tick={{ fill: '#6B7280', fontSize: 12 }}
-              axisLine={{ stroke: '#E5E7EB' }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#fff', 
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px'
-              }}
-            />
-            <Bar 
-              dataKey="value" 
-              radius={[8, 8, 0, 0]}
-              fill="#3B82F6"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Stats Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
-        <div className="p-6">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Statistics Overview</h6>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Metric</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Count</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Exam</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Interview</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Course</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Batch</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Placement</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 rounded-full p-2">
-                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">Total Students</p>
-                        <p className="text-sm text-gray-500">All enrolled students</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-xl font-bold text-gray-800">{stats?.total_students || 0}</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">85%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">92%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">78%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">2024</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-green-600">65%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Active
-                    </span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="text-sm text-green-600 font-medium">+12%</span>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-green-100 rounded-full p-2">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">Total Courses</p>
-                        <p className="text-sm text-gray-500">Available courses</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-xl font-bold text-gray-800">{stats?.total_courses || 0}</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">100%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Available
-                    </span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="text-sm text-green-600 font-medium">+8%</span>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-purple-100 rounded-full p-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">Total Jobs</p>
-                        <p className="text-sm text-gray-500">Active job postings</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-xl font-bold text-gray-800">{stats?.total_jobs || 0}</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">88%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">--</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-green-600">72%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Active
-                    </span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="text-sm text-green-600 font-medium">+25%</span>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-orange-100 rounded-full p-2">
-                        <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">Active Students</p>
-                        <p className="text-sm text-gray-500">Currently active</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-xl font-bold text-gray-800">{stats?.active_students || 0}</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">92%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">95%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">88%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-gray-700">2024</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="text-sm font-medium text-green-600">78%</span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      Engaged
-                    </span>
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="text-sm text-green-600 font-medium">+15%</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -748,91 +484,51 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Additional Stats Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h6>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">New Students</span>
-              <span className="text-sm font-semibold text-blue-600">+12</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completed Courses</span>
-              <span className="text-sm font-semibold text-green-600">+8</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Job Applications</span>
-              <span className="text-sm font-semibold text-purple-600">+25</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Performance</h6>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Pass Rate</span>
-              <span className="text-sm font-semibold text-green-600">85%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Avg. Score</span>
-              <span className="text-sm font-semibold text-blue-600">78%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completion Rate</span>
-              <span className="text-sm font-semibold text-purple-600">92%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h6 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h6>
-          <div className="space-y-2">
-            <button className="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-              Add New Course
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-              View All Students
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors">
-              Manage Jobs
-            </button>
+      {/* Recent Activities */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+        <div className="p-6">
+          <h6 className="text-lg font-semibold text-gray-800 mb-4">Recent Activities</h6>
+          
+          <div className="space-y-4">
+            {examReports.slice(0, 5).map((report, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-100 rounded-full p-2">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {report.exam_title || `Exam ${index + 1}`}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Score: {report.score || 0}/{report.total_questions || 0}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">
+                    {report.exam_date ? new Date(report.exam_date).toLocaleDateString() : 'Recent'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {report.user?.username || 'Student'}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {examReports.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>No recent exam activities</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Card({ title, value }) {
-  return (
-    <div className="col-md-3 mb-3">
-      <div className="p-3 bg-light border rounded text-center">
-        <small className="text-muted">{title}</small>
-        <h5 className="mt-1">{value ?? 0}</h5>
-      </div>
-    </div>
-  );
-}
-
-function StatusCard({ title, value, active, onClick, color }) {
-  return (
-    <div className="col-md-4 mb-3">
-      <button
-        type="button"
-        onClick={onClick}
-        className={`w-100 p-3 rounded shadow-sm border text-left ${color} ${
-          active ? "border-2 border-dark" : "border-0"
-        } text-white`}
-        style={{ minHeight: 120 }}
-      >
-        <div className="d-flex justify-content-between align-items-start mb-2">
-          <span className="fw-semibold">{title}</span>
-          <span className="badge bg-white text-dark">{value}</span>
-        </div>
-        <p className="mb-0 text-white-75">Click to inspect details on this page.</p>
-      </button>
     </div>
   );
 }

@@ -431,6 +431,7 @@ class Course(models.Model):
     progress = models.IntegerField(default=0)  # Default progress percentage
     locked = models.BooleanField(default=False)
     topics = models.JSONField(default=list)  # Store topics as JSON array
+    modules = models.JSONField(null=True, blank=True, default=list)  # Added for hierarchical subjects/topics
     custom_videos = models.JSONField(default=dict, blank=True)  # Store custom videos
     created_at = models.DateTimeField(auto_now_add=True)
 
