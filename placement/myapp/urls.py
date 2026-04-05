@@ -12,7 +12,7 @@ from .views.leave_views import get_all_leave_requests, create_leave_request, get
 from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions
 from .views.playground_views import create_playground, get_playground, delete_playground
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, CreateSampleApplicationsView
-from .views.python_views import playground_questions_api, run_code_api
+from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
@@ -25,9 +25,8 @@ router.register(r'faculty-applications', FacultyApplicationsViewSet, basename='f
 router.register(r'courses', CourseViewSet, basename='courses')
 
 urlpatterns = [
-    # Router URLs
+    # Router URLs - MUST COME FIRST
     path('', include(router.urls)),
-    path('create-sample-applications/', CreateSampleApplicationsView.as_view(), name='create-sample-applications'),
     
     # Auth and user URLs
     path('login/', login, name='api_login'),
@@ -38,6 +37,9 @@ urlpatterns = [
     path("change-password/", change_password),
     path("send_otp/", send_otp),
     path("verify_otp/", verify_otp),
+    
+    # Sample data
+    path('create-sample-applications/', CreateSampleApplicationsView.as_view(), name='create-sample-applications'),
     
     # Profile URLs
     path('profile/', profile_view, name='profile'),
@@ -70,6 +72,18 @@ urlpatterns = [
     path('exam/<int:session_id>/end/', end_exam_session),
     path('exam/webcam/snapshot/', save_webcam_snapshot),
     path('exam/sessions/', get_exam_sessions),
+    
+    # Daily Exam System URLs
+    path('exam-reports/', exam_reports_api),
+    path('exam-reports/<int:pk>/', exam_report_detail_api),
+    path('exam-reports/save/', save_exam_report_api),
+    path('exam-reports/delete/<int:pk>/', delete_exam_report_api),
+    path('exam-reports/weekly/', weekly_exam_reports_api),
+    path('exam-reports/monthly/', monthly_exam_reports_api),
+    path('exam-reports/daily/', exam_reports_api),  # Daily exam reports
+    path('exam-questions/', exam_questions_api),
+    path('exam-settings/', exam_settings_api),
+    path('leaderboard/', leaderboard_api),
     
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
