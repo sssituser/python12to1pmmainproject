@@ -41,12 +41,19 @@ function DailyExamReports() {
       const url = `/api/all-exam-results/?exam_type=daily${currentUsername ? `&username=${currentUsername}` : ''}`;
       const res = await axios.get(url, config);
 
-      let examList = [];
+      let backendList = [];
       if (res.data && Array.isArray(res.data.data)) {
-        examList = res.data.data;
+        backendList = res.data.data;
       } else if (Array.isArray(res.data)) {
-        examList = res.data;
+        backendList = res.data;
       }
+      
+      let localList = [];
+      try {
+         localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      } catch(e) {}
+      
+      let examList = [...localList, ...backendList];
 
       // 🛡️ SMART DEDUPLICATE: Keep single best result per day
       const seenKeys = new Map();
@@ -221,7 +228,7 @@ function DailyExamReports() {
                     <div className="flex justify-between items-center text-xs">
                        <span className="text-gray-400">Date</span>
                        <span className="text-gray-600 font-medium">
-                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
+                        {exam.examDate ? new Date(exam.examDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
                        </span>
                     </div>
                   </div>

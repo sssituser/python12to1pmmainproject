@@ -7,7 +7,7 @@
         "duration": 45
     },
     "Python Full Stack_Weekly": {
-        "maxQuestions": 50,
+        "maxQuestions": 2,
         "questions": [
             {
                 "type": "mcq",
@@ -50,9 +50,9 @@
                 "id": 1775397878914
             }
         ],
-        "passingRule": "percentage",
-        "passingValue": 50,
-        "duration": 45
+        "passingRule": "correct_answers",
+        "passingValue": 2,
+        "duration": 1
     },
     ".net Full Stack_Weekly": {
         "maxQuestions": 50,
@@ -60,5 +60,33 @@
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45
+    },
+    "Java Full Stack_Weekly": {
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "asdsfdghjhghfgdsdsa",
+                "options": [
+                    "SADSFDGFHG",
+                    "Sadsfdgfh",
+                    "dsfdgfhgjh",
+                    "SADSFDGF"
+                ],
+                "answer": "SADSFDGF",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775411014298
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 1,
+        "duration": 1
     }
 }

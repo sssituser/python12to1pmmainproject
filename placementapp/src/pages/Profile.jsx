@@ -60,7 +60,6 @@ export default function Profile() {
       headers: getAuthHeaders(token)
     })
       .then(res => {
-        console.log("DEBUG: Leave requests data:", res.data);
         setLeaveRequests(Array.isArray(res.data) ? res.data : []);
         setLoadingLeaveRequests(false);
       })
@@ -84,11 +83,6 @@ export default function Profile() {
       headers: getAuthHeaders(token)
     })
       .then(res => {
-        console.log("DEBUG: Raw API response:", res.data);
-        console.log("DEBUG: Available fields in API response:", Object.keys(res.data));
-        console.log("DEBUG: student_id value:", res.data.student_id);
-        console.log("DEBUG: parent_phone value:", res.data.parent_phone);
-        
         const nextData = {
           name: res.data.name || "",
           email: res.data.email || "",
@@ -108,7 +102,6 @@ export default function Profile() {
           education: Array.isArray(res.data.education) ? res.data.education : [],
           course: res.data.course_title || ""
         };
-        console.log("DEBUG: Form data after mapping:", nextData);
         setFormData(nextData);
         localStorage.setItem(localStorageKey, JSON.stringify(nextData));
         setLoading(false);
@@ -135,7 +128,6 @@ export default function Profile() {
 
     // Listen for leave request updates
     const handleLeaveRequestUpdate = () => {
-      console.log("Leave request update detected, refreshing...");
       fetchLeaveRequests(token);
     };
 

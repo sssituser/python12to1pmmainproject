@@ -13,31 +13,58 @@ function Playground() {
   const [weeklyTime, setWeeklyTime] = useState(45);
   const [monthlyQuestions, setMonthlyQuestions] = useState(50);
   const [monthlyTime, setMonthlyTime] = useState(45);
+  const [studentCourse, setStudentCourse] = useState("");
 
   useEffect(() => {
     // Fetch limits safely so UI is dynamic based on Faculty settings
-    const fetchSettings = async () => {
+    const fetchSettings = async (courseToUse) => {
       try {
+        // Fetch all settings
         const res = await axios.get("/api/admin/exam-settings/");
         if (res.data && res.data.success && res.data.data) {
-          if (res.data.data.Daily) {
-            setDailyQuestions(res.data.data.Daily.maxQuestions || 20);
-            setDailyTime(res.data.data.Daily.duration || 45);
+          const s = res.data.data;
+          
+          // Helper to find setting either as 'Course_Category' or just 'Category'
+          const getVal = (cat) => {
+            const prioritized = courseToUse ? s[`${courseToUse}_${cat}`] : null;
+            return prioritized || s[cat] || null;
+          };
+
+          const daily = getVal('Daily');
+          if (daily) {
+            setDailyQuestions(daily.maxQuestions || 20);
+            setDailyTime(daily.duration || 45);
           }
-          if (res.data.data.Weekly) {
-            setWeeklyQuestions(res.data.data.Weekly.maxQuestions || 50);
-            setWeeklyTime(res.data.data.Weekly.duration || 45);
+
+          const weekly = getVal('Weekly');
+          if (weekly) {
+            setWeeklyQuestions(weekly.maxQuestions || 50);
+            setWeeklyTime(weekly.duration || 45);
           }
-          if (res.data.data.Monthly) {
-            setMonthlyQuestions(res.data.data.Monthly.maxQuestions || 50);
-            setMonthlyTime(res.data.data.Monthly.duration || 45);
+
+          const monthly = getVal('Monthly');
+          if (monthly) {
+            setMonthlyQuestions(monthly.maxQuestions || 50);
+            setMonthlyTime(monthly.duration || 45);
           }
         }
       } catch (err) {
-        console.error("Could not fetch dynamic exact sizes", err);
+        console.error("Could not fetch dynamic exam settings", err);
       }
     };
-    fetchSettings();
+
+    const userStr = localStorage.getItem("user");
+    let currentCourse = "";
+    if (userStr && userStr !== "undefined") {
+      try {
+        const user = JSON.parse(userStr);
+        currentCourse = user.course || "";
+        setStudentCourse(currentCourse);
+      } catch (e) {}
+    }
+    
+    fetchSettings(currentCourse);
+    
     // Clear any stale exam result flag when entering the playground
     localStorage.removeItem("examResult");
   }, []);
@@ -101,7 +128,7 @@ function Playground() {
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                Daily practice exam to test your Python programming skills. Cover variables, operators, data types, control flow, functions, and more with 20 multiple choice questions.
+                Daily practice exam to test your {studentCourse || 'Python'} programming skills. Cover variables, operators, data types, control flow, functions, and more with 20 multiple choice questions.
               </p>
 
               <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">

@@ -1100,13 +1100,21 @@ def exam_settings_api(request):
         else:
             data = {}
             
-        category = request.GET.get('category')
-        course = request.GET.get('course', '')
+        category = request.GET.get('category', '').strip()
+        course = request.GET.get('course', '').strip()
         storage_key = f"{course}_{category}" if course else category
         
         if category:
-            # Return specific category config
-            return Response({'success': True, 'data': data.get(storage_key, {'maxQuestions': 50, 'questions': []})})
+            # Check specific course config first
+            result_data = data.get(storage_key)
+            # Fallback to general category config if course specific is not found
+            if not result_data and course:
+                result_data = data.get(category)
+            # Final fallback to empty format
+            if not result_data:
+                result_data = {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45}
+                
+            return Response({'success': True, 'data': result_data})
             
         return Response({'success': True, 'data': data})
 

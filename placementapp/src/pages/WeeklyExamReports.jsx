@@ -41,28 +41,40 @@ function WeeklyExamReports() {
       const url = `/api/all-exam-results/?exam_type=weekly${currentUsername ? `&username=${currentUsername}` : ''}`;
       const res = await axios.get(url, config);
 
-      let examList = [];
+      let backendList = [];
       if (res.data && Array.isArray(res.data.data)) {
-        examList = res.data.data;
+        backendList = res.data.data;
       } else if (Array.isArray(res.data)) {
-        examList = res.data;
+        backendList = res.data;
       }
+      
+      let localList = [];
+      try {
+         localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      } catch(e) {}
+      
+      let examList = [...localList, ...backendList];
 
-      // 🛡️ SMART DEDUPLICATE: Keep single best weekly result per day
+      // 🛡️ DEDUPLICATE: Merge local unsynced exams with backend exams based on exact ID
       const seenKeys = new Map();
       
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
-         const title = (exam.examTitle || exam.title || "").toLowerCase();
+         const title = (exam.examTitle || exam.title || exam.exam_title || "").toLowerCase();
          
          // 1. Strict Category Match - Filter by 'weekly' type but check title as backup
          const isWeekly = type === 'weekly' || title.includes('weekly');
          const isExcluded = title.includes('monthly');
          
-         if (!isWeekly || isExcluded) return;
+         // User isolation filter (allow if exam has no user attached just in case, but prefer exact username match)
+         const examUsername = exam.user?.username || exam.username || "";
+         const currentUsername = getCurrentUsername() || "";
+         const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !currentUsername || examUsername.toLowerCase() === currentUsername;
          
-         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-time';
-         const key = `${title}-${dateStr}`;
+         if (!isWeekly || isExcluded || !isOwnExam) return;
+         
+         const dateVal = exam.examDate ? new Date(exam.examDate).getTime() : 0;
+         const key = exam.random_id || exam.randomId || exam.id || `${title}-${dateVal}`;
          const score = exam.score || 0;
          
          if (!seenKeys.has(key)) {
@@ -118,7 +130,7 @@ function WeeklyExamReports() {
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam) => {
+    exams.forEach((exam, index) => {
       const total = exam.totalMarks || 40;
       const percentage = total > 0 ? (exam.score / total) * 100 : 0;
 
@@ -131,12 +143,43 @@ function WeeklyExamReports() {
         }
         setProgress((prev) => ({
           ...prev,
-          [exam.id]: value,
+          [exam.id || index]: value,
         }));
       }, 20);
     });
 
   }, [exams]);
+  
+  // 🔄 BACKGROUND AUTO-SYNC for unsynced reports
+  useEffect(() => {
+    const syncRemaining = async () => {
+      try {
+        const local = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+        const unsynced = local.filter(exam => exam.synced === false);
+        
+        if (unsynced.length === 0) return;
+        
+        console.log(`Auto-syncing ${unsynced.length} pending weekly reports...`);
+        
+        for (const report of unsynced) {
+          try {
+            const res = await axios.post("/api/save-exam-report/", report);
+            if (res.data.success) {
+               report.synced = true;
+            }
+          } catch (e) {
+            console.error("Failed to background sync a report:", e);
+          }
+        }
+        
+        localStorage.setItem("allExamResults", JSON.stringify(local));
+      } catch (e) {}
+    };
+    
+    // Tiny delay to not compete with initial load
+    const timeout = setTimeout(syncRemaining, 1500);
+    return () => clearTimeout(timeout);
+  }, []);
 
   //  COLOR LOGIC
   const getColor = (percentage) => {
@@ -182,16 +225,16 @@ function WeeklyExamReports() {
             {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-              const value = progress[exam.id] || 0;
+              const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
 
               return (
                 <div 
-                  key={exam.id} 
+                  key={exam.id || index} 
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="w-full mb-4 text-center">
-                    <h3 className="text-lg font-bold text-gray-800 truncate px-2">
+                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={`Weekly Exam ${exams.length - index}`}>
                        {`Weekly Exam ${exams.length - index}`}
                     </h3>
                     <p className="text-xs text-green-600 font-bold tracking-wider uppercase mt-1">
@@ -221,13 +264,30 @@ function WeeklyExamReports() {
                     <div className="flex justify-between items-center text-xs">
                        <span className="text-gray-400">Recorded</span>
                        <span className="text-gray-600 font-medium">
-                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
+                        {exam.examDate ? new Date(exam.examDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
                        </span>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Weekly' } })}
+                    onClick={() => {
+                        if (exam.id) {
+                            navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Weekly' } });
+                        } else {
+                            // Local unsynced exam fallback
+                            const localStr = localStorage.getItem("allExamResults");
+                            let targetIdx = 0;
+                            if (localStr) {
+                                const allLocal = JSON.parse(localStr);
+                                const foundIdx = allLocal.findIndex(e => (e.random_id && e.random_id === exam.random_id) || (e.randomId && e.randomId === exam.randomId));
+                                if (foundIdx !== -1) targetIdx = foundIdx;
+                            }
+                            localStorage.setItem("selectedExamResult", JSON.stringify(exam));
+                            navigate(`/dashboard/playground/detailed-results/${targetIdx}`, { 
+                                state: { examTitle: `Weekly Exam ${exams.length - index}` } 
+                            });
+                        }
+                    }}
                     className="w-full py-3 bg-gray-50 text-green-600 rounded-xl font-bold text-sm hover:bg-green-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
                     View Report 

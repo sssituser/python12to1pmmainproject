@@ -41,26 +41,39 @@ function MonthlyExamReports() {
       const url = `/api/all-exam-results/?exam_type=monthly${currentUsername ? `&username=${currentUsername}` : ''}`;
       const res = await axios.get(url, config);
 
-      let examList = [];
+      let backendList = [];
       if (res.data && Array.isArray(res.data.data)) {
-        examList = res.data.data;
+        backendList = res.data.data;
       } else if (Array.isArray(res.data)) {
-        examList = res.data;
+        backendList = res.data;
       }
+      
+      let localList = [];
+      try {
+         localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      } catch(e) {}
+      
+      let examList = [...localList, ...backendList];
 
-      // 🛡️ SMART DEDUPLICATE: Keep single best monthly result per day
+      // 🛡️ DEDUPLICATE: Merge local unsynced exams with backend exams based on exact ID
       const seenKeys = new Map();
       
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
-         const title = (exam.examTitle || exam.title || "").toLowerCase();
+         const title = (exam.examTitle || exam.title || exam.exam_title || "").toLowerCase();
          
          // 1. Strict Category Match
          const isMonthly = type === 'monthly' || title.includes('monthly');
-         if (!isMonthly) return;
          
-         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-time';
-         const key = `${title}-${dateStr}`;
+         // User isolation filter
+         const examUsername = exam.user?.username || exam.username || "";
+         const currentUsername = getCurrentUsername() || "";
+         const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !currentUsername || examUsername.toLowerCase() === currentUsername;
+         
+         if (!isMonthly || !isOwnExam) return;
+         
+         const dateVal = exam.examDate ? new Date(exam.examDate).getTime() : 0;
+         const key = exam.random_id || exam.randomId || exam.id || `${title}-${dateVal}`;
          const score = exam.score || 0;
          
          if (!seenKeys.has(key)) {
@@ -116,7 +129,7 @@ function MonthlyExamReports() {
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam) => {
+    exams.forEach((exam, index) => {
       const total = exam.totalMarks || 40;
       const percentage = total > 0 ? (exam.score / total) * 100 : 0;
 
@@ -129,7 +142,7 @@ function MonthlyExamReports() {
         }
         setProgress((prev) => ({
           ...prev,
-          [exam.id]: value,
+          [exam.id || index]: value,
         }));
       }, 20);
     });
@@ -180,16 +193,16 @@ function MonthlyExamReports() {
             {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-              const value = progress[exam.id] || 0;
+              const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
 
               return (
                 <div 
-                   key={exam.id} 
+                   key={exam.id || index} 
                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-b-4 border-b-purple-500"
                 >
                   <div className="w-full mb-4 text-center">
-                    <h3 className="text-lg font-bold text-gray-800 truncate px-2">
+                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={`Monthly Exam ${exams.length - index}`}>
                        {`Monthly Exam ${exams.length - index}`}
                     </h3>
                     <p className="text-xs text-purple-600 font-bold tracking-wider uppercase mt-1">
@@ -219,13 +232,30 @@ function MonthlyExamReports() {
                     <div className="flex justify-between items-center text-xs">
                        <span className="text-gray-400">Date Taken</span>
                        <span className="text-gray-600 font-medium">
-                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
+                        {exam.examDate ? new Date(exam.examDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
                        </span>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Monthly' } })}
+                    onClick={() => {
+                        if (exam.id) {
+                            navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Monthly' } });
+                        } else {
+                            // Local unsynced exam fallback
+                            const localStr = localStorage.getItem("allExamResults");
+                            let targetIdx = 0;
+                            if (localStr) {
+                                const allLocal = JSON.parse(localStr);
+                                const foundIdx = allLocal.findIndex(e => (e.random_id && e.random_id === exam.random_id) || (e.randomId && e.randomId === exam.randomId));
+                                if (foundIdx !== -1) targetIdx = foundIdx;
+                            }
+                            localStorage.setItem("selectedExamResult", JSON.stringify(exam));
+                            navigate(`/dashboard/playground/detailed-results/${targetIdx}`, { 
+                                state: { examTitle: `Monthly Exam ${exams.length - index}` } 
+                            });
+                        }
+                    }}
                     className="w-full py-3 bg-purple-50 text-purple-700 rounded-xl font-bold text-sm hover:bg-purple-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
                     View Result Analysis 

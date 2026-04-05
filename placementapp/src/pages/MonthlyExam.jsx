@@ -146,6 +146,7 @@ const MonthlyExam = () => {
   const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
+  const [studentCourse, setStudentCourse] = useState("");
 
   const [questions, setQuestions] = useState([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
@@ -178,15 +179,16 @@ const MonthlyExam = () => {
 
         // Fetch custom exam settings loaded manually by Faculty
         const userStr = localStorage.getItem("user");
-        let studentCourse = "";
+        let course = "";
         try {
           const user = userStr ? JSON.parse(userStr) : {};
-          studentCourse = user.course || "";
+          course = user.course || "";
+          setStudentCourse(course);
         } catch (e) {
           console.error("Error parsing user for course:", e);
         }
 
-        const customRes = await fetch(`/api/admin/exam-settings/?category=Monthly&course=${studentCourse}`);
+        const customRes = await fetch(`/api/admin/exam-settings/?category=Monthly&course=${course}`);
         const customJson = await customRes.json();
 
         // 1. Prioritize Custom Questions from Exam Manager
@@ -903,7 +905,7 @@ useEffect(() => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Monthly Exam",
+      examTitle: `Monthly ${studentCourse || 'Python'} Exam`,
       submissionReason: reason
     };
 
@@ -912,7 +914,7 @@ useEffect(() => {
 
     const payload = {
       username: user.username || "Unknown",
-      exam_title: "Monthly Python Programming Assessment",
+      exam_title: `Monthly ${studentCourse || 'Python'} Programming Assessment`,
       exam_type: "monthly",
       score: earnedMarks,
       total_questions: totalQ,
@@ -955,10 +957,7 @@ useEffect(() => {
 
     sessionStorage.removeItem('monthlyExamState');
 
-    window.history.go(-1);
-    setTimeout(() => {
-      navigate("/dashboard/playground-results", { replace: true });
-    }, 100);
+    // Allow the user to manually click the 'View Monthly Results' button
   };
 
   const formatTime = (seconds) => {
@@ -998,7 +997,7 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              Monthly Assessment
+              {studentCourse || 'Monthly'} Assessment
             </h2>
             <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
@@ -1049,10 +1048,10 @@ useEffect(() => {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => navigate("/dashboard/playground-results")}
+              onClick={() => navigate("/dashboard/monthly-exams")}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
             >
-              View Detailed Results
+              View Monthly Results
             </button>
           </div>
         </div>

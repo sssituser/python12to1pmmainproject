@@ -18,14 +18,10 @@ function DetailedResults() {
     if (t.includes("weekly") || t.includes("monthly")) return 35;
     return 20;
   };
-  const formatExamTitle = (title = "") => {
-    const t = title.toLowerCase();
-    if (t.includes("python")) return "Python Exam";
-    if (t.includes("java")) return "Java Exam";
-    if (t.includes("oracle")) return "Oracle Exam";
-    if (t.includes("ui")) return "UI Exam";
-    if (t.includes("django")) return "Django Exam";
-    return title || "Exam";
+  const formatExamTitle = (title) => {
+    if (!title) return "Exam";
+    // Return original title from backend instead of overly aggressive truncations
+    return title;
   };
 
   useEffect(() => {
@@ -49,13 +45,42 @@ function DetailedResults() {
   }, [index]);
 
   const handleBack = () => {
-    navigate("/dashboard/playground-results");
+    const titleFromState = location.state?.examTitle || "";
+    if (titleFromState.includes('Weekly')) {
+      navigate("/dashboard/weekly-exams");
+    } else if (titleFromState.includes('Monthly')) {
+      navigate("/dashboard/monthly-exams");
+    } else {
+      navigate("/dashboard/playground-results");
+    }
   };
 
+  // --- Pure Data Sanitation Sweep (No State Mutation) ---
+  let parsedQuestions = [];
+  if (result && result.questions) {
+    let q = result.questions;
+    if (typeof q === 'string') {
+      try { q = JSON.parse(q); } catch (e) { q = []; }
+    }
+    if (typeof q === 'string') {
+      try { q = JSON.parse(q); } catch (e) { q = []; }
+    }
+    parsedQuestions = Array.isArray(q) ? q : (typeof q === 'object' && q !== null ? Object.values(q) : []);
+  }
+
+  let parsedAnswers = [];
+  if (result && result.answers) {
+    let a = result.answers;
+    if (typeof a === 'string') {
+      try { a = JSON.parse(a); } catch (e) { a = []; }
+    }
+    parsedAnswers = Array.isArray(a) ? a : (typeof a === 'object' && a !== null ? Object.values(a) : []);
+  }
+
   // ─── Shared exam calculations (computed at component scope) ───
-  const totalQuestions = result?.totalQuestions || result?.questions?.length || 20;
+  const totalQuestions = result?.totalQuestions || parsedQuestions.length || 20;
   const totalMarks = result?.totalMarks || result?.total_marks || (totalQuestions * 2);
-  const passingScore = getPassingScore(result?.examTitle);
+  const passingScore = getPassingScore(result?.examTitle || result?.title || result?.exam_title);
 
   // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
   const passed = result && result.passed !== undefined 
@@ -91,6 +116,8 @@ function DetailedResults() {
       || (profileCache.name && profileCache.name.includes("@") ? profileCache.name : null)
       || "N/A";
 
+    const studentId = result.user?.studentId || result.user?.student_id || profileCache?.studentId || storedProfile?.student_id || "N/A";
+
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
@@ -101,7 +128,7 @@ function DetailedResults() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${studentName}`, 20, 50);
     doc.text(`Email: ${email}`, 20, 60);
-    doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
+    doc.text(`ID: ${studentId}`, 20, 70);
     
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
@@ -171,7 +198,7 @@ function DetailedResults() {
           <div className="p-4 sm:p-6">
             <h2 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <span className="w-8 h-[2px] bg-indigo-500"></span>
-              {formatExamTitle(result?.examTitle) || "Student Assessment Summary"}
+              {formatExamTitle(result?.examTitle || result?.title || result?.exam_title) || "Student Assessment Summary"}
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
@@ -184,13 +211,17 @@ function DetailedResults() {
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Student ID</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {result.user?.randomId || "N/A"}
+                  {result.user?.studentId || result.user?.student_id || (() => {
+                    try { return JSON.parse(localStorage.getItem("sssit-profile") || "{}").studentId; } catch { return null; }
+                  })() || (() => {
+                    try { return JSON.parse(localStorage.getItem("user") || "{}").student_id; } catch { return null; }
+                  })() || "N/A"}
                 </p>
               </div> 
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Exam</p>
                 <p className="text-xl font-black text-gray-900 truncate">
-                  {formatExamTitle(result.examTitle)}
+                  {formatExamTitle(result?.examTitle || result?.title || result?.exam_title)}
                 </p>
               </div> 
               <div className="space-y-1 text-right md:text-left">
@@ -236,7 +267,9 @@ function DetailedResults() {
              <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-gray-500 font-black text-xs uppercase tracking-widest mb-2">Skipped</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
-               {result.answers?.filter(a => a === null || a === undefined).length || 0}
+               {Array.isArray(parsedAnswers) 
+                  ? parsedAnswers.filter(a => a === null || a === undefined).length 
+                  : Math.max(0, totalQuestions - Object.keys(result.answers || {}).length)}
             </p>
             <p className="text-sm font-bold text-gray-400 italic">Not Analyzed</p>
           </div>
@@ -247,18 +280,18 @@ function DetailedResults() {
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-2 px-4">
              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
-               Question Breakdown <span className="text-indigo-500 ml-2">{result.questions?.length || 0} ITEMS</span>
+               Question Breakdown <span className="text-indigo-500 ml-2">{parsedQuestions.length} ITEMS</span>
              </h3>
              <div className="h-[2px] flex-grow mx-8 bg-gray-100 hidden sm:block"></div>
           </div>
 
-          {result && result.questions && result.questions.length > 0 ? (
+          {parsedQuestions.length > 0 ? (
             <div className="space-y-6">
-              {result.questions.map((question, questionIndex) => {
+              {parsedQuestions.map((question, questionIndex) => {
                 const questionText = question?.question || `Assessment Item ${questionIndex + 1}`;
                 const options = Array.isArray(question?.options) ? question.options : [];
                 const correctAnswerIndex = question?.correct ?? 0;
-                const userAnswerIndex = Array.isArray(result?.answers) ? result.answers[questionIndex] : null;
+                const userAnswerIndex = result?.answers ? result.answers[questionIndex] : null;
                 const isCorrect = userAnswerIndex === correctAnswerIndex;
                 const notAttempted = userAnswerIndex === null || userAnswerIndex === undefined;
                 const isCoding = question?.type === 'coding' || !options || options.length === 0;

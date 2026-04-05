@@ -47,8 +47,22 @@ function ExamReportDetail() {
 
   const passed = report.passed;
   const percentage = report.percentage || 0;
-  const questions = report.questions || [];
-  const answers = report.answers || [];
+  let questions = report.questions || [];
+  if (typeof questions === 'string') {
+    try { questions = JSON.parse(questions); } catch(e) { questions = []; }
+  }
+  if (typeof questions === 'string') { 
+    // Double serialized safety
+    try { questions = JSON.parse(questions); } catch(e) { questions = []; }
+  }
+  if (!Array.isArray(questions)) {
+    questions = typeof questions === 'object' && questions !== null ? Object.values(questions) : [];
+  }
+
+  let answers = report.answers || [];
+  if (typeof answers === 'string') {
+    try { answers = JSON.parse(answers); } catch(e) { answers = []; }
+  }
 
   return (
     <div className="container mt-4 pb-5" style={{ maxWidth: "860px" }}>

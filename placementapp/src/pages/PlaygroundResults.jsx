@@ -20,13 +20,9 @@ function PlaygroundResults() {
   };
 
   const formatExamTitle = (title = "") => {
-    const t = title.toLowerCase();
-    if (t.includes("python")) return "Python Exam";
-    if (t.includes("java")) return "Java Exam";
-    if (t.includes("oracle")) return "Oracle Exam";
-    if (t.includes("ui")) return "UI Exam";
-    if (t.includes("django")) return "Django Exam";
-    return title || "Exam";
+    if (!title) return "Exam";
+    // Just return the clean title without overly aggressive regex or length constraints
+    return title;
   };
 
   useEffect(() => {
@@ -73,6 +69,19 @@ function PlaygroundResults() {
           
           // We put localResults first so the most recent locally saved exam takes priority visually
           for (const res of [...localResults, ...backendResults]) {
+             
+             // 🛡️ STRICT CATEGORY FILTER: Hide 'weekly' & 'monthly' exams from the Playground
+             const type = (res.examType || res.exam_type || "").toLowerCase();
+             const titleStr = (res.examTitle || res.title || res.exam_title || "").toLowerCase();
+             
+             // User isolation filter
+             const examUsername = res.user?.username || res.username || "";
+             const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !targetUsername || examUsername.toLowerCase() === targetUsername.toLowerCase();
+             
+             if (type === 'weekly' || type === 'monthly' || titleStr.includes('weekly') || titleStr.includes('monthly') || !isOwnExam) {
+               continue; // SKIP this exam, do not show it in Playground
+             }
+
              const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
              if (key && !seen.has(key)) {
                 seen.add(key);
