@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const VideoPlayer = () => {
@@ -8,6 +8,75 @@ const VideoPlayer = () => {
   const [customVideoSrc, setCustomVideoSrc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUsingDefaultVideo, setIsUsingDefaultVideo] = useState(false);
+
+  // Persistence and Tracking Refs
+  const ytPlayerRef = useRef(null);
+  const nativeVideoRef = useRef(null);
+
+  // Sync current time periodically to localStorage
+  useEffect(() => {
+    if (!videoId && !customVideoSrc) return;
+
+    const interval = setInterval(() => {
+      let currentTime = 0;
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+        currentTime = Math.floor(ytPlayerRef.current.getCurrentTime());
+      } else if (nativeVideoRef.current) {
+        currentTime = Math.floor(nativeVideoRef.current.currentTime);
+      }
+
+      if (currentTime > 2) { // Only save if we've actually started
+        localStorage.setItem(`time_${courseTitle}_${topicName}`, currentTime.toString());
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [videoId, customVideoSrc, courseTitle, topicName]);
+
+  // Initialize YouTube IFrame API
+  useEffect(() => {
+    if (!videoId) return;
+
+    const initYT = () => {
+      if (window.YT && window.YT.Player) {
+        if (ytPlayerRef.current) {
+            try { ytPlayerRef.current.destroy(); } catch(e) {}
+        }
+
+        const savedTime = parseInt(localStorage.getItem(`time_${courseTitle}_${topicName}`)) || 0;
+        
+        ytPlayerRef.current = new window.YT.Player('yt-iframe', {
+          events: {
+            'onReady': (event) => {
+              if (savedTime > 0) {
+                  event.target.seekTo(savedTime, true);
+              }
+            }
+          }
+        });
+      }
+    };
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      window.onYouTubeIframeAPIReady = initYT;
+    } else {
+      initYT();
+    }
+  }, [videoId]);
+
+  // Native Video Resume logic
+  useEffect(() => {
+    if (nativeVideoRef.current && (customVideoSrc?.isNativeVideo)) {
+        const savedTime = parseInt(localStorage.getItem(`time_${courseTitle}_${topicName}`)) || 0;
+        if (savedTime > 0) {
+            nativeVideoRef.current.currentTime = savedTime;
+        }
+    }
+  }, [customVideoSrc, videoId]);
 
   // Check if user is faculty
   const user = JSON.parse(localStorage.getItem("user"));
@@ -225,26 +294,27 @@ const VideoPlayer = () => {
             {/* Vibrant Outer Glow */}
             <div className="absolute -inset-4 bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-400 rounded-[2.5rem] blur-xl opacity-70 group-hover:opacity-100 transition duration-500 group-hover:duration-200 animate-pulse"></div>
             
-            {/* Full Page iframe Container */}
+            {/* Full Page iframe/Video Container */}
             <div className="relative w-full flex-grow overflow-hidden rounded-[2rem] border-[6px] border-white/80 shadow-2xl bg-black z-10 transition-transform duration-300">
               {videoId ? (
                 <iframe
+                  id="yt-iframe"
                   className="absolute inset-0 w-full h-full rounded-[1.5rem]"
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1&origin=${window.location.origin}`}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  autoPlay
                 />
-              ) : customVideoSrc && customVideoSrc.isNativeVideo ? (
+              ) : (customVideoSrc && customVideoSrc.isNativeVideo) ? (
                 <video 
+                  ref={nativeVideoRef}
                   className="absolute inset-0 w-full h-full rounded-[1.5rem] object-contain bg-black"
                   src={customVideoSrc.url}
                   controls
                   autoPlay
                 />
-              ) : customVideoSrc && !customVideoSrc.isNativeVideo ? (
+              ) : (customVideoSrc && !customVideoSrc.isNativeVideo) ? (
                 <iframe
                   className="absolute inset-0 w-full h-full rounded-[1.5rem] bg-white"
                   src={customVideoSrc.url}

@@ -101,6 +101,7 @@ const subjects = [
 // Course-specific subject mappings (lowercase keys)
 const courseMappings = {
   "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
   "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
   ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
   "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
@@ -117,51 +118,34 @@ const courseMappings = {
 };
 
 const getAllowedSubjects = (courseName = "") => {
-  const normalized = courseName
+  const normalized = String(courseName || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strict Mapping First
+  if (courseMappings[normalized]) return courseMappings[normalized];
+
+  // Fuzzy Match
   const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key)
+    normalized.includes(key) || key.includes(normalized)
   );
   if (matchedKey) return courseMappings[matchedKey];
 
-  // Synonym boost (helps when course name doesn't directly match subjects)
+  // Synonym boost
   const synonymMap = {
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    hacking: ["ethical_hacking", "penetration_testing"],
-    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power query": ["power_query"],
-    dax: ["dax"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-    devsecops: ["devops", "network_security", "penetration_testing"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    app: ["flutter_react_native", "android", "ios_swift", "ui"],
-    application: ["flutter_react_native", "android", "ios_swift", "ui"],
-    flutter: ["flutter_react_native", "android", "ui"],
-    reactnative: ["flutter_react_native", "react", "ui"],
+    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
     dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dot net": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    net: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    csharp: ["c_sharp", "asp_net_mvc", "backend"],
+    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
   };
 
-  // Fallback: token-based fuzzy match against subject keys/names
   const tokens = normalized.split(" ").filter((t) => t.length > 2);
   const allowed = new Set();
 
@@ -171,13 +155,6 @@ const getAllowedSubjects = (courseName = "") => {
     }
   });
 
-  tokens.forEach((tok) => {
-    subjects.forEach((subj) => {
-      const keyHit = subj.key.toLowerCase().includes(tok);
-      const nameHit = subj.name.toLowerCase().includes(tok);
-      if (keyHit || nameHit) allowed.add(subj.key);
-    });
-  });
   return Array.from(allowed);
 };
 
@@ -188,67 +165,47 @@ function DailyExamSubjects() {
   const [studentCourse, setStudentCourse] = useState(storedUser.course || "");
   const [courseId, setCourseId] = useState(null);
   const [topicsAllowed, setTopicsAllowed] = useState([]);
+  const [isValidating, setIsValidating] = useState(true);
   const userRole = (storedUser.role || "").toLowerCase();
   const isStudent = userRole === "student";
 
-  // Always refresh course from profile on mount so newly registered courses reflect immediately
   useEffect(() => {
+    // Self-healing synchronization for different laptops/devices
     const token = localStorage.getItem("access");
-    if (!isStudent || !token) return;
-
-    const syncCourseFromProfile = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const resolvedCourse = data?.course_title || data?.course || "";
-        const resolvedCourseId = data?.course || null;
-        if (resolvedCourse && resolvedCourse !== studentCourse) {
-          setStudentCourse(resolvedCourse);
-          const updatedUser = { ...storedUser, course: resolvedCourse };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
-        if (resolvedCourseId) setCourseId(resolvedCourseId);
-      } catch (err) {
-        console.error("Failed to sync course from profile:", err);
-      }
-    };
-
-    syncCourseFromProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStudent]);
-
-  useEffect(() => {
-    // If course is missing in local storage, resolve it from profile so every student is constrained properly
-    if (!isStudent || studentCourse) return;
-    const token = localStorage.getItem("access");
-    if (!token) return;
+    if (!isStudent || !token) {
+      setIsValidating(false);
+      return;
+    }
 
     const fetchCourseFromProfile = async () => {
       try {
         const res = await fetch("http://127.0.0.1:8000/api/profile/", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setIsValidating(false);
+          return;
+        }
         const data = await res.json();
         const resolvedCourse = data?.course_title || data?.course || "";
         const resolvedCourseId = data?.course || null;
         if (resolvedCourse) {
           setStudentCourse(resolvedCourse);
-          // persist for other pages
+          // Persist the verified course name to local storage for instant access across reloads
           const updatedUser = { ...storedUser, course: resolvedCourse };
           localStorage.setItem("user", JSON.stringify(updatedUser));
         }
         if (resolvedCourseId) setCourseId(resolvedCourseId);
       } catch (err) {
-        console.error("Failed to fetch course from profile:", err);
+        console.error("Critical: Failed to validate student registration on this device:", err);
+      } finally {
+        // Only allow subject rendering after we've attempted to sync with the central server
+        setIsValidating(false);
       }
     };
 
     fetchCourseFromProfile();
-  }, [isStudent, studentCourse]);
+  }, [isStudent, storedUser.username]);
 
   // Fetch topics for the student's course to build dynamic subject mapping
   useEffect(() => {
@@ -348,6 +305,15 @@ function DailyExamSubjects() {
   const handleSelectSubject = (subjectKey) => {
     navigate(`/dashboard/daily-exam/${subjectKey}`);
   };
+
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-500 font-medium animate-pulse">Verifying Registration...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 sm:p-8 relative">
