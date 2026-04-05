@@ -84,6 +84,11 @@ function PlaygroundResults() {
           }
           
           setAllResults(merged);
+          try {
+            localStorage.setItem("allExamResults", JSON.stringify(merged));
+          } catch (e) {
+            console.error("Failed to persist merged results:", e);
+          }
         } else {
           setError(json.error || "Failed to fetch results");
           setAllResults(localResults);

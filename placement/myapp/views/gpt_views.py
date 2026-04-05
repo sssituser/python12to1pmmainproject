@@ -1,0 +1,100 @@
+import random
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+# Agentic AI question bank (80 items, 4-option MCQs, correct is 0-based index)
+AGENTIC_AI_QUESTIONS = [
+    {"id": 1, "question": "What best describes an agentic AI system?", "options": ["Goal-driven loop that plans, acts, and observes with tools", "Static FAQ bot", "Single-shot text classifier", "Pure rules engine"], "correct": 0},
+    {"id": 2, "question": "Which step comes immediately after an action in the ReAct loop?", "options": ["Planning", "Observation", "Evaluation", "Deployment"], "correct": 1},
+    {"id": 3, "question": "Why are tools critical for agents?", "options": ["They reduce latency", "They let the agent affect or query the world beyond text generation", "They change the model weights", "They compress context"], "correct": 1},
+    {"id": 4, "question": "Planner vs executor pattern separates:", "options": ["Training and inference", "High-level task decomposition from low-level tool calls", "Front-end and back-end", "Auth and billing"], "correct": 1},
+    {"id": 5, "question": "Short-term memory in agents usually lives in:", "options": ["Prompt history / scratchpad", "Vector database only", "Local disk cache only", "Model weights"], "correct": 0},
+    {"id": 6, "question": "Long-term memory for agents is commonly stored in:", "options": ["GPU RAM", "Vector store or database", "Environment variables", "Browser cookies"], "correct": 1},
+    {"id": 7, "question": "Retrieval-Augmented Generation (RAG) helps agents by:", "options": ["Speeding up GPUs", "Grounding responses with fetched documents", "Replacing planning", "Disabling hallucinations completely"], "correct": 1},
+    {"id": 8, "question": "Guardrails in agentic systems are used to:", "options": ["Improve network speed", "Enforce safety and policy constraints", "Format JSON", "Cache embeddings"], "correct": 1},
+    {"id": 9, "question": "Human-in-the-loop means:", "options": ["Humans label training data only", "Humans can review or approve agent actions", "Humans run the server", "Humans edit embeddings"], "correct": 1},
+    {"id": 10, "question": "Multi-agent orchestration typically improves:", "options": ["CPU temperature", "Task specialization and parallelism", "Token prices", "URL routing"], "correct": 1},
+    {"id": 11, "question": "Task decomposition helps agents by:", "options": ["Reducing training epochs", "Breaking goals into smaller executable steps", "Shrinking embeddings", "Avoiding API keys"], "correct": 1},
+    {"id": 12, "question": "Self-reflection in agents is used to:", "options": ["Tune hyperparameters", "Critique prior actions and adjust plan", "Compress prompts", "Encrypt logs"], "correct": 1},
+    {"id": 13, "question": "ReAct stands for:", "options": ["Reason + Act loop combining thoughts and tool calls", "ReactJS library", "Real-time actions", "Regression actions"], "correct": 0},
+    {"id": 14, "question": "Why are execution traces logged?", "options": ["For caching only", "Debugging, auditability, and replay", "To slow the system", "To disable retries"], "correct": 1},
+    {"id": 15, "question": "Action-observation loops stop when:", "options": ["Tokens hit zero", "Success condition or max iterations reached", "CPU overclocks", "A new user signs in"], "correct": 1},
+    {"id": 16, "question": "If a tool call fails, an agent should first:", "options": ["Delete context", "Handle the error and decide to retry or replan", "Restart the server", "Ignore it"], "correct": 1},
+    {"id": 17, "question": "Rate limits mainly affect:", "options": ["Disk IO", "LLM/tool call frequency and throughput", "CSS rendering", "Vector dimensions"], "correct": 1},
+    {"id": 18, "question": "Idempotent tool design matters because:", "options": ["It speeds up GPUs", "Agents may retry the same action safely", "It increases randomness", "It removes logs"], "correct": 1},
+    {"id": 19, "question": "Prompt injection risk arises when:", "options": ["Training loss spikes", "Untrusted input alters the agent's instructions", "GPU memory is low", "Latency is high"], "correct": 1},
+    {"id": 20, "question": "State persistence across runs lets agents:", "options": ["Forget past tasks", "Resume or learn from previous sessions", "Reduce tokenization", "Disable RAG"], "correct": 1},
+    {"id": 21, "question": "Function calling/tool calling schemas provide:", "options": ["Database migrations", "Structured arguments and validation for tools", "Faster GPUs", "CSS frameworks"], "correct": 1},
+    {"id": 22, "question": "Parallel tool execution is useful when:", "options": ["Tasks are independent and IO-bound", "LLM is offline", "Tokens are free", "Prompts are tiny"], "correct": 0},
+    {"id": 23, "question": "A run budget typically caps:", "options": ["Prompt size only", "Cost, iterations, or time allowed per task", "Number of users", "Vector dimensions"], "correct": 1},
+    {"id": 24, "question": "Replanning is triggered when:", "options": ["CPU spikes", "New observations invalidate the plan", "Tokens are cheap", "User logs out"], "correct": 1},
+    {"id": 25, "question": "Agent vs chatbot difference:", "options": ["Agents act with tools and state; chatbots only reply text", "Chatbots are slower", "Agents cannot use prompts", "No difference"], "correct": 0},
+    {"id": 26, "question": "Good agent use case example:", "options": ["Serving static HTML", "Automating research plus spreadsheet updates", "Rendering CSS", "Image compression only"], "correct": 1},
+    {"id": 27, "question": "Safety filters often cover:", "options": ["RAM usage", "Content harm categories like violence or PII leakage", "GPU count", "Disk quota"], "correct": 1},
+    {"id": 28, "question": "A system prompt should:", "options": ["Be empty", "Define role, constraints, and tone for the agent", "Hold API keys", "Reset embeddings"], "correct": 1},
+    {"id": 29, "question": "Output validation ensures:", "options": ["Higher GPU clocks", "Responses meet schema or policy before acting", "Longer prompts", "More randomness"], "correct": 1},
+    {"id": 30, "question": "When requesting structured output, use:", "options": ["Plain prose only", "JSON or schema hints", "Base64 images", "Binary blobs"], "correct": 1},
+    {"id": 31, "question": "Lower temperature in planning usually leads to:", "options": ["More random plans", "More deterministic plans", "Slower tokens", "Higher cost"], "correct": 1},
+    {"id": 32, "question": "Self-consistency sampling is:", "options": ["A caching trick", "Sampling multiple reasoning paths then voting", "A compression algorithm", "A GPU feature"], "correct": 1},
+    {"id": 33, "question": "Event-driven agents wake up based on:", "options": ["Cron only", "Triggers like webhooks, file drops, or messages", "GPU temp", "Loss values"], "correct": 1},
+    {"id": 34, "question": "Scheduled (cron) agents are best for:", "options": ["Random chats", "Periodic tasks like daily syncs", "GPU tuning", "Code formatting"], "correct": 1},
+    {"id": 35, "question": "Multimodal agents can:", "options": ["Only read text", "Process text plus other inputs like images or audio", "Only write SQL", "Ignore prompts"], "correct": 1},
+    {"id": 36, "question": "Observability for agents should track:", "options": ["Only IPs", "Latency, cost, tool success, and outcomes", "CPU fan speed", "CSS colors"], "correct": 1},
+    {"id": 37, "question": "Agent evaluation commonly uses:", "options": ["Unit tests only", "Task benchmarks, human review, or LLM-as-judge", "GPU stress tests", "Lint warnings"], "correct": 1},
+    {"id": 38, "question": "Trace replay is helpful for:", "options": ["Increasing cost", "Debugging and regression testing", "Lowering accuracy", "Removing logs"], "correct": 1},
+    {"id": 39, "question": "Context window limits require:", "options": ["Throwing errors", "Summarizing or pruning history", "Adding GPUs", "Using CSV"], "correct": 1},
+    {"id": 40, "question": "Vector stores are preferred for:", "options": ["Storing binaries", "Similarity search over embeddings", "Running servers", "Serving HTML"], "correct": 1},
+    {"id": 41, "question": "Agent authorization scopes should:", "options": ["Be unrestricted", "Match least privilege for tools", "Hide in prompts", "Depend on GPU"], "correct": 1},
+    {"id": 42, "question": "Data privacy requires agents to:", "options": ["Log all PII", "Mask or avoid storing sensitive data", "Email secrets", "Ignore regulation"], "correct": 1},
+    {"id": 43, "question": "Tool selection policies depend on:", "options": ["Front-end theme", "Capabilities, cost, and reliability", "GPU vendor", "IDE color"], "correct": 1},
+    {"id": 44, "question": "Clear tool descriptions help by:", "options": ["Increasing token count only", "Guiding the model to choose correct tools and arguments", "Making UI pretty", "Changing auth"], "correct": 1},
+    {"id": 45, "question": "Conflicting goals should be:", "options": ["Ignored", "Resolved via priority rules or human input", "Stored in cache", "Given to GPU"], "correct": 1},
+    {"id": 46, "question": "LLM-as-judge is:", "options": ["A compiler", "Using another model to score outputs", "A database", "A cache"], "correct": 1},
+    {"id": 47, "question": "Planning depth trade-off:", "options": ["Deeper plans cost more tokens but may reduce mistakes", "Shallow plans are always better", "Depth changes GPU speed", "No trade-off"], "correct": 0},
+    {"id": 48, "question": "Retries with backoff are used to:", "options": ["Increase cost", "Handle transient failures politely", "Speed up GPUs", "Disable logging"], "correct": 1},
+    {"id": 49, "question": "Response caching for agents:", "options": ["Increases hallucinations", "Reduces repeated tool/LLM calls for identical inputs", "Breaks safety", "Only stores images"], "correct": 1},
+    {"id": 50, "question": "Heuristics in agents provide:", "options": ["Random noise", "Simple rules that steer decisions when confidence is low", "GPU overclock", "Loss scaling"], "correct": 1},
+    {"id": 51, "question": "Code-execution tools must be:", "options": ["Unaudited", "Sandboxed and permissioned", "Run as root", "Disabled"], "correct": 1},
+    {"id": 52, "question": "Web-browsing agents risk:", "options": ["Better CSS", "Prompt injection and untrusted outputs", "Lower latency", "Safer data"], "correct": 1},
+    {"id": 53, "question": "Observation tokens can grow when:", "options": ["Tools return large payloads", "GPU fans stop", "Using cron", "Caching responses"], "correct": 0},
+    {"id": 54, "question": "Max-iteration limits prevent:", "options": ["Short runs", "Infinite or costly loops", "GPU training", "JSON output"], "correct": 1},
+    {"id": 55, "question": "Timeouts in agents are set to:", "options": ["Speed models", "Avoid stuck tool calls or plans", "Increase tokens", "Disable logs"], "correct": 1},
+    {"id": 56, "question": "Async tool calls benefit:", "options": ["CPU only", "Latency when waiting on multiple IO tasks", "GPU math", "Tokenization"], "correct": 1},
+    {"id": 57, "question": "Fail-closed strategy means:", "options": ["Act even when unsure", "Stop risky actions when confidence is low", "Ignore errors", "Always retry"], "correct": 1},
+    {"id": 58, "question": "Self-consistency helps agents by:", "options": ["Adding randomness", "Reducing reasoning errors through majority voting", "Raising costs only", "Skipping planning"], "correct": 1},
+    {"id": 59, "question": "Escalation to a human should occur when:", "options": ["Tokens are cheap", "Confidence is low or impact is high", "GPU is idle", "Plan is short"], "correct": 1},
+    {"id": 60, "question": "Success criteria should be:", "options": ["Implicit", "Explicitly derived from the task and returned to the agent", "Hidden in logs", "Ignored"], "correct": 1},
+    {"id": 61, "question": "Multi-agent communication often uses:", "options": ["GPU memory", "Messages on queues or shared state", "CSS variables", "FTP only"], "correct": 1},
+    {"id": 62, "question": "Blackboard pattern means agents:", "options": ["Use chalk", "Share a common state board to post and read updates", "Train together", "Stop planning"], "correct": 1},
+    {"id": 63, "question": "Agent persona definitions help by:", "options": ["Adding color", "Constraining behavior and voice for consistency", "Saving RAM", "Changing GPU brand"], "correct": 1},
+    {"id": 64, "question": "Prompt versioning is needed to:", "options": ["Reduce JSON", "Track changes and rollbacks of instructions", "Improve CSS", "Cut GPU cost"], "correct": 1},
+    {"id": 65, "question": "Compensating actions are used to:", "options": ["Speed tokens", "Undo or mitigate earlier actions when errors occur", "Change colors", "Lower RAM"], "correct": 1},
+    {"id": 66, "question": "Structured plans should include:", "options": ["Only jokes", "Ordered steps with owners and success signals", "GPU stats", "HTML tags"], "correct": 1},
+    {"id": 67, "question": "Agent integration tests focus on:", "options": ["Model pretraining", "End-to-end tool use and policies", "CSS linting", "GPU tuning"], "correct": 1},
+    {"id": 68, "question": "Canary runs are for:", "options": ["Birds", "Testing agents safely on a small slice before full rollout", "GPU cooling", "Prompt shrinking"], "correct": 1},
+    {"id": 69, "question": "External API rate limits are handled by:", "options": ["Ignoring errors", "Backoff, queuing, or budget enforcement", "Changing CSS", "GPU upgrades"], "correct": 1},
+    {"id": 70, "question": "Task and subtask IDs allow:", "options": ["More tokens", "Traceability between plan items and actions", "GPU graphs", "CSS reuse"], "correct": 1},
+    {"id": 71, "question": "Logs that include PII should be:", "options": ["Shared widely", "Redacted or avoided", "Emailed", "Saved forever"], "correct": 1},
+    {"id": 72, "question": "Secrets for agents should be stored in:", "options": ["Source code", "Secure vault or environment variables", "Chat history", "Tool outputs"], "correct": 1},
+    {"id": 73, "question": "Reward models in agents are used to:", "options": ["Train GPUs", "Score outputs to guide learning or selection", "Format JSON", "Resize images"], "correct": 1},
+    {"id": 74, "question": "Low confidence detection can rely on:", "options": ["Randomness", "Model logprobs or self-reported certainty", "GPU temp", "CSS units"], "correct": 1},
+    {"id": 75, "question": "Chain-of-responsibility in agents means:", "options": ["Single step only", "Sequential handlers pass or process tasks until handled", "GPU daisy chain", "CSS cascade"], "correct": 1},
+    {"id": 76, "question": "Observed state differs from latent state because:", "options": ["Observed is what tools return; latent is internal reasoning", "Both are identical", "Latent is logs only", "Observed is always wrong"], "correct": 0},
+    {"id": 77, "question": "Autonomous code execution must include:", "options": ["Root access", "Strong sandboxing and approval gates", "No logs", "Unlimited retries"], "correct": 1},
+    {"id": 78, "question": "Post-run summaries help:", "options": ["Increase cost", "Brief stakeholders and feed future context", "Hide errors", "Lower accuracy"], "correct": 1},
+    {"id": 79, "question": "Tool responses should be:", "options": ["Unstructured", "Validated and truncated to fit context", "Always streamed", "Encrypted with CSS"], "correct": 1},
+    {"id": 80, "question": "A healthy agent loop balances:", "options": ["GPU brands", "Planning depth, tool costs, and safety constraints", "HTML tags", "CSS gradients"], "correct": 1},
+]
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def playground_questions_agentic_ai_gpt_api(request):
+    """
+    Serve 30 randomized Agentic AI questions for the GPT track.
+    """
+    return Response({
+        "success": True,
+        "data": random.sample(AGENTIC_AI_QUESTIONS, 30)
+    })

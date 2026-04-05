@@ -253,12 +253,12 @@ class ExamAttempt(models.Model):
     exam_type = models.CharField(max_length=50, default='daily')
 
     score = models.IntegerField(default=0)
-    total_questions = models.IntegerField(default=20)
+    total_questions = models.IntegerField(default=30)
     correct_answers = models.IntegerField(default=0)
     incorrect_answers = models.IntegerField(default=0)
 
     marks_obtained = models.IntegerField(default=0)
-    total_marks = models.IntegerField(default=40)
+    total_marks = models.IntegerField(default=60)
 
     time_taken = models.IntegerField()
 

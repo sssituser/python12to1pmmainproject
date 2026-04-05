@@ -1,8 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPython, faJava, faReact } from "@fortawesome/free-brands-svg-icons";
-import { faDatabase, faCode, faLayerGroup } from "@fortawesome/free-solid-svg-icons";
+import { 
+  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum 
+} from "@fortawesome/free-brands-svg-icons";
+import { 
+  faDatabase, faCode, faLayerGroup, faGlobe, faVrCardboard, faFileSignature, faArrowRight,
+  faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain, 
+  faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear, 
+  faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity, 
+  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon 
+} from "@fortawesome/free-solid-svg-icons";
 
 const subjects = [
   { name: "Python", key: "python", icon: faPython, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
@@ -11,10 +19,341 @@ const subjects = [
   { name: "Java", key: "java", icon: faJava, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
   { name: "React", key: "react", icon: faReact, textStyle: "text-cyan-600", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(8,145,178,0.2)]" },
   { name: "UI", key: "ui", icon: faLayerGroup, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
+  
+  // NEW TRENDING TECH
+  { name: "Web3", key: "web3", icon: faGlobe, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+  { name: "Virtual Reality", key: "virtual_reality", icon: faVrCardboard, textStyle: "text-fuchsia-600", bgStyle: "bg-fuchsia-50", hoverBorder: "hover:border-fuchsia-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(192,38,211,0.2)]" },
+  { name: "Smart Contracts", key: "smart_contracts", icon: faFileSignature, textStyle: "text-amber-600", bgStyle: "bg-amber-50", hoverBorder: "hover:border-amber-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(217,119,6,0.2)]" },
+  { name: "Selenium", key: "selenium", icon: faVial, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
+  { name: "QA Processes", key: "qa_processes", icon: faClipboardCheck, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
+  { name: "Penetration Testing", key: "penetration_testing", icon: faShieldHalved, textStyle: "text-slate-700", bgStyle: "bg-slate-50", hoverBorder: "hover:border-slate-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(71,85,105,0.2)]" },
+  { name: "Backend", key: "backend", icon: faServer, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
+  { name: ".NET Core", key: "dotnet", icon: faCode, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+  { name: ".NET MVC", key: "dotnet_mvc", icon: faCode, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-200", hoverShadow: "hover:shadow-[0_10px_40px_rgba(99,102,241,0.2)]" },
+  { name: "Network Security", key: "network_security", icon: faNetworkWired, textStyle: "text-red-700", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(185,28,28,0.2)]" },
+  { name: "MongoDB", key: "mongodb", icon: faDbIcon, textStyle: "text-emerald-700", bgStyle: "bg-emerald-50", hoverBorder: "hover:border-emerald-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(4,120,87,0.2)]" },
+  { name: "iOS Swift", key: "ios_swift", icon: faSwift, textStyle: "text-orange-500", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(249,115,22,0.2)]" },
+  { name: "Generative AI", key: "generative_ai", icon: faRobot, textStyle: "text-violet-600", bgStyle: "bg-violet-50", hoverBorder: "hover:border-violet-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(124,58,237,0.2)]" },
+  { name: "Flutter/React Native", key: "flutter_react_native", icon: faMobileScreenButton, textStyle: "text-sky-500", bgStyle: "bg-sky-50", hoverBorder: "hover:border-sky-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(14,165,233,0.2)]" },
+  { name: "ETL Pipelines", key: "etl_pipelines", icon: faGear, textStyle: "text-teal-600", bgStyle: "bg-teal-50", hoverBorder: "hover:border-teal-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(13,148,136,0.2)]" },
+  { name: "Ethical Hacking", key: "ethical_hacking", icon: faShieldHalved, textStyle: "text-zinc-800", bgStyle: "bg-zinc-100", hoverBorder: "hover:border-zinc-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(39,39,42,0.2)]" },
+  { name: "Ethereum", key: "ethereum", icon: faEthereum, textStyle: "text-blue-700", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(29,78,216,0.2)]" },
+  { name: "Deep Learning", key: "deep_learning", icon: faBrain, textStyle: "text-pink-600", bgStyle: "bg-pink-50", hoverBorder: "hover:border-pink-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(219,39,119,0.2)]" },
+  { name: "Big Data Tools", key: "big_data_tools", icon: faDatabase, textStyle: "text-yellow-700", bgStyle: "bg-yellow-50", hoverBorder: "hover:border-yellow-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(161,98,7,0.2)]" },
+  { name: "Augmented Reality", key: "augmented_reality", icon: faVrCardboard, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
+  { name: "API Testing", key: "api_testing", icon: faVial, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
+  { name: "Android", key: "android", icon: faRobot, textStyle: "text-green-500", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(34,197,94,0.2)]" },
+
+  // DATA SCIENCE & AI
+  { name: "Python for Data Science", key: "python_data_science", icon: faPython, textStyle: "text-yellow-600", bgStyle: "bg-yellow-50", hoverBorder: "hover:border-yellow-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(202,138,4,0.2)]" },
+  { name: "Numpy", key: "numpy", icon: faCode, textStyle: "text-blue-700", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(29,78,216,0.2)]" },
+  { name: "Pandas", key: "pandas", icon: faTable, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(67,56,202,0.2)]" },
+  { name: "Data Visualization", key: "data_visualization", icon: faChartLine, textStyle: "text-pink-500", bgStyle: "bg-pink-50", hoverBorder: "hover:border-pink-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(236,72,153,0.2)]" },
+  { name: "Machine Learning", key: "machine_learning", icon: faBrain, textStyle: "text-purple-700", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(126,34,206,0.2)]" },
+  { name: "AI Concepts", key: "ai_concepts", icon: faRobot, textStyle: "text-cyan-700", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(14,116,144,0.2)]" },
+  { name: "Agentic AI (Claude)", key: "agentic_ai_claude", icon: faRobot, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+  { name: "Agentic AI (GPT)", key: "agentic_ai_gpt", icon: faRobot, textStyle: "text-teal-700", bgStyle: "bg-teal-50", hoverBorder: "hover:border-teal-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(13,148,136,0.2)]" },
+
+  // POWER BI
+  { name: "Data Modeling", key: "datamodeling", icon: faDbIcon, textStyle: "text-orange-600", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40_rgba(234,88,12,0.2)]" },
+  { name: "Dashboards", key: "dashboards", icon: faDesktop, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
+  { name: "Reports", key: "reports", icon: faChartPie, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
+  { name: "Power Query", key: "power_query", icon: faTable, textStyle: "text-amber-700", bgStyle: "bg-amber-50", hoverBorder: "hover:border-amber-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(217,119,6,0.2)]" },
+  { name: "DAX", key: "dax", icon: faChartLine, textStyle: "text-indigo-700", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+
+  // CLOUD
+  { name: "Cloud Basics", key: "cloud_basics", icon: faCloudArrowUp, textStyle: "text-sky-600", bgStyle: "bg-sky-50", hoverBorder: "hover:border-sky-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(2,132,199,0.2)]" },
+  { name: "EC2 & S3", key: "ec2_s3", icon: faAws, textStyle: "text-orange-600", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(234,88,12,0.2)]" },
+  { name: "IAM", key: "iam", icon: faShieldHalved, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
+  { name: "Deployment", key: "deployment", icon: faGear, textStyle: "text-gray-700", bgStyle: "bg-gray-100", hoverBorder: "hover:border-gray-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(55,65,81,0.2)]" },
+  { name: "Microsoft Azure", key: "microsoft_azure", icon: faMicrosoft, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
+  { name: "Google Cloud", key: "google_cloud", icon: faGoogle, textStyle: "text-red-500", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(239,68,68,0.2)]" },
+
+  // DEVOPS
+  { name: "Git & Github", key: "git_github", icon: faGitAlt, textStyle: "text-orange-700", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(194,65,12,0.2)]" },
+  { name: "CI/CD", key: "ci_cd", icon: faInfinity, textStyle: "text-blue-800", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(30,64,175,0.2)]" },
+  { name: "Docker", key: "docker", icon: faDocker, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
+  { name: "Kubernetes", key: "kubernetes_basics", icon: faGear, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
+
+  // OTHER SUBJECTS
+  { name: "ASP.NET MVC", key: "asp_net_mvc", icon: faCode, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
+  { name: "C & Data Structures", key: "c_data_structures", icon: faCode, textStyle: "text-blue-600", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(37,99,235,0.2)]" },
+  { name: "C#", key: "c_sharp", icon: faCode, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
+  { name: "Hibernate", key: "hibernate", icon: faLayerGroup, textStyle: "text-red-700", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(185,28,28,0.2)]" },
+  { name: "JDBC", key: "jdbc", icon: faDatabase, textStyle: "text-amber-700", bgStyle: "bg-amber-50", hoverBorder: "hover:border-amber-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(180,83,9,0.2)]" },
+  { name: "OOPS with C++", key: "oops_cpp", icon: faCode, textStyle: "text-blue-700", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(29,78,216,0.2)]" },
+  { name: "Spring", key: "spring", icon: faLayerGroup, textStyle: "text-green-700", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(21,128,61,0.2)]" },
+  { name: "Web APIs", key: "web_apis", icon: faGlobe, textStyle: "text-sky-700", bgStyle: "bg-sky-50", hoverBorder: "hover:border-sky-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(3,105,161,0.2)]" },
+
+  // DCA / PGDCA
+  { name: "Computer Fundamentals", key: "computer_fundamentals", icon: faDesktop, textStyle: "text-slate-600", bgStyle: "bg-slate-50", hoverBorder: "hover:border-slate-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(71,85,105,0.2)]" },
+  { name: "Programming Basics", key: "programming_basics", icon: faCode, textStyle: "text-indigo-500", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(99,102,241,0.2)]" },
+  { name: "MS Office", key: "ms_office", icon: faFileLines, textStyle: "text-red-500", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(239,68,68,0.2)]" },
+  { name: "Database Basics", key: "database_basics", icon: faDbIcon, textStyle: "text-emerald-600", bgStyle: "bg-emerald-50", hoverBorder: "hover:border-emerald-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(16,185,129,0.2)]" },
+
+  // DOA
+  { name: "MS Word", key: "ms_word", icon: faFileWord, textStyle: "text-blue-700", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(29,78,216,0.2)]" },
+  { name: "Excel", key: "excel", icon: faFileExcel, textStyle: "text-green-700", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(21,128,61,0.2)]" },
+  { name: "PowerPoint", key: "powerpoint", icon: faFilePowerpoint, textStyle: "text-orange-700", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(194,65,12,0.2)]" },
+  { name: "Data Handling", key: "data_handling", icon: faDatabase, textStyle: "text-cyan-700", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(14,116,144,0.2)]" },
 ];
+
+// Course-specific subject mappings (lowercase keys)
+const courseMappings = {
+  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
+  "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+  "mern": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+  "mern stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+  "mean": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
+  "mean stack": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
+  "mevn": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
+  "mevn stack": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
+  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
+  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
+  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
+  "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
+  "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
+  "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
+  "flutter": ["flutter_react_native", "android", "ui"],
+  "react native": ["flutter_react_native", "react", "ui"],
+  "dotnet full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+  "c# full stack": ["c_sharp", "asp_net_mvc", "backend", "web_apis", "database_basics", "ui"],
+  "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+  "dotnet": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "dot net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "microsoft technologies": ["dotnet", "dotnet_mvc", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+  "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
+  "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
+  "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
+};
+
+const getAllowedSubjects = (courseName = "") => {
+  const normalized = courseName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const matchedKey = Object.keys(courseMappings).find((key) =>
+    normalized.includes(key)
+  );
+  if (matchedKey) return courseMappings[matchedKey];
+
+  // Synonym boost (helps when course name doesn't directly match subjects)
+  const synonymMap = {
+    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    hacking: ["ethical_hacking", "penetration_testing"],
+    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
+    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    "power query": ["power_query"],
+    dax: ["dax"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+    devsecops: ["devops", "network_security", "penetration_testing"],
+    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
+    app: ["flutter_react_native", "android", "ios_swift", "ui"],
+    application: ["flutter_react_native", "android", "ios_swift", "ui"],
+    flutter: ["flutter_react_native", "android", "ui"],
+    reactnative: ["flutter_react_native", "react", "ui"],
+    dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+    "dot net": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+    net: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+    "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+    "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+    "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+    "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+    csharp: ["c_sharp", "asp_net_mvc", "backend"],
+  };
+
+  // Fallback: token-based fuzzy match against subject keys/names
+  const tokens = normalized.split(" ").filter((t) => t.length > 2);
+  const allowed = new Set();
+
+  tokens.forEach((tok) => {
+    if (synonymMap[tok]) {
+      synonymMap[tok].forEach((s) => allowed.add(s));
+    }
+  });
+
+  tokens.forEach((tok) => {
+    subjects.forEach((subj) => {
+      const keyHit = subj.key.toLowerCase().includes(tok);
+      const nameHit = subj.name.toLowerCase().includes(tok);
+      if (keyHit || nameHit) allowed.add(subj.key);
+    });
+  });
+  return Array.from(allowed);
+};
 
 function DailyExamSubjects() {
   const navigate = useNavigate();
+
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const [studentCourse, setStudentCourse] = useState(storedUser.course || "");
+  const [courseId, setCourseId] = useState(null);
+  const [topicsAllowed, setTopicsAllowed] = useState([]);
+  const userRole = (storedUser.role || "").toLowerCase();
+  const isStudent = userRole === "student";
+
+  // Always refresh course from profile on mount so newly registered courses reflect immediately
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!isStudent || !token) return;
+
+    const syncCourseFromProfile = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const resolvedCourse = data?.course_title || data?.course || "";
+        const resolvedCourseId = data?.course || null;
+        if (resolvedCourse && resolvedCourse !== studentCourse) {
+          setStudentCourse(resolvedCourse);
+          const updatedUser = { ...storedUser, course: resolvedCourse };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+        if (resolvedCourseId) setCourseId(resolvedCourseId);
+      } catch (err) {
+        console.error("Failed to sync course from profile:", err);
+      }
+    };
+
+    syncCourseFromProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudent]);
+
+  useEffect(() => {
+    // If course is missing in local storage, resolve it from profile so every student is constrained properly
+    if (!isStudent || studentCourse) return;
+    const token = localStorage.getItem("access");
+    if (!token) return;
+
+    const fetchCourseFromProfile = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const resolvedCourse = data?.course_title || data?.course || "";
+        const resolvedCourseId = data?.course || null;
+        if (resolvedCourse) {
+          setStudentCourse(resolvedCourse);
+          // persist for other pages
+          const updatedUser = { ...storedUser, course: resolvedCourse };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+        if (resolvedCourseId) setCourseId(resolvedCourseId);
+      } catch (err) {
+        console.error("Failed to fetch course from profile:", err);
+      }
+    };
+
+    fetchCourseFromProfile();
+  }, [isStudent, studentCourse]);
+
+  // Fetch topics for the student's course to build dynamic subject mapping
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!isStudent || !token) return;
+    if (!courseId) return;
+
+    const fetchTopics = async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/courses/${courseId}/topics/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const topicList = Array.isArray(json.topics) ? json.topics : [];
+        const matchedKeys = matchTopicsToSubjects(topicList);
+        if (matchedKeys.length > 0) {
+          setTopicsAllowed(matchedKeys);
+        }
+      } catch (err) {
+        console.error("Failed to fetch course topics:", err);
+      }
+    };
+
+    fetchTopics();
+  }, [isStudent, courseId]);
+
+  const matchTopicsToSubjects = (topicList = []) => {
+    const normalizedSubjects = subjects.map((s) => ({
+      key: s.key.toLowerCase(),
+      name: s.name.toLowerCase(),
+    }));
+    const results = new Set();
+
+    topicList.forEach((topicRaw) => {
+      const topic = String(topicRaw || "").toLowerCase();
+      const slug = topic.replace(/[^a-z0-9]+/g, "_");
+
+      normalizedSubjects.forEach((subj) => {
+        const hit =
+          subj.key.includes(slug) ||
+          slug.includes(subj.key) ||
+          subj.name.includes(topic) ||
+          topic.includes(subj.name) ||
+          subj.key.includes(topic) ||
+          topic.includes(subj.key);
+        if (hit) results.add(subj.key);
+      });
+    });
+
+    return Array.from(results);
+  };
+
+  const allowedSubjectKeys = getAllowedSubjects(studentCourse);
+  let effectiveAllowed = Array.from(new Set([...(allowedSubjectKeys || []), ...(topicsAllowed || [])]));
+  const courseMatch = (studentCourse || "").toLowerCase();
+  if (courseMatch.match(/mobile|flutter|react\s*native/)) {
+    effectiveAllowed = Array.from(new Set([...effectiveAllowed, "flutter_react_native", "android", "ios_swift"]));
+  }
+  if (courseMatch.match(/dotnet|\.net|asp\s*net|asp\.net|c#|csharp/)) {
+    effectiveAllowed = Array.from(new Set([...effectiveAllowed, "dotnet", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"]));
+  }
+  const shouldRestrict = isStudent && studentCourse && effectiveAllowed.length > 0;
+
+  let filteredSubjects = shouldRestrict
+    ? subjects.filter((subject) => effectiveAllowed.includes(subject.key))
+    : subjects;
+
+  // Safety: if course mentions .NET and dotnet card is missing, append it
+  if (shouldRestrict && courseMatch.match(/dotnet|\.net|asp\s*net|asp\.net|c#|csharp|net\s+full/)) {
+    const hasDotnetCard = filteredSubjects.some((s) => s.key === "dotnet");
+    if (!hasDotnetCard) {
+      const dotnetCard = subjects.find((s) => s.key === "dotnet");
+      if (dotnetCard) filteredSubjects = [...filteredSubjects, dotnetCard];
+    }
+  }
 
   useEffect(() => {
     // Clear any previous exam result flag so we don't instantly bounce back to results
@@ -41,10 +380,15 @@ function DailyExamSubjects() {
           <p className="text-gray-500 font-medium leading-relaxed max-w-2xl mx-auto text-lg">
             Choose your technical domain. Each assessment delivers curated questions dynamically shuffled to validate your proficiency.
           </p>
+          {shouldRestrict && filteredSubjects.length === 0 && (
+            <p className="text-sm text-red-500 font-semibold">
+              No daily exams are mapped to your course yet. Please contact faculty to assign course subjects.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subjects.map((subject) => (
+          {filteredSubjects.map((subject) => (
             <Link
               key={subject.key}
               to={`/dashboard/daily-exam/${subject.key}`}
@@ -67,16 +411,16 @@ function DailyExamSubjects() {
                 </div>
               </div>
 
-              {/* Arrow Icon on hover */}
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-gray-50 text-gray-400 opacity-0 transform translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 group-hover:${subject.bgStyle.split('/')[0]} ${subject.textStyle.replace('text-', 'group-hover:text-')}`}>
-                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                 </svg>
-              </div>
+               {/* Right side decoration */}
+               <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                  <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
+               </div>
+
+              {/* Hover highlight line */}
+              <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>
             </Link>
           ))}
         </div>
-
       </div>
     </div>
   );

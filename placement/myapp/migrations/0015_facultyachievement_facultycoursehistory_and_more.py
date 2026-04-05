@@ -8,7 +8,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('myapp', '0014_remove_loginemaillog_myapp_login_is_dele_a6b0b4_idx_and_more'),
     ]
 
     operations = [

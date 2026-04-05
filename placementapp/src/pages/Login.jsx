@@ -99,7 +99,11 @@ function Login() {
       localStorage.setItem("refresh", res.data.refresh || "");
       localStorage.setItem(
         "user",
-        JSON.stringify({ username: savedUser.username, role: normalizedRole })
+        JSON.stringify({ 
+          username: savedUser.username, 
+          role: normalizedRole,
+          course: res.data.user?.course || "" 
+        })
       );
 
       toast.success("OTP verified. Redirecting...");
@@ -190,6 +194,7 @@ function Login() {
           username: res.data.user?.username || form.studentId,
           studentId: res.data.user?.studentId || form.studentId,
           role: normalizedRole,
+          course: res.data.user?.course || ""
         })
       );
 

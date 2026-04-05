@@ -10,6 +10,21 @@ function MonthlyExamReports() {
   const [progress, setProgress] = useState({});
   const navigate = useNavigate();
 
+  const getCurrentUsername = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr && userStr !== "undefined") {
+        const parsedUser = JSON.parse(userStr);
+        return parsedUser?.username?.toLowerCase() || null;
+      }
+    } catch (e) {
+      console.error("User parse error:", e);
+    }
+    return null;
+  };
+
+  const cacheKey = `monthly-exam-reports-${getCurrentUsername() || "guest"}`;
+
   //  FETCH DATA FROM BACKEND - Monthly exams only (this month)
   const fetchReports = async () => {
     try {
@@ -24,31 +39,36 @@ function MonthlyExamReports() {
       }
 
       // Filter by logged-in user (case-insensitive)
-      try {
-        const userStr = localStorage.getItem("user");
-        if (userStr && userStr !== "undefined") {
-          const parsedUser = JSON.parse(userStr);
-          const currentUsername = parsedUser?.username?.toLowerCase();
-          if (currentUsername) {
-            examList = examList.filter(
-              (e) => e.user?.username?.toLowerCase() === currentUsername
-            );
-          }
-        }
-      } catch (e) {
-        console.error("User parse error:", e);
+      const currentUsername = getCurrentUsername();
+      if (currentUsername) {
+        examList = examList.filter(
+          (e) => e.user?.username?.toLowerCase() === currentUsername
+        );
       }
 
       // No fallback — monthly page only shows monthly data
       setExams(examList);
+      localStorage.setItem(cacheKey, JSON.stringify(examList));
 
     } catch (err) {
       console.error("Failed to fetch monthly exam reports:", err);
-      setExams([]);
+      // keep cached data visible
     }
   };
 
   useEffect(() => {
+    // Show cached monthly data first
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setExams(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to read cached monthly reports:", e);
+    }
     fetchReports();
   }, []);
 

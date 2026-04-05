@@ -134,7 +134,8 @@ def login(request):
                 "username": user.username,
                 "email": user_email,
                 "name": user.first_name or user.username,
-                "role": user.role or "student"
+                "role": user.role or "student",
+                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course is not None else ""
             },
             "email_sent": email_sent
         }
@@ -216,6 +217,8 @@ def verify_otp(request):
             user.save(update_fields=['is_active'])
 
         tokens = get_tokens(user)
+        student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+        course_title = student_profile.course.title if student_profile and student_profile.course else ""
         return Response({
             **tokens,
             "user": {
@@ -223,13 +226,11 @@ def verify_otp(request):
                 "email": user.email,
                 "name": user.first_name or user.username,
                 "role": user.role or "student",
+                "course": course_title if user.role == 'student' else ""
             },
         })
 
     return Response({"error": "Invalid OTP"}, status=400)
-
-
-# 🔁 RESET PASSWORD
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def reset_password(request):

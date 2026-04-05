@@ -202,7 +202,7 @@ const MonthlyExam = () => {
           // 3. Take the limit (e.g. random 50)
           const monthlyQuestions = allShuffled.slice(0, displayLimit);
           
-          const dur = customJson.data.duration || 45;
+          const dur = customJson.data.duration || 75;
           setExamDuration(dur);
           setTimeLeft(dur * 60);
 
