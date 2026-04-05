@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum 
+import {
+  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum
 } from "@fortawesome/free-brands-svg-icons";
-import { 
+import {
   faDatabase, faCode, faLayerGroup, faGlobe, faVrCardboard, faFileSignature, faArrowRight,
-  faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain, 
-  faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear, 
-  faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity, 
-  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon 
+  faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain,
+  faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear,
+  faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity,
+  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon
 } from "@fortawesome/free-solid-svg-icons";
 
 const subjects = [
@@ -18,8 +18,10 @@ const subjects = [
   { name: "Django", key: "django", icon: faCode, textStyle: "text-emerald-600", bgStyle: "bg-emerald-50", hoverBorder: "hover:border-emerald-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(16,185,129,0.2)]" },
   { name: "Java", key: "java", icon: faJava, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
   { name: "React", key: "react", icon: faReact, textStyle: "text-cyan-600", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(8,145,178,0.2)]" },
+  { name: "Node JS", key: "node_js", icon: faNodeJs, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
+  { name: "Express JS", key: "express_js", icon: faServer, textStyle: "text-gray-600", bgStyle: "bg-gray-50", hoverBorder: "hover:border-gray-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(75,85,99,0.2)]" },
   { name: "UI", key: "ui", icon: faLayerGroup, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
-  
+
   // NEW TRENDING TECH
   { name: "Web3", key: "web3", icon: faGlobe, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
   { name: "Virtual Reality", key: "virtual_reality", icon: faVrCardboard, textStyle: "text-fuchsia-600", bgStyle: "bg-fuchsia-50", hoverBorder: "hover:border-fuchsia-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(192,38,211,0.2)]" },
@@ -102,16 +104,22 @@ const subjects = [
 const courseMappings = {
   "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
   "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
-  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
   ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
   "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
-  "ui full stack": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
-  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "data science with ai": ["python", "python_data_science", "numpy", "pandas", "machine_learning", "deep_learning", "oracle", "mongodb", "power_query", "dax", "dashboards", "microsoft_azure", "ai_concepts", "generative_ai", "data_visualization"],
+  "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
+  "cloud computing": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
+  "ui full stack": ["ui", "react", "oracle", "backend", "node_js", "express_js", "mongodb"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "database_basics"],
+  "frontend": ["ui", "react"],
   "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
-  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
+  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment", "microsoft_azure", "python"],
   "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
+  "microsoft technologies": ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
+  "mobile full stack": ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
+  "mongodb": ["python", "java", "node_js", "mongodb"],
   "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
   "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
   "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
@@ -138,12 +146,15 @@ const getAllowedSubjects = (courseName = "") => {
     python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
     java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
     dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
     cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
     agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+    mobile: ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
+    mongodb: ["python", "java", "node_js", "mongodb"],
+    microsoft: ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
+    "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
   };
 
   const tokens = normalized.split(" ").filter((t) => t.length > 2);
@@ -317,9 +328,9 @@ function DailyExamSubjects() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 sm:p-8 relative">
-      
+
       <div className="relative z-10 max-w-6xl w-full">
-        
+
         {/* TOP LEFT BACK BUTTON */}
         <div className="absolute top-0 left-0 pt-2 z-20">
           <button
@@ -359,24 +370,24 @@ function DailyExamSubjects() {
               <div className="flex items-center gap-5">
                 {/* Icon Container */}
                 <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${subject.bgStyle}`}>
-                    <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
+                  <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
                 </div>
 
                 {/* Text Info */}
                 <div className="text-left flex flex-col justify-center">
-                    <h3 className="text-xl font-black text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
-                        {subject.name}
-                    </h3>
-                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
-                        Select Topic
-                    </p>
+                  <h3 className="text-xl font-black text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
+                    {subject.name}
+                  </h3>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
+                    Select Topic
+                  </p>
                 </div>
               </div>
 
-               {/* Right side decoration */}
-               <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                  <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
-               </div>
+              {/* Right side decoration */}
+              <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
+              </div>
 
               {/* Hover highlight line */}
               <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>
