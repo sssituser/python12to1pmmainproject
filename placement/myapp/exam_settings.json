@@ -28,6 +28,26 @@
                 ],
                 "marks": 2,
                 "id": 1775394955465
+            },
+            {
+                "type": "mcq",
+                "question": "sdafsdgfhgjhkjlk.,vcmxnz",
+                "options": [
+                    "dafszgdhfxjgkh/,",
+                    "xzdafsgdhfjgkh.",
+                    "gfadfsgdfhgjkh,.",
+                    "xaesgdhfjgkh."
+                ],
+                "answer": "dafszgdhfxjgkh/,",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775397878914
             }
         ],
         "passingRule": "percentage",
@@ -36,28 +56,7 @@
     },
     ".net Full Stack_Weekly": {
         "maxQuestions": 50,
-        "questions": [
-            {
-                "type": "mcq",
-                "question": "adsfdgfhgjkjlkhgfdg",
-                "options": [
-                    "ghfjgkh,.",
-                    "fdsdfghnbm",
-                    "fxzgcxhvcjbn,",
-                    "ZCXVcbvnbmn "
-                ],
-                "answer": "fdsdfghnbm",
-                "marks": 2,
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
-                "id": 1775394969343
-            }
-        ],
+        "questions": [],
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45

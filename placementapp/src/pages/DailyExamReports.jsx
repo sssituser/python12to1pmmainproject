@@ -8,6 +8,7 @@ function DailyExamReports() {
 
   const [exams, setExams] = useState([]);
   const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const getCurrentUsername = () => {
@@ -25,11 +26,20 @@ function DailyExamReports() {
 
   const cacheKey = `daily-exam-reports-${getCurrentUsername() || "guest"}`;
 
-  //  FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
-  const fetchReports = async () => {
+  // FETCH DATA FROM BACKEND
+  const fetchReports = async (showLoading = false) => {
     try {
-      // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("/api/all-exam-results/?exam_type=daily");
+      if (showLoading) setLoading(true);
+      const token = localStorage.getItem("access");
+      const currentUsername = getCurrentUsername();
+      
+      const config = {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      };
+
+      // Fetch with both exam_type and username filters for optimized retrieval
+      const url = `/api/all-exam-results/?exam_type=daily${currentUsername ? `&username=${currentUsername}` : ''}`;
+      const res = await axios.get(url, config);
 
       let examList = [];
       if (res.data && Array.isArray(res.data.data)) {
@@ -38,38 +48,70 @@ function DailyExamReports() {
         examList = res.data;
       }
 
-      // Filter by logged-in username from localStorage (case-insensitive)
-      const currentUsername = getCurrentUsername();
+      // 🛡️ SMART DEDUPLICATE: Keep single best result per day
+      const seenKeys = new Map();
+      
+      examList.forEach(exam => {
+         const type = (exam.examType || exam.exam_type || "").toLowerCase();
+         const title = (exam.examTitle || exam.title || "").toLowerCase();
+         
+         // 1. Strict Category Match
+         if (type !== 'daily') return;
+         
+         // 2. Identify the attempt signature
+         const dateStr = exam.examDate ? new Date(exam.examDate).toLocaleDateString() : 'no-date';
+         const key = `${title}-${dateStr}`;
+         const score = exam.score || 0;
+         
+         if (!seenKeys.has(key)) {
+           seenKeys.set(key, exam);
+         } else {
+           // Compare and keep the one with the higher score
+           const existing = seenKeys.get(key);
+           if (score > (existing.score || 0) || (score === (existing.score || 0) && (exam.id || 0) > (existing.id || 0))) {
+             seenKeys.set(key, exam);
+           }
+         }
+      });
 
-      if (currentUsername) {
-        examList = examList.filter(
-          (e) => e.user?.username?.toLowerCase() === currentUsername
-        );
-      }
+      const uniqueExams = Array.from(seenKeys.values());
 
-      setExams(examList);
-      localStorage.setItem(cacheKey, JSON.stringify(examList));
+      // 🛡️ SORT (Most Recent First)
+      uniqueExams.sort((a, b) => {
+        const dateA = new Date(a.examDate || 0);
+        const dateB = new Date(b.examDate || 0);
+        if (dateB - dateA !== 0) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+      });
+
+      setExams(uniqueExams);
+      localStorage.setItem(cacheKey, JSON.stringify(uniqueExams));
 
     } catch (err) {
       console.error("Failed to fetch exam reports:", err);
       // keep whatever is already shown (likely cache)
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     // Show cached data instantly if present
+    let hasCache = false;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           setExams(parsed);
+          hasCache = true;
         }
       }
     } catch (e) {
       console.error("Failed to read cached daily reports:", e);
     }
-    fetchReports();
+    // Only show full-screen loading spinner if we don't have cached data to show
+    fetchReports(!hasCache);
   }, []);
 
   // ANIMATION AFTER DATA LOAD
@@ -130,7 +172,12 @@ function DailyExamReports() {
           </div>
         </div>
 
-        {exams.length > 0 ? (
+        {loading && exams.length === 0 ? (
+           <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Loading reports...</p>
+           </div>
+        ) : exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
