@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Bar,
     BarChart,
@@ -10,19 +11,35 @@ import {
 } from "recharts";
 
 function Dashboard() {
-  const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    total_students: 2,
+    total_courses: 1,
+    total_jobs: 3,
+    active_students: 2
+  });
   const [examReports, setExamReports] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Fail");
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [studentsError, setStudentsError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     getStats();
+  }, [students]);
+
+  useEffect(() => {
     getExamReports();
     getStudents();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const refreshAccessToken = async () => {
     try {
@@ -90,18 +107,20 @@ function Dashboard() {
       const token = localStorage.getItem("access");
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      // For faculty users, try to fetch real student data from existing endpoints
       if (token && user.role === "faculty") {
-        try {
-          // Primary: Try students endpoint which should return student data
-          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/students/");
+        let allStudentData = [];
+        let success = false;
 
+        // Try students endpoint
+        try {
+          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/students/");
           if (res.ok) {
             const data = await res.json();
             console.log("Students data from API:", data);
             
             // Transform real student data to match table structure
-            const transformedStudents = data.students.map((student, index) => ({
+            const studentsArray = Array.isArray(data) ? data : (data.students || []);
+            const transformedStudents = studentsArray.map((student, index) => ({
               sno: index + 1,
               studentId: student.student_id || student.id || `STU${String(index + 1).padStart(3, '0')}`,
               studentName: student.name || student.user?.name || student.user?.username || student.username || 'Unknown',
@@ -122,86 +141,62 @@ function Dashboard() {
             localStorage.removeItem("refresh");
           } else if (res.status === 404) {
             console.log("Students endpoint not found, trying student-stats");
+            allStudentData = await res.json();
+            success = true;
           }
-        } catch (error) {
-          console.log("Students endpoint failed, trying student-stats");
+        } catch (e) { console.log("api/students/ failed"); }
+
+        // If above failed, try student-stats endpoint
+        if (!success) {
+          try {
+            const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/student-stats/");
+            if (res.ok) {
+              allStudentData = await res.json();
+              success = true;
+            }
+          } catch (e) { console.log("api/student-stats/ failed"); }
         }
 
-        // Fallback 1: Try student-stats endpoint
-        try {
-          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/student-stats/");
-
-          if (res.ok) {
-            const data = await res.json();
-            console.log("Student stats from API:", data);
-            
-            // If student-stats returns array of students, use it
-            if (data.students && Array.isArray(data.students)) {
-              const transformedStudents = data.students.map((student, index) => ({
+        // If we have data from any endpoint, process it
+        if (success && Array.isArray(allStudentData)) {
+          const transformedStudents = allStudentData
+            .filter(s => {
+              const role = (s.role || s.user?.role || "").toLowerCase();
+              return role === 'student' || (!role && s.is_staff === false);
+            })
+            .map((student, index) => {
+              const userObj = student.user || {};
+              // Ensure we have a clean student name
+              const name = student.studentName || student.name || userObj.name || userObj.username || student.username || "Unknown";
+              
+              return {
                 sno: index + 1,
-                studentId: student.student_id || student.id || `STU${String(index + 1).padStart(3, '0')}`,
-                studentName: student.name || student.user?.name || student.user?.username || student.username || 'Unknown',
-                phoneNo: student.phone || student.user?.phone || `+91 987654321${index}`,
-                courseType: student.course_title || student.course?.title || student.course_type || 'Not assigned',
-                status: student.is_active !== undefined ? (student.is_active ? 'Active' : 'Inactive') : 
-                        student.status === 'inactive' ? 'Inactive' : 
-                        student.status === 'pending' ? 'Pending' : 'Active',
-                email: student.email || student.user?.email || '',
+                // Look everywhere for ID and Profile data
+                studentId: student.studentId || student.student_id || student.id || userObj.id || "--",
+                studentName: name,
+                mobileNo: student.mobileNo || student.phone || student.mobile || userObj.phone || userObj.mobile || "--",
+                courseType: student.courseType || student.course_title || student.course_type || "Not assigned",
+                status: student.status || (student.is_active ? 'Active' : 'Inactive'),
+                is_active: student.is_active !== undefined ? student.is_active : student.status !== 'Inactive',
+                email: student.email || userObj.email || '',
                 id: student.id || index + 1
-              }));
-              setStudents(transformedStudents);
-              return;
-            }
-          }
-        } catch (error) {
-          console.log("Student-stats endpoint failed");
-        }
+              };
+            });
 
-        // Fallback 2: Try to get student data from dashboard-stats and use it to query individual students
-        try {
-          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/dashboard-stats/");
-
-          if (res.ok) {
-            const statsData = await res.json();
-            console.log("Dashboard stats:", statsData);
-            
-            // If we have student IDs or can infer student data, use it
-            if (statsData.total_students > 0) {
-              // Try to get individual student details
-              try {
-                const studentDetailsRes = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/student/1/");
-                
-                if (studentDetailsRes.ok) {
-                  const studentDetail = await studentDetailsRes.json();
-                  console.log("Sample student detail:", studentDetail);
-                  
-                  // Create sample data based on the structure of real data
-                  const sampleStudents = Array.from({ length: Math.min(statsData.total_students, 6) }, (_, index) => ({
-                    sno: index + 1,
-                    studentId: studentDetail.student_id || `STU${String(index + 1).padStart(3, '0')}`,
-                    studentName: studentDetail.name || studentDetail.user?.name || studentDetail.user?.username || `Student ${index + 1}`,
-                    phoneNo: studentDetail.phone || studentDetail.user?.phone || `+91 987654321${index}`,
-                    courseType: studentDetail.course_title || studentDetail.course?.title || studentDetail.course_type || 'Computer Science',
-                    status: studentDetail.is_active !== undefined ? (studentDetail.is_active ? 'Active' : 'Inactive') : 'Active',
-                    email: studentDetail.email || studentDetail.user?.email || `student${index + 1}@example.com`,
-                    id: studentDetail.id || index + 1
-                  }));
-                  setStudents(sampleStudents);
-                  return;
-                }
-              } catch (error) {
-                console.log("Individual student detail fetch failed");
-              }
-            }
-          }
-        } catch (error) {
-          console.log("Dashboard stats fallback failed");
+          setStudents(transformedStudents);
+          
+          // SYNC TOP CARDS immediately
+          setStats(prev => ({
+            ...prev,
+            total_students: transformedStudents.length,
+            active_students: transformedStudents.filter(s => s.is_active).length,
+          }));
+          return;
         }
       }
 
-      // Final fallback: Set empty array with error message
       setStudents([]);
-      setStudentsError("No student data available from backend");
+      setStudentsError("Student Data Not Available");
     } catch (err) {
       console.log("Error fetching students:", err);
       setStudentsError("Failed to load student data");
@@ -216,28 +211,25 @@ function Dashboard() {
       const token = localStorage.getItem("access");
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      // For faculty users, use existing dashboard-stats endpoint
       if (token && user.role === "faculty") {
         try {
           const res = await fetch("http://127.0.0.1:8000/api/dashboard-stats/", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
 
           if (res.ok) {
             const data = await res.json();
-            setStats(data);
+            // FORCIBLY OVERRIDE with current students list to ensure logic consistency
+            setStats({
+              ...data,
+              // Only override students count if we have them, otherwise trust backend
+              total_students: (students.length > 0) ? students.length : (data.total_students || 0),
+              active_students: (students.length > 0) ? students.filter(s => s.is_active).length : (data.active_students || 0),
+            });
             setLoading(false);
             return;
-          } else if (res.status === 401) {
-            console.log("Unauthorized - clearing invalid token");
-            localStorage.removeItem("access");
-            localStorage.removeItem("refresh");
           }
-        } catch (error) {
-          console.log("Dashboard stats endpoint failed");
-        }
+        } catch (error) { console.log("Dashboard stats failed"); }
       }
 
       // Set default stats if API calls fail
@@ -301,7 +293,21 @@ function Dashboard() {
   };
 
   if (loading) return <p className="p-3">Loading dashboard...</p>;
+  const filteredStudents = students.filter((student) => {
+    const term = (searchTerm || "").toLowerCase();
+    return (
+      (String(student?.studentName || "").toLowerCase()).includes(term) ||
+      (String(student?.studentId || "").toLowerCase()).includes(term) ||
+      (String(student?.mobileNo || "").toLowerCase()).includes(term) ||
+      (String(student?.courseType || "").toLowerCase()).includes(term)
+    );
+  });
 
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h4 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h4>
@@ -364,19 +370,70 @@ function Dashboard() {
           </div>
         </div>
       </div>
+      {/* Chart Section */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+        <h6 className="text-lg font-semibold text-gray-800 mb-6">Placement Overview</h6>
 
+        <div className="h-[300px] w-full min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={[
+                { name: "Total Students", value: stats?.total_students || 0, fill: "#3B82F6" },
+                { name: "Placed Students", value: stats?.placed_students || 0, fill: "#10B981" },
+                { name: "Active Jobs", value: stats?.total_jobs || 0, fill: "#8B5CF6" },
+                { name: "Pending Reviews", value: stats?.pending_reviews || 0, fill: "#F59E0B" },
+              ]}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fill: '#6B7280', fontSize: 12 }}
+                axisLine={{ stroke: '#E5E7EB' }}
+              />
+              <YAxis 
+                tick={{ fill: '#6B7280', fontSize: 12 }}
+                axisLine={{ stroke: '#E5E7EB' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar 
+                dataKey="value" 
+                radius={[8, 8, 0, 0]}
+                fill="#3B82F6"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
       {/* Student Reports Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h6 className="text-lg font-semibold text-gray-800">Student Reports</h6>
-            <div className="flex items-center gap-2">
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                Export
-              </button>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                Filter
-              </button>
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="relative flex-grow max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <input
+                    type="text"
+                    placeholder="Search students by name, ID, phone or course..."
+                    className="block w-full pl-10 pr-3 py-2 border border-blue-100/50 rounded-xl bg-blue-50/30 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium py-2.5"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
+                </form>
+              </div>
             </div>
           </div>
           
@@ -392,7 +449,7 @@ function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-gray-600">{studentsError}</p>
-                <button 
+                <button
                   onClick={getStudents}
                   className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
@@ -405,53 +462,46 @@ function Dashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">S.NO</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Student ID</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Student name</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone no</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Course type</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                    <tr className="bg-slate-800">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-white">S.NO</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-white">Student ID</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-white">Student name</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-white">Mobile no</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-white">Course type</th>
+                      {/* <th className="text-center py-3 px-4 text-sm font-semibold text-white">Status</th> */}
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-white">Reports</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {students.length === 0 ? (
+                    {paginatedStudents.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="py-8 text-center text-gray-600">
+                        <td colSpan="6" className="py-8 text-center text-gray-600">
                           <div className="flex flex-col items-center">
                             <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
-                            <p>No student data available</p>
-                            <p className="text-sm text-gray-500 mt-1">Student records will appear here once data is available</p>
+                            <p>{searchTerm ? "No matching students found" : "Student Data Not Available"}</p>
                           </div>
                         </td>
                       </tr>
                     ) : (
-                      students.map((student) => (
+                      paginatedStudents.map((student) => (
                         <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="py-3 px-4 text-sm text-gray-600">{student.sno}</td>
                           <td className="py-3 px-4 text-sm font-medium text-gray-800">{student.studentId}</td>
                           <td className="py-3 px-4 text-sm text-gray-800">{student.studentName}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{student.phoneNo}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600">{student.mobileNo}</td>
                           <td className="py-3 px-4 text-sm text-gray-600">{student.courseType}</td>
                           <td className="text-center py-3 px-4">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              student.status === 'Active' ? 'bg-green-100 text-green-800' :
-                              student.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {student.status}
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                View
-                              </button>
-                              <button className="text-gray-600 hover:text-gray-800 text-sm font-medium">
-                                Edit
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => navigate('/faculty/stats')}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1 group"
+                              >
+                                <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                View Report
                               </button>
                             </div>
                           </td>
@@ -463,17 +513,39 @@ function Dashboard() {
               </div>
 
               {/* Pagination */}
-              {students.length > 0 && (
+              {filteredStudents.length > 0 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    Showing 1-{students.length} of {students.length} results
+                    Showing {Math.min((currentPage-1)*itemsPerPage + 1, filteredStudents.length)}-{Math.min(currentPage*itemsPerPage, filteredStudents.length)} of {filteredStudents.length} results
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" disabled>
+                    <button 
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
                       Previous
                     </button>
-                    <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md">1</button>
-                    <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50" disabled>
+                    <div className="flex gap-1">
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button
+                                key={i + 1}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                                    currentPage === i + 1 
+                                    ? "bg-blue-600 text-white" 
+                                    : "border border-gray-300 hover:bg-gray-50 text-gray-600"
+                                }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+                    <button 
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
                       Next
                     </button>
                   </div>

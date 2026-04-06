@@ -84,19 +84,14 @@ function PlaygroundResults() {
           }
           
           setAllResults(merged);
-          try {
-            localStorage.setItem("allExamResults", JSON.stringify(merged));
-          } catch (e) {
-            console.error("Failed to persist merged results:", e);
-          }
         } else {
           setError(json.error || "Failed to fetch results");
-          setAllResults(localResults);
+          setAllResults([]);
         }
       } catch (err) {
         console.error("Error fetching results:", err);
         setError("Network error. Please check if the server is running.");
-        setAllResults(localResults);
+        setAllResults([]);
       } finally {
         setIsLoading(false);
       }
@@ -270,16 +265,15 @@ function PlaygroundResults() {
       </h3>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px]">
-          <thead className="bg-gray-50 border-b sticky top-0 z-10">
+        <table className="w-full min-w-[1200px] border">
+          <thead className="bg-[#212529] text-white">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[60px]">S.No</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Student</th>
-              {/* <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">ID</th> */}
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[120px]">Exam Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Date</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[80px]">Score</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700 min-w-[100px]">Actions</th>
+              <th className="px-4 py-3 text-center font-bold min-w-[60px] border-r border-gray-700">S.No</th>
+              <th className="px-4 py-4 text-start font-bold min-w-[250px] border-r border-gray-700">Student</th>
+              <th className="px-4 py-4 text-start font-bold min-w-[200px] border-r border-gray-700">Exam Name</th>
+              <th className="px-4 py-3 text-center font-bold min-w-[100px] border-r border-gray-700">Date</th>
+              <th className="px-4 py-3 text-center font-bold min-w-[80px] border-r border-gray-700">Score</th>
+              <th className="px-4 py-3 text-center font-bold min-w-[150px]">Reports</th>
             </tr>
           </thead>
 
@@ -293,48 +287,43 @@ function PlaygroundResults() {
               const passed = scoreValue >= passingScore;
 
               return (
-                <tr key={index} className="border-b">
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[60px]">
+                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[60px]">
                     {index + 1}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
+                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[250px]">
                     {result.user?.firstName ||
                       result.user?.username ||
                       "Unknown"}
                   </td>
-                  {/* <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
-                    {result.user?.randomId || "N/A"}
-                  </td> */}
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[120px]">
+                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[200px]">
                     {formatExamTitle(result.examTitle)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
+                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[100px]">
                     {new Date(
                       result.examDate
                     ).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[80px]">
+                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[80px]">
                     {scoreValue}/{totalMarks}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap min-w-[100px]">
-                    <div className="flex gap-2">
+                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[150px]">
+                    <div className="flex justify-center gap-4">
                       <button
                         onClick={() =>
                           handleViewDetails(result,index)
                         }
-                        className="text-blue-600 hover:text-blue-800 px-2 py-1"
-                        title="View Details"
+                        className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase transition-colors"
                       >
-                        👁
+                        VIEW
                       </button>
                       <button
                         onClick={() =>
                           handleDownload(result)
                         }
-                        className="text-green-600 hover:text-green-800 px-2 py-1"
-                        title="Download Result"
+                        className="text-green-600 hover:text-green-800 font-bold text-xs uppercase transition-colors"
                       >
-                        📥
+                        DOWNLOAD
                       </button>
                     </div>
                   </td>

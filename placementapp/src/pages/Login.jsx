@@ -252,7 +252,7 @@ function Login() {
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-md p-8 rounded-2xl bg-slate-900 border border-slate-700"
+          className="w-full max-w-sm p-8 rounded-2xl bg-slate-900 border border-slate-700"
         >
           <h2 className="text-2xl text-center mb-6 font-semibold">
             Student Login

@@ -179,8 +179,11 @@ function CoursesPage() {
         const token = localStorage.getItem('access');
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         
-        if (token) {
-          // Try to fetch from API first
+        // For faculty users, skip API call and use localStorage directly
+        if (user.role === "faculty") {
+          console.log("Faculty user detected - using localStorage only");
+        } else if (token) {
+          // For non-faculty users with token, try to fetch from API first
           const response = await fetch('http://127.0.0.1:8000/api/courses/', {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -368,14 +371,8 @@ function CoursesPage() {
       return;
     }
     
-    // Use manual topics instead of auto-generated ones
-    const modules = [{
-      title: "Main Content",
-      topics: manualTopicsList.map(t => ({
-        title: typeof t === 'string' ? t : t.title,
-        video: (typeof t === 'object' && t.video) ? t.video.url : null
-      }))
-    }];
+    // Generate modules with topics for the course
+    const modules = generateModulesForCourse(newCourseName);
     
     // Flatten all topic titles for backward compatibility
     const allTopics = manualTopicsList.map(t => typeof t === 'string' ? t : t.title);
@@ -403,8 +400,10 @@ function CoursesPage() {
     try {
       // Save to backend API
       const token = localStorage.getItem('access');
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      if (token) {
+      if (token && user.role !== "faculty") {
+        // Only try API for non-faculty users
         const response = await fetch('http://127.0.0.1:8000/api/courses/', {
           method: 'POST',
           headers: {
@@ -425,7 +424,7 @@ function CoursesPage() {
           // Still add to local state even if backend fails
         }
       } else {
-        console.log("No token - saving to localStorage only");
+        console.log("Faculty user - skipping backend API call");
       }
     } catch (error) {
       console.error("API save failed, using localStorage only:", error);
@@ -614,7 +613,8 @@ function CoursesPage() {
     try {
       const token = localStorage.getItem('access');
       
-      if (token) {
+      if (token && user.role !== "faculty") {
+        // Only try API for non-faculty users
         const deletePromises = idsToRemove.map(id => 
           fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
             method: 'DELETE',
@@ -637,7 +637,7 @@ function CoursesPage() {
           console.log(`Failed to delete ${failedDeletes.length} courses from backend, removing from local storage only`);
         }
       } else {
-        console.log("No token - removing from localStorage only");
+        console.log("Faculty user - skipping backend API deletion");
       }
     } catch (error) {
       console.log("Backend deletion failed, removing from localStorage only:", error);
@@ -1091,12 +1091,28 @@ function CoursesPage() {
                      <p className="text-center py-3 text-secondary italic small">Start adding topics above to define your course syllabus.</p>
                    )}
                 </div>
-
-                <div className="d-flex justify-content-end gap-3 mt-5">
-                   <button className="btn btn-light px-5 fw-bold" onClick={() => setShowAddCourse(false)}>Discard</button>
-                   <button className="btn btn-primary px-5 fw-bold shadow-lg py-3 rounded-pill" onClick={addNewCourse} disabled={!newCourseName.trim() || manualTopicsList.length === 0}>Launch Manual Course</button>
-                </div>
               </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex justify-between items-center mt-8 border-t pt-5">
+              <button
+                onClick={() => {
+                  resetCourseForm();
+                  setShowAddCourse(false);
+                }}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={addNewCourse}
+                disabled={!newCourseName.trim() || manualTopicsList.length === 0}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
+              >
+                Create Complete Course
+              </button>
             </div>
           </div>
         </div>

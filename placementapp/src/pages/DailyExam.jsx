@@ -1237,6 +1237,13 @@ useEffect(() => {
             : 'Start Assessment'}
           </button>
 
+          <button
+            onClick={() => navigate("/dashboard/daily-exam")}
+            className="block mt-6 text-[10px] font-black text-gray-400 hover:text-blue-600 uppercase tracking-widest mx-auto transition-colors"
+          >
+            Back to Daily Assessment Center
+          </button>
+
           <p className="mt-6 text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
              Follow all proctoring rules during the exam

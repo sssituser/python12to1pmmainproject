@@ -14,6 +14,7 @@ from .views.playground_views import create_playground, get_playground, delete_pl
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, CreateSampleApplicationsView
 from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api, user_combined_results_api
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
+from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 
@@ -96,6 +97,13 @@ urlpatterns = [
     # Admin URLs
     path('admin/jobs/', JobViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('admin/exam-settings/', exam_settings_api),
+    
+    # Admin Management System URLs
+    path('all-users/', all_users_api),
+    path('create-faculty/', create_faculty_api),
+    path('toggle-student-status/<int:student_id>/', toggle_student_status_api),
+    path('delete-user/<int:user_id>/', delete_user_api),
+    path('update-faculty/<int:faculty_id>/', update_faculty_api),
     
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),

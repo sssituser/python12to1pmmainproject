@@ -174,11 +174,17 @@ function DetailedResults() {
               {formatExamTitle(result?.examTitle) || "Student Assessment Summary"}
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Student Name</p>
                 <p className="text-xl font-black text-gray-900 truncate">
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
+                </p>
+              </div> 
+              <div className="space-y-1">
+                <p className="text-gray-400 text-sm font-medium">Student ID</p>
+                <p className="text-xl font-black text-gray-900 truncate">
+                  {result.user?.randomId || "N/A"}
                 </p>
               </div> 
               <div className="space-y-1">

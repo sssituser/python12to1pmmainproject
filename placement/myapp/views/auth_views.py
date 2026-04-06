@@ -81,9 +81,14 @@ def login(request):
             print(f"DEBUG: Auto-activating faculty account for {user.username}")
             user.is_active = True
             # We will save after updating last_login below
-
+        
+        # 🛡️ ADMINS ARE ALWAYS ALLOWED (no activation needed)
+        elif user.role == 'admin':
+            print(f"DEBUG: Admin login detected for {user.username}")
+            # Admins don't need activation checks
+        
         # 🛑 Still block inactive students
-        if user.role == 'student' and not user.is_active:
+        elif user.role == 'student' and not user.is_active:
             print(f"DEBUG: Student account inactive: {user.username}")
             return Response({"detail": "Account is inactive. Contact faculty to reactivate."}, status=403)
 
@@ -134,7 +139,7 @@ def login(request):
                 "username": user.username,
                 "email": user_email,
                 "name": user.first_name or user.username,
-                "role": user.role or "student",
+                "role": user.role or "unknown",
                 "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course is not None else ""
             },
             "email_sent": email_sent
@@ -292,12 +297,9 @@ def register(request):
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
     course = request.data.get("course", "")
+    phone_number = request.data.get("phone_number", "")
 
-    print(f"DEBUG REGISTER: username={username}, studentId={studentId}, password={password}, email={email}, role={role}, course={course}")
-
-    # For students, use studentId as username if provided
-    if role == 'student' and studentId:
-        username = studentId
+    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}")
 
     if not username or not password:
         return Response({"error": "Student ID and password required"}, status=400)
@@ -345,18 +347,8 @@ def register(request):
             else:
                 print(f"DEBUG: Using existing course: {course}")
             
-            # Create student profile with student_id
-            try:
-                student_id_int = int(studentId) if studentId else None
-            except (ValueError, TypeError):
-                student_id_int = None
-            
-            student_profile = StudentProfile.objects.create(
-                user=user, 
-                course=course_obj,
-                student_id=student_id_int
-            )
-            print(f"DEBUG: Created student profile for {username} with student_id={student_id_int} and course: {course}")
+            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
+            print(f"DEBUG: Created student profile for {username} with course: {course}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification

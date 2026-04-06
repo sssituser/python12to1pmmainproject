@@ -34,8 +34,11 @@ import VideoPlayer from "./pages/VideoPlayer";
 import WeeklyExam from "./pages/WeeklyExam";
 import WeeklyExamReports from "./pages/WeeklyExamReports";
 
+/* 🔹 ADMIN */
+import AdminLogin from "./admin/AdminLogin";
+import adminRoutes from "./admin/adminRoutes";
+
 /* 🔹 FACULTY */
-import AdminPanel from "./faculty/AdminPanel";
 import Applications from "./faculty/Application";
 import FacultyCourse from "./faculty/Course";
 import FacultyDashboard from "./faculty/Dashboard";
@@ -117,6 +120,7 @@ function App() {
         {/* 🔐 AUTH */}
         <Route path="/" element={<Login />} />
         <Route path="/faculty/login" element={<FacultyLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-faculty" element={<VerifyFaculty />} />
 
@@ -197,7 +201,7 @@ function App() {
         <Route
           path="/faculty"
           element={
-            token && (isFaculty || isAdmin) ? <FacultyLayout /> : <Navigate to="/" />
+            token && isFaculty ? <FacultyLayout /> : <Navigate to="/" />
           }
         >
           <Route index element={<FacultyDashboard />} />
@@ -206,8 +210,6 @@ function App() {
           <Route path="exam-failure" element={<ExamFailureDashboard />} />
           <Route path="stats" element={<Stats />} />
           <Route path="profile" element={<FacultyProfile />} />
-          <Route path="admin" element={isAdmin ? <AdminPanel /> : <Navigate to="/faculty/dashboard" />} />
-          <Route path="/faculty/login" element={<FacultyLogin />} />
           <Route path="jobs" element={<FacultyJobs />} />
           <Route path="exam" element={<ExamManager />} />
           <Route path="Stats" element={<Stats />} />
@@ -218,6 +220,19 @@ function App() {
           <Route path="Course" element={<FacultyCourse />} />
           <Route path="Course/:courseId" element={<FacultyCourse />} />
         </Route>
+
+        {/* 🛡️ ADMIN PANEL */}
+        {adminRoutes.map((route, index) => (
+          <Route key={index} path={route.path} element={route.element}>
+            {route.children?.map((child, childIndex) => (
+              child.path === "index" || child.index ? (
+                <Route key={childIndex} index element={child.element} />
+              ) : (
+                <Route key={childIndex} path={child.path} element={child.element} />
+              )
+            ))}
+          </Route>
+        ))}
 
       </Routes>
     </>

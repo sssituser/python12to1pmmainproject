@@ -280,7 +280,7 @@ fetch(url, {
             </div>
 
             <div className="col-md-6 mb-2">
-              <input name="external_application_link" placeholder="External Application Link (Optional)"
+              <input name="external_application_link" placeholder="External Application Link"
                 className="form-control"
                 value={form.external_application_link}
                 onChange={handleChange} />
@@ -309,18 +309,16 @@ fetch(url, {
       style={{ minWidth: "1200px" }}
     >
 
-      <thead className="table-dark text-center">
-        <tr>
-          <th>Job</th>
-          <th>Company</th>
-          <th>Type</th>
-          <th>Experience</th>
-          <th>Salary</th>
-          <th>Location</th>
-          {/* <th>Description</th>
-          <th>Responsibilities</th> */}
-          <th>Deadline</th>
-          <th>Action</th>
+      <thead className="bg-slate-800 text-white">
+        <tr className="align-middle">
+          <th className="px-4 py-4 text-start font-bold border-r border-slate-700" style={{ minWidth: "180px" }}>Job</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "150px" }}>Company</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "120px" }}>Type</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "140px" }}>Experience</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "120px" }}>Salary</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "180px" }}>Location</th>
+          <th className="px-4 py-4 text-center font-bold border-r border-slate-700" style={{ minWidth: "130px" }}>Deadline</th>
+          <th className="px-4 py-4 text-center font-bold" style={{ minWidth: "220px" }}>Action</th>
         </tr>
       </thead>
 
@@ -335,49 +333,31 @@ fetch(url, {
           jobs.map(j => (
             <tr key={j.id} style={{ verticalAlign: "middle" }}>
 
-              <td className="text-start fw-semibold" style={{ minWidth: "150px" }}>
+              <td className="text-start fw-semibold">
                 {j.job_title}
               </td>
 
-              <td className="text-center" style={{ minWidth: "130px" }}>
+              <td className="text-center">
                 {j.company}
               </td>
 
-              <td className="text-center" style={{ minWidth: "100px" }}>
+              <td className="text-center">
                 {j.job_type}
               </td>
 
-              <td className="text-center" style={{ minWidth: "120px" }}>
+              <td className="text-center">
                 {j.experience}
               </td>
 
-              <td className="text-center" style={{ minWidth: "100px" }}>
+              <td className="text-center">
                 {j.salary}
               </td>
 
-              <td className="text-center" style={{ minWidth: "180px" }}>
+              <td className="text-center">
                 {j.location}
               </td>
 
-              {/* <td style={{
-                maxWidth: "200px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis"
-              }}>
-                {j.description}
-              </td>
-
-              <td style={{
-                maxWidth: "200px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis"
-              }}>
-                {j.responsibilities}
-              </td> */}
-
-              <td>
+              <td className="text-center">
                 {j.deadline
                   ? (() => {
                       const d = new Date(j.deadline);
@@ -400,7 +380,22 @@ fetch(url, {
                     <button
                       className="btn btn-warning btn-sm px-3"
                       onClick={() => {
-                        setForm(j);          
+                        // Populate form with ALL job fields to prevent data loss
+                        setForm({
+                          id: j.id,
+                          job_title: j.job_title || "",
+                          company: j.company || "",
+                          location: j.location || "",
+                          job_type: j.job_type || "",
+                          experience: j.experience || "",
+                          salary: j.salary || "",
+                          primary_skills: j.primary_skills || "",
+                          eligibility: j.eligibility || "",
+                          description: j.description || "",
+                          responsibilities: j.responsibilities || "",
+                          external_application_link: j.external_application_link || "",
+                          deadline: j.deadline || ""
+                        });          
                         setShowForm(true);  
                         window.scrollTo({ top: 0, behavior: "smooth" }); 
                       }}
