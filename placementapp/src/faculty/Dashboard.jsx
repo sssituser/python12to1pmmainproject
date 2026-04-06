@@ -35,6 +35,14 @@ function Dashboard() {
   useEffect(() => {
     getExamReports();
     getStudents();
+
+    // Auto-refresh data every 10 seconds
+    const interval = setInterval(() => {
+      getExamReports();
+      getStudents(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -99,9 +107,9 @@ function Dashboard() {
     return response;
   };
 
-  const getStudents = async () => {
+  const getStudents = async (showLoading = true) => {
     try {
-      setStudentsLoading(true);
+      if (showLoading) setStudentsLoading(true);
       setStudentsError(null);
       
       const token = localStorage.getItem("access");
@@ -120,18 +128,23 @@ function Dashboard() {
             
             // Transform real student data to match table structure
             const studentsArray = Array.isArray(data) ? data : (data.students || []);
-            const transformedStudents = studentsArray.map((student, index) => ({
-              sno: index + 1,
-              studentId: student.student_id || student.id || `STU${String(index + 1).padStart(3, '0')}`,
-              studentName: student.name || student.user?.name || student.user?.username || student.username || 'Unknown',
-              phoneNo: student.phone || student.user?.phone || `+91 987654321${index}`,
-              courseType: student.course_title || student.course?.title || student.course_type || 'Not assigned',
-              status: student.is_active !== undefined ? (student.is_active ? 'Active' : 'Inactive') : 
-                      student.status === 'inactive' ? 'Inactive' : 
-                      student.status === 'pending' ? 'Pending' : 'Active',
-              email: student.email || student.user?.email || '',
-              id: student.id || index + 1
-            }));
+            const transformedStudents = studentsArray.map((student, index) => {
+              const userObj = student.user || {};
+              return {
+                sno: index + 1,
+                // Robust fallbacks for ID, Name, and Mobile
+                studentId: student.studentId || student.student_id || student.id || userObj.studentId || userObj.id || "--",
+                studentName: student.studentName || student.name || userObj.name || userObj.username || student.username || 'Unknown',
+                mobileNo: student.mobileNo || student.phone || student.mobile || userObj.phone || userObj.mobile || "--",
+                courseType: student.course_title || student.course?.title || student.course_type || 'Not assigned',
+                status: student.is_active !== undefined ? (student.is_active ? 'Active' : 'Inactive') : 
+                        student.status === 'inactive' ? 'Inactive' : 
+                        student.status === 'pending' ? 'Pending' : 'Active',
+                is_active: student.is_active !== undefined ? student.is_active : student.status !== 'Inactive',
+                email: student.email || student.user?.email || userObj.email || '',
+                id: student.id || index + 1
+              };
+            });
             
             setStudents(transformedStudents);
             return;
@@ -166,15 +179,16 @@ function Dashboard() {
             })
             .map((student, index) => {
               const userObj = student.user || {};
-              // Ensure we have a clean student name
+              // Robust fallbacks for ID, Name, and Mobile
               const name = student.studentName || student.name || userObj.name || userObj.username || student.username || "Unknown";
+              const studentId = student.studentId || student.student_id || student.id || userObj.studentId || userObj.id || "--";
+              const mobileNo = student.mobileNo || student.phone || student.mobile || userObj.phone || userObj.mobile || "--";
               
               return {
                 sno: index + 1,
-                // Look everywhere for ID and Profile data
-                studentId: student.studentId || student.student_id || student.id || userObj.id || "--",
+                studentId: studentId,
                 studentName: name,
-                mobileNo: student.mobileNo || student.phone || student.mobile || userObj.phone || userObj.mobile || "--",
+                mobileNo: mobileNo,
                 courseType: student.courseType || student.course_title || student.course_type || "Not assigned",
                 status: student.status || (student.is_active ? 'Active' : 'Inactive'),
                 is_active: student.is_active !== undefined ? student.is_active : student.status !== 'Inactive',
@@ -199,10 +213,10 @@ function Dashboard() {
       setStudentsError("Student Data Not Available");
     } catch (err) {
       console.log("Error fetching students:", err);
-      setStudentsError("Failed to load student data");
+      if (showLoading) setStudentsError("Failed to load student data");
       setStudents([]);
     } finally {
-      setStudentsLoading(false);
+      if (showLoading) setStudentsLoading(false);
     }
   };
 

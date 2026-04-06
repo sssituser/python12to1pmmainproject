@@ -85,12 +85,18 @@ def students_api(request):
             # Get job applications for this student
             job_app = JobApplication.objects.filter(user_id=user.id).first()
             
+            # Construct a dynamic full name
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            display_name = full_name if full_name else user.username
+            
             students_list.append({
                 'id': user.id,
                 'studentId': profile.student_id if profile and profile.student_id else user.id,
-                'name': user.username,
+                'name': display_name,
+                'username': user.username,
                 'email': user.email,
                 'phone': profile.phone if profile and profile.phone else '',
+                'mobileNo': profile.phone if profile and profile.phone else '', # Alias for frontend compatibility
                 'course_title': profile.course.title if profile and profile.course else 'Not assigned',
                 'college': profile.college if profile and profile.college else 'N/A',
                 'cgpa': profile.cgpa if profile and profile.cgpa else 0,
