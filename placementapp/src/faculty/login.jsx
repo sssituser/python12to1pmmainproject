@@ -159,8 +159,13 @@ function FacultyLogin() {
               </button>
             </p>
             <p className="text-center text-xs text-gray-400">
-              Admin? Sign in with your admin credentials here. After login,
-              access the Admin Center from the sidebar.
+              Admin?{" "}
+              <button
+                onClick={() => navigate("/admin/login")}
+                className="text-purple-400 hover:text-purple-300 font-medium"
+              >
+                Admin Login
+              </button>
             </p>
           </div>
         </div>
