@@ -71,11 +71,14 @@ function MonthlyExamReports() {
          
          if (!isMonthly || !isOwnExam) return;
          
-         // 🛡️ UNIQUE ID DEDUPLICATION: Preserve every attempt
-         const key = exam.id || exam.random_id || exam.randomId || (exam.examDate + JSON.stringify(exam));
+         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
+         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
+         const uniqueKey = exam.id 
+           ? `db_${exam.id}` 
+           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
          
-         if (!seenKeys.has(key)) {
-           seenKeys.set(key, exam);
+         if (!seenKeys.has(uniqueKey)) {
+           seenKeys.set(uniqueKey, exam);
          }
       });
 

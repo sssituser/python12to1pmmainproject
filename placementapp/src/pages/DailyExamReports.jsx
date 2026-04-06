@@ -55,19 +55,21 @@ function DailyExamReports() {
       
       let examList = [...localList, ...backendList];
 
-      // 🛡️ SMART DEDUPLICATE: Keep single best result per day
+      // 🛡️ SMART DEDUPLICATE: Merge local unsynced exams with backend exams
       const seenKeys = new Map();
       
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
          if (type !== 'daily' && type !== '') return;
          
-         // 🛡️ UNIQUE ATTEMPT KEY: Use ID or combinations of unique metadata
-         // to ensure every attempt shows up separately.
-         const key = exam.id || (exam.random_id + exam.examDate);
+         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
+         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
+         const uniqueKey = exam.id 
+           ? `db_${exam.id}` 
+           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
          
-         if (!seenKeys.has(key)) {
-           seenKeys.set(key, exam);
+         if (!seenKeys.has(uniqueKey)) {
+           seenKeys.set(uniqueKey, exam);
          }
       });
 
@@ -115,7 +117,7 @@ function DailyExamReports() {
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam) => {
+    exams.forEach((exam, index) => {
       const total = exam.totalMarks || 40;
       const percentage = total > 0 ? (exam.score / total) * 100 : 0;
 
@@ -128,7 +130,7 @@ function DailyExamReports() {
         }
         setProgress((prev) => ({
           ...prev,
-          [exam.id]: value,
+          [exam.id || index]: value,
         }));
       }, 20);
     });
@@ -179,12 +181,12 @@ function DailyExamReports() {
             {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-              const value = progress[exam.id] || 0;
+              const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
 
               return (
                 <div 
-                  key={exam.id} 
+                  key={exam.id || index} 
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="w-full mb-4 text-center">

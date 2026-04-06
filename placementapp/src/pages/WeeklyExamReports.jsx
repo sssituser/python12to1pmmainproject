@@ -70,22 +70,16 @@ function WeeklyExamReports() {
          const currentUsername = getCurrentUsername() || "";
          const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !currentUsername || examUsername.toLowerCase() === currentUsername;
          
-
-         // 🛡️ UNIQUE ATTEMPT DEDUPLICATION: Use the database ID to 
-         // ensure every unique attempt is shown in the history.
-         const initialKey = exam.id || (exam.random_id + exam.examDate);
-
          if (!isWeekly || isExcluded || !isOwnExam) return;
-         
-         const dateVal = exam.examDate ? new Date(exam.examDate).getTime() : 0;
-         const deduplicatedKey = exam.random_id || exam.randomId || exam.id || `${title}-${dateVal}`;
-         const keyToUse = deduplicatedKey; // Or just use the original 'key'
 
-         const score = exam.score || 0;
-
+         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
+         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
+         const uniqueKey = exam.id 
+           ? `db_${exam.id}` 
+           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
          
-         if (!seenKeys.has(key)) {
-           seenKeys.set(key, exam);
+         if (!seenKeys.has(uniqueKey)) {
+           seenKeys.set(uniqueKey, exam);
          }
       });
 

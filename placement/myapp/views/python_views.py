@@ -918,9 +918,17 @@ def user_combined_results_api(request):
             attempts = ExamAttempt.objects.all().order_by('-exam_date')
     elif request.user and request.user.is_authenticated:
         # Include attempts specifically tied to this user OR matching their username (for consistency)
-        attempts = ExamAttempt.objects.filter(
-            Q(user=request.user) | Q(user__username__iexact=request.user.username)
-        ).order_by('-exam_date')
+        # 🧪 ENHANCEMENT: Also include attempts that match their Student ID (random_id) for better consistency across sessions
+        user_filter = Q(user=request.user) | Q(user__username__iexact=request.user.username)
+        
+        try:
+            profile = StudentProfile.objects.filter(user=request.user).first()
+            if profile and profile.student_id:
+                user_filter |= Q(random_id=str(profile.student_id))
+        except Exception:
+            pass
+            
+        attempts = ExamAttempt.objects.filter(user_filter).order_by('-exam_date')
     else:
         if not username:
              return Response({
@@ -930,10 +938,14 @@ def user_combined_results_api(request):
         attempts = ExamAttempt.objects.filter(user__username__iexact=username).order_by('-exam_date')
 
     if exam_type:
-        attempts = attempts.filter(exam_type__iexact=exam_type)
+        # Match by type field OR title (handles case where titles have the keyword but type is set generically e.g. 'daily')
+        attempts = attempts.filter(
+            Q(exam_type__iexact=exam_type) | Q(exam_title__icontains=exam_type)
+        )
     
     # Strictly deduplicate across IDs to prevent any "repeated" records UI bugs
-    attempts = attempts.distinct()
+    # Added explicit distinct() to avoid duplicates from multiple Q matches 
+    attempts = attempts.order_by('-exam_date').distinct()
     
     formatted_data = []
     for attempt in attempts:
