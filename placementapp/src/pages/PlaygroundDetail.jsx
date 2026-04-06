@@ -81,6 +81,8 @@ function PlaygroundDetail() {
                 <img
                   src={item.image}
                   alt={item.title}
+                  width="80"
+                  height="80"
                   className="w-20 h-20 rounded-lg object-cover"
                 />
 
