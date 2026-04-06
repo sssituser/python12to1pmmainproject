@@ -1,9 +1,11 @@
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import Globe from "../components/Globe";
+
+// 🚀 LAZY LOAD HEAVY COMPONENTS
+const Globe = lazy(() => import("../components/Globe"));
 
 function Login() {
   const navigate = useNavigate();
@@ -225,7 +227,9 @@ function Login() {
       <div className="w-1/2 hidden md:flex items-center justify-center relative">
 
         <div className="absolute inset-0 opacity-70 pointer-events-none">
-          <Globe />
+          <Suspense fallback={<div className="w-full h-full bg-slate-950" />}>
+            <Globe />
+          </Suspense>
         </div>
 
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />

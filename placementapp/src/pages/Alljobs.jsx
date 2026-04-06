@@ -9,6 +9,19 @@ function AllJobs() {
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
   const [search, setSearch] = useState("");
+  const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
+
+  const toggleDescription = (id) => {
+    setExpandedDescriptions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   // ==============================
   // APPLY JOB
@@ -184,7 +197,28 @@ function AllJobs() {
               <tr key={job.id}>
                 <td>{job.company}</td>
                 <td>{job.job_title}</td>
-                <td className="text-center">{job.description || "N/A"}</td>
+                <td className="text-start" style={{ minWidth: "300px" }}>
+                  {job.description ? (
+                    job.description.length > 100 ? (
+                      <>
+                        {expandedDescriptions.has(job.id)
+                          ? job.description
+                          : `${job.description.substring(0, 100)}... `}
+                        <span
+                          onClick={() => toggleDescription(job.id)}
+                          className="text-primary font-weight-bold"
+                          style={{ cursor: "pointer", fontSize: "0.8rem", textDecoration: "underline" }}
+                        >
+                          {expandedDescriptions.has(job.id) ? "View Less" : "View More"}
+                        </span>
+                      </>
+                    ) : (
+                      job.description
+                    )
+                  ) : (
+                    "N/A"
+                  )}
+                </td>
                 <td className="text-center">{job.primary_skills || "N/A"}</td>
                 <td>{job.deadline}</td>
                 <td>{job.location}</td>
