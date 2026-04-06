@@ -136,6 +136,52 @@ function CoursesPage() {
   const [editTopicVidLink, setEditTopicVidLink] = useState('');
   const [showAddTopicForm, setShowAddTopicForm] = useState(false);
 
+  // Sync courses with backend on mount to ensure all devices see the same curriculum
+  useEffect(() => {
+    const fetchCoursesFromAPI = async () => {
+      const token = localStorage.getItem('access');
+      if (!token) return;
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+          headers: {
+            'Authorization': `Bearer ${token.replace(/^"|"$/g, "")}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Handle DRF ViewSet variations: paginated (.results), wrapped (.data.success), or raw array
+          let rawCourses = [];
+          if (data.results && Array.isArray(data.results)) {
+            rawCourses = data.results;
+          } else if (data.success && Array.isArray(data.data)) {
+            rawCourses = data.data;
+          } else if (Array.isArray(data)) {
+            rawCourses = data;
+          }
+          
+          if (rawCourses.length > 0) {
+            const coursesWithIcons = rawCourses.map(course => ({
+              ...course,
+              icon: getIconForCourse(course.title)
+            }));
+            
+            // Prioritize API data as truth
+            setCourses(coursesWithIcons);
+            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
+            localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
+            console.log("Faculty curriculum synchronized with database successfully.");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to sync faculty dashboard with API:", error);
+      }
+    };
+
+    fetchCoursesFromAPI();
+  }, []);
+
   // ---------------------------------------------------------
   // PROGRESS CALCULATION LOGIC
   // ---------------------------------------------------------
@@ -172,91 +218,9 @@ function CoursesPage() {
   };
 
   
-  // Load courses from API dynamically on component mount
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const token = localStorage.getItem('access');
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        
-        // For faculty users, skip API call and use localStorage directly
-        if (user.role === "faculty") {
-          console.log("Faculty user detected - using localStorage only");
-        } else if (token) {
-          // For non-faculty users with token, try to fetch from API first
-          const response = await fetch('http://127.0.0.1:8000/api/courses/', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            const apiCourses = await response.json();
-            
-            // Transform API data to match frontend structure
-            const coursesWithIcons = calculateCourseProgress(apiCourses).map(course => ({
-              ...course,
-              id: course.id,
-              title: course.title,
-              icon: getIconForCourse(course.title),
-              level: course.level || 'Beginner',
-              duration: course.duration || 'Self-paced',
-              progress: course.progress || 0,
-              locked: course.locked || false,
-              topics: Array.isArray(course.topics) ? course.topics : [],
-              modules: Array.isArray(course.modules) ? course.modules : [],
-              customVideos: course.custom_videos || {}
-            }));
-            
-            setCourses(coursesWithIcons);
-            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
-            localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
-            return;
-          } else if (response.status === 401) {
-            console.log("Unauthorized - falling back to localStorage");
-          }
-        }
-      } catch (error) {
-        console.log("API fetch failed, falling back to localStorage:", error);
-      }
-
-      // Fallback to local persistence: try facultyCourses first, then courses
-      const facultySaved = localStorage.getItem('facultyCourses');
-      const genericSaved = localStorage.getItem('courses');
-      const savedCourses = facultySaved || genericSaved;
-      
-      if (savedCourses) {
-        try {
-          const parsedCourses = JSON.parse(savedCourses);
-          
-          if (!parsedCourses || parsedCourses.length === 0) {
-             // If we have absolutely nothing, show defaults
-             setCourses(defaultCourses);
-             localStorage.setItem('facultyCourses', JSON.stringify(defaultCourses));
-             return;
-          }
-
-          const coursesWithIcons = calculateCourseProgress(parsedCourses).map(course => ({
-            ...course,
-            icon: getIconForCourse(typeof course === 'string' ? course : course.title)
-          }));
-          setCourses(coursesWithIcons);
-          // Sync facultyCourses to ensure it stays current
-          localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
-        } catch (error) {
-          console.error("LocalStorage fallback failed:", error);
-          setCourses(defaultCourses);
-        }
-      } else {
-        // First time visit - no cache at all
-        setCourses(defaultCourses);
-        localStorage.setItem('facultyCourses', JSON.stringify(defaultCourses));
-      }
-    };
-
-    fetchCourses();
-  }, []);
+  // Redundant sync useEffect removed for consolidation. 
+  // Initial courses state is loaded via line 88 and synced via mount-Effect at line 140.
+  // This ensures perfect parity with students and permanent persistence.
 
   // Save courses to localStorage whenever they change
   useEffect(() => {
@@ -351,11 +315,12 @@ function CoursesPage() {
         }
       }
       
-      setCourses(updatedCourses);
-      setSelectedCourse({...updatedCourses[courseIndex]});
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
-      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-      syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+      const recalculatedCourses = calculateCourseProgress(updatedCourses);
+      setCourses(recalculatedCourses);
+      setSelectedCourse({...recalculatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+      syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
       
       // Clear manual topics list and reset module selection
       setManualTopicsList([]);
@@ -371,8 +336,8 @@ function CoursesPage() {
       return;
     }
     
-    // Generate modules with topics for the course
-    const modules = generateModulesForCourse(newCourseName);
+    // New courses start empty, no auto-generation
+    const modules = [];
     
     // Flatten all topic titles for backward compatibility
     const allTopics = manualTopicsList.map(t => typeof t === 'string' ? t : t.title);
@@ -402,8 +367,8 @@ function CoursesPage() {
       const token = localStorage.getItem('access');
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
+        // Try API for all authenticated users to ensure persistence
         const response = await fetch('http://127.0.0.1:8000/api/courses/', {
           method: 'POST',
           headers: {
@@ -423,9 +388,7 @@ function CoursesPage() {
           console.error("Backend save failed:", errorData);
           // Still add to local state even if backend fails
         }
-      } else {
-        console.log("Faculty user - skipping backend API call");
-      }
+      } 
     } catch (error) {
       console.error("API save failed, using localStorage only:", error);
     }
@@ -435,11 +398,12 @@ function CoursesPage() {
     newCourse.id = newCourse.id || localId;
     
     const updatedCourses = [...courses, newCourse];
-    setCourses(updatedCourses);
+    const recalculatedCourses = calculateCourseProgress(updatedCourses);
+    setCourses(recalculatedCourses);
     
     // Save to localStorage immediately
-    localStorage.setItem('courses', JSON.stringify(updatedCourses));
-    localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
+    localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+    localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
     
     // Clear form and reset state
     setNewCourseName("");
@@ -456,12 +420,8 @@ function CoursesPage() {
     setManualTopicEntry("");
     setSelectedModuleForTopics("");
     
-    // Navigate to newly created course topics page after a short delay
-    setTimeout(() => {
-      const courseName = newCourse.title.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-      navigate(`/faculty/Course/${courseName}`);
-      setSelectedCourse(newCourse);
-    }, 100);
+    // Success! Stay on course administration main page
+    console.log("Course created successfully on main dashboard");
   };
 
   // Reset Course Creation Form
@@ -528,11 +488,12 @@ function CoursesPage() {
           topics: []
         });
         
-        setCourses(updatedCourses);
-        setSelectedCourse({...updatedCourses[courseIndex]});
-        localStorage.setItem('courses', JSON.stringify(updatedCourses));
-        localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-        syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+        const recalculatedCourses = calculateCourseProgress(updatedCourses);
+        setCourses(recalculatedCourses);
+        setSelectedCourse({...recalculatedCourses[courseIndex]});
+        localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+        localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+        syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
       }
     }
     setNewSubject("");
@@ -545,11 +506,12 @@ function CoursesPage() {
       const updatedCourses = [...courses];
       updatedCourses[courseIndex].modules = updatedCourses[courseIndex].modules.filter(m => m.title !== subjectTitle);
       
-      setCourses(updatedCourses);
-      setSelectedCourse({...updatedCourses[courseIndex]});
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
-      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-      syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+      const recalculatedCourses = calculateCourseProgress(updatedCourses);
+      setCourses(recalculatedCourses);
+      setSelectedCourse({...recalculatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+      syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
     }
   };
 
@@ -583,11 +545,12 @@ function CoursesPage() {
         if (!updatedCourses[courseIndex].topics) updatedCourses[courseIndex].topics = [];
         updatedCourses[courseIndex].topics.push(newTopic);
         
-        setCourses(updatedCourses);
-        setSelectedCourse({...updatedCourses[courseIndex]});
-        localStorage.setItem('courses', JSON.stringify(updatedCourses));
-        localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-        syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+        const recalculatedCourses = calculateCourseProgress(updatedCourses);
+        setCourses(recalculatedCourses);
+        setSelectedCourse({...recalculatedCourses[courseIndex]});
+        localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+        localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+        syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
       }
     }
 
@@ -613,8 +576,8 @@ function CoursesPage() {
     try {
       const token = localStorage.getItem('access');
       
-      if (token && user.role !== "faculty") {
-        // Only try API for non-faculty users
+      if (token) {
+        // Try API for all authenticated users to ensure proper cleanup
         const deletePromises = idsToRemove.map(id => 
           fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
             method: 'DELETE',
@@ -636,9 +599,7 @@ function CoursesPage() {
         if (failedDeletes.length > 0) {
           console.log(`Failed to delete ${failedDeletes.length} courses from backend, removing from local storage only`);
         }
-      } else {
-        console.log("Faculty user - skipping backend API deletion");
-      }
+      } 
     } catch (error) {
       console.log("Backend deletion failed, removing from localStorage only:", error);
     }
@@ -685,11 +646,12 @@ function CoursesPage() {
         );
       }
 
-      setCourses(updatedCourses);
-      setSelectedCourse({...updatedCourses[courseIndex]});
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
-      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-      syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+      const recalculatedCourses = calculateCourseProgress(updatedCourses);
+      setCourses(recalculatedCourses);
+      setSelectedCourse({...recalculatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+      syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
     }
   };
 
@@ -700,11 +662,12 @@ function CoursesPage() {
       const updatedCourses = [...courses];
       updatedCourses[courseIndex].topics = [];
       updatedCourses[courseIndex].customVideos = {};
-      setCourses(updatedCourses);
-      setSelectedCourse({...updatedCourses[courseIndex]});
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
-      localStorage.setItem('facultyCourses', JSON.stringify(updatedCourses));
-      syncCourseToBackend(updatedCourses[courseIndex].id, updatedCourses);
+      const recalculatedCourses = calculateCourseProgress(updatedCourses);
+      setCourses(recalculatedCourses);
+      setSelectedCourse({...recalculatedCourses[courseIndex]});
+      localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
+      localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
+      syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
     }
   };
 
@@ -1049,70 +1012,42 @@ function CoursesPage() {
                 <button type="button" className="btn-close btn-close-white" onClick={() => setShowAddCourse(false)}></button>
               </div>
               <div className="modal-body p-5">
-                <div className="mb-4 pb-4 border-bottom">
-                  <label className="form-label text-muted fw-bold small">Course Main Heading</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-lg border-2 border-primary-subtle"
-                    placeholder="e.g. Master Python Programming"
-                    value={newCourseName}
-                    onChange={(e) => setNewCourseName(e.target.value)}
-                  />
-                </div>
-
                 <div className="mb-4">
-                   <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
-                     <span className="badge bg-primary rounded-circle">1</span> Add Initial Topics
+                   <h5 className="fw-bold mb-4 d-flex align-items-center gap-3">
+                     <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '32px', height: '32px', fontSize: '14px'}}>1</div>
+                     Create New Course
                    </h5>
-                   <div className="input-group input-group-lg shadow-sm">
+                   <div className="input-group input-group-lg shadow-sm mb-4">
                       <input
                         type="text"
                         className="form-control bg-light border-0"
-                        placeholder="Topic Title..."
-                        value={manualTopicEntry}
-                        onChange={(e) => setManualTopicEntry(e.target.value)}
+                        placeholder="Enter Course Name..."
+                        value={newCourseName}
+                        onChange={(e) => setNewCourseName(e.target.value)}
                       />
-                      <button className="btn btn-primary fw-bold" onClick={handleAddManualTopic}>Add to List</button>
+                      <button 
+                        className="btn btn-primary fw-bold px-5" 
+                        onClick={addNewCourse}
+                        disabled={!newCourseName.trim()}
+                      >
+                        Add
+                      </button>
                    </div>
                 </div>
-
-                <div className="bg-light rounded-4 p-4 mb-4 border border-2 border-dashed">
-                   <p className="text-muted small fw-bold border-bottom pb-2 mb-3">Topic Roadmap Preview:</p>
-                   {manualTopicsList.length > 0 ? (
-                     <div className="list-group gap-2">
-                        {manualTopicsList.map((t, i) => (
-                           <div key={i} className="list-group-item border-0 shadow-sm rounded-3 d-flex justify-content-between align-items-center p-3 animate-in slide-in-from-right-2">
-                              <span className="fw-bold">{i+1}. {t.title}</span>
-                              <button onClick={() => removeManualTopic(i)} className="btn btn-link text-danger p-0"><FaTrash size={12}/></button>
-                           </div>
-                        ))}
-                     </div>
-                   ) : (
-                     <p className="text-center py-3 text-secondary italic small">Start adding topics above to define your course syllabus.</p>
-                   )}
-                </div>
               </div>
-            </div>
 
-            {/* Bottom Actions */}
-            <div className="flex justify-between items-center mt-8 border-t pt-5">
-              <button
-                onClick={() => {
-                  resetCourseForm();
-                  setShowAddCourse(false);
-                }}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
-              >
-                Cancel
-              </button>
-              
-              <button
-                onClick={addNewCourse}
-                disabled={!newCourseName.trim() || manualTopicsList.length === 0}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-lg transform hover:scale-105 transition-all text-lg"
-              >
-                Create Complete Course
-              </button>
+              {/* Bottom Actions */}
+              <div className="modal-footer border-0 p-5 pt-0">
+                <button
+                  onClick={() => {
+                    resetCourseForm();
+                    setShowAddCourse(false);
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1165,7 +1100,7 @@ function CoursesPage() {
                      )}
                   </div>
                   <div className="card-body p-4 d-flex flex-column" style={{minHeight: '260px'}}>
-                    <h5 className="card-title fw-bold text-dark mb-2 h-25 text-uppercase" style={{maxHeight: '60px', overflow: 'hidden'}}>{course.title}</h5>
+                    <h5 className="card-title fw-bold text-dark mb-2 h-25 text-uppercase" style={{maxHeight: '60px', overflow: 'hidden'}}>{course.title?.toUpperCase()}</h5>
                     
                     <div className="mt-4 mb-4">
                       <div className="d-flex justify-content-between align-items-center mb-1">

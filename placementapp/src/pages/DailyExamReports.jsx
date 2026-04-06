@@ -8,6 +8,7 @@ function DailyExamReports() {
 
   const [exams, setExams] = useState([]);
   const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const getCurrentUsername = () => {
@@ -25,58 +26,98 @@ function DailyExamReports() {
 
   const cacheKey = `daily-exam-reports-${getCurrentUsername() || "guest"}`;
 
-  //  FETCH DATA FROM BACKEND (no auth header — public endpoint, token may expire during exam)
-  const fetchReports = async () => {
+  // FETCH DATA FROM BACKEND
+  const fetchReports = async (showLoading = false) => {
     try {
-      // Always fetch without auth so expired tokens don't block the page
-      const res = await axios.get("/api/all-exam-results/?exam_type=daily");
-
-      let examList = [];
-      if (res.data && Array.isArray(res.data.data)) {
-        examList = res.data.data;
-      } else if (Array.isArray(res.data)) {
-        examList = res.data;
-      }
-
-      // Filter by logged-in username from localStorage (case-insensitive)
+      if (showLoading) setLoading(true);
+      const token = localStorage.getItem("access");
       const currentUsername = getCurrentUsername();
+      
+      const config = {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      };
 
-      if (currentUsername) {
-        examList = examList.filter(
-          (e) => e.user?.username?.toLowerCase() === currentUsername
-        );
+      // Fetch with both exam_type and username filters for optimized retrieval
+      const url = `/api/all-exam-results/?exam_type=daily${currentUsername ? `&username=${currentUsername}` : ''}`;
+      const res = await axios.get(url, config);
+
+      let backendList = [];
+      if (res.data && Array.isArray(res.data.data)) {
+        backendList = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        backendList = res.data;
       }
+      
+      let localList = [];
+      try {
+         localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      } catch(e) {}
+      
+      let examList = [...localList, ...backendList];
 
-      setExams(examList);
-      localStorage.setItem(cacheKey, JSON.stringify(examList));
+      // 🛡️ SMART DEDUPLICATE: Merge local unsynced exams with backend exams
+      const seenKeys = new Map();
+      
+      examList.forEach(exam => {
+         const type = (exam.examType || exam.exam_type || "").toLowerCase();
+         if (type !== 'daily' && type !== '') return;
+         
+         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
+         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
+         const uniqueKey = exam.id 
+           ? `db_${exam.id}` 
+           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
+         
+         if (!seenKeys.has(uniqueKey)) {
+           seenKeys.set(uniqueKey, exam);
+         }
+      });
+
+      const uniqueExams = Array.from(seenKeys.values());
+
+      // 🛡️ SORT (Most Recent First)
+      uniqueExams.sort((a, b) => {
+        const dateA = new Date(a.examDate || 0);
+        const dateB = new Date(b.examDate || 0);
+        if (dateB - dateA !== 0) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
+      });
+
+      setExams(uniqueExams);
+      localStorage.setItem(cacheKey, JSON.stringify(uniqueExams));
 
     } catch (err) {
       console.error("Failed to fetch exam reports:", err);
       // keep whatever is already shown (likely cache)
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     // Show cached data instantly if present
+    let hasCache = false;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           setExams(parsed);
+          hasCache = true;
         }
       }
     } catch (e) {
       console.error("Failed to read cached daily reports:", e);
     }
-    fetchReports();
+    // Only show full-screen loading spinner if we don't have cached data to show
+    fetchReports(!hasCache);
   }, []);
 
   // ANIMATION AFTER DATA LOAD
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam) => {
+    exams.forEach((exam, index) => {
       const total = exam.totalMarks || 40;
       const percentage = total > 0 ? (exam.score / total) * 100 : 0;
 
@@ -89,7 +130,7 @@ function DailyExamReports() {
         }
         setProgress((prev) => ({
           ...prev,
-          [exam.id]: value,
+          [exam.id || index]: value,
         }));
       }, 20);
     });
@@ -130,17 +171,22 @@ function DailyExamReports() {
           </div>
         </div>
 
-        {exams.length > 0 ? (
+        {loading && exams.length === 0 ? (
+           <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Loading reports...</p>
+           </div>
+        ) : exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {exams.map((exam, index) => {
               const total = exam.totalMarks || 40;
               const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-              const value = progress[exam.id] || 0;
+              const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
 
               return (
                 <div 
-                  key={exam.id} 
+                  key={exam.id || index} 
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="w-full mb-4 text-center">
@@ -174,7 +220,7 @@ function DailyExamReports() {
                     <div className="flex justify-between items-center text-xs">
                        <span className="text-gray-400">Date</span>
                        <span className="text-gray-600 font-medium">
-                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"}
+                        {exam.examDate ? new Date(exam.examDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
                        </span>
                     </div>
                   </div>

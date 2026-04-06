@@ -87,5 +87,25 @@ def playground_questions_smartcontracts_api(request):
         {"id": 78, "question": "What is 'Frontrunning' in crypto?", "options": ["Execution of a trade based on knowledge of pending transactions", "Running in front of a race", "A types of sports betting", "None"], "correct": 0},
         {"id": 79, "question": "What is 'MEV' (Maximal Extractable Value)?", "options": ["Profit derived by including/reordering transactions in a block", "A type of medicine", "A video file", "None"], "correct": 0},
         {"id": 80, "question": "What is 'Smart Contract Vulnerability'?", "options": ["A bug in contract code that can be exploited (e.g. reentrancy, overflow)", "A types of physical injury", "A weak internet connection", "None"], "correct": 0},
+        {"id": 81, "question": "What is 'ERC-20'?", "options": ["Standard for fungible tokens on Ethereum", "A type of cryptocurrency", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'ERC-721'?", "options": ["Standard for non-fungible tokens (NFTs) on Ethereum", "A type of document", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Gas Optimization'?", "options": ["Writing efficient code to minimize transaction costs", "Making gas cheaper", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Proxy Contract'?", "options": ["Contract that delegates calls to other contracts", "A contract helper", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Upgradeable Contract'?", "options": ["Contract that can be upgraded with new logic", "A better contract", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Immutable Contract'?", "options": ["Contract that cannot be modified after deployment", "A permanent contract", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Library Contract'?", "options": ["Reusable contract code deployed as library", "A book of contracts", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Factory Contract'?", "options": ["Contract that creates other contracts", "A manufacturing contract", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Multisig Wallet'?", "options": ["Wallet requiring multiple signatures for transactions", "A wallet with many signatures", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Time-lock Contract'?", "options": ["Contract that releases funds after specific time", "A clock contract", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Oracle Contract'?", "options": ["Contract that provides external data to blockchain", "A fortune teller", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Payable Contract'?", "options": ["Contract that can receive and store cryptocurrency", "A payment contract", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'View Contract'?", "options": ["Contract that only reads data without modifying state", "A reading contract", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Abstract Contract'?", "options": ["Contract template that cannot be deployed directly", "A theoretical contract", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Interface Contract'?", "options": ["Contract defining standard functions", "A communication contract", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Storage Contract'?", "options": ["Contract for storing data on blockchain", "A warehouse contract", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Token Contract'?", "options": ["Contract implementing fungible tokens", "A money contract", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Governance Contract'?", "options": ["Contract for managing protocol rules", "A government contract", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Crowdsale Contract'?", "options": ["Contract for group token purchases", "A group sale contract", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Bridge Contract'?", "options": ["Contract for connecting different blockchains", "A physical bridge", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -89,4 +89,4 @@ def playground_questions_powerpoint_api(request):
         {"id": 79, "question": "What's 'Selection Pane' usefulness?", "options": ["Viewing and naming all objects on a slide for easier management", "Choosing a book", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary benefit of MS PowerPoint?", "options": ["Providing powerful tools specifically for communicating ideas and info visually", "Having more TV channels", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -88,5 +88,25 @@ def playground_questions_gcp_api(request):
         {"id": 78, "question": "What is 'Looker' in GCP?", "options": ["A types of clothes", "A modern data platform for business intelligence and data analytics", "Neither", "Both"], "correct": 1},
         {"id": 79, "question": "What's 'Google Cloud Premium Tier' network?", "options": ["Highest performance network for low latency and high quality", "A high speed car", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What's the primary benefit of Google Cloud for companies already using many Google tools?", "options": ["Unified interface, consistent billing, and high-performance infrastructure", "Having more servers", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Google Cloud Storage'?", "options": ["Object storage service for any amount of data", "Storage for Google files", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Google Cloud SQL'?", "options": ["Managed relational database service", "SQL for Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Google Cloud Firestore'?", "options": ["NoSQL document database", "A database for Google", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Google Cloud BigQuery'?", "options": ["Serverless data warehouse", "Big data queries", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Google Cloud Functions'?", "options": ["Serverless compute platform", "Functions for Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Google Cloud Run'?", "options": ["Serverless container platform", "Running containers on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Google Kubernetes Engine' (GKE)?", "options": ["Managed Kubernetes service", "Kubernetes on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Google Cloud IAM'?", "options": ["Identity and access management", "Managing access to Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Google Cloud VPC'?", "options": ["Virtual private cloud network", "Private network on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Google Cloud Load Balancing'?", "options": ["Distributing traffic across instances", "Balancing Google Cloud traffic", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Google Cloud CDN'?", "options": ["Content delivery network", "Fast content delivery on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Google Cloud Armor'?", "options": ["Web application firewall", "Security for Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Google Cloud Monitoring'?", "options": ["Observability and monitoring service", "Monitoring Google Cloud resources", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Google Cloud Logging'?", "options": ["Log management and analysis", "Managing logs on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Google Cloud Trace'?", "options": ["Application performance monitoring", "Tracing applications on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Google Cloud Profiler'?", "options": ["Application performance profiling", "Profiling apps on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Google Cloud Debugger'?", "options": ["Application debugging service", "Debugging apps on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Google Cloud Error Reporting'?", "options": ["Error tracking and alerting", "Managing errors on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Google Cloud Deployment Manager'?", "options": ["Infrastructure deployment service", "Deploying infrastructure on Google Cloud", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Google Cloud Resource Manager'?", "options": ["Resource organization and management", "Managing Google Cloud resources", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

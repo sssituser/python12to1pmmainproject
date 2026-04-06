@@ -12,63 +12,35 @@ let globalStreamsToClean = [];
 
 // Subject-wise rules (marks and pass criteria)
 const SUBJECT_RULES = {
-  python:   { displayName: "Python",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  java:     { displayName: "Java",     maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  oracle:   { displayName: "Oracle",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  django:   { displayName: "Django",   maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  react:    { displayName: "React",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  agentic_ai_claude: { displayName: "Agentic AI (Claude)", maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 30, passMarks: 20, durationMinutes: 75 },
-  ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap", "react"], durationMinutes: 120 },
-  backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120 },
+  python:   { displayName: "Python",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  java:     { displayName: "Java",     maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  oracle:   { displayName: "Oracle",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  django:   { displayName: "Django",   maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  react:    { displayName: "React",    maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_claude: { displayName: "Agentic AI (Claude)", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap"], durationMinutes: 120, sectionSize: 20 },
+  backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120, sectionSize: 20 },
 };
 // Default for unknown subjects
-const DEFAULT_RULE = { maxQuestions: 30, passMarks: 20, durationMinutes: 75 };
+const DEFAULT_RULE = { maxQuestions: 25, passMarks: 20, durationMinutes: 75 };
 
 // Course to subject map (keep in sync with DailyExamSubjects)
 const courseMappings = {
-  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
   "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-  "mern": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mern stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mean": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
+  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
+  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
   "mean stack": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
-  "mevn": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
   "mevn stack": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
-  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
-  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
-  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
-  "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "flutter": ["flutter_react_native", "android", "ui"],
-  "react native": ["flutter_react_native", "react", "ui"],
   "dotnet full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
   ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dot net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "microsoft technologies": ["dotnet", "dotnet_mvc", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "c# full stack": ["c_sharp", "asp_net_mvc", "backend", "web_apis", "database_basics", "ui"],
-  "dotnet": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
+  "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
+  "ui full stack": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
+  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
+  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
 };
 
 const knownSubjectKeys = [
@@ -126,50 +98,34 @@ const knownSubjectKeys = [
 ];
 
 const getAllowedSubjects = (courseName = "") => {
-  const normalized = courseName
+  const normalized = String(courseName || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strict Mapping First
+  if (courseMappings[normalized]) return courseMappings[normalized];
+
+  // Fuzzy Match against keys
   const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key)
+    normalized.includes(key) || key.includes(normalized)
   );
   if (matchedKey) return courseMappings[matchedKey];
 
   // Synonym boost (helps when course name doesn't directly match subjects)
   const synonymMap = {
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    hacking: ["ethical_hacking", "penetration_testing"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power query": ["power_query"],
-    dax: ["dax"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-    devsecops: ["devops", "network_security", "penetration_testing"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    app: ["flutter_react_native", "android", "ios_swift", "ui"],
-    application: ["flutter_react_native", "android", "ios_swift", "ui"],
-    flutter: ["flutter_react_native", "android", "ui"],
-    reactnative: ["flutter_react_native", "react", "ui"],
+    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
     dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dot net": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    csharp: ["c_sharp", "asp_net_mvc", "backend"],
+    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
+    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
   };
 
-  // Fallback: token-based fuzzy match against known subject keys
   const tokens = normalized.split(" ").filter((t) => t.length > 2);
   const allowed = new Set();
 
@@ -179,13 +135,6 @@ const getAllowedSubjects = (courseName = "") => {
     }
   });
 
-  tokens.forEach((tok) => {
-    knownSubjectKeys.forEach((key) => {
-      if (key.toLowerCase().includes(tok) || tok.includes(key.toLowerCase())) {
-        allowed.add(key);
-      }
-    });
-  });
   return Array.from(allowed);
 };
 
@@ -493,6 +442,46 @@ const DailyExam = () => {
       try {
         setIsLoadingQuestions(true);
 
+        // 1. Try to fetch custom exam settings for DAILY and the specific COURSE
+        const customRes = await fetch(`/api/admin/exam-settings/?category=Daily&course=${studentCourse}`);
+        const customJson = await customRes.json();
+
+        if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
+           const shuffleArray = (array) => {
+             const shuffled = [...array];
+             for (let i = shuffled.length - 1; i > 0; i--) {
+               const j = Math.floor(Math.random() * (i + 1));
+               [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+             }
+             return shuffled;
+           };
+           
+           const maxQ = customJson.data.maxQuestions || 25;
+           const displayLimit = Math.min(customJson.data.questions.length, maxQ);
+           const allShuffled = shuffleArray(customJson.data.questions);
+           const dailyQuestions = allShuffled.slice(0, displayLimit);
+           
+           const dur = customJson.data.duration || 45;
+           setExamDuration(dur);
+           setTimeLeft(dur * 60);
+           setPassingRule(customJson.data.passingRule || "percentage");
+           setPassingValue(customJson.data.passingValue !== undefined ? customJson.data.passingValue : 50);
+
+           const mappedQuestions = dailyQuestions.map((q, idx) => ({
+              ...q, 
+              id: idx + 1,
+              marks: 2,
+              question: q.question,
+              options: q.options || [],
+              type: q.question_type || 'mcq',
+              correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
+           }));
+           
+           setQuestions(mappedQuestions);
+           return; // 🚀 Exit early since we found custom questions
+        }
+
+        // 2. Fallback to existing Playground/Subject Logic if no custom questions
         const mapQuestionList = (data, startIndex = 0, sectionLabel = null, limit = 999) => {
           if (!Array.isArray(data)) return [];
           return data.slice(0, limit).map((q, idx) => ({
@@ -535,10 +524,11 @@ const DailyExam = () => {
               const res = await fetch(`/api/playground-questions/${secKey}/`);
               const json = await res.json();
               const data = json.data || json;
-              let chunk = mapQuestionList(data, offset, sectionLabels[i] || secKey.toUpperCase(), 20);
-              // Pad if fewer than 20
-              if (chunk.length < 20 && chunk.length > 0) {
-                const needed = 20 - chunk.length;
+              const currentSectionSize = subjectRule.sectionSize || 20;
+              let chunk = mapQuestionList(data, offset, sectionLabels[i] || secKey.toUpperCase(), currentSectionSize);
+              // Pad if fewer than targeted size
+              if (chunk.length < currentSectionSize && chunk.length > 0) {
+                const needed = currentSectionSize - chunk.length;
                 const pad = [];
                 for (let k = 0; k < needed; k++) {
                   const src = chunk[k % chunk.length];
@@ -556,7 +546,7 @@ const DailyExam = () => {
           const res = await fetch("/api/playground-questions/" + (subjectKey || 'python') + "/");
           const json = await res.json();
           const data = json.data || json;
-          const limit = subjectRule.maxQuestions || 20;
+          const limit = subjectRule.maxQuestions || 25;
           assembledQuestions = mapQuestionList(data, 0, null, limit);
           // Pad up to limit if fewer received
           if (assembledQuestions.length < limit && assembledQuestions.length > 0) {
@@ -1012,11 +1002,11 @@ useEffect(() => {
 
   const unlockNextSection = () => {
     if (!isSectionedSubject) return;
-    const sectionSize = 20;
-    const start = uiCurrentSection * sectionSize;
-    const end = start + sectionSize;
+    const currentSectionSize = subjectRule.sectionSize || 20;
+    const start = uiCurrentSection * currentSectionSize;
+    const end = start + currentSectionSize;
     const slice = answers.slice(start, end);
-    const allAnswered = slice.length === sectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
+    const allAnswered = slice.length === currentSectionSize && slice.every((a) => a !== null && a !== undefined && a !== "");
     if (!allAnswered) return;
     if (uiUnlockedSections < sectionCount) {
       setUiUnlockedSections((prev) => prev + 1);
@@ -1064,25 +1054,54 @@ useEffect(() => {
       user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
     } catch (e) { }
 
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    // Get actual student ID from profile instead of random
+    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
     const now = new Date().toISOString();
 
     let correctCount = 0;
     let earnedMarks = 0;
     let maxPossibleMarks = 0;
 
+    console.log("🔍 Daily Exam - Calculating results:");
+    console.log("Total questions:", questions.length);
+    console.log("Total answers:", answers.length);
+    console.log("Questions array:", questions);
+    console.log("Answers array:", answers);
+
     answers.forEach((ans, index) => {
       const q = questions[index];
-      if (!q) return;
+      if (!q) {
+        console.log(`❌ Question ${index} not found`);
+        return;
+      }
 
       const qMarks = parseInt(q.marks) || 2;
       maxPossibleMarks += qMarks;
 
+      console.log(`📝 Question ${index}:`, {
+        question: q.question?.substring(0, 50) + '...',
+        userAnswer: ans,
+        correctAnswer: q.correct,
+        isCorrect: ans === q.correct,
+        marks: qMarks
+      });
+
       if (ans === q.correct) {
         correctCount++;
         earnedMarks += qMarks;
+        console.log(`✅ Correct! Total correct: ${correctCount}`);
+      } else {
+        console.log(`❌ Incorrect. Total correct: ${correctCount}`);
       }
     });
+
+    console.log("📊 Final Results:");
+    console.log("Correct Count:", correctCount);
+    console.log("Incorrect Count:", questions.length - correctCount);
+    console.log("Earned Marks:", earnedMarks);
+    console.log("Max Possible Marks:", maxPossibleMarks);
 
     const totalQ = questions.length;
     const finalScore = earnedMarks;
@@ -1100,44 +1119,120 @@ useEffect(() => {
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
     const finalStatus = isTerminated ? "Cheated" : "completed";
 
-    const result = {
-      status: finalStatus,
-      correctAnswers: correctCount,
-      incorrectAnswers: totalQ - correctCount,
-      totalQuestions: totalQ,
-      score: finalScore,
-      marks: finalScore,
+    const payload = {
+      username: user.username || "Unknown",
+      exam_title: `Daily ${subjectName} Exam`,
+      exam_type: "daily",
+      score: earnedMarks,
+      total_questions: totalQ,
+      correct_answers: correctCount,
+      incorrect_answers: totalQ - correctCount,
+      marks_obtained: earnedMarks,
       total_marks: maxPossibleMarks,
-      totalMarks: maxPossibleMarks, // align with results table expectation
       passed: passed,
       time_taken: (examDuration * 60) - timeLeft,
       start_time: now,
-      answers,
-      questions,
-      timeTaken: (examDuration * 60) - timeLeft,
+      end_time: new Date().toISOString(),
+      status: finalStatus,
+      random_id: String(randomId),
+      answers: answers,
+      questions: questions,
+      reason: reason
+    };
+
+    let synced = false;
+    try {
+      const res = await fetch("/api/save-exam-report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        synced = true;
+        console.log("✅ Daily exam result synced successfully!");
+      } else {
+        console.error("❌ Failed to sync to server, saved locally.");
+      }
+    } catch (err) {
+      console.error("Backend error during sync:", err);
+    }
+
+    const result = {
+      ...payload,
+      synced,
+      examTitle: payload.exam_title,
+      examType: payload.exam_type,
+      timeTaken: payload.time_taken,
+      correctAnswers: correctCount,
+      incorrectAnswers: totalQ - correctCount,
+      totalQuestions: totalQ,
       user: {
         username: user.username || "Unknown",
         email: user.email || "",
         firstName: user.firstName || user.username,
         randomId
       },
-      examDate: new Date().toISOString(),
-      examTitle: `${subjectName} Exam`,
-      submissionReason: reason
+      examDate: payload.end_time,
+      answers: answers, // Use actual array, not stringified
+      questions: questions // Use actual array, not stringified
     };
 
-    try {
-      await fetch("/api/save-exam-report/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result)
-      });
-    } catch (err) {
-      console.error("Backend error:", err);
-    }
+    console.log("🔍 Daily Exam - Final result object being stored:");
+    console.log("Result.correctAnswers:", result.correctAnswers);
+    console.log("Result.incorrectAnswers:", result.incorrectAnswers);
+    console.log("Result.totalQuestions:", result.totalQuestions);
+    console.log("Result.score:", result.score);
+    console.log("Result.random_id:", result.random_id);
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    
+    // Validate and ensure questions data is properly stored
+    console.log("🔍 Daily Exam - Validating result data before storage:");
+    console.log("Questions count:", result.questions?.length || 0);
+    console.log("Answers count:", result.answers?.length || 0);
+    console.log("Student ID:", result.random_id);
+    console.log("Exam Title:", result.examTitle);
+    
+    // Ensure questions and answers are arrays, not strings (backup check)
+    if (typeof result.questions === 'string') {
+      try {
+        result.questions = JSON.parse(result.questions);
+        console.log("✅ Parsed stringified questions");
+      } catch (e) {
+        console.error("❌ Failed to parse questions:", e);
+        result.questions = [];
+      }
+    }
+    
+    if (typeof result.answers === 'string') {
+      try {
+        result.answers = JSON.parse(result.answers);
+        console.log("✅ Parsed stringified answers");
+      } catch (e) {
+        console.error("❌ Failed to parse answers:", e);
+        result.answers = [];
+      }
+    }
+    
+    // Final validation
+    const isValid = Array.isArray(result.questions) && Array.isArray(result.answers) && 
+                   result.questions.length > 0 && result.answers.length > 0;
+    
+    if (isValid) {
+      console.log("✅ Daily Exam data validation passed");
+    } else {
+      console.error("❌ Daily Exam data validation failed");
+      console.log("Final questions type:", Array.isArray(result.questions));
+      console.log("Final answers type:", Array.isArray(result.answers));
+    }
+    
     allResults.unshift(result);
+    localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'daily', result: result } 
+    }));
 
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
     localStorage.setItem("examResult", JSON.stringify(result));
@@ -1148,7 +1243,7 @@ useEffect(() => {
     // Remove the locked back-button state, then navigate to results replacing the exam in history
     window.history.go(-1);
     setTimeout(() => {
-      navigate("/dashboard/playground-results", { replace: true });
+      navigate("/dashboard/daily-exams", { replace: true });
     }, 100);
   };
 
@@ -1264,12 +1359,12 @@ useEffect(() => {
     );
   }
 
-  const sectionSize = 20;
-  const uiSectionStart = isSectionedSubject ? uiCurrentSection * sectionSize : 0;
-  const uiSectionEnd = isSectionedSubject ? uiSectionStart + sectionSize : questions.length;
+  const currentSectionSize = isSectionedSubject ? (subjectRule.sectionSize || 20) : questions.length;
+  const uiSectionStart = isSectionedSubject ? uiCurrentSection * currentSectionSize : 0;
+  const uiSectionEnd = isSectionedSubject ? uiSectionStart + currentSectionSize : questions.length;
   const displayQuestions = isSectionedSubject ? questions.slice(uiSectionStart, uiSectionEnd) : questions;
   const activeQuestion = displayQuestions[currentQuestion] || displayQuestions[displayQuestions.length - 1] || questions[currentQuestion];
-  const sectionDisplayNames = subjectKey === "ui" ? ["HTML", "CSS", "JavaScript", "Bootstrap", "React"] : ["Node.js", "Express.js"];
+  const sectionDisplayNames = subjectKey === "ui" ? ["HTML", "CSS", "JavaScript", "Bootstrap"] : ["Node.js", "Express.js"];
   const currentSectionTitle = isSectionedSubject ? `${(sectionDisplayNames[uiCurrentSection] || `Section ${uiCurrentSection + 1}`)} Exam` : `${subjectName} Exam`;
   // Show per-section numbering 1-20, but keep global labels elsewhere
   const questionNumberLabel = isSectionedSubject ? (currentQuestion + 1) : (currentQuestion + 1);

@@ -65,11 +65,15 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # For faculty users, return all applications (not filtered by current user)
         user = self.request.user
-        print(f"Current user: {user}, role: {getattr(user, 'role', 'unknown')}, is_staff: {getattr(user, 'is_staff', 'unknown')}")
+        username = self.request.query_params.get('username')
+        print(f"Current user: {user}, role: {getattr(user, 'role', 'unknown')}, is_staff: {getattr(user, 'is_staff', 'unknown')}, filter_username: {username}")
         
         if user and (user.is_staff or getattr(user, 'role', None) == 'faculty'):
             print("Returning all applications for faculty user")
-            return AppliedJob.objects.all().select_related('user', 'job').order_by('-applied_date')
+            qs = AppliedJob.objects.all().select_related('user', 'job').order_by('-applied_date')
+            if username:
+                qs = qs.filter(user__username__iexact=username)
+            return qs
         else:
             print(f"Returning filtered applications for user: {user}")
             return AppliedJob.objects.filter(user=user).select_related('user', 'job').order_by('-applied_date')
@@ -135,103 +139,11 @@ class AdminJobViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def perform_create(self, serializer):
         serializer.save()
-
-
-# ================= TEST DATA CREATION =================
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-class CreateSampleApplicationsView(APIView):
-    """
-    Create sample AppliedJob data for testing
-    """
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        try:
-            from django.utils import timezone
-            
-            print("Creating sample applications...")
-            
-            # Get existing users or create simple ones
-            try:
-                student1 = User.objects.get(username='student1')
-            except User.DoesNotExist:
-                student1 = User.objects.create_user(
-                    username='student1',
-                    email='student1@example.com',
-                    password='password123',
-                    role='student'
-                )
-                print("Created student1")
-                
-            try:
-                student2 = User.objects.get(username='student2')
-            except User.DoesNotExist:
-                student2 = User.objects.create_user(
-                    username='student2',
-                    email='student2@example.com', 
-                    password='password123',
-                    role='student'
-                )
-                print("Created student2")
-            
-            # Get existing jobs or create simple ones
-            job1, created1 = Job.objects.get_or_create(
-                job_title='Software Engineer',
-                defaults={
-                    'company': 'Tech Corp',
-                    'description': 'Develop software applications',
-                    'location': 'Bangalore'
-                }
-            )
-            if created1:
-                print("Created job1: Software Engineer")
-                
-            job2, created2 = Job.objects.get_or_create(
-                job_title='Frontend Developer',
-                defaults={
-                    'company': 'Web Solutions',
-                    'description': 'Build user interfaces',
-                    'location': 'Mumbai'
-                }
-            )
-            if created2:
-                print("Created job2: Frontend Developer")
-            
-            # Create sample applications
-            app1, app_created1 = AppliedJob.objects.get_or_create(
-                user=student1,
-                job=job1,
-                defaults={'applied_date': timezone.now()}
-            )
-            if app_created1:
-                print("Created application for student1")
-                
-            app2, app_created2 = AppliedJob.objects.get_or_create(
-                user=student2,
-                job=job2,
-                defaults={'applied_date': timezone.now()}
-            )
-            if app_created2:
-                print("Created application for student2")
-            
-            # Check final count
-            total_apps = AppliedJob.objects.count()
-            print(f"Total applications in database: {total_apps}")
-            
-            return Response({
-                "message": "Sample applications created successfully",
-                "total_applications": total_apps,
-                "applications": [
-                    {"user": app1.user.username, "job": app1.job.job_title},
-                    {"user": app2.user.username, "job": app2.job.job_title}
-                ]
-            })
-        except Exception as e:
-            print(f"Error creating sample applications: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return Response({"error": str(e)}, status=500)
+

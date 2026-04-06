@@ -88,5 +88,25 @@ def playground_questions_ml_api(request):
         {"id": 78, "question": "Which of these is a typical business use case for ML?", "options": ["Fraud Detection", "Customer Churn Prediction", "Personalized Recommendation", "All of the above"], "correct": 3},
         {"id": 79, "question": "What's 'Explainable AI' (XAI)?", "options": ["AI that can explain its decisions and output", "A simple model", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What's the primary benefit of ML?", "options": ["Automating complex decisions and recognizing invisible patterns at scale", "Starting a business", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Supervised Learning'?", "options": ["Training models on labeled data", "Learning with supervision", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Unsupervised Learning'?", "options": ["Finding patterns in unlabeled data", "Learning without supervision", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Reinforcement Learning'?", "options": ["Learning through rewards and punishments", "Learning with reinforcement", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Feature Engineering'?", "options": ["Creating new features from existing data", "Engineering features", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Model Selection'?", "options": ["Choosing best algorithm for task", "Selecting models", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Cross-Validation'?", "options": ["Evaluating model performance on multiple data splits", "Validating across folds", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Hyperparameter Tuning'?", "options": ["Optimizing model parameters", "Tuning hyperparameters", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Ensemble Learning'?", "options": ["Combining multiple models", "Learning with ensembles", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Bagging'?", "options": ["Bootstrap aggregating with replacement", "Putting models in bags", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Boosting'?", "options": ["Sequential ensemble learning", "Boosting model performance", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Random Forest'?", "options": ["Ensemble of decision trees", "Forest of random trees", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Support Vector Machine' (SVM)?", "options": ["Classification with maximum margin", "Machine for support", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'K-Means Clustering'?", "options": ["Unsupervised clustering algorithm", "Clustering with K means", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Hierarchical Clustering'?", "options": ["Building cluster hierarchy", "Clustering with hierarchy", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Principal Component Analysis' (PCA)?", "options": ["Dimensionality reduction technique", "Analyzing principal components", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Linear Regression'?", "options": ["Predicting continuous values", "Regression with lines", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Logistic Regression'?", "options": ["Classification with sigmoid output", "Regression for logistics", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Decision Tree'?", "options": ["Tree-based decision model", "Tree for decisions", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Neural Network'?", "options": ["Computing system inspired by brain", "Network of neurons", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Model Deployment'?", "options": ["Putting models into production", "Deploying models", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

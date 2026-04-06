@@ -57,15 +57,55 @@ def playground_questions_java_api(request):
         {"id": 48, "question": "What will this Java snippet print?\ntry {\n  int data = 10 / 0;\n} catch (ArithmeticException e) {\n  System.out.print(\"A\");\n} finally {\n  System.out.print(\"B\");\n}", "options": ["A", "B", "AB", "program crashes"], "correct": 2},
         {"id": 49, "question": "What does the following print?\nint x = 5;\nSystem.out.println(x++ + ++x);", "options": ["10", "11", "12", "13"], "correct": 2},
         {"id": 50, "question": "What is the output of this Java loop?\nint sum = 0;\nfor(int i = 0; i < 5; i++) {\n  if(i == 3) continue;\n  sum += i;\n}\nSystem.out.println(sum);", "options": ["10", "7", "6", "3"], "correct": 1},
+        {"id": 51, "question": "What is 'Autoboxing' in Java?", "options": ["Automatic conversion of primitive to wrapper", "Manual conversion", "Neither", "Both"], "correct": 0},
+        {"id": 52, "question": "What is 'Wrapper' class for int?", "options": ["Integer", "IntClass", "Neither", "Both"], "correct": 0},
+        {"id": 53, "question": "What does 'instanceof' operator do?", "options": ["Checks if object is of a specific type", "Creates a new instance", "Neither", "Both"], "correct": 0},
+        {"id": 54, "question": "What is 'EnumMap'?", "options": ["A specialized Map for enum keys", "A map of integers", "Neither", "Both"], "correct": 0},
+        {"id": 55, "question": "What is 'IdentityHashMap'?", "options": ["Compares keys using == instead of equals()", "A normal hash map", "Neither", "Both"], "correct": 0},
+        {"id": 56, "question": "What is 'Deadlock'?", "options": ["Two threads waiting for each other's locks forever", "A computer crash", "Neither", "Both"], "correct": 0},
+        {"id": 57, "question": "What is 'ThreadLocal'?", "options": ["Variables accessible only to a specific thread", "Global variables", "Neither", "Both"], "correct": 0},
+        {"id": 58, "question": "What is 'Phaser' in Java concurrency?", "options": ["A reusable synchronization barrier", "A laser tool", "Neither", "Both"], "correct": 0},
+        {"id": 59, "question": "What is 'ForkJoinPool'?", "options": ["A framework for parallelizing tasks", "A pool for dining", "Neither", "Both"], "correct": 0},
+        {"id": 60, "question": "What is 'CompletableFuture'?", "options": ["An extension of Future for asynchronous programming", "A promise that never ends", "Neither", "Both"], "correct": 0},
+        {"id": 61, "question": "What is 'Optional' class for?", "options": ["Avoiding NullPointerException in Java 8+", "Making code optional", "Neither", "Both"], "correct": 0},
+        {"id": 62, "question": "What is the result of '10 >> 1'?", "options": ["5", "20", "Neither", "Both"], "correct": 0},
+        {"id": 63, "question": "What is the result of '10 << 1'?", "options": ["20", "5", "Neither", "Both"], "correct": 0},
+        {"id": 64, "question": "What is 'Transient' keyword?", "options": ["Prevents variable from being serialized", "Makes variable fast", "Neither", "Both"], "correct": 0},
+        {"id": 65, "question": "What is 'Strictfp' keyword?", "options": ["Ensures identical floating point results across platforms", "Faster math", "Neither", "Both"], "correct": 0},
+        {"id": 66, "question": "What is 'JIT' compiler?", "options": ["Just-In-Time compiler for speed", "Java Internal Tool", "Neither", "Both"], "correct": 0},
+        {"id": 67, "question": "What is 'JDK' vs 'JRE'?", "options": ["JDK includes development tools; JRE is just for running", "They are identical", "Neither", "Both"], "correct": 0},
+        {"id": 68, "question": "What is 'JVM'?", "options": ["Java Virtual Machine", "Java Version Manager", "Neither", "Both"], "correct": 0},
+        {"id": 69, "question": "What is 'Classloader'?", "options": ["Part of JVM that loads classes", "A person who loads classes", "Neither", "Both"], "correct": 0},
+        {"id": 70, "question": "What is 'StackOverflowError'?", "options": ["Occurs when stack memory is full (nested calls)", "A website error", "Neither", "Both"], "correct": 0},
+        {"id": 71, "question": "What is 'OutOfMemoryError'?", "options": ["Occurs when heap memory is full", "Deleting a file", "Neither", "Both"], "correct": 0},
+        {"id": 72, "question": "What is 'finalize()' method?", "options": ["Called by GC before destroying an object", "Finishes the program", "Neither", "Both"], "correct": 0},
+        {"id": 73, "question": "What is 'System.gc()'?", "options": ["A hint to run garbage collection", "Forces immediate collection", "Neither", "Both"], "correct": 0},
+        {"id": 74, "question": "What is 'Default' method in interface?", "options": ["Method with implementation in an interface", "An error", "Neither", "Both"], "correct": 0},
+        {"id": 75, "question": "What is 'Static' method in interface?", "options": ["Method that belongs to interface class", "Neither", "Both", "An abstract method"], "correct": 0},
+        {"id": 76, "question": "What is 'Double Colon (::)' operator?", "options": ["Method reference in Java 8", "Wait for it", "Neither", "Both"], "correct": 0},
+        {"id": 77, "question": "What is 'Predicate' in Java 8?", "options": ["A functional interface representing a boolean condition", "A type of loop", "Neither", "Both"], "correct": 0},
+        {"id": 78, "question": "What is 'Consumer' in Java 8?", "options": ["A functional interface taking one argument and returning nothing", "A person", "Neither", "Both"], "correct": 0},
+        {"id": 79, "question": "What is 'Supplier' in Java 8?", "options": ["A functional interface taking no arguments and returning a value", "A shop", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "What is 'Function' in Java 8?", "options": ["A functional interface taking one argument and returning a value", "A math problem", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'FlatMap' in streams?", "options": ["Flattens a stream of streams into a single stream", "Makes a map flat", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'ParallelStream'?", "options": ["Executes stream operations in parallel using ForkJoinPool", "Stream for parallel lines", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'IntStream'?", "options": ["A specialized stream for int primitives", "A stream of integers", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Collectors.toMap()'?", "options": ["Collects stream elements into a Map", "Draws a map", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Stream.peek()'?", "options": ["Intermediate operation for debugging", "Looking inside a file", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'LinkedHashSet'?", "options": ["Set that maintains insertion order", "Neither", "Both", "A set of links"], "correct": 0},
+        {"id": 87, "question": "What is 'BigInteger'?", "options": ["A class for arbitrarily large integers", "A big number", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'BigDecimal'?", "options": ["A class for high-precision decimal numbers", "Neither", "Both", "A small number"], "correct": 0},
+        {"id": 89, "question": "What is 'AtomicInteger'?", "options": ["Thread-safe integer for atomicity", "An atom", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'CopyOnWriteArrayList'?", "options": ["Thread-safe list where updates copy the underlying array", "A list for writing", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'ConcurrentHashMap'?", "options": ["Thread-safe map with better concurrency than Hashtable", "Neither", "Both", "A map for running"], "correct": 0},
+        {"id": 92, "question": "What is 'Annotation' in Java?", "options": ["Metadata added to code (@Override, etc.)", "A drawing", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Reflection' API?", "options": ["Inspecting classes at runtime", "A mirror", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Java Native Interface (JNI)'?", "options": ["Calling C/C++ code from Java", "A native plant", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Var' keyword in Java 10+?", "options": ["Local variable type inference", "A global variable", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Records' in Java 14+?", "options": ["Compact classes for data storage", "Music disks", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Sealed' classes in Java 17+?", "options": ["Classes that restrict which other classes may extend them", "Closed classes", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Switch Expression' in modern Java?", "options": ["Using switch as an expression (yield)", "A new loop", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Modules' in Java 9+?", "options": ["A way to group packages (Project Jigsaw)", "A piece of code", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Property' in JavaFX?", "options": ["Observable values that can be bound to UI", "A house", "Neither", "Both"], "correct": 0},
     ]
-
-    theoretical_questions = questions_pool[:45]
-    practical_questions = questions_pool[45:50]
-    
-    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
-    random.shuffle(selected_questions)
-    
-    return Response({
-        'success': True,
-        'data': selected_questions
-    })
+    return Response({'success': True, 'data': random.sample(questions_pool, 25)})

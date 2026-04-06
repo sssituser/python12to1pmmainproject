@@ -87,5 +87,25 @@ def playground_questions_qaprocesses_api(request):
         {"id": 78, "question": "What represents the 'Cost of Quality'?", "options": ["Expenses incurred in preventing, finding and repairing defects", "The price of code", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What is 'Bug Triage'?", "options": ["A meeting where bugs are prioritized for fixing by several stakeholders", "Writing about bugs", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is QA essential for every project?", "options": ["Ensuring customer satisfaction and high-quality software with fewer issues", "Having more social media likes", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Quality Assurance' vs 'Quality Control'?", "options": ["QA focuses on preventing defects; QC focuses on process consistency", "They are the same", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Test Case'?", "options": ["Set of conditions and steps to verify functionality", "A test box", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Test Plan'?", "options": ["Document outlining scope, approach, resources, and schedule", "A plan for testing", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Test Matrix'?", "options": ["Table showing test coverage across different scenarios", "A test matrix", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Traceability'?", "options": ["Ability to track requirements and changes through development lifecycle", "Following changes", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Peer Review'?", "options": ["Process where team members review each other's work", "Team review", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Inspection'?", "options": ["Formal examination of work products or processes", "Checking quality", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Audit'?", "options": ["Systematic examination of processes and compliance", "Financial review", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Risk Assessment'?", "options": ["Identifying and evaluating potential risks", "Finding dangers", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Compliance Testing'?", "options": ["Verifying adherence to standards and regulations", "Following rules", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Usability Testing'?", "options": ["Testing how easily users can accomplish tasks", "Testing ease of use", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Accessibility Testing'?", "options": ["Testing for users with disabilities", "Testing access", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Performance Testing'?", "options": ["Measuring system speed and resource usage", "Testing speed", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Security Testing'?", "options": ["Finding vulnerabilities and security flaws", "Testing security", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Regression Testing'?", "options": ["Re-testing after changes to ensure no new bugs", "Testing again", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Integration Testing'?", "options": ["Testing how components work together", "Testing parts", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'End-to-End Testing'?", "options": ["Testing complete user workflows", "Testing everything", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Continuous Testing'?", "options": ["Automated testing throughout development lifecycle", "Testing continuously", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Chaos Testing'?", "options": ["Testing system resilience under random failure conditions", "Testing chaos", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Exploratory Testing'?", "options": ["Investigative testing to discover unknown issues", "Finding problems", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

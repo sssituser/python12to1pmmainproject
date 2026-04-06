@@ -13,6 +13,15 @@ import {
 
 function ExamManager() {
   const [questions, setQuestions] = useState([]);
+  const [courses, setCourses] = useState([
+    "Python Full Stack",
+    "Java Full Stack",
+    ".net Full Stack",
+    "Mern Full Stack",
+    "Data Science and Agentic AI",
+    "UI Full Stack"
+  ]);
+  const [selectedCourse, setSelectedCourse] = useState("Python Full Stack");
   const [maxQuestions, setMaxQuestions] = useState(50);
   const [duration, setDuration] = useState(45); // duration in minutes
   const [passingRule, setPassingRule] = useState("percentage"); // "percentage" or "correct_answers"
@@ -38,7 +47,7 @@ function ExamManager() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}?category=${category}`);
+        const res = await axios.get(`${BASE_URL}?category=${category}&course=${selectedCourse}`);
         if (res.data && res.data.success && res.data.data) {
           const { maxQuestions: savedMax, questions: savedQuestions, passingRule: rule, passingValue: val, duration: savedDuration } = res.data.data;
           setMaxQuestions(savedMax || 50);
@@ -52,7 +61,7 @@ function ExamManager() {
       }
     };
     fetchSettings();
-  }, [category]);
+  }, [category, selectedCourse]);
 
   // handle input
   const handleChange = (e) => {
@@ -93,6 +102,7 @@ function ExamManager() {
     try {
       const payload = {
         category,
+        course: selectedCourse,
         maxQuestions: parseInt(maxQuestions, 10) || 1,
         duration: parseInt(duration, 10) || 1,
         passingRule,
@@ -120,6 +130,7 @@ function ExamManager() {
     try {
       const payload = {
         category: categoryToSave,
+        course: selectedCourse,
         questions: questionsToSave
       };
       const res = await axios.post(BASE_URL, payload);
@@ -199,6 +210,19 @@ function ExamManager() {
             >
               <option value="Weekly">Weekly Exam</option>
               <option value="Monthly">Monthly Exam</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
+              Target Course Track
+            </label>
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
+            >
+              {courses.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
@@ -368,7 +392,7 @@ function ExamManager() {
       {/* QUESTION LIST */}
       <div className="mt-12 mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
         <h2 className="text-2xl font-black text-gray-800 tracking-tight flex items-center gap-3">
-          Current {category} Questions
+          Current {selectedCourse} - {category} Questions
           {isQuestionsSaving && <FontAwesomeIcon icon={faSpinner} spin className="text-blue-500 text-sm" />}
         </h2>
         <span className="bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg shadow-blue-100 flex items-center gap-2 uppercase tracking-tighter">

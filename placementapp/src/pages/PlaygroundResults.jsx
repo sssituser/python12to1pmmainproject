@@ -20,23 +20,28 @@ function PlaygroundResults() {
   };
 
   const formatExamTitle = (title = "") => {
-    const t = title.toLowerCase();
-    if (t.includes("python")) return "Python Exam";
-    if (t.includes("java")) return "Java Exam";
-    if (t.includes("oracle")) return "Oracle Exam";
-    if (t.includes("ui")) return "UI Exam";
-    if (t.includes("django")) return "Django Exam";
     return title || "Exam";
   };
 
   useEffect(() => {
+    const ensureParsed = (obj) => {
+      if (!obj) return obj;
+      if (typeof obj.questions === 'string') {
+        try { obj.questions = JSON.parse(obj.questions); } catch (e) {}
+      }
+      if (typeof obj.answers === 'string') {
+        try { obj.answers = JSON.parse(obj.answers); } catch (e) {}
+      }
+      return obj;
+    };
+
     const fetchResults = async () => {
       setIsLoading(true);
       setError(null);
 
       let localResults = [];
       try {
-        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]").map(ensureParsed);
       } catch (e) {}
       
       const userStr = localStorage.getItem("user");
@@ -50,7 +55,8 @@ function PlaygroundResults() {
       const targetUsername = username || currentUser?.username;
 
       if (!targetUsername) {
-        setAllResults(localResults);
+        const uniqueResults = removeDuplicateResults(localResults);
+        setAllResults(uniqueResults);
         setIsLoading(false);
         return;
       }
@@ -60,30 +66,29 @@ function PlaygroundResults() {
         const json = await response.json();
 
         if (json.success) {
-          // Merge local storage results (to capture unsynced/new exams) with backend results
-          let localResults = [];
-          try {
-             localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-          } catch(e) {}
+          let backendResults = (json.data || []).map(ensureParsed);
           
-          let backendResults = json.data || [];
+          const uniqueLocalResults = removeDuplicateResults(localResults);
           
+          // 🛡️ SHOW ALL ATTEMPTS: Ensure every attempt is shown.
+          // Deduplication only filters by exact database ID to avoid double-counting.
           const seen = new Set();
-          const merged = [];
+          const finalResults = [];
           
-          // We put localResults first so the most recent locally saved exam takes priority visually
-          for (const res of [...localResults, ...backendResults]) {
-             const key = res.random_id || (res.user && res.user.randomId) || res.examDate || res.start_time;
-             if (key && !seen.has(key)) {
-                seen.add(key);
-                merged.push(res);
-             } else if (!key) {
-                // If it really lacks a key, just add it to avoid losing data
-                merged.push(res);
-             }
-          }
+          [...uniqueLocalResults, ...backendResults].forEach(res => {
+            // 🛡️ TRULY UNIQUE KEY: Ensure every attempt shows up.
+            // Combine DB ID (if synced) or a mix of random_id + date + timestamp for local ones.
+            const uniqueKey = res.id 
+                ? `db_${res.id}` 
+                : `local_${(res.random_id || res.user?.randomId || 'guest')}_${(res.examDate || '0')}_${(res.start_time || '0')}`;
+            
+            if (!seen.has(uniqueKey)) {
+              seen.add(uniqueKey);
+              finalResults.push(res);
+            }
+          });
           
-          setAllResults(merged);
+          setAllResults(finalResults);
         } else {
           setError(json.error || "Failed to fetch results");
           setAllResults([]);
@@ -99,14 +104,47 @@ function PlaygroundResults() {
 
     fetchResults();
 
-    // Still check for one-time results/failures from localStorage
     const examFailure = localStorage.getItem("examFailure");
     if (examFailure) {
-      const failedResult = JSON.parse(examFailure);
-      setAllResults(prev => [failedResult, ...prev]);
+      const failedResult = ensureParsed(JSON.parse(examFailure));
+      setAllResults(prev => {
+        const uniqueResults = removeDuplicateResults([failedResult, ...prev]);
+        return uniqueResults;
+      });
       localStorage.removeItem("examFailure");
     }
+
+    const handleExamDataUpdate = (event) => {
+      console.log("🔄 PlaygroundResults - Auto-updating data for:", event.detail.examType);
+      fetchResults();
+    };
+
+    window.addEventListener('examDataUpdated', handleExamDataUpdate);
+
+    return () => {
+      window.removeEventListener('examDataUpdated', handleExamDataUpdate);
+    };
   }, []);
+
+  // Helper function to remove duplicate results based on unique identifiers
+  const removeDuplicateResults = (results) => {
+    const seen = new Set();
+    const unique = [];
+    
+    for (const result of results) {
+      // 🛡️ TRULY UNIQUE PER-ATTEMPT KEY
+      const key = result.id 
+        ? `db_${result.id}` 
+        : `local_${(result.random_id || result.randomId || 'guest')}_${(result.examDate || '0')}_${(result.start_time || '0')}`;
+      
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(result);
+      }
+    }
+    
+    return unique;
+  };
 
   // TAKE NEW EXAM
   const handleTakeNewExam = () => {
@@ -121,8 +159,12 @@ function PlaygroundResults() {
 
   const handleViewDetails = (result, index) => {
     localStorage.setItem("selectedExamResult", JSON.stringify(result));
-    navigate(`/dashboard/playground/detailed-results/${index}`, { 
-        state: { examTitle: formatExamTitle(result.examTitle) } 
+    const uniqueId = result.id || result.random_id || result.examDate || result.start_time || index;
+    navigate(`/dashboard/playground/detailed-results/${uniqueId}`, { 
+        state: { 
+          examTitle: result.examTitle || result.exam_title || result.title || "Exam",
+          resultData: result 
+        } 
     });
   };
 
@@ -143,9 +185,6 @@ function PlaygroundResults() {
     const storedProfile = (() => {
       try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
     })();
-    const profileCache = (() => {
-      try { return JSON.parse(localStorage.getItem("sssit-profile") || "{}"); } catch { return {}; }
-    })();
     const studentName =
       storedProfile.name ||
       storedProfile.firstName ||
@@ -154,35 +193,24 @@ function PlaygroundResults() {
       storedProfile.username ||
       "Unknown";
 
-    // Create new PDF document
     const doc = new jsPDF();
     
-    // Add title
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Results Report', 105, 20, { align: 'center' });
     
-    // Add student information
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('Student Information:', 20, 40);
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${studentName}`, 20, 50);
+
     const lcEmail = localStorage.getItem("email");
-    let email = result.user?.email
-      || result.user?.Email
-      || profileCache.email
-      || storedProfile.email
-      || storedProfile.Email
-      || profileCache.username
-      || (lcEmail && lcEmail.includes("@") ? lcEmail : null)
-      || (storedProfile.username && storedProfile.username.includes("@") ? storedProfile.username : null)
-      || (profileCache.name && profileCache.name.includes("@") ? profileCache.name : null)
-      || "N/A";
-    doc.text(`Email: ${email}`, 20, 60);
-    doc.text(`ID: ${result.user?.randomId || 'N/A'}`, 20, 70);
+    const email = result.user?.email || storedProfile.email || (lcEmail && lcEmail.includes("@") ? lcEmail : "N/A");
     
-    // Add exam information
+    doc.text(`Email: ${email}`, 20, 60);
+    doc.text(`ID: ${result.user?.randomId || result.random_id || 'N/A'}`, 20, 70);
+    
     doc.setFont('helvetica', 'bold');
     doc.text('Exam Information:', 20, 90);
     doc.setFont('helvetica', 'normal');
@@ -192,148 +220,148 @@ function PlaygroundResults() {
     doc.text(`Status: ${passed ? 'Pass' : 'Fail'}`, 20, 130);
     doc.text(`Criteria: ${criteriaText}`, 20, 140);
     
-    // Add performance summary
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Summary:', 20, 150);
     doc.setFont('helvetica', 'normal');
     doc.text(`Correct Answers: ${result.correctAnswers || 0}/${totalQuestions}`, 20, 160);
     doc.text(`Incorrect Answers: ${result.incorrectAnswers || (totalQuestions - (result.correctAnswers || 0))}/${totalQuestions}`, 20, 170);
     doc.text(`Percentage: ${(((result.correctAnswers || 0) / totalQuestions) * 100).toFixed(1)}%`, 20, 180);
-    doc.text(`Marks Obtained: ${result.score || (result.correctAnswers || 0) * 2} out of ${totalMarks}`, 20, 190);
     
-    // Add generation date
     doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: 'numeric' })}`, 105, 200, { align: 'center' });
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 200, { align: 'center' });
     
-    // Save PDF
     doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
   };
 
   const hasResults = allResults.length > 0;
 
   if (!hasResults) {
-
     return (
-
-      <div className="p-8 text-center">
-
-        <div className="text-6xl mb-4">📝</div>
-
-        <h2 className="text-2xl font-semibold mb-3">
-          No Exam Results Found
-        </h2>
-
-        <p className="mb-6 text-gray-500">
-          Take your first exam to see results here
+      <div className="p-8 text-center pt-20">
+        <div className="text-6xl mb-4 animate-bounce">📝</div>
+        <h2 className="text-2xl font-bold mb-3 text-gray-800">No Exam Results Found</h2>
+        <p className="mb-6 text-gray-500 max-w-md mx-auto">
+          We couldn't find any synced or local exam results for this account.
+          Take your first assessment in the playground to begin your history!
         </p>
-
         <button
           onClick={handleTakeNewExam}
-          className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
+          className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all hover:-translate-y-1"
         >
           Take Your First Exam
         </button>
-
       </div>
     );
   }
 
   return (
+    <div className="bg-white min-h-screen w-full px-6 py-10 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto">
+        
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Exam History</h1>
+            <p className="text-gray-500 mt-1">Review and manage all your assessment attempts</p>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleDashboard}
+              className="px-6 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={handleTakeNewExam}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+            >
+              New Exam
+            </button>
+          </div>
+        </div>
 
-    <div
-      className="bg-white shadow p-6 w-full"
-      style={{
-        width: "100%",
-        margin: 0,
-        overflowX: "hidden"
-      }}
-    >
-
-      {/* ACTION BUTTONS */}
-
-      <div className="flex items-center justify-start gap-3 mb-4">
-        <button
-          onClick={handleDashboard}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-        >
-          Back
-        </button>
-      </div>
-
-      <h3 className="text-xl font-semibold mb-4">
-        All Results
-      </h3>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px] border">
-          <thead className="bg-[#212529] text-white">
-            <tr>
-              <th className="px-4 py-3 text-center font-bold min-w-[60px] border-r border-gray-700">S.No</th>
-              <th className="px-4 py-4 text-start font-bold min-w-[250px] border-r border-gray-700">Student</th>
-              <th className="px-4 py-4 text-start font-bold min-w-[200px] border-r border-gray-700">Exam Name</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[100px] border-r border-gray-700">Date</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[80px] border-r border-gray-700">Score</th>
-              <th className="px-4 py-3 text-center font-bold min-w-[150px]">Reports</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {allResults.map((result, index) => {
-
-              const totalQuestions = result.totalQuestions || result.questions?.length || 0;
-              const totalMarks = result.totalMarks || result.total_marks || (totalQuestions ? totalQuestions * 2 : 40);
-              const passingScore = getPassingScore(result.examTitle);
-              const scoreValue = result.score || (result.correctAnswers || 0) * 2;
-              const passed = scoreValue >= passingScore;
-
-              return (
-                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[60px]">
-                    {index + 1}
-                  </td>
-                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[250px]">
-                    {result.user?.firstName ||
-                      result.user?.username ||
-                      "Unknown"}
-                  </td>
-                  <td className="px-4 py-3 text-start whitespace-nowrap min-w-[200px]">
-                    {formatExamTitle(result.examTitle)}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[100px]">
-                    {new Date(
-                      result.examDate
-                    ).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[80px]">
-                    {scoreValue}/{totalMarks}
-                  </td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap min-w-[150px]">
-                    <div className="flex justify-center gap-4">
-                      <button
-                        onClick={() =>
-                          handleViewDetails(result,index)
-                        }
-                        className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase transition-colors"
-                      >
-                        VIEW
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDownload(result)
-                        }
-                        className="text-green-600 hover:text-green-800 font-bold text-xs uppercase transition-colors"
-                      >
-                        DOWNLOAD
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">#</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Student</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Assessment</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">Date</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">Score</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-[0.2em] text-center">Actions</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
 
+              <tbody className="divide-y divide-gray-50">
+                {allResults.map((result, index) => {
+                  const totalQuestions = result.totalQuestions || result.total_questions || result.questions?.length || 0;
+                  const totalMarks = result.totalMarks || result.total_marks || (totalQuestions ? totalQuestions * 2 : 40);
+                  const scoreValue = result.score || result.marks_obtained || ( (result.correctAnswers || result.correct_answers || 0) * 2 );
+                  const percentage = totalMarks > 0 ? (scoreValue / totalMarks) * 100 : 0;
+                  
+                  return (
+                    <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
+                      <td className="px-6 py-5 text-sm font-bold text-gray-400">{index + 1}</td>
+                      <td className="px-6 py-5 text-sm font-bold text-gray-800">
+                        {result.user?.firstName || result.user?.username || "Guest User"}
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="text-sm font-black text-gray-800 block uppercase tracking-wide">
+                          {result.examTitle || result.exam_title || result.title || "Standard Exam"}
+                        </span>
+                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-1 block">
+                          {result.examType || "General"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-center text-sm font-medium text-gray-500">
+                        {new Date(result.examDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <div className="inline-flex flex-col items-center">
+                          <span className={`text-sm font-black ${percentage >= 40 ? 'text-green-600' : 'text-red-500'}`}>
+                            {scoreValue}/{totalMarks}
+                          </span>
+                          <div className="w-16 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className={`h-full ${percentage >= 40 ? 'bg-green-500' : 'bg-red-500'}`} 
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <div className="flex justify-center gap-3">
+                          <button
+                            onClick={() => handleViewDetails(result, index)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="View Detailed Analysis"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDownload(result)}
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                            title="Download PDF"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

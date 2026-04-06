@@ -88,4 +88,4 @@ def playground_questions_flutterreactnative_api(request):
         {"id": 79, "question": "How many apps can you build with one Flutter codebase?", "options": ["Many (iOS, Android, Web, Desktop)", "Only one", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why use cross-platform frameworks for business?", "options": ["Reduces development time and cost specifically by sharing a single codebase", "It's a newer trend", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

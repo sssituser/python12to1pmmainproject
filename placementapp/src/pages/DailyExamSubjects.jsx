@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum 
+import {
+  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum
 } from "@fortawesome/free-brands-svg-icons";
-import { 
+import {
   faDatabase, faCode, faLayerGroup, faGlobe, faVrCardboard, faFileSignature, faArrowRight,
-  faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain, 
-  faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear, 
-  faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity, 
-  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon 
+  faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain,
+  faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear,
+  faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity,
+  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon
 } from "@fortawesome/free-solid-svg-icons";
 
 const subjects = [
@@ -18,8 +18,10 @@ const subjects = [
   { name: "Django", key: "django", icon: faCode, textStyle: "text-emerald-600", bgStyle: "bg-emerald-50", hoverBorder: "hover:border-emerald-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(16,185,129,0.2)]" },
   { name: "Java", key: "java", icon: faJava, textStyle: "text-red-600", bgStyle: "bg-red-50", hoverBorder: "hover:border-red-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(220,38,38,0.2)]" },
   { name: "React", key: "react", icon: faReact, textStyle: "text-cyan-600", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(8,145,178,0.2)]" },
+  { name: "Node JS", key: "node_js", icon: faNodeJs, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
+  { name: "Express JS", key: "express_js", icon: faServer, textStyle: "text-gray-600", bgStyle: "bg-gray-50", hoverBorder: "hover:border-gray-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(75,85,99,0.2)]" },
   { name: "UI", key: "ui", icon: faLayerGroup, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
-  
+
   // NEW TRENDING TECH
   { name: "Web3", key: "web3", icon: faGlobe, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
   { name: "Virtual Reality", key: "virtual_reality", icon: faVrCardboard, textStyle: "text-fuchsia-600", bgStyle: "bg-fuchsia-50", hoverBorder: "hover:border-fuchsia-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(192,38,211,0.2)]" },
@@ -100,97 +102,61 @@ const subjects = [
 
 // Course-specific subject mappings (lowercase keys)
 const courseMappings = {
-  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
   "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-  "mern": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mern stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mean": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
-  "mean stack": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
-  "mevn": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
-  "mevn stack": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
-  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
-  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
-  "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-  "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "mongodb": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "powerbi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment"],
-  "cloud": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "information security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "agenticai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile app": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "mobile application": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "flutter": ["flutter_react_native", "android", "ui"],
-  "react native": ["flutter_react_native", "react", "ui"],
-  "dotnet full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
+  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
   ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "c# full stack": ["c_sharp", "asp_net_mvc", "backend", "web_apis", "database_basics", "ui"],
-  "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-  "dotnet": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dot net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  "microsoft technologies": ["dotnet", "dotnet_mvc", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
+  "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
+  "data science with ai": ["python", "python_data_science", "numpy", "pandas", "machine_learning", "deep_learning", "oracle", "mongodb", "power_query", "dax", "dashboards", "microsoft_azure", "ai_concepts", "generative_ai", "data_visualization"],
+  "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
+  "cloud computing": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
+  "ui full stack": ["ui", "react", "oracle", "backend", "node_js", "express_js", "mongodb"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "database_basics"],
+  "frontend": ["ui", "react"],
+  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
+  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment", "microsoft_azure", "python"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
+  "microsoft technologies": ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
+  "mobile full stack": ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
+  "mongodb": ["python", "java", "node_js", "mongodb"],
   "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
   "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
   "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
 };
 
 const getAllowedSubjects = (courseName = "") => {
-  const normalized = courseName
+  const normalized = String(courseName || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Strict Mapping First
+  if (courseMappings[normalized]) return courseMappings[normalized];
+
+  // Fuzzy Match
   const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key)
+    normalized.includes(key) || key.includes(normalized)
   );
   if (matchedKey) return courseMappings[matchedKey];
 
-  // Synonym boost (helps when course name doesn't directly match subjects)
+  // Synonym boost
   const synonymMap = {
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    security: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    hacking: ["ethical_hacking", "penetration_testing"],
-    analytics: ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    "data analytics": ["python", "python_data_science", "dashboards", "oracle", "excel", "numpy", "pandas"],
-    mongodb: ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    "mongo db": ["python", "java", "c_sharp", "backend", "dotnet", "mongodb"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-    "power query": ["power_query"],
-    dax: ["dax"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    agents: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "agentic ai": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    "autonomous agents": ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-    devsecops: ["devops", "network_security", "penetration_testing"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    app: ["flutter_react_native", "android", "ios_swift", "ui"],
-    application: ["flutter_react_native", "android", "ios_swift", "ui"],
-    flutter: ["flutter_react_native", "android", "ui"],
-    reactnative: ["flutter_react_native", "react", "ui"],
+    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
+    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
     dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dot net": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    net: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "dotnet fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "net fullstack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    "asp net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    "asp.net": ["asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"],
-    csharp: ["c_sharp", "asp_net_mvc", "backend"],
+    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
+    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
+    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
+    mobile: ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
+    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
+    mongodb: ["python", "java", "node_js", "mongodb"],
+    microsoft: ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
+    "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
   };
 
-  // Fallback: token-based fuzzy match against subject keys/names
   const tokens = normalized.split(" ").filter((t) => t.length > 2);
   const allowed = new Set();
 
@@ -200,13 +166,6 @@ const getAllowedSubjects = (courseName = "") => {
     }
   });
 
-  tokens.forEach((tok) => {
-    subjects.forEach((subj) => {
-      const keyHit = subj.key.toLowerCase().includes(tok);
-      const nameHit = subj.name.toLowerCase().includes(tok);
-      if (keyHit || nameHit) allowed.add(subj.key);
-    });
-  });
   return Array.from(allowed);
 };
 
@@ -217,67 +176,47 @@ function DailyExamSubjects() {
   const [studentCourse, setStudentCourse] = useState(storedUser.course || "");
   const [courseId, setCourseId] = useState(null);
   const [topicsAllowed, setTopicsAllowed] = useState([]);
+  const [isValidating, setIsValidating] = useState(true);
   const userRole = (storedUser.role || "").toLowerCase();
   const isStudent = userRole === "student";
 
-  // Always refresh course from profile on mount so newly registered courses reflect immediately
   useEffect(() => {
+    // Self-healing synchronization for different laptops/devices
     const token = localStorage.getItem("access");
-    if (!isStudent || !token) return;
-
-    const syncCourseFromProfile = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const resolvedCourse = data?.course_title || data?.course || "";
-        const resolvedCourseId = data?.course || null;
-        if (resolvedCourse && resolvedCourse !== studentCourse) {
-          setStudentCourse(resolvedCourse);
-          const updatedUser = { ...storedUser, course: resolvedCourse };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
-        if (resolvedCourseId) setCourseId(resolvedCourseId);
-      } catch (err) {
-        console.error("Failed to sync course from profile:", err);
-      }
-    };
-
-    syncCourseFromProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStudent]);
-
-  useEffect(() => {
-    // If course is missing in local storage, resolve it from profile so every student is constrained properly
-    if (!isStudent || studentCourse) return;
-    const token = localStorage.getItem("access");
-    if (!token) return;
+    if (!isStudent || !token) {
+      setIsValidating(false);
+      return;
+    }
 
     const fetchCourseFromProfile = async () => {
       try {
         const res = await fetch("http://127.0.0.1:8000/api/profile/", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          setIsValidating(false);
+          return;
+        }
         const data = await res.json();
         const resolvedCourse = data?.course_title || data?.course || "";
         const resolvedCourseId = data?.course || null;
         if (resolvedCourse) {
           setStudentCourse(resolvedCourse);
-          // persist for other pages
+          // Persist the verified course name to local storage for instant access across reloads
           const updatedUser = { ...storedUser, course: resolvedCourse };
           localStorage.setItem("user", JSON.stringify(updatedUser));
         }
         if (resolvedCourseId) setCourseId(resolvedCourseId);
       } catch (err) {
-        console.error("Failed to fetch course from profile:", err);
+        console.error("Critical: Failed to validate student registration on this device:", err);
+      } finally {
+        // Only allow subject rendering after we've attempted to sync with the central server
+        setIsValidating(false);
       }
     };
 
     fetchCourseFromProfile();
-  }, [isStudent, studentCourse]);
+  }, [isStudent, storedUser.username]);
 
   // Fetch topics for the student's course to build dynamic subject mapping
   useEffect(() => {
@@ -378,11 +317,20 @@ function DailyExamSubjects() {
     navigate(`/dashboard/daily-exam/${subjectKey}`);
   };
 
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-500 font-medium animate-pulse">Verifying Registration...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 sm:p-8 relative">
-      
+
       <div className="relative z-10 max-w-6xl w-full">
-        
+
         {/* TOP LEFT BACK BUTTON */}
         <div className="absolute top-0 left-0 pt-2 z-20">
           <button
@@ -422,24 +370,24 @@ function DailyExamSubjects() {
               <div className="flex items-center gap-5">
                 {/* Icon Container */}
                 <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${subject.bgStyle}`}>
-                    <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
+                  <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
                 </div>
 
                 {/* Text Info */}
                 <div className="text-left flex flex-col justify-center">
-                    <h3 className="text-xl font-black text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
-                        {subject.name}
-                    </h3>
-                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
-                        Select Topic
-                    </p>
+                  <h3 className="text-xl font-black text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
+                    {subject.name}
+                  </h3>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
+                    Select Topic
+                  </p>
                 </div>
               </div>
 
-               {/* Right side decoration */}
-               <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                  <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
-               </div>
+              {/* Right side decoration */}
+              <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
+              </div>
 
               {/* Hover highlight line */}
               <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>

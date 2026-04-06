@@ -26,7 +26,7 @@ function Jobs() {
   function fetchJobs() {
     const token = localStorage.getItem("access");
 
-    fetch("/api/admin/jobs/", {
+    fetch("http://127.0.0.1:8000/api/admin/jobs/", {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(async (res) => {
@@ -77,8 +77,8 @@ function createJob(e) {
   console.log("FORM DATA:", form);
 
   const url = form.id
-    ? `/api/admin/jobs/${form.id}/`   // UPDATE
-    : `/api/admin/jobs/`;             // CREATE
+    ? `http://127.0.0.1:8000/api/admin/jobs/${form.id}/`   // UPDATE
+    : `http://127.0.0.1:8000/api/admin/jobs/`;             // CREATE
 
   const method = form.id ? "PATCH" : "POST";
 
@@ -147,7 +147,7 @@ fetch(url, {
   function deleteJob(id) {
     const token = localStorage.getItem("access");
 
-    fetch(`/api/admin/jobs/${id}/`, {
+    fetch(`http://127.0.0.1:8000/api/admin/jobs/${id}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     })

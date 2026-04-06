@@ -88,5 +88,25 @@ def playground_questions_oopscpp_api(request):
         {"id": 78, "question": "What is 'constexpr'?", "options": ["A constant error", "Specifies that the value of an expression/function can be evaluated at compile-time", "None", "None"], "correct": 1},
         {"id": 79, "question": "What's the meaning of 'RAII' (Resource Acquisition Is Initialization)?", "options": ["Binding resources to object lifetime for automatic cleanup", "A programming joke", "Both", "None"], "correct": 0},
         {"id": 80, "question": "Which operator is used for dynamic memory allocation in C++?", "options": ["malloc", "new", "alloc", "None"], "correct": 1},
+        {"id": 81, "question": "What is 'std::vector'?", "options": ["A geometric vector", "A dynamic array container", "A math library", "None"], "correct": 1},
+        {"id": 82, "question": "What is 'std::map'?", "options": ["A geographic map", "An associative container with key-value pairs", "A drawing tool", "None"], "correct": 1},
+        {"id": 83, "question": "What is 'std::set'?", "options": ["A collection of unique elements", "A TV set", "A game set", "None"], "correct": 0},
+        {"id": 84, "question": "What is 'template' in C++?", "options": ["A web template", "A blueprint for creating generic classes and functions", "A document template", "None"], "correct": 1},
+        {"id": 85, "question": "What is 'exception handling' in C++?", "options": ["Handling unexpected events during program execution", "Weather exceptions", "None", "None"], "correct": 0},
+        {"id": 86, "question": "What is 'try-catch' block?", "options": ["A fishing technique", "Error handling mechanism", "A game", "None"], "correct": 1},
+        {"id": 87, "question": "What is 'virtual function'?", "options": ["A function in virtual reality", "A function that enables runtime polymorphism", "A computer function", "None"], "correct": 1},
+        {"id": 88, "question": "What is 'abstract class'?", "options": ["A class with abstract concepts", "A class with at least one pure virtual function", "A theoretical class", "None"], "correct": 1},
+        {"id": 89, "question": "What is 'interface' in C++?", "options": ["A user interface", "A class with only pure virtual functions", "A network interface", "None"], "correct": 1},
+        {"id": 90, "question": "What is 'multiple inheritance'?", "options": ["Inheriting from multiple base classes", "Multiple children", "None", "None"], "correct": 0},
+        {"id": 91, "question": "What is 'diamond problem'?", "options": ["A jewelry problem", "Ambiguity in multiple inheritance", "A shape problem", "None"], "correct": 1},
+        {"id": 92, "question": "What is 'virtual inheritance'?", "options": ["Inheritance in virtual reality", "Solving diamond problem", "None", "None"], "correct": 1},
+        {"id": 93, "question": "What is 'friend function'?", "options": ["A function that is a friend", "A function that can access private members of a class", "A social function", "None"], "correct": 1},
+        {"id": 94, "question": "What is 'friend class'?", "options": ["A friendly class", "A class that can access private members of another class", "A social class", "None"], "correct": 1},
+        {"id": 95, "question": "What is 'operator overloading'?", "options": ["Overloading computer operators", "Defining operators for user-defined types", "None", "None"], "correct": 1},
+        {"id": 96, "question": "What is 'copy constructor'?", "options": ["A constructor for copying", "A constructor that initializes an object from another object", "None", "None"], "correct": 1},
+        {"id": 97, "question": "What is 'destructor'?", "options": ["A destructive function", "A function called when object is destroyed", "None", "None"], "correct": 1},
+        {"id": 98, "question": "What is 'static member'?", "options": ["A member that doesn't move", "A member shared by all objects of a class", "None", "None"], "correct": 1},
+        {"id": 99, "question": "What is 'const member function'?", "options": ["A constant function", "A function that doesn't modify object state", "None", "None"], "correct": 1},
+        {"id": 100, "question": "What is 'mutable' keyword?", "options": ["Something that can change", "Allows modification of member variables even in const functions", "None", "None"], "correct": 1}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

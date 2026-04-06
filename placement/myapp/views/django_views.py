@@ -8,7 +8,7 @@ from rest_framework.response import Response
 @permission_classes([AllowAny])
 def playground_questions_django_api(request):
     """
-    Serve a 50-question Django assessment pool (2-mark MCQs).
+    Serve a 100-question Django assessment pool (2-mark MCQs).
     """
     questions_pool = [
         {"id": 1, "question": "What does Django’s MTV stand for?", "options": ["Model-Template-View", "Model-Test-View", "Module-Template-View", "Model-Template-Variable"], "correct": 0},
@@ -61,11 +61,55 @@ def playground_questions_django_api(request):
         {"id": 48, "question": "Which session engine stores data in signed cookies?", "options": ["cached_db", "file", "cookie", "cache"], "correct": 2},
         {"id": 49, "question": "How to paginate querysets in DRF generics?", "options": ["Set PAGE_SIZE/DEFAULT_PAGINATION_CLASS", "Loop manually", "Use Paginator only", "Add limit/offset to URL manually"], "correct": 0},
         {"id": 50, "question": "Which management command shows SQL for migrations without applying?", "options": ["showmigrations --plan", "sqlmigrate", "migrate --sql", "showsql"], "correct": 1},
+        {"id": 51, "question": "What is 'Slug' field in Django?", "options": ["URL-friendly text version of a title", "A heavy object", "Neither", "Both"], "correct": 0},
+        {"id": 52, "question": "What is 'OneToOneField'?", "options": ["Relationship where one record maps exactly to one other record", "One to many", "Neither", "Both"], "correct": 0},
+        {"id": 53, "question": "What is 'ForeignKey'?", "options": ["Relationship where many records map to one other record", "A key from another country", "Neither", "Both"], "correct": 0},
+        {"id": 54, "question": "What is 'ManyToManyField'?", "options": ["Relationship where many records map to many other records", "Many users", "Neither", "Both"], "correct": 0},
+        {"id": 55, "question": "What is 'Related Name'?", "options": ["Custom name for the reverse relationship", "Name of a family member", "Neither", "Both"], "correct": 0},
+        {"id": 56, "question": "What is 'Abstract' model?", "options": ["A model that doesn't create a database table itself", "A model with no fields", "Neither", "Both"], "correct": 0},
+        {"id": 57, "question": "What is 'Proxy' model?", "options": ["Model that changes behavior without changing DB structure", "A network proxy", "Neither", "Both"], "correct": 0},
+        {"id": 58, "question": "What is 'Meta' class in models?", "options": ["Inner class for model-level options (ordering, etc.)", "A social media class", "Neither", "Both"], "correct": 0},
+        {"id": 59, "question": "What is 'Choices' in model field?", "options": ["A way to limit field input to specific options", "Multiple files", "Neither", "Both"], "correct": 0},
+        {"id": 60, "question": "What is 'Default' in model field?", "options": ["Initial value if none is provided", "A backup", "Neither", "Both"], "correct": 0},
+        {"id": 61, "question": "What is 'Blank=True' vs 'Null=True'?", "options": ["Blank is for validation; Null is for the database", "They are same", "Neither", "Both"], "correct": 0},
+        {"id": 62, "question": "What is 'Django Admin'?", "options": ["Automatic interface for managing data models", "A person", "Neither", "Both"], "correct": 0},
+        {"id": 63, "question": "What is 'Inlines' in admin?", "options": ["Editing related models on the same page as parent", "Inline code", "Neither", "Both"], "correct": 0},
+        {"id": 64, "question": "What is 'List Display' in admin?", "options": ["Controlling which fields appear in the admin list view", "A monitor", "Neither", "Both"], "correct": 0},
+        {"id": 65, "question": "What is 'Filter Horizontal'?", "options": ["UI for ManyToMany relations in admin", "A CSS filter", "Neither", "Both"], "correct": 0},
+        {"id": 66, "question": "What is 'Template Inheritance'?", "options": ["Reusing layout via {% extends %} and {% block %}", "Passing money", "Neither", "Both"], "correct": 0},
+        {"id": 67, "question": "What is '{% include %}' tag?", "options": ["Loading another template fragment inside current one", "Adding a file", "Neither", "Both"], "correct": 0},
+        {"id": 68, "question": "What is 'Context Processor'?", "options": ["Function that adds data to every template automatically", "A CPU", "Neither", "Both"], "correct": 0},
+        {"id": 69, "question": "What is 'Built-in Filter' like '|length'?", "options": ["Manipulating variables inside templates", "A water filter", "Neither", "Both"], "correct": 0},
+        {"id": 70, "question": "What is 'Custom Template Tag'?", "options": ["Defining custom logic to use in HTML", "A price tag", "Neither", "Both"], "correct": 0},
+        {"id": 71, "question": "What is 'Form.is_valid()'?", "options": ["Validates all fields based on clean() methods", "Checks if form was sent", "Neither", "Both"], "correct": 0},
+        {"id": 72, "question": "What is 'Form.cleaned_data'?", "options": ["Dictionary of validated data after is_valid()", "A clean form", "Neither", "Both"], "correct": 0},
+        {"id": 73, "question": "What is 'CSRF Token'?", "options": ["Shield against cross-site request forgery", "A login token", "Neither", "Both"], "correct": 0},
+        {"id": 74, "question": "What is 'Django Middleware'?", "options": ["Hook for processing requests/responses globally", "A server component", "Neither", "Both"], "correct": 0},
+        {"id": 75, "question": "What is 'Message Framework'?", "options": ["Storing flash messages for users", "A chat app", "Neither", "Both"], "correct": 0},
+        {"id": 76, "question": "What is 'Session' in Django?", "options": ["Storing data across requests for a specific user", "A meeting", "Neither", "Both"], "correct": 0},
+        {"id": 77, "question": "What is 'Authentication' vs 'Authorization'?", "options": ["Auth is who you are; Authorization is what you can do", "They are same", "Neither", "Both"], "correct": 0},
+        {"id": 78, "question": "What is '@permission_required'?", "options": ["Check if user has specific permission before view", "Accessing a file", "Neither", "Both"], "correct": 0},
+        {"id": 79, "question": "What is 'Django Signals'?", "options": ["Decoupled event handling (sender/receiver)", "Phone signals", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "What is 'Receiver' in signals?", "options": ["The function that executes when signal is sent", "A phone", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Django Cache'?", "options": ["Storing results to speed up future requests", "A hidden box", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Memcached'?", "options": ["High-performance distributed memory caching system", "A hard drive", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Redis' in Django?", "options": ["Advanced key-value store used for caching/queues", "A types of fruit", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Database Cache'?", "options": ["Storing cache in the main database", "Neither", "Both", "Table storage"], "correct": 0},
+        {"id": 85, "question": "What is 'Django Test Case'?", "options": ["Class for writing unit tests with DB isolation", "A medical case", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Client' in Django testing?", "options": ["Simulates a web browser to test views", "A customer", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Mocking' in tests?", "options": ["Replacing real objects with simulated ones", "Laughing at code", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Django Rest Framework (DRF)'?", "options": ["Powerful toolkit for building Web APIs", "A CSS library", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Serializer' in DRF?", "options": ["Converting complex data (models) to native Python (JSON)", "A movie series", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'ModelSerializer'?", "options": ["Serializer that automatically maps fields from a model", "A model builder", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'ViewSet' in DRF?", "options": ["Combining logic for multiple related views (list, retrieve, etc.)", "A list of screens", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Router' in DRF?", "options": ["Automatically determining URL conf for ViewSets", "A hardware router", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'APIView'?", "options": ["Base class for all DRF views", "A regular web page", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Throttling' in DRF?", "options": ["Limiting the rate of requests for security", "Choking code", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Pagination' in DRF?", "options": ["Controlling how many results are returned per page", "Page numbering", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'JWT' in Django?", "options": ["JSON Web Token for stateless authentication", "A types of script", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'CorsHeaders'?", "options": ["Middleware to handle Cross-Origin Resource Sharing", "A list of strings", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Storage' class for?", "options": ["Customizing how files are saved (S3, local, etc.)", "A room", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Django Command'?", "options": ["Custom script run via manage.py", "A voice command", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'WhiteNoise'?", "options": ["Serving static files directly from Django in production", "A loud sound", "Neither", "Both"], "correct": 0},
     ]
-
-    selected_questions = random.sample(questions_pool, 25)
-
-    return Response({
-        "success": True,
-        "data": selected_questions
-    })
+    return Response({'success': True, 'data': random.sample(questions_pool, 25)})

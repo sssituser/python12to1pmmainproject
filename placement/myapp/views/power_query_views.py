@@ -96,5 +96,5 @@ def playground_questions_power_query_api(request):
     """
     return Response({
         "success": True,
-        "data": random.sample(POWER_QUERY_QUESTIONS, 30)
+        "data": random.sample(POWER_QUERY_QUESTIONS, 25)
     })

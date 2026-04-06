@@ -494,8 +494,8 @@ function Dashboard() {
                           <td className="py-3 px-4 text-sm text-gray-600">{student.courseType}</td>
                           <td className="text-center py-3 px-4">
                             <div className="flex items-center justify-center gap-3">
-                              <button
-                                onClick={() => navigate('/faculty/stats')}
+                              <button 
+                                onClick={() => navigate(`/faculty/student-report/${student.studentName}`)}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1 group"
                               >
                                 <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -601,6 +601,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

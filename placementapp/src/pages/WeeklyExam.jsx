@@ -145,9 +145,10 @@ const WeeklyExam = () => {
   const examSubmittedRef = useRef(false);
   const [webcamActive, setWebcamActive] = useState(false);
   const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
-  const [faceCount, setFaceCount] = useState(0);
+  const [faceCount, setFaceCount] = useState(1);
   const [examFailed, setExamFailed] = useState(false);
 
+  const [studentCourse, setStudentCourse] = useState("");
   const [questions, setQuestions] = useState([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
@@ -168,72 +169,60 @@ const WeeklyExam = () => {
       navigate("/dashboard/playground-results", { replace: true });
       return;
     }
-    const fetchQuestionsFromBackend = async () => {
-      // Always clear any previous session state for fresh start
-      try {
-        sessionStorage.removeItem('weeklyExamState');
-      } catch (e) {}
-
-      try {
+      const fetchQuestionsFromBackend = async () => {
         setIsLoadingQuestions(true);
+        try {
+          const userStr = localStorage.getItem("user");
+          let course = "";
+          try {
+            const user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
+            course = user.course || "";
+            setStudentCourse(course);
+          } catch (e) {}
 
-        // Fetch custom exam settings loaded manually by Faculty
-        const customRes = await fetch("/api/admin/exam-settings/?category=Weekly");
-        const customJson = await customRes.json();
+          const customRes = await fetch(`/api/admin/exam-settings/?category=Weekly&course=${encodeURIComponent(course)}`);
+          const customJson = await customRes.json();
 
-        // 1. Prioritize Custom Questions from Exam Manager
-        if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
-          
-          // Helper for Fisher-Yates shuffle
-          const shuffleArray = (array) => {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-          };
-          
-          const maxQ = customJson.data.maxQuestions || 50;
-          const displayLimit = Math.min(customJson.data.questions.length, maxQ);
-          
-          // 2. Shuffle ALL available questions from Faculty FIRST
-          const allShuffled = shuffleArray(customJson.data.questions);
-          
-          // 3. Take the limit (e.g. random 50)
-          const weeklyQuestions = allShuffled.slice(0, displayLimit);
-          
-          const dur = customJson.data.duration || 75;
-          setExamDuration(dur);
-          setTimeLeft(dur * 60);
+          if (customJson.success && customJson.data && customJson.data.questions && Array.isArray(customJson.data.questions) && customJson.data.questions.length > 0) {
+            const shuffleArray = (array) => {
+              const shuffled = [...array];
+              for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+              }
+              return shuffled;
+            };
 
-          setPassingRule(customJson.data.passingRule || "percentage");
-          setPassingValue(customJson.data.passingValue !== undefined ? customJson.data.passingValue : 35);
+            const maxQ = customJson.data.maxQuestions || 50;
+            const displayLimit = Math.min(customJson.data.questions.length, maxQ);
+            const allShuffled = shuffleArray(customJson.data.questions);
+            const weeklyQuestions = allShuffled.slice(0, displayLimit);
 
-          const mappedQuestions = weeklyQuestions.map((q, idx) => ({
-             ...q, 
-             id: idx + 1,
-             marks: parseInt(q.marks) || 10,
-             question: q.question,
-             options: q.options || [],
-             type: q.question_type || 'mcq',
-             starter_code: q.starter_code || '',
-             test_cases: q.test_cases || [],
-             correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
-          }));
-          
-          setQuestions(mappedQuestions);
+            const dur = customJson.data.duration || 45;
+            setExamDuration(dur);
+            setTimeLeft(dur * 60);
 
-        } else {
-          // If no custom questions exist, leave questions array empty
-          setQuestions([]);
+            const mappedQuestions = weeklyQuestions.map((q, idx) => ({
+              ...q,
+              id: idx + 1,
+              marks: parseInt(q.marks) || 10,
+              question: q.question,
+              options: q.options || [],
+              type: q.question_type || 'mcq',
+              starter_code: q.starter_code || '',
+              test_cases: q.test_cases || [],
+              correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
+            }));
+            setQuestions(mappedQuestions);
+          } else {
+            setQuestions([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch questions:", err);
+        } finally {
+          setIsLoadingQuestions(false);
         }
-      } catch (err) {
-        console.error("Failed to fetch questions from backend:", err);
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    };
+      };
     
     fetchQuestionsFromBackend();
     
@@ -679,9 +668,15 @@ useEffect(() => {
       console.error("Error enabling fullscreen", err);
     }
     setExamStarted(true);
-    // Push state once here when exam starts to lock the back button effectively
-    window.history.pushState(null, null, window.location.href);
     startWebcam(); // Start webcam when exam begins
+
+    // 🔒 PROCTORING: Lock Back Button during active exam
+    window.history.pushState(null, null, window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, null, window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   };
 
   const handleAnswerSelect = (qIndex, optionIndex) => {
@@ -747,7 +742,17 @@ useEffect(() => {
     } catch(e) {
       console.error(e);
     }
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    // Get actual student ID from profile instead of random
+    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
+    
+    // Debug logging to verify student ID
+    console.log("WeeklyExam - Profile studentId:", profileData.studentId);
+    console.log("WeeklyExam - User studentId:", userData.studentId);
+    console.log("WeeklyExam - User ID:", userData.id);
+    console.log("WeeklyExam - Final randomId being used:", randomId);
+    
     const now = new Date().toISOString();
 
     let correctCount = 0;
@@ -780,6 +785,7 @@ useEffect(() => {
        passed = correctCount >= passingValue;
     }
 
+
     const result = {
       status: "completed",
       correctAnswers: correctCount,
@@ -800,15 +806,17 @@ useEffect(() => {
       },
       examDate: new Date().toISOString(),
       examTitle: "Weekly Exam",
-      submissionReason: reason
+      submissionReason: reason,
+      random_id: String(randomId) // Add missing random_id field
     };
 
+
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
-    const finalStatus = isTerminated ? "Cheated" : "completed";
+    const finalStatus = isTerminated ? "Cheated" : (passed ? "Pass" : "Fail");
 
     const payload = {
       username: user.username || "Unknown",
-      exam_title: "Weekly Python Programming Assessment",
+      exam_title: `Weekly ${studentCourse || 'Python'} Programming Assessment`,
       exam_type: "weekly",
       score: earnedMarks,
       total_questions: totalQ,
@@ -827,34 +835,74 @@ useEffect(() => {
       reason: reason // Include detailed reason
     };
 
+    let isSynced = false;
     try {
       const res = await fetch("/api/save-exam-report/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        console.error("Save exam report failed:", res.status, errData);
-      } else {
-        const saved = await res.json().catch(() => ({}));
-        console.log("✅ Exam saved for user:", saved.saved_username);
-      }
+      if (res.ok) isSynced = true;
     } catch (err) {
-      console.error("Failed to sync exam to backend:", err);
+      console.error("Failed to sync exam:", err);
     }
 
+
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    
+    // Validate and ensure questions data is properly stored
+    console.log("🔍 Weekly Exam - Validating result data before storage:");
+    console.log("Questions count:", result.questions?.length || 0);
+    console.log("Answers count:", result.answers?.length || 0);
+    console.log("Student ID:", result.random_id);
+    console.log("Exam Title:", result.examTitle);
+    
+    // Ensure questions and answers are arrays, not strings
+    if (typeof result.questions === 'string') {
+      try {
+        result.questions = JSON.parse(result.questions);
+        console.log("✅ Parsed stringified questions");
+      } catch (e) {
+        console.error("❌ Failed to parse questions:", e);
+        result.questions = [];
+      }
+    }
+    
+    if (typeof result.answers === 'string') {
+      try {
+        result.answers = JSON.parse(result.answers);
+        console.log("✅ Parsed stringified answers");
+      } catch (e) {
+        console.error("❌ Failed to parse answers:", e);
+        result.answers = [];
+      }
+    }
+    
+    // Final validation
+    const isValid = Array.isArray(result.questions) && Array.isArray(result.answers) && 
+                   result.questions.length > 0 && result.answers.length > 0;
+    
+    if (isValid) {
+      console.log("✅ Weekly Exam data validation passed");
+    } else {
+      console.error("❌ Weekly Exam data validation failed");
+      console.log("Final questions type:", Array.isArray(result.questions));
+      console.log("Final answers type:", Array.isArray(result.answers));
+    }
+    
     allResults.unshift(result);
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'weekly', result: result } 
+    }));
     localStorage.setItem("examResult", JSON.stringify(result));
 
     sessionStorage.removeItem('weeklyExamState');
 
-    window.history.go(-1);
-    setTimeout(() => {
-      navigate("/dashboard/playground-results", { replace: true });
-    }, 100);
+
+    // Do not auto-navigate, let the user click the button
   };
 
   const formatTime = (seconds) => {
@@ -989,7 +1037,7 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              Weekly Assessment
+              {studentCourse || 'Weekly'} Assessment
             </h2>
             <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
@@ -1041,7 +1089,7 @@ useEffect(() => {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => navigate("/dashboard/playground-results", {replace: true})}
+              onClick={() => navigate("/dashboard/weekly-exams", {replace: true})}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
             >
               View Detailed Results
@@ -1367,12 +1415,12 @@ useEffect(() => {
                   <div className="flex items-center justify-between mb-6">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
                     <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
-                      {Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100)}%
+                      {Math.round(((Array.isArray(answers) ? answers.filter(a => a !== null).length : 0) / (Array.isArray(questions) ? questions.length : 1)) * 100)}%
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-4 gap-2">
-                    {questions.map((_, index) => {
+                    {Array.isArray(questions) ? questions.map((_, index) => {
                       let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
                       if (currentQuestion === index) {
                         statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
@@ -1385,13 +1433,13 @@ useEffect(() => {
                       return (
                         <button
                           key={index}
-                          onClick={() => goToQuestion(index)}
-                          className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95`}
+                          className={`w-10 h-10 rounded-lg border-2 transition-all ${statusColor}`}
+                          onClick={() => setCurrentQuestion(index)}
                         >
                           {index + 1}
                         </button>
                       );
-                    })}
+                    }) : null}
                   </div>
                 </div>
                 
@@ -1401,7 +1449,7 @@ useEffect(() => {
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
                        </div>
-                       <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                       <span className="text-xs font-black text-gray-800">{Array.isArray(answers) ? answers.filter(a => a !== null).length : 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2.5">

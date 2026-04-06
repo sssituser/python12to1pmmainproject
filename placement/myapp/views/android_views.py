@@ -87,5 +87,25 @@ def playground_questions_android_api(request):
         {"id": 78, "question": "What represents 'Firebase Cloud Messaging' (FCM)?", "options": ["Sending specifically push notifications to Android devices", "Chatting on a cloud", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents 'AdMob' in Android apps?", "options": ["Google's platform specifically for displaying ads and monetizing apps", "A types of crowd", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Android development a great career choice?", "options": ["Huge market share specifically and open ecosystem for developers worldwide", "Because it uses more RAM", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Android Jetpack'?", "options": ["Set of Android components and tools", "A jet pack for Android", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Android Architecture Components'?", "options": ["Set of libraries for Android architecture", "Components for building", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Android Data Binding'?", "options": ["Library for binding UI to data", "Binding data manually", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Android Room Database'?", "options": ["Persistence library for SQLite", "Room for Android", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Android WorkManager'?", "options": ["Library for background work", "Managing work", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Android Navigation Component'?", "options": ["Framework for app navigation", "Navigation in Android", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Android Paging Library'?", "options": ["Library for pagination", "Paging in Android", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Android ViewModel'?", "options": ["UI data storage class", "View model pattern", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Android LiveData'?", "options": ["Observable data holder", "Live data", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Android Coroutine'?", "options": ["Asynchronous programming", "Coroutines in Android", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Android Flow'?", "options": ["Asynchronous data stream", "Flow in Android", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Android Dagger'?", "options": ["Dependency injection framework", "Dagger tool", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Android Hilt'?", "options": ["Dependency injection library", "Hilt tool", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Android Retrofit'?", "options": ["HTTP client library", "Retrofit tool", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Android OkHttp'?", "options": ["HTTP client implementation", "HTTP client", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Android Glide'?", "options": ["Image loading library", "Glide tool", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Android Picasso'?", "options": ["Image loading library", "Picasso tool", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Android Coil'?", "options": ["Image loading library", "Coil tool", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Android Lottie'?", "options": ["Animation library", "Lottie tool", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Android Shimmer'?", "options": ["Shimmer effect library", "Shimmer tool", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

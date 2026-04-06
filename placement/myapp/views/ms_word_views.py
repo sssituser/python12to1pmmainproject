@@ -89,4 +89,4 @@ def playground_questions_msword_api(request):
         {"id": 79, "question": "What's the meaning of 'Cross-reference'?", "options": ["Linking to another headline or figure within the same document", "Linking to a different book", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary benefit of MS Word?", "options": ["Creating professional documents efficiently with many tools", "Having more TV channels", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

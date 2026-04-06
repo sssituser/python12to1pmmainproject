@@ -88,4 +88,4 @@ def playground_questions_ethicalhacking_api(request):
         {"id": 79, "question": "What represents 'Certified Ethical Hacker' (CEH)?", "options": ["A professional specifically qualification for demonstrating hacking skills", "A types of driver license", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Ethical Hacking essential for security?", "options": ["Proactively finding specifically and fixing security gaps before attackers do", "Because it is cheaper", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

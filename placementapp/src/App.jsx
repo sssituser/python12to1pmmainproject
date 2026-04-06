@@ -50,6 +50,7 @@ import Leaves from "./faculty/LeaveRequest";
 import FacultyLogin from "./faculty/login";
 import Stats from "./faculty/Stats";
 import FacultyProfile from "./faculty/Profile";
+import StudentReport from "./faculty/StudentReport";
 
 /* 🔹 AUTH */
 import VerifyFaculty from "./pages/FacultyOtp";
@@ -212,10 +213,8 @@ function App() {
           <Route path="profile" element={<FacultyProfile />} />
           <Route path="jobs" element={<FacultyJobs />} />
           <Route path="exam" element={<ExamManager />} />
-          <Route path="Stats" element={<Stats />} />
-          <Route path="jobs" element={<Jobs />} />
-          <Route path="Exam" element={<ExamManager />} />
           <Route path="applications" element={<Applications />} />
+          <Route path="student-report/:username" element={<StudentReport />} />
           <Route path="leaves" element={<Leaves />} />
           <Route path="Course" element={<FacultyCourse />} />
           <Route path="Course/:courseId" element={<FacultyCourse />} />

@@ -89,4 +89,4 @@ def playground_questions_gitgithub_api(request):
         {"id": 79, "question": "Which file extension is commonly used for Markdown?", "options": [".md", ".markdown", "Both A and B", "Neither"], "correct": 2},
         {"id": 80, "question": "Why is Git essential for modern software development?", "options": ["Allows safe collaboration, tracking progress and easy version management", "Faster internet speed", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

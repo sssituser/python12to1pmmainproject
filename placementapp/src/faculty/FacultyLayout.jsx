@@ -169,7 +169,7 @@ function FacultyLayout() {
                   getInitials()
                 )}
               </div>
-              {sidebarOpen && (
+              {open && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">
                     {getDisplayName()}

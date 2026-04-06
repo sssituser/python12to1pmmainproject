@@ -88,5 +88,25 @@ def playground_questions_cloudbasics_api(request):
         {"id": 78, "question": "Which constant represents 'Infrastructure as Code'?", "options": ["IaC", "SaC", "Both", "None"], "correct": 0},
         {"id": 79, "question": "What is 'Cost Optimization' in cloud?", "options": ["Reducing cloud spend by rightsizing resources and choosing better plans", "Buying more servers", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary driver for many companies moving to the cloud?", "options": ["Cost savings, Agility, and Scalability", "Having more servers", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Infrastructure as Code' (IaC)?", "options": ["Managing infrastructure through code and automation", "Writing code for servers", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'DevOps'?", "options": ["Combining development and operations practices", "Development operations", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'CI/CD'?", "options": ["Continuous Integration and Continuous Deployment", "Code deployment", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Auto Scaling'?", "options": ["Automatically adjusting resources based on demand", "Scaling automatically", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Load Balancing'?", "options": ["Distributing traffic across multiple servers", "Balancing loads", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'CDN' (Content Delivery Network)?", "options": ["Distributed servers for fast content delivery", "Content delivery network", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Edge Computing'?", "options": ["Processing data closer to users", "Computing at the edge", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Cloud Migration'?", "options": ["Moving applications and data to cloud", "Migrating to cloud", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Hybrid Cloud'?", "options": ["Combination of public and private cloud", "Mixed cloud", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Multi-Cloud'?", "options": ["Using multiple cloud providers", "Many clouds", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Cloud Native'?", "options": ["Applications designed for cloud environments", "Native cloud apps", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Serverless Computing'?", "options": ["Running code without managing servers", "Computing without servers", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Function as a Service' (FaaS)?", "options": ["Running functions in response to events", "Functions as service", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'API Gateway'?", "options": ["Managing API requests and routing", "Gateway for APIs", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Container Orchestration'?", "options": ["Managing containerized applications", "Orchestrating containers", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Microservices'?", "options": ["Small, independent services", "Tiny services", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Service Mesh'?", "options": ["Infrastructure for managing service communication", "Mesh for services", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Cloud Security'?", "options": ["Protecting cloud resources and data", "Security in cloud", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Cloud Monitoring'?", "options": ["Observing cloud resource performance", "Monitoring cloud", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Cloud Governance'?", "options": ["Managing cloud policies and compliance", "Governance in cloud", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

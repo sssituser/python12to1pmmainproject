@@ -146,6 +146,7 @@ const MonthlyExam = () => {
   const [webcamStatus, setWebcamStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'error'
   const [faceCount, setFaceCount] = useState(0);
   const [examFailed, setExamFailed] = useState(false);
+  const [studentCourse, setStudentCourse] = useState("");
 
   const [questions, setQuestions] = useState([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
@@ -177,7 +178,17 @@ const MonthlyExam = () => {
         setIsLoadingQuestions(true);
 
         // Fetch custom exam settings loaded manually by Faculty
-        const customRes = await fetch("/api/admin/exam-settings/?category=Monthly");
+        const userStr = localStorage.getItem("user");
+        let course = "";
+        try {
+          const user = userStr ? JSON.parse(userStr) : {};
+          course = user.course || "";
+          setStudentCourse(course);
+        } catch (e) {
+          console.error("Error parsing user for course:", e);
+        }
+
+        const customRes = await fetch(`/api/admin/exam-settings/?category=Monthly&course=${course}`);
         const customJson = await customRes.json();
 
         // 1. Prioritize Custom Questions from Exam Manager
@@ -842,7 +853,10 @@ useEffect(() => {
     } catch(e) {
       console.error(e);
     }
-    const randomId = Math.floor(1000 + Math.random() * 9000);
+    // Get actual student ID from profile instead of random
+    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const userData = JSON.parse(localStorage.getItem("user") || "{}");
+    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
     const now = new Date().toISOString();
 
     let correctCount = 0;
@@ -894,8 +908,10 @@ useEffect(() => {
         randomId
       },
       examDate: new Date().toISOString(),
-      examTitle: "Monthly Exam",
-      submissionReason: reason
+      examTitle: `Monthly ${studentCourse || 'Python'} Exam`,
+      submissionReason: reason,
+      random_id: String(randomId) // Add missing random_id field
+
     };
 
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
@@ -903,7 +919,7 @@ useEffect(() => {
 
     const payload = {
       username: user.username || "Unknown",
-      exam_title: "Monthly Python Programming Assessment",
+      exam_title: `Monthly ${studentCourse || 'Python'} Programming Assessment`,
       exam_type: "monthly",
       score: earnedMarks,
       total_questions: totalQ,
@@ -940,16 +956,59 @@ useEffect(() => {
     }
 
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    
+    // Validate and ensure questions data is properly stored
+    console.log("🔍 Monthly Exam - Validating result data before storage:");
+    console.log("Questions count:", result.questions?.length || 0);
+    console.log("Answers count:", result.answers?.length || 0);
+    console.log("Student ID:", result.random_id);
+    console.log("Exam Title:", result.examTitle);
+    
+    // Ensure questions and answers are arrays, not strings
+    if (typeof result.questions === 'string') {
+      try {
+        result.questions = JSON.parse(result.questions);
+        console.log("✅ Parsed stringified questions");
+      } catch (e) {
+        console.error("❌ Failed to parse questions:", e);
+        result.questions = [];
+      }
+    }
+    
+    if (typeof result.answers === 'string') {
+      try {
+        result.answers = JSON.parse(result.answers);
+        console.log("✅ Parsed stringified answers");
+      } catch (e) {
+        console.error("❌ Failed to parse answers:", e);
+        result.answers = [];
+      }
+    }
+    
+    // Final validation
+    const isValid = Array.isArray(result.questions) && Array.isArray(result.answers) && 
+                   result.questions.length > 0 && result.answers.length > 0;
+    
+    if (isValid) {
+      console.log("✅ Monthly Exam data validation passed");
+    } else {
+      console.error("❌ Monthly Exam data validation failed");
+      console.log("Final questions type:", Array.isArray(result.questions));
+      console.log("Final answers type:", Array.isArray(result.answers));
+    }
+    
     allResults.unshift(result);
     localStorage.setItem("allExamResults", JSON.stringify(allResults));
+    
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'monthly', result: result } 
+    }));
     localStorage.setItem("examResult", JSON.stringify(result));
 
     sessionStorage.removeItem('monthlyExamState');
 
-    window.history.go(-1);
-    setTimeout(() => {
-      navigate("/dashboard/playground-results", { replace: true });
-    }, 100);
+    // Allow the user to manually click the 'View Monthly Results' button
   };
 
   const formatTime = (seconds) => {
@@ -989,7 +1048,7 @@ useEffect(() => {
 
           <div className="mb-8">
             <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">
-              Monthly Assessment
+              {studentCourse || 'Monthly'} Assessment
             </h2>
             <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-500 font-medium leading-relaxed px-4">
@@ -1040,10 +1099,10 @@ useEffect(() => {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => navigate("/dashboard/playground-results")}
+              onClick={() => navigate("/dashboard/monthly-exams")}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95"
             >
-              View Detailed Results
+              View Monthly Results
             </button>
           </div>
         </div>
@@ -1367,12 +1426,12 @@ useEffect(() => {
                   <div className="flex items-center justify-between mb-6">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Navigator</h4>
                     <div className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black">
-                      {Math.round(((answers.filter(a => a !== null).length) / questions.length) * 100)}%
+                      {Math.round(((Array.isArray(answers) ? answers.filter(a => a !== null).length : 0) / (Array.isArray(questions) ? questions.length : 1)) * 100)}%
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-4 gap-2">
-                    {questions.map((_, index) => {
+                    {Array.isArray(questions) ? questions.map((_, index) => {
                       let statusColor = "bg-gray-50 text-gray-300 border-gray-50 hover:bg-gray-100 hover:text-gray-400";
                       if (currentQuestion === index) {
                         statusColor = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 scale-105 z-10 pointer-events-none";
@@ -1385,13 +1444,13 @@ useEffect(() => {
                       return (
                         <button
                           key={index}
-                          onClick={() => goToQuestion(index)}
-                          className={`h-10 w-full rounded-xl text-xs font-black transition-all border-2 ${statusColor} hover:scale-105 active:scale-95 flex items-center justify-center`}
+                          className={`w-10 h-10 rounded-lg border-2 transition-all ${statusColor}`}
+                          onClick={() => setCurrentQuestion(index)}
                         >
                           {index + 1}
                         </button>
                       );
-                    })}
+                    }) : null}
                   </div>
                 </div>
                 
@@ -1401,7 +1460,7 @@ useEffect(() => {
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Answered</span>
                        </div>
-                       <span className="text-xs font-black text-gray-800">{answers.filter(a => a !== null).length}</span>
+                       <span className="text-xs font-black text-gray-800">{Array.isArray(answers) ? answers.filter(a => a !== null).length : 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2.5">

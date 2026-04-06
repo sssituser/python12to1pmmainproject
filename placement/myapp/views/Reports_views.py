@@ -87,5 +87,25 @@ def playground_questions_reports_api(request):
         {"id": 78, "question": "What's 'Waterfall Chart' best for?", "options": ["Visualizing categorical changes summing to a total (e.g. monthly profit changes)", "A waterfall", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "Which visual is best for showing process stages and conversion rates?", "options": ["Funnel Chart", "Line Chart", "Both", "None"], "correct": 0},
         {"id": 80, "question": "What's 'Matrix' visual benefit over a regular Table?", "options": ["Support for subtotals and cross-tabulation in a grouped view", "It is smaller", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'KPI Dashboard'?", "options": ["Visual interface showing key performance indicators", "A dashboard for cars", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Executive Summary'?", "options": ["High-level overview for stakeholders", "A business summary", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Drill-Through'?", "options": ["Navigation to detailed data by clicking on summary elements", "Making holes in data", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Data Storytelling'?", "options": ["Presenting data as narrative with context", "Telling data stories", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Geospatial Analysis'?", "options": ["Analyzing location-based data patterns", "Studying geography", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Predictive Analytics' in reports?", "options": ["Forecasting future trends based on historical data", "Guessing future", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Cohort Analysis'?", "options": ["Grouping users by behavior patterns for insights", "Analyzing groups", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Root Cause Analysis'?", "options": ["Identifying fundamental causes of problems in data", "Finding problems", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Benchmarking' in reports?", "options": ["Comparing performance against standards or competitors", "Testing speed", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'A/B Testing' in reports?", "options": ["Comparing different report versions for effectiveness", "Testing report versions", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Data Quality' assessment?", "options": ["Evaluating accuracy, completeness, and consistency of data", "Checking data quality", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'User Behavior Analytics'?", "options": ["Analyzing how users interact with reports and dashboards", "Studying user actions", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Conversion Funnel'?", "options": ["Visualizing user journey from awareness to action", "A funnel for users", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Heatmap' in reports?", "options": ["Visual showing where users click/scroll most", "A temperature map", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Cohort Retention'?", "options": ["Measuring how well you keep user groups over time", "Keeping groups together", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Churn Analysis'?", "options": ["Analyzing why users leave or stop using service", "Studying user departure", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Lifetime Value' (LTV)?", "options": ["Predicting future revenue from a customer", "Customer lifetime value", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Segmentation' in reports?", "options": ["Dividing users into groups for targeted analysis", "Breaking into segments", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Personalization'?", "options": ["Customizing content based on user preferences", "Making personal", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Multi-variant Testing'?", "options": ["Testing different report versions simultaneously", "Testing multiple versions", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

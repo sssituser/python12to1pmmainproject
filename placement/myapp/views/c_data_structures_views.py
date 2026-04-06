@@ -88,4 +88,4 @@ def playground_questions_c_data_structures_api(request):
         {"id": 79, "question": "What is 'Priority Queue'?", "options": ["A queue where items have priorities and higher priority items are served first", "A regular list", "A security log", "None"], "correct": 0},
         {"id": 80, "question": "Which function is used for getting user input in C?", "options": ["printf()", "scanf()", "put()", "None"], "correct": 1},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

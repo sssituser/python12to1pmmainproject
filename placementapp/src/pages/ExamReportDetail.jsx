@@ -47,8 +47,22 @@ function ExamReportDetail() {
 
   const passed = report.passed;
   const percentage = report.percentage || 0;
-  const questions = report.questions || [];
-  const answers = report.answers || [];
+  let questions = report.questions || [];
+  if (typeof questions === 'string') {
+    try { questions = JSON.parse(questions); } catch(e) { questions = []; }
+  }
+  if (typeof questions === 'string') { 
+    // Double serialized safety
+    try { questions = JSON.parse(questions); } catch(e) { questions = []; }
+  }
+  if (!Array.isArray(questions)) {
+    questions = typeof questions === 'object' && questions !== null ? Object.values(questions) : [];
+  }
+
+  let answers = report.answers || [];
+  if (typeof answers === 'string') {
+    try { answers = JSON.parse(answers); } catch(e) { answers = []; }
+  }
 
   return (
     <div className="container mt-4 pb-5" style={{ maxWidth: "860px" }}>
@@ -102,7 +116,7 @@ function ExamReportDetail() {
       </div>
 
       {/* Question Analysis */}
-      {questions.length > 0 ? (
+      {Array.isArray(questions) && questions.length > 0 ? (
         <div>
           <h5 className="fw-bold mb-3">Question Analysis</h5>
           {questions.map((q, i) => {
@@ -238,31 +252,66 @@ function ExamReportDetail() {
                     })}
                   </div>
 
-                  {/* Footer — Your Answer / Correct Answer */}
-                  <div
-                    className="d-flex justify-content-between align-items-center mt-3 pt-2 pb-3"
-                    style={{ borderTop: "1px solid #e5e7eb", fontSize: "0.9rem" }}
-                  >
-                    <span>
-                      Your Answer:{" "}
-                      <strong style={{ color: isCorrect ? "#10b981" : "#ef4444" }}>
-                        {userAnswerText}
-                      </strong>
-                    </span>
-                    <span>
-                      Correct Answer:{" "}
-                      <strong style={{ color: "#10b981" }}>{correctAnswerText}</strong>
-                    </span>
+                    <div
+                      className="d-flex justify-content-between align-items-center mt-3 pt-2 pb-3"
+                      style={{ borderTop: "1px solid #e5e7eb", fontSize: "0.9rem" }}
+                    >
+                      <span>
+                        Your Answer:{" "}
+                        <strong style={{ color: isCorrect ? "#10b981" : "#ef4444" }}>
+                          {userAnswerText}
+                        </strong>
+                      </span>
+                      <span>
+                        Correct Answer:{" "}
+                        <strong style={{ color: "#10b981" }}>{correctAnswerText}</strong>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
             );
           })}
         </div>
       ) : (
-        <div className="text-center mt-4 text-muted">
-          <p>No question data available for this report.</p>
-          <small>Questions are only available for exams taken after the latest update.</small>
+        <div className="mt-4">
+          <div className="card border-0 shadow-sm overflow-hidden" style={{ borderRadius: "20px" }}>
+             <div className="card-body p-4 p-md-5">
+                <div className="text-center mb-5">
+                   <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="fs-2">📊</span>
+                   </div>
+                   <h3 className="fw-black text-dark mb-2">Performance Summary Analysis</h3>
+                   <p className="text-secondary small max-w-lg mx-auto">
+                      Detailed question breakdown is currently unavailable for this record, but here is your comprehensive performance evaluation based on the overall assessment metrics.
+                   </p>
+                </div>
+
+                <div className="row g-4 mb-5">
+                   <div className="col-md-4">
+                      <div className="p-4 rounded-4 bg-light border text-center h-100">
+                         <div className="text-primary small uppercase font-bold tracking-wider mb-2">Accuracy Rate</div>
+                         <div className="fs-2 fw-black text-dark">{report?.percentage || 0}%</div>
+                         <div className="text-muted tiny mt-1">Based on {report?.total_questions || 50} questions</div>
+                      </div>
+                   </div>
+                   <div className="col-md-4">
+                      <div className="p-4 rounded-4 bg-light border text-center h-100">
+                         <div className="text-success small uppercase font-bold tracking-wider mb-2">Successful Mastery</div>
+                         <div className="fs-2 fw-black text-dark">{report?.correct_answers || 0} Correct</div>
+                         <div className="text-muted tiny mt-1">Validated knowledge points</div>
+                      </div>
+                   </div>
+                   <div className="col-md-4">
+                      <div className="p-4 rounded-4 bg-light border text-center h-100">
+                         <div className="text-danger small uppercase font-bold tracking-wider mb-2">Areas for Growth</div>
+                         <div className="fs-2 fw-black text-dark">{report?.incorrect_answers || 0} Wrong</div>
+                         <div className="text-muted tiny mt-1">Opportunity for review</div>
+                      </div>
+                   </div>
+                </div>
+
+             </div>
+          </div>
         </div>
       )}
     </div>

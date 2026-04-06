@@ -88,5 +88,25 @@ def playground_questions_py_datascience_api(request):
         {"id": 78, "question": "Which command-line tool allows interactive data exploration?", "options": ["IPython", "Jupyter", "Both A and B", "None"], "correct": 2},
         {"id": 79, "question": "What is the result of '1 / 0' in Python?", "options": ["0", "ZeroDivisionError", "Infinity", "None"], "correct": 1},
         {"id": 80, "question": "What is 'Pickle' in Python context?", "options": ["A type of food", "A module used for serializing and de-serializing objects", "Neither", "Both"], "correct": 1},
+        {"id": 81, "question": "What is 'Pickle' in Python context?", "options": ["A type of food", "A module used for serializing and de-serializing objects", "Neither", "Both"], "correct": 1},
+        {"id": 82, "question": "What is 'Matplotlib'?", "options": ["A plotting library for data visualization", "A math library", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Seaborn'?", "options": ["A statistical data visualization library", "A type of fish", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Plotly'?", "options": ["Building interactive, web-based graphs and charts", "Deleting records", "Both", "None"], "correct": 0},
+        {"id": 85, "question": "What is 'Jupyter Notebook'?", "options": ["An interactive web environment for data analysis", "A type of paper", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Pandas'?", "options": ["A library for data manipulation and analysis", "A type of bear", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'NumPy'?", "options": ["A library for numerical computing in Python", "A number library", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Scikit-learn'?", "options": ["Machine learning library for Python", "A learning kit", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'TensorFlow'?", "options": ["Deep learning framework by Google", "A flow of data", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Keras'?", "options": ["High-level neural network API for Python", "A type of fish", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'PyTorch'?", "options": ["Deep learning framework for Python", "A torch for data", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'XGBoost'?", "options": ["Gradient boosting algorithm for structured data", "A type of boost", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'LightGBM'?", "options": ["Gradient boosting framework for efficient training", "A light boosting method", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'CatBoost'?", "options": ["Gradient boosting algorithm that handles categorical features", "A cat boost", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Random Forest'?", "options": ["Ensemble learning method using multiple decision trees", "A forest with random trees", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Support Vector Machine' (SVM)?", "options": ["Classification algorithm finding optimal hyperplane", "A machine for support", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'K-Means'?", "options": ["Unsupervised clustering algorithm", "A clustering method", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'DBSCAN'?", "options": ["Density-based clustering algorithm", "A scanning method", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Hierarchical Clustering'?", "options": ["Building clusters from bottom-up", "A tree-based clustering", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Cross-Validation'?", "options": ["Evaluating model performance on different data splits", "Testing multiple times", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

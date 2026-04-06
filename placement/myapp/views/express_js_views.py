@@ -87,5 +87,25 @@ def playground_questions_expressjs_api(request):
         {"id": 78, "question": "How can you debug Express apps?", "options": ["Using the 'debug' specifically module or console.log", "Using a physical debugger", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What represents specific 'Strict Routing'?", "options": ["Distinguishing specifically between '/path' and '/path/'", "A routing law", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Express.js so popular?", "options": ["Large ecosystem, minimalism, specifically and ease of use for building APIs", "It is old", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'app.mountpath'?", "options": ["Contains one or more path patterns on which a sub-app was mounted", "Path to the mountain", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'app.on('mount')' event?", "options": ["Fired on a sub-app when it is mounted on a parent app", "Fired when app starts", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What does 'req.accepts()' do?", "options": ["Checks if the specified content types are acceptable", "Accepts a user request", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'req.get(field)'?", "options": ["Returns the specified HTTP request header field", "Gets a file", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'req.is(type)'?", "options": ["Checks if the 'Content-Type' header matches the given MIME type", "Checks identity", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'res.append()' used for?", "options": ["Appends the specified value to the HTTP response header field", "Adding to a list", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What does 'res.clearCookie()' do?", "options": ["Clears the cookie specified by name", "Logs out a user", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'res.format()'?", "options": ["Performs content-negotiation on the Accept HTTP header on the request object", "Formats a disk", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'res.links(links)'?", "options": ["Joins the links provided to populate the Link HTTP header field", "Creates HTML links", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'res.location()'?", "options": ["Sets the response Location HTTP header field to the specified path", "Finds user GPS", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What does 'res.type()' do?", "options": ["Sets the Content-Type HTTP header to the MIME type", "Prints text", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'res.vary()'?", "options": ["Adds the field to the Vary response header of the request", "Changes a variable", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "Which middleware handles Favicons?", "options": ["serve-favicon", "icon-handler", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'cookie-session' middleware for?", "options": ["Storing session data in a cookie (client-side)", "Locking cookies", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'method-override' middleware used for?", "options": ["Allowing use of HTTP verbs like PUT or DELETE where the client doesn't support it", "Overriding a function", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "Which of these is a database adapter for Express?", "options": ["Knex.js", "Bookshelf.js", "Neither", "Both"], "correct": 3},
+        {"id": 97, "question": "What is 'express-validator' used for?", "options": ["Server-side data validation", "Validating the server itself", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Passport-Local' strategy?", "options": ["Strategy for authenticating with a username and password", "A travel guide", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "How to handle binary file downloads in Express?", "options": ["res.sendFile() or res.download()", "res.sendBinary()", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'EJS' primarily known for?", "options": ["Using simple JavaScript templates to generate HTML", "A database engine", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 20))})

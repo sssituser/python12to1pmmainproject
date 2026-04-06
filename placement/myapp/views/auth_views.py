@@ -51,22 +51,34 @@ def login(request):
     # Handle student ID login
     if studentId:
         try:
-            # Look up user by student ID through StudentProfile
-            student_profile = StudentProfile.objects.filter(student_id=studentId).first()
+            # 1. Profile Lookup (Primary for Students)
+            student_profile = None
+            if str(studentId).isdigit():
+                student_profile = StudentProfile.objects.filter(student_id=int(studentId)).first()
+            
+            if not student_profile:
+                student_profile = StudentProfile.objects.filter(
+                    Q(user__username__iexact=studentId) | 
+                    Q(user__first_name__iexact=studentId)
+                ).first()
+            
             if student_profile:
                 user = student_profile.user
-                print(f"DEBUG: Found user via student ID: {user.username}")
+                print(f"DEBUG: Found user via StudentProfile: {user.username}")
             else:
-                # Fallback: try to find user with student_id as username
-                user = User.objects.filter(username=studentId, role='student').first()
+                # 2. GLOBAL FALLBACK: Check User table directly (Fix for legacy/incomplete profiles)
+                user = User.objects.filter(Q(username__iexact=studentId) | Q(email__iexact=studentId)).first()
                 if user:
-                    print(f"DEBUG: Found user with student ID as username: {user.username}")
-        except (ValueError, StudentProfile.DoesNotExist):
+                     print(f"DEBUG: Found user via Direct User Lookup: {user.username}")
+        except Exception as e:
+            print(f"DEBUG: Student lookup error: {e}")
             pass
     
-    # Handle regular username/email login
+    # Handle regular username/email login (alternate input name)
     elif username:
-        user = User.objects.filter(Q(username=username) | Q(email=username)).first()
+        user = User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username)).first()
+
+    required_role = request.data.get("role")
 
     if user:
         # 🔐 Verify password FIRST before checking active status
@@ -75,6 +87,17 @@ def login(request):
 
         if not password_valid:
             return Response({"detail": "Invalid credentials"}, status=401)
+            
+        # 🛡️ Role separation check
+        if required_role:
+            user_role = (user.role or "student").lower().strip()
+            req_role = required_role.lower().strip()
+            
+            if req_role == "student" and user_role != "student":
+                return Response({"detail": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
+            
+            if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+                return Response({"detail": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
 
         # ⚡ AUTO-ACTIVATE FACULTY ON CORRECT LOGIN (Fix for stuck accounts)
         if user.role == 'faculty' and not user.is_active:
@@ -209,6 +232,7 @@ def send_otp(request):
 def verify_otp(request):
     identifier = request.data.get("username")
     otp = request.data.get("otp")
+    role = request.data.get("role")
 
     record = OTP.objects.filter(Q(username=identifier) | Q(email=identifier), otp=otp).last()
 
@@ -216,6 +240,17 @@ def verify_otp(request):
         user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
         if not user:
             return Response({"error": "Invalid OTP"}, status=400)
+            
+        # 🛡️ Role separation check
+        if role:
+            user_role = (user.role or "student").lower().strip()
+            req_role = role.lower().strip()
+            
+            if req_role == "student" and user_role != "student":
+                return Response({"error": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
+            
+            if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+                return Response({"error": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
         # ✅ ACTIVATE USER ON SUCCESSFUL OTP
         if not user.is_active:
             user.is_active = True
@@ -291,8 +326,7 @@ def change_password(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    username = request.data.get("username")
-    studentId = request.data.get("studentId")
+    username = request.data.get("username") or request.data.get("studentId")
     password = request.data.get("password")
     email = request.data.get("email", "")
     role = request.data.get("role", "student").strip().lower()
@@ -347,8 +381,13 @@ def register(request):
             else:
                 print(f"DEBUG: Using existing course: {course}")
             
-            student_profile = StudentProfile.objects.create(user=user, course=course_obj)
-            print(f"DEBUG: Created student profile for {username} with course: {course}")
+            # Numeric sync for optimized lookups
+            sp_kwargs = {"user": user, "course": course_obj}
+            if str(username).isdigit():
+                sp_kwargs["student_id"] = int(username)
+                
+            student_profile = StudentProfile.objects.create(**sp_kwargs)
+            print(f"DEBUG: Created student profile for {username} with course: {course} and ID: {sp_kwargs.get('student_id')}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification
@@ -382,12 +421,16 @@ def register(request):
 
     # Student flow (immediate login)
     tokens = get_tokens(user)
+    student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+    course_title = student_profile.course.title if student_profile and student_profile.course else course
+    
     return Response({
         **tokens,
         "user": {
             "username": user.username,
             "email": user.email,
             "role": user.role,
+            "course": course_title if user.role == 'student' else ""
         },
         "message": "Registration successful"
     })

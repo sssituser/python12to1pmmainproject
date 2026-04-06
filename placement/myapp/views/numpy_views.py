@@ -89,4 +89,4 @@ def playground_questions_numpy_api(request):
         {"id": 79, "question": "Which function allows generating a random integer array?", "options": ["np.random.randint()", "np.random.rand()", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is 'Universal Function' (ufunc) in NumPy?", "options": ["A function that operates on ndarrays element-by-element", "Functions for UI", "Both", "None"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

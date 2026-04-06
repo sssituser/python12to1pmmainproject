@@ -11,17 +11,21 @@ from .views.profile_views import profile_view, update_profile, upload_resume, fa
 from .views.leave_views import get_all_leave_requests, create_leave_request, get_leave_request, approve_leave_request, reject_leave_request, delete_leave_request, my_leave_requests
 from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions
 from .views.playground_views import create_playground, get_playground, delete_playground
-from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, CreateSampleApplicationsView
-from .views.python_views import playground_questions_api, run_code_api, exam_reports_api, exam_report_detail_api, save_exam_report_api, delete_exam_report_api, weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, exam_settings_api, leaderboard_api, user_combined_results_api
+from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet
+from .views.python_views import (
+    playground_questions_api, run_code_api, exam_reports_api, 
+    exam_report_detail_api, save_exam_report_api, delete_exam_report_api, 
+    weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, 
+    exam_settings_api, leaderboard_api, toggle_student_active, user_combined_results_api
+)
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
 from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
-
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
 router.register(r'applied-jobs', AppliedJobViewSet, basename='applied-job')
-router.register(r'admin-jobs', AdminJobViewSet, basename='admin-job')
+router.register(r'admin/jobs', AdminJobViewSet, basename='admin-job')
 router.register(r'faculty-applications', FacultyApplicationsViewSet, basename='faculty-application')
 router.register(r'courses', CourseViewSet, basename='courses')
 
@@ -39,8 +43,6 @@ urlpatterns = [
     path("send_otp/", send_otp),
     path("verify_otp/", verify_otp),
     
-    # Sample data
-    path('create-sample-applications/', CreateSampleApplicationsView.as_view(), name='create-sample-applications'),
     
     # Profile URLs
     path('profile/', profile_view, name='profile'),
@@ -77,14 +79,19 @@ urlpatterns = [
     # Daily Exam System URLs
     path('exam-reports/', exam_reports_api),
     path('exam-reports/<int:pk>/', exam_report_detail_api),
+    path('exam-report-detail/<int:pk>/', exam_report_detail_api),
     path('exam-reports/save/', save_exam_report_api),
+    path('save-exam-report/', save_exam_report_api),
     path('exam-reports/delete/<int:pk>/', delete_exam_report_api),
     path('exam-reports/weekly/', weekly_exam_reports_api),
     path('exam-reports/monthly/', monthly_exam_reports_api),
     path('exam-reports/daily/', exam_reports_api),  # Daily exam reports
     path('all-exam-results/', exam_reports_api),  # For Dashboard.jsx compatibility
     path('exam-questions/', exam_questions_api),
+    path('user-combined-results/', user_combined_results_api),
+    path('all-exam-results/', user_combined_results_api),
     path('exam-settings/', exam_settings_api),
+    path('admin/exam-settings/', exam_settings_api),
     path('leaderboard/', leaderboard_api),
     
     # Dashboard and Student URLs
@@ -128,4 +135,12 @@ urlpatterns = [
     # Test endpoints
     path('test-faculty-profile/', lambda request: JsonResponse({'message': 'Test endpoint working'}), name='test_faculty_profile'),
     path('test-faculty-minimal/', faculty_profile_minimal_test, name='test_faculty_minimal'),
+    
+    # Dashboard Stats & Student Management
+    path('dashboard-stats/', dashboard_stats_api, name='dashboard_stats'),
+    path('student-stats/', student_stats_api, name='student_stats'),
+    path('students/toggle-active/<int:pk>/', toggle_student_active, name='toggle_student_active'),
+    
+    # Generic Students list (fallback for frontend)
+    path('students/', student_stats_api, name='students_list'),
 ]

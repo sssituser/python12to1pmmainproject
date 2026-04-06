@@ -47,36 +47,55 @@ def playground_questions_react_api(request):
         {"id": 34, "question": "Which hook to read search params in React Router v6.4+?", "options": ["useSearchParams", "useQuery", "useParams", "useHash"], "correct": 0},
         {"id": 35, "question": "How to lazy load routes in React Router v6?", "options": ["lazy() + createBrowserRouter", "Switch + loadable", "Suspense only", "Redirect"], "correct": 0},
         {"id": 36, "question": "What prop enables fragments with key?", "options": ["key on <></>", "Use <React.Fragment key='k'>", "Cannot key fragments", "data-key"], "correct": 1},
-        {"id": 37, "question": "What API batches state updates in React 18 by default?", "options": ["unstable_batchedUpdates", "Automatic batching", "flushSync", "setImmediate"], "correct": 1},
-        {"id": 38, "question": "What is recommended way to focus an input?", "options": ["document.querySelector", "useRef + ref.current.focus()", "window.focus()", "querySelectorAll"], "correct": 1},
-        {"id": 39, "question": "Which hook is best for debounced input filtering?", "options": ["useEffect + setTimeout", "useRef only", "useTransition only", "useLayoutEffect only"], "correct": 0},
-        {"id": 40, "question": "What does flushSync do?", "options": ["Defers updates", "Forces sync render before browser paint", "Cancels updates", "Hydrates server HTML"], "correct": 1},
-        {"id": 41, "question": "How to share logic without rendering UI?", "options": ["Render props", "Custom hooks", "CSS Modules", "Portals"], "correct": 1},
-        {"id": 42, "question": "What hook to read current location in Router v6?", "options": ["useHistory", "useLocation", "useRouter", "useRoute"], "correct": 1},
-        {"id": 43, "question": "Which component wraps suspenseful routes in Router v6?", "options": ["Await", "Suspense", "RouteGuard", "Switch"], "correct": 1},
-        {"id": 44, "question": "What is tree shaking aided by in React builds?", "options": ["CommonJS", "ES modules", "Global vars", "Inline scripts"], "correct": 1},
-        {"id": 45, "question": "Best practice for list keys when using UUID per render?", "options": ["Good", "Avoid—causes remount", "Required", "Doesn't matter"], "correct": 1},
-        {"id": 46, "question": "How to run effect only once on mount?", "options": ["No deps array", "Empty deps array", "[state]", "return inside effect"], "correct": 1},
-        {"id": 47, "question": "What hook to read media query matches?", "options": ["useMediaQuery custom hook", "useRef", "useParams", "useLocation"], "correct": 0},
-        {"id": 48, "question": "What does useCallback memoize?", "options": ["Values", "Functions", "Components", "Refs"], "correct": 1},
-        {"id": 49, "question": "Which hook to sync state with localStorage?", "options": ["useLocalStorage custom hook", "useSyncExternalStore", "useEffect only", "useRef"], "correct": 0},
-        {"id": 50, "question": "How to prevent component from rendering until data is ready?", "options": ["Return null until ready", "Force render", "Use document.write", "Only class components"], "correct": 0},
+        {"id": 51, "question": "What is 'JSX' abbreviated for?", "options": ["JavaScript XML", "Java Syntax Extension", "Neither", "Both"], "correct": 0},
+        {"id": 52, "question": "What is 'Virtual DOM'?", "options": ["A lightweight copy of the real DOM", "A slow DOM", "Neither", "Both"], "correct": 0},
+        {"id": 53, "question": "What is 'State' in React?", "options": ["Mutable local data of a component", "Fixed props", "Neither", "Both"], "correct": 0},
+        {"id": 54, "question": "What is 'Props' in React?", "options": ["Immutable inputs passed to components", "Local state", "Neither", "Both"], "correct": 0},
+        {"id": 55, "question": "What is 'Stateless' component?", "options": ["Functional component with no local state", "A broken component", "Neither", "Both"], "correct": 0},
+        {"id": 56, "question": "What is 'Pure Component' in class React?", "options": ["Component that only re-renders if props/state change", "A math function", "Neither", "Both"], "correct": 0},
+        {"id": 57, "question": "What is 'Synthetic Event'?", "options": ["A cross-browser wrapper around native events", "A fake event", "Neither", "Both"], "correct": 0},
+        {"id": 58, "question": "What is 'Lift State Up'?", "options": ["Moving state to common ancestor to share it", "Deleting state", "Neither", "Both"], "correct": 0},
+        {"id": 59, "question": "What is 'React Fiber'?", "options": ["The core reconciliation engine for React", "A types of cable", "Neither", "Both"], "correct": 0},
+        {"id": 60, "question": "What is 'React Router'?", "options": ["Library for handling navigation in React", "A hardware router", "Neither", "Both"], "correct": 0},
+        {"id": 61, "question": "What is 'NavLink' vs 'Link'?", "options": ["NavLink adds active styling; Link is basic", "They are same", "Neither", "Both"], "correct": 0},
+        {"id": 62, "question": "What is 'Higher Order Component (HOC)'?", "options": ["Function that takes a component and returns a new one", "A tall component", "Neither", "Both"], "correct": 0},
+        {"id": 63, "question": "What is 'Render Prop' pattern?", "options": ["Sharing logic by passing a function as a prop", "A stage prop", "Neither", "Both"], "correct": 0},
+        {"id": 64, "question": "What is 'React.lazy' used for?", "options": ["Code splitting and deferred loading", "Lazy developers", "Neither", "Both"], "correct": 0},
+        {"id": 65, "question": "What is 'Suspense' boundary?", "options": ["Shows fallback UI while child components load", "A thriller movie", "Neither", "Both"], "correct": 0},
+        {"id": 66, "question": "What is 'Reconciliation'?", "options": ["Process of updating the DOM to match state", "Making up after a fight", "Neither", "Both"], "correct": 0},
+        {"id": 67, "question": "What is 'Key' prop for?", "options": ["Helping React identify which items changed in a list", "Opening a lock", "Neither", "Both"], "correct": 0},
+        {"id": 68, "question": "What is 'Error Boundary'?", "options": ["Catches errors in descendant components", "A wall", "Neither", "Both"], "correct": 0},
+        {"id": 69, "question": "What is 'Profiler' component?", "options": ["Utility to measure performance of a React tree", "A social page", "Neither", "Both"], "correct": 0},
+        {"id": 70, "question": "What is 'ForwardRef'?", "options": ["Passing refs through components to children", "Forward thinking", "Neither", "Both"], "correct": 0},
+        {"id": 71, "question": "What is 'useId' hook?", "options": ["Generates stable unique IDs for child elements", "A login hook", "Neither", "Both"], "correct": 0},
+        {"id": 72, "question": "What is 'useTransition' hook?", "options": ["Marks updates as non-urgent transitions", "A fade effect", "Neither", "Both"], "correct": 0},
+        {"id": 73, "question": "What is 'useDeferredValue' hook?", "options": ["Defers updating a value to avoid blocking UI", "Waiting for data", "Neither", "Both"], "correct": 0},
+        {"id": 74, "question": "What is 'useSyncExternalStore'?", "options": ["Hook for subscribing to external state stores safely", "Buying things", "Neither", "Both"], "correct": 0},
+        {"id": 75, "question": "What is 'Redux' in React?", "options": ["State management library focused on global store", "A color", "Neither", "Both"], "correct": 0},
+        {"id": 76, "question": "What is 'Action' in Redux?", "options": ["Plain object describing a state change", "A movie genre", "Neither", "Both"], "correct": 0},
+        {"id": 77, "question": "What is 'Reducer' in Redux?", "options": ["Function that determines next state based on action", "A plumber", "Neither", "Both"], "correct": 0},
+        {"id": 78, "question": "What is 'Store' in Redux?", "options": ["Central repository for application state", "A shop", "Neither", "Both"], "correct": 0},
+        {"id": 79, "question": "What is 'Dispatch' in Redux?", "options": ["Sending an action to the store", "A message", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "What is 'MobX'?", "options": ["Alternative state management using observability", "A game", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Zustand'?", "options": ["Minimalist state management for React", "German bread", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'React Query' (TanStack Query)?", "options": ["Library for managing server-state and fetching", "A database query", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Axios'?", "options": ["Promise-based HTTP client for browser and node", "The earth's axis", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Fetch API'?", "options": ["Native browser way to make network requests", "Playing with a dog", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Strict Mode'?", "options": ["Development tool highlighting potential problems", "A tough teacher", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Hydration Error'?", "options": ["Mismatch between server and client HTML in SSR", "No water", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Next.js'?", "options": ["React framework for production with SSR/SSG", "The next version", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Server Side Rendering (SSR)'?", "options": ["Rendering HTML on the server per request", "Cooking food", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Static Site Generation (SSG)'?", "options": ["Rendering HTML at build time", "Printing a book", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'API Route' in Next.js?", "options": ["Writing backend code inside Next.js", "A map", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Gatsby'?", "options": ["React framework focused on high-performance static sites", "A rich person", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Vite'?", "options": ["Fast build tool and dev server (replacement for Webpack)", "French for quick", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Webpack'?", "options": ["Module bundler for complex JS applications", "Packing boxes", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Babel'?", "options": ["Compiler that transforms modern JS to backward compatible", "A tower", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'NPM'?", "options": ["Node Package Manager", "New Paper Music", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Yarn'?", "options": ["Alternative package manager for NPM", "Knitting string", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'CRA' (Create React App)?", "options": ["Legacy CLI for starting React projects", "A car", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Storybook'?", "options": ["Environment for building and testing UI components in isolation", "A children's book", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Enzyme'?", "options": ["Testing utility for React (mostly legacy class testing)", "A biological tool", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'React Testing Library (RTL)'?", "options": ["Modern testing focused on user interactions", "A reading room", "Neither", "Both"], "correct": 0},
     ]
-
-    # Ensure at least 50 questions; pad if needed
-    target = 50
-    if len(questions_pool) < target:
-        base = questions_pool.copy()
-        while len(questions_pool) < target:
-            clone = base[len(questions_pool) % len(base)].copy()
-            clone["id"] = len(questions_pool) + 1
-            questions_pool.append(clone)
-
-    selected = random.sample(questions_pool, target)
-    for idx, q in enumerate(selected):
-        q["id"] = idx + 1
-
-    return Response({
-        "success": True,
-        "data": selected
-    })
+    return Response({'success': True, 'data': random.sample(questions_pool, 25)})

@@ -88,4 +88,4 @@ def playground_questions_penetrationtesting_api(request):
         {"id": 79, "question": "What's 'Spyware'?", "options": ["Software designed to secretly gather info specifically from a device", "Taking photos of people", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Pen-testing vital for modern businesses?", "options": ["Enables proactive identification of security gaps specifically to protect data", "Increases social media presence", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -89,4 +89,4 @@ def playground_questions_ec2s3_api(request):
         {"id": 79, "question": "Which of these is a typical EC2 status check?", "options": ["System Status Check", "Instance Status Check", "Both A and B", "Neither"], "correct": 2},
         {"id": 80, "question": "What is the primary benefit of pay-as-you-go model for EC2?", "options": ["No upfront cost and ability to scale down anytime", "Having many servers for free", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

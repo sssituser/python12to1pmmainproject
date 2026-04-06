@@ -88,5 +88,25 @@ def playground_questions_spring_api(request):
         {"id": 78, "question": "What is 'Jackson' in Spring context?", "options": ["A famous person name", "The default library used to convert Java objects to/from JSON", "None", "None"], "correct": 1},
         {"id": 79, "question": "Which status code represents 'OK' for a successful request?", "options": ["200", "404", "500", "201"], "correct": 0},
         {"id": 80, "question": "Which status code represents 'Not Found'?", "options": ["404", "401", "400", "500"], "correct": 0},
+        {"id": 81, "question": "What is '@SpringBootApplication'?", "options": ["Annotation marking main class as Spring Boot app", "Spring application boot", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Spring Data JPA'?", "options": ["ORM framework for database operations", "Java persistence API", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Spring Security'?", "options": ["Framework for authentication and authorization", "Security for Spring apps", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Spring AOP'?", "options": ["Aspect-oriented programming for cross-cutting concerns", "Advanced Spring programming", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Spring Cloud'?", "options": ["Set of tools for cloud-native applications", "Spring in the cloud", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Spring Batch'?", "options": ["Framework for batch processing", "Processing in batches", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Spring Integration'?", "options": ["Pattern for integrating enterprise systems", "Integrating systems", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Spring WebSocket'?", "options": ["WebSocket support in Spring", "Web socket for Spring", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Spring Kafka'?", "options": ["Integration with Apache Kafka", "Kafka for Spring", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Spring GraphQL'?", "options": ["GraphQL support in Spring", "GraphQL for Spring", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Spring WebFlux'?", "options": ["Reactive web framework", "Web flux for Spring", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Spring Retry'?", "options": ["Mechanism for retrying failed operations", "Trying again", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Spring Circuit Breaker'?", "options": ["Pattern for preventing cascading failures", "Breaking circuits", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Spring Sleuth'?", "options": ["Distributed tracing for Spring applications", "Investigating Spring apps", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Spring Config'?", "options": ["External configuration management", "Spring configuration", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Spring Profile'?", "options": ["Environment-specific configuration", "Spring user profiles", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Spring Actuator'?", "options": ["Production-ready features for monitoring apps", "Spring monitoring", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Spring Native'?", "options": ["Compile-time configuration processor", "Native Spring apps", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Spring Shell'?", "options": ["Interactive shell for Spring applications", "Command line for Spring", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Spring Roo'?", "options": ["RAD tool for Spring development", "A kangaroo tool", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

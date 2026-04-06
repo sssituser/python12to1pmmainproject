@@ -89,4 +89,4 @@ def playground_questions_excel_api(request):
         {"id": 79, "question": "How can you view formulas instead of values in every cell?", "options": ["Ctrl + ` (Backtick)", "Ctrl + F", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What is the primary benefit of MS Excel?", "options": ["Providing powerful tools for advanced data analysis and organization effortlessly", "Having more TV channels", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -88,4 +88,4 @@ def playground_questions_generativeai_api(request):
         {"id": 79, "question": "What represents 'Style Transfer'?", "options": ["Applying the artistic style specifically of one image to another using AI", "A fashion brand", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Generative AI transforming industries?", "options": ["By automating content creation specifically and enhancing human creativity", "Because it is expensive", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

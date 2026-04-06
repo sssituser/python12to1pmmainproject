@@ -86,5 +86,25 @@ def playground_questions_selenium_api(request):
         {"id": 78, "question": "Which constant is used for 'ChromeOptions'?", "options": ["Setting flags like --incognito or --headless for Chrome", "Chrome speed", "Neither", "Both"], "correct": 0},
         {"id": 79, "question": "What is 'WebDriverManager' tool (by Boni Garcia)?", "options": ["Automatically managing browser driver executables without manual setup", "A list of users", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Selenium preferred over manual testing for regression?", "options": ["Ensuring that old features still work correctly after changes efficiently", "It's free", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Selenium Grid'?", "options": ["Parallel test execution across multiple machines", "A grid of selenium", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Selenium IDE'?", "options": ["Integrated development environment for Selenium", "Selenium programming environment", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Page Object Model' (POM)?", "options": ["Design pattern representing web pages as objects", "A model of web pages", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Data-Driven Testing'?", "options": ["Using external data sources for test inputs", "Testing with data", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Keyword-Driven Testing'?", "options": ["Using keywords to identify test objects", "Testing with keywords", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Behavior-Driven Testing'?", "options": ["Testing based on user behavior patterns", "Testing behavior", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Cross-Browser Testing'?", "options": ["Ensuring compatibility across different browsers", "Testing multiple browsers", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Headless Browser Testing'?", "options": ["Running tests without GUI", "Testing without heads", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Visual Testing'?", "options": ["Validating visual appearance and layout", "Testing visuals", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'API Testing' with Selenium?", "options": ["Testing REST APIs and web services", "Testing APIs", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Mobile Testing' with Selenium?", "options": ["Testing on mobile devices and browsers", "Testing mobile apps", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Performance Testing'?", "options": ["Measuring application speed and resource usage", "Testing speed", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Accessibility Testing'?", "options": ["Testing for users with disabilities", "Testing access", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Localization Testing'?", "options": ["Testing in different languages and regions", "Testing locations", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Security Testing'?", "options": ["Finding vulnerabilities and security flaws", "Testing security", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Regression Testing'?", "options": ["Re-testing after changes to ensure no new bugs", "Testing again", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Integration Testing'?", "options": ["Testing how components work together", "Testing parts", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'End-to-End Testing'?", "options": ["Testing complete user workflows", "Testing everything", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Continuous Testing'?", "options": ["Automated testing throughout development lifecycle", "Testing continuously", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Test Reporting'?", "options": ["Documenting and communicating test results", "Writing test reports", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

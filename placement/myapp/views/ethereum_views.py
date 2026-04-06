@@ -88,4 +88,4 @@ def playground_questions_ethereum_api(request):
         {"id": 79, "question": "What represents specific 'Slippage'?", "options": ["The difference specifically between expected and actual execution price of a trade", "Slipping on ice", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "Why is Ethereum called the 'World Computer'?", "options": ["Because it provides specifically a global, decentralized platform for computation", "Because it is huge", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

@@ -89,4 +89,4 @@ def playground_questions_jdbc_api(request):
         {"id": 79, "question": "Which API should you generally use in modern Java applications instead of raw JDBC for big projects?", "options": ["Spring Data JPA / Hibernate", "Raw SQL only", "None", "None"], "correct": 0},
         {"id": 80, "question": "What is 'Database Connection URI'?", "options": ["Another name for the JDBC URL", "A server address", "None of the above", "None"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

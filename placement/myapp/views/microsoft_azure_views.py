@@ -88,4 +88,4 @@ def playground_questions_azure_api(request):
         {"id": 79, "question": "What's 'Azure Service Health' for?", "options": ["Providing localized dashboard updates on the status and issues with your services", "A medical report", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What's the primary benefit of choosing Azure for companies already using Microsoft tools?", "options": ["Seamless integration with Windows, Office 365, and Active Directory", "Having more servers", "Neither", "Both"], "correct": 0},
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

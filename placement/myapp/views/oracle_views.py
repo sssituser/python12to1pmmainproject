@@ -56,16 +56,54 @@ def playground_questions_oracle_api(request):
         {"id": 47, "question": "What does this Oracle query exactly do?\nSELECT * FROM employees WHERE ROWNUM <= 5;", "options": ["Fetches the top 5 employees by salary", "Fetches the first 5 records retrieved by the database", "Throws a syntax error", "Fetches rows older than 5 days"], "correct": 1},
         {"id": 48, "question": "What will be the output of this query?\nSELECT NVL(NULL, 'Default Data') FROM dual;", "options": ["NULL", "Default Data", "Error", "0"], "correct": 1},
         {"id": 49, "question": "In Oracle, what is the output of the following string query?\nSELECT SUBSTR('Database', 1, 4) FROM dual;", "options": ["Data", "base", "Daba", "atab"], "correct": 0},
-        {"id": 50, "question": "What does the following SQL achieve?\nSELECT dept_id, count(*) FROM employees GROUP BY dept_id HAVING count(*) > 5;", "options": ["Returns all departments", "Returns departments with exactly 5 employees", "Returns departments with more than 5 employees", "Returns the top 5 departments"], "correct": 2},
+        {"id": 51, "question": "What is 'Dual' table in Oracle?", "options": ["A special one-row, one-column table used for expressions", "A mirror table", "Neither", "Both"], "correct": 0},
+        {"id": 52, "question": "What is 'Rowid' in Oracle?", "options": ["The physical address of a row in a table", "The row number", "Neither", "Both"], "correct": 0},
+        {"id": 53, "question": "What is 'Rownum' in Oracle?", "options": ["A pseudocolumn that numbers result rows", "A physical ID", "Neither", "Both"], "correct": 0},
+        {"id": 54, "question": "What is 'Tablespace'?", "options": ["A logical storage container for database objects", "Space in a table", "Neither", "Both"], "correct": 0},
+        {"id": 55, "question": "What is 'Datafile'?", "options": ["A physical file that stores database data on disk", "A text file", "Neither", "Both"], "correct": 0},
+        {"id": 56, "question": "What is 'Control File'?", "options": ["File that stores physical structure and state of database", "A remote control", "Neither", "Both"], "correct": 0},
+        {"id": 57, "question": "What is 'Redo Log'?", "options": ["Files that record all changes to database for recovery", "A checklist", "Neither", "Both"], "correct": 0},
+        {"id": 58, "question": "What is 'Archive Log'?", "options": ["Stored copies of old redo logs", "A history book", "Neither", "Both"], "correct": 0},
+        {"id": 60, "question": "What is 'SGA' (System Global Area)?", "options": ["Shared memory area for database processes", "A global map", "Neither", "Both"], "correct": 0},
+        {"id": 61, "question": "What is 'PGA' (Program Global Area)?", "options": ["Private memory area for a single process", "Public memory", "Neither", "Both"], "correct": 0},
+        {"id": 62, "question": "What is 'Listener' in Oracle?", "options": ["A background process that listens for client connections", "A person", "Neither", "Both"], "correct": 0},
+        {"id": 63, "question": "What is 'TNS' (Transparent Network Substrate)?", "options": ["Oracle's networking architecture", "A lens", "Neither", "Both"], "correct": 0},
+        {"id": 64, "question": "What is 'Oracle Home'?", "options": ["The directory where Oracle software is installed", "Owner's house", "Neither", "Both"], "correct": 0},
+        {"id": 65, "question": "What is 'SID' (System ID)?", "options": ["Unique identifier for an Oracle instance", "Student ID", "Neither", "Both"], "correct": 0},
+        {"id": 66, "question": "What is 'Flashback' in Oracle?", "options": ["Utility to view or restore past states of data", "A bright light", "Neither", "Both"], "correct": 0},
+        {"id": 67, "question": "What is 'Data Pump'?", "options": ["High-speed utility for exporting/importing data", "A physical pump", "Neither", "Both"], "correct": 0},
+        {"id": 68, "question": "What is 'RMAN' (Recovery Manager)?", "options": ["Primary tool for database backup and recovery", "A superhero", "Neither", "Both"], "correct": 0},
+        {"id": 69, "question": "What is 'ASM' (Automatic Storage Management)?", "options": ["Oracle's volume manager and file system", "Manual storage", "Neither", "Both"], "correct": 0},
+        {"id": 70, "question": "What is 'Materialized View'?", "options": ["A view whose results are physically stored in a table", "A virtual view", "Neither", "Both"], "correct": 0},
+        {"id": 71, "question": "What is 'Synonym' in Oracle?", "options": ["An alias for a database object", "A similar word", "Neither", "Both"], "correct": 0},
+        {"id": 72, "question": "What is 'Partitioning'?", "options": ["Dividing large tables into smaller, more manageable pieces", "Splitting code", "Neither", "Both"], "correct": 0},
+        {"id": 73, "question": "What is 'Range Partitioning'?", "options": ["Dividing data based on a range of values (e.g. date)", "Picking a random range", "Neither", "Both"], "correct": 0},
+        {"id": 74, "question": "What is 'List Partitioning'?", "options": ["Dividing data based on a specific list of values", "A list of items", "Neither", "Both"], "correct": 0},
+        {"id": 75, "question": "What is 'Hash Partitioning'?", "options": ["Dividing data using a hashing algorithm", "Scrambling data", "Neither", "Both"], "correct": 0},
+        {"id": 76, "question": "What is 'Global Index'?", "options": ["An index that covers the entire table (all partitions)", "A world index", "Neither", "Both"], "correct": 0},
+        {"id": 77, "question": "What is 'Local Index'?", "options": ["An index that is partitioned identically to the table", "A nearby index", "Neither", "Both"], "correct": 0},
+        {"id": 78, "question": "What is 'Constraint' in Oracle?", "options": ["Rule applied to columns (Primary Key, Unique, etc.)", "A tight space", "Neither", "Both"], "correct": 0},
+        {"id": 79, "question": "What is 'Check Constraint'?", "options": ["Ensures values in a column meet a boolean condition", "Checking a box", "Neither", "Both"], "correct": 0},
+        {"id": 80, "question": "What is 'Self-Referencing' Foreign Key?", "options": ["A foreign key that points to the same table's primary key", "Talking to yourself", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'B-Tree Index'?", "options": ["Balanced tree index used for normal lookups", "A literal tree", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Bitmap Index'?", "options": ["Index used for columns with low cardinality (few distinct values)", "A picture", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Clustered Table'?", "options": ["Tables that share blocks based on a common key", "Messy tables", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'IOT' (Index Organized Table)?", "options": ["A table where rows are stored in B-Tree index structure", "Internet of Things", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'LOB' (Large Object)?", "options": ["Data type for large unstructured data (BLOB, CLOB)", "A lob in tennis", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'BLOB'?", "options": ["Binary Large Object (images, video)", "A mess", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'CLOB'?", "options": ["Character Large Object (long text)", "A club icon", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'EXPLAIN PLAN'?", "options": ["Shows the execution path the database will take for a query", "Talking to users", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Optimizer' in Oracle?", "options": ["Subsystem that determines the most efficient way to run SQL", "A math tool", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Hint' in Oracle SQL?", "options": ["Instructions passed to the optimizer", "A clue", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'TKPROF'?", "options": ["Tool for formatting trace files", "A professor", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'V$Views'?", "options": ["Dynamic performance views in Oracle", "Visual views", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'DBA_Views'?", "options": ["Data dictionary views for all objects in the database", "Admin views", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Grant' command?", "options": ["Used to give permissions to users", "A person's name", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Roles' in Oracle?", "options": ["Named groups of related privileges", "Acting parts", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Profile' in Oracle?", "options": ["Used to limit resources (CPU, idle time) per user", "A social page", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'PFILE' vs 'SPFILE'?", "options": ["PFILE is text-based; SPFILE is binary and persistent", "They are same", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'In-Memory Column Store'?", "options": ["Oracle feature that stores data in columnar format in SGA", "Storage in brain", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Multi-tenant Architecture'?", "options": ["Consolidated database (CDB) with multiple pluggable databases (PDBs)", "Multiple houses", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Oracle GoldenGate'?", "options": ["Real-time data integration and replication software", "A golden gate", "Neither", "Both"], "correct": 0},
     ]
-
-    theoretical_questions = questions_pool[:45]
-    practical_questions = questions_pool[45:50]
-    
-    selected_questions = random.sample(theoretical_questions, 15) + practical_questions
-    random.shuffle(selected_questions)
-    
-    return Response({
-        'success': True,
-        'data': selected_questions
-    })
+    return Response({'success': True, 'data': random.sample(questions_pool, 25)})

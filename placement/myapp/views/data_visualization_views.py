@@ -88,5 +88,25 @@ def playground_questions_data_visualization_api(request):
         {"id": 78, "question": "Which chart type is best for showing parts of a whole?", "options": ["Pie Chart", "Stacked Bar Chart", "Both", "None"], "correct": 2},
         {"id": 79, "question": "What is 'Correlation matrix' visualization?", "options": ["Typically shown as a colored Heatmap showing relationship between multiple variables", "A list of strings", "Neither", "Both"], "correct": 0},
         {"id": 80, "question": "What's 'Mapbox' used for in custom visualizations?", "options": ["Building detailed and interactive web maps", "Drawing a circle", "Neither", "Both"], "correct": 0},
+        {"id": 81, "question": "What is 'Bokeh'?", "options": ["Interactive visualization library for web applications", "A type of plant", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Plotly'?", "options": ["Web-based visualization library", "Online plotting", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Dash'?", "options": ["Python framework for analytical web apps", "Dashboard framework", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Streamlit'?", "options": ["Python library for data apps", "Streaming data", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Altair'?", "options": ["Declarative statistical visualization library", "A star constellation", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'D3.js'?", "options": ["JavaScript library for data-driven documents", "Data documents", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'Tableau'?", "options": ["Business intelligence and visualization platform", "A type of board", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'Power BI'?", "options": ["Microsoft business analytics tool", "Powerful BI", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'Grafana'?", "options": ["Open-source monitoring and visualization platform", "Graphing tool", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Kibana'?", "options": ["Visualization tool for Elasticsearch", "Data analysis tool", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Superset'?", "options": ["Open-source business intelligence platform", "Super set", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Looker'?", "options": ["Data platform for business intelligence", "Looking tool", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Data Storytelling'?", "options": ["Presenting data as narrative", "Telling data stories", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Heatmap'?", "options": ["Color-coded matrix visualization", "Hot map visualization", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Choropleth Map'?", "options": ["Thematic map with shaded regions", "Map with colors", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Sankey Diagram'?", "options": ["Flow diagram showing proportional relationships", "Diagram of flows", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Tree Map'?", "options": ["Hierarchical data visualization", "Map of trees", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Network Graph'?", "options": ["Visualization of relationships and connections", "Graph of networks", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Geospatial Visualization'?", "options": ["Mapping and analyzing location-based data", "Visualizing geography", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Interactive Dashboard'?", "options": ["Dynamic visualization with user controls", "Interactive dashboard", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

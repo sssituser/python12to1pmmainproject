@@ -5,5 +5,88 @@
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45
+    },
+    "Python Full Stack_Weekly": {
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "zcbnmb,nmmn,mbvxcfdfnm,",
+                "options": [
+                    "zcbxvnbm,m.",
+                    "xvzcbxvnbmn,m",
+                    "xzcbvnbmv",
+                    "fzgvcbmn,b"
+                ],
+                "answer": "xvzcbxvnbmn,m",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775394955465
+            },
+            {
+                "type": "mcq",
+                "question": "sdafsdgfhgjhkjlk.,vcmxnz",
+                "options": [
+                    "dafszgdhfxjgkh/,",
+                    "xzdafsgdhfjgkh.",
+                    "gfadfsgdfhgjkh,.",
+                    "xaesgdhfjgkh."
+                ],
+                "answer": "dafszgdhfxjgkh/,",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775397878914
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 2,
+        "duration": 1
+    },
+    ".net Full Stack_Weekly": {
+        "maxQuestions": 50,
+        "questions": [],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
+    },
+    "Java Full Stack_Weekly": {
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "asdsfdghjhghfgdsdsa",
+                "options": [
+                    "SADSFDGFHG",
+                    "Sadsfdgfh",
+                    "dsfdgfhgjh",
+                    "SADSFDGF"
+                ],
+                "answer": "SADSFDGF",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775411014298
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 1,
+        "duration": 1
     }
 }

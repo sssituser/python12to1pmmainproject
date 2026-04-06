@@ -88,5 +88,25 @@ def playground_questions_datamodeling_api(request):
         {"id": 78, "question": "What's 'Blank' in DAX context?", "options": ["Equivalent to Null in SQL representing no value", "A zero", "A space", "None"], "correct": 0},
         {"id": 79, "question": "What's 'Data Redundancy' problem?", "options": ["Storing same information multiple times wasting space and causing sync issues", "Repeating files", "Both", "None"], "correct": 0},
         {"id": 80, "question": "What is the primary tool for Data Modeling in Microsoft ecosystem?", "options": ["Power BI", "Excel Power Pivot", "Analysis Services", "All of the above"], "correct": 3},
+        {"id": 81, "question": "What is 'Star Schema'?", "options": ["Schema design for data warehousing", "Star schema", "Neither", "Both"], "correct": 0},
+        {"id": 82, "question": "What is 'Snowflake Schema'?", "options": ["Schema design for cloud data warehouse", "Snowflake schema", "Neither", "Both"], "correct": 0},
+        {"id": 83, "question": "What is 'Fact Table'?", "options": ["Table containing business metrics", "Table of facts", "Neither", "Both"], "correct": 0},
+        {"id": 84, "question": "What is 'Dimension Table'?", "options": ["Table containing descriptive attributes", "Table of dimensions", "Neither", "Both"], "correct": 0},
+        {"id": 85, "question": "What is 'Bridge Table'?", "options": ["Table linking fact and dimension tables", "Bridge between tables", "Neither", "Both"], "correct": 0},
+        {"id": 86, "question": "What is 'Data Mart'?", "options": ["Subset of data warehouse for specific department", "Market for data", "Neither", "Both"], "correct": 0},
+        {"id": 87, "question": "What is 'OLAP' vs 'OLTP'?", "options": ["Online analytical processing vs online transaction processing", "Analysis vs transactions", "Neither", "Both"], "correct": 0},
+        {"id": 88, "question": "What is 'ETL' process?", "options": ["Extract, Transform, Load", "Electronic transfer load", "Neither", "Both"], "correct": 0},
+        {"id": 89, "question": "What is 'ELT' process?", "options": ["Extract, Load, Transform", "Electronic load transform", "Neither", "Both"], "correct": 0},
+        {"id": 90, "question": "What is 'Data Lake'?", "options": ["Centralized repository for raw data", "Lake of data", "Neither", "Both"], "correct": 0},
+        {"id": 91, "question": "What is 'Data Warehouse'?", "options": ["Central repository for integrated data", "Warehouse for data", "Neither", "Both"], "correct": 0},
+        {"id": 92, "question": "What is 'Master Data Management' (MDM)?", "options": ["Managing reference data across systems", "Mastering data", "Neither", "Both"], "correct": 0},
+        {"id": 93, "question": "What is 'Data Governance'?", "options": ["Managing data quality and policies", "Governing data", "Neither", "Both"], "correct": 0},
+        {"id": 94, "question": "What is 'Data Lineage'?", "options": ["Tracking data origin and transformations", "Lineage of data", "Neither", "Both"], "correct": 0},
+        {"id": 95, "question": "What is 'Data Quality'?", "options": ["Assessing data accuracy and completeness", "Quality of data", "Neither", "Both"], "correct": 0},
+        {"id": 96, "question": "What is 'Entity Relationship' (ER) modeling?", "options": ["Designing relationships between data entities", "Modeling relationships", "Neither", "Both"], "correct": 0},
+        {"id": 97, "question": "What is 'Normalization'?", "options": ["Organizing data to reduce redundancy", "Making data normal", "Neither", "Both"], "correct": 0},
+        {"id": 98, "question": "What is 'Denormalization'?", "options": ["Adding redundancy for query performance", "Making data denormal", "Neither", "Both"], "correct": 0},
+        {"id": 99, "question": "What is 'Aggregation'?", "options": ["Summarizing data for analysis", "Aggregating data", "Neither", "Both"], "correct": 0},
+        {"id": 100, "question": "What is 'Data Virtualization'?", "options": ["Creating unified view of distributed data", "Virtualizing data", "Neither", "Both"], "correct": 0}
     ]
-    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 30))})
+    return Response({'success': True, 'data': random.sample(questions_pool, min(len(questions_pool), 25))})

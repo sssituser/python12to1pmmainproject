@@ -96,5 +96,5 @@ def playground_questions_agentic_ai_claude_api(request):
     """
     return Response({
         "success": True,
-        "data": random.sample(AGENTIC_AI_QUESTIONS, 30)
+        "data": random.sample(AGENTIC_AI_QUESTIONS, 25)
     })
