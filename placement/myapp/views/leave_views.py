@@ -375,68 +375,57 @@ def create_leave_request(request):
     print("Content type:", request.content_type)
     print("Authenticated user:", request.user)
     
+    payload = request.data.copy()
+    
+    # Try to get student_id from user's profile
     try:
-        payload = request.data.copy()
-        
-        # Try to get student_id from user's profile
-        try:
-            from myapp.models import StudentProfile
-            student_profile = StudentProfile.objects.filter(user=request.user).first()
-            if student_profile and student_profile.student_id:
-                payload["student_id"] = str(student_profile.student_id)
-        except:
-            pass
-        
-        # Use user's name and email if not provided
-        if not payload.get("name"):
-            payload["name"] = request.user.first_name or request.user.username or "Unknown"
-        if not payload.get("email"):
-            payload["email"] = request.user.email
-        
-        resolved_email = _resolve_submitter_email(request, payload)
+        from myapp.models import StudentProfile
+        student_profile = StudentProfile.objects.filter(user=request.user).first()
+        if student_profile and student_profile.student_id:
+            payload["student_id"] = str(student_profile.student_id)
+    except:
+        pass
+    
+    # Use user's name and email if not provided
+    if not payload.get("name"):
+        payload["name"] = request.user.first_name or request.user.username or "Unknown"
+    if not payload.get("email"):
+        payload["email"] = request.user.email
+    
+    resolved_email = _resolve_submitter_email(request, payload)
 
-        if resolved_email and resolved_email != _normalize_email(request.data.get("email")):
-            payload["email"] = resolved_email
+    if resolved_email and resolved_email != _normalize_email(request.data.get("email")):
+        payload["email"] = resolved_email
 
-        if not payload.get("email"):
-            return Response({
-                "success": False,
-                "errors": {"email": ["Email is required to send leave notifications."]}
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = LeaveRequestSerializer(data=payload)
-        print("Serializer created:", serializer)
-
-        if serializer.is_valid():
-            print("Serializer is valid")
-            print("Validated data:", serializer.validated_data)
-            # Set the user after validation
-            serializer.validated_data['user'] = request.user
-            leave = serializer.save()
-            print("Leave saved:", leave)
-            # Send leave submission email (background).
-            _run_in_background(_send_leave_submission_notifications, leave)
-            return Response({
-                "success": True,
-                "message": "Leave request created successfully",
-                "data": LeaveRequestSerializer(leave).data,
-            }, status=status.HTTP_201_CREATED)
-        else:
-            print("Serializer errors:", serializer.errors)
-            return Response({
-                "success": False,
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        print("Exception occurred:", str(e))
-        print("Exception type:", type(e))
-        import traceback
-        print("Traceback:", traceback.format_exc())
+    if not payload.get("email"):
         return Response({
             "success": False,
-            "error": str(e),
-            "message": "Server error occurred"
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            "errors": {"email": ["Email is required to send leave notifications."]}
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = LeaveRequestSerializer(data=payload)
+    print("Serializer created:", serializer)
+
+    if serializer.is_valid():
+        print("Serializer is valid")
+        print("Validated data:", serializer.validated_data)
+        # Set the user after validation
+        serializer.validated_data['user'] = request.user
+        leave = serializer.save()
+        print("Leave saved:", leave)
+        # Send leave submission email (background).
+        _run_in_background(_send_leave_submission_notifications, leave)
+        return Response({
+            "success": True,
+            "message": "Leave request created successfully",
+            "data": LeaveRequestSerializer(leave).data,
+        }, status=status.HTTP_201_CREATED)
+    else:
+        print("Serializer errors:", serializer.errors)
+        return Response({
+            "success": False,
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 # -----------------------------------------------------------

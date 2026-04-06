@@ -14,50 +14,44 @@ User = get_user_model()
 @permission_classes([AllowAny])
 def dashboard_stats_api(request):
     """Get overall dashboard statistics"""
-    try:
-        users = User.objects.all()
-        students = users.filter(role='student')
-        faculty = users.filter(role='faculty')
-        
-        # Get actual student profiles
-        student_profiles = StudentProfile.objects.all()
-        
-        # Calculate placement statistics
-        placed_applications = JobApplication.objects.filter(status='Placed').count()
-        total_applications = JobApplication.objects.count()
-        
-        # Calculate exam statistics
-        total_exams = ExamAttempt.objects.count()
-        avg_score = 0
-        if total_exams > 0:
-            score_data = ExamAttempt.objects.aggregate(avg_score=models.Avg('score'))
-            avg_score = score_data.get('avg_score', 0) if score_data else 0
-        
-        # Count active students
-        active_students = students.filter(is_active=True).count()
-        
-        # Count total jobs
-        total_jobs = Job.objects.count()
-        
-        return Response({
-            'success': True,
-            'total_students': students.count(),
-            'total_faculty': faculty.count(),
-            'total_users': users.count(),
-            'active_students': active_students,
-            'placed_students': placed_applications,
-            'total_jobs': total_jobs,
-            'total_applications': total_applications,
-            'placement_rate': round((placed_applications / total_applications * 100), 2) if total_applications > 0 else 0,
-            'total_exams': total_exams,
-            'average_score': round(avg_score, 2),
-            'recent_activity': 'Dashboard loaded successfully'
-        })
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+    users = User.objects.all()
+    students = users.filter(role='student')
+    faculty = users.filter(role='faculty')
+    
+    # Get actual student profiles
+    student_profiles = StudentProfile.objects.all()
+    
+    # Calculate placement statistics
+    placed_applications = JobApplication.objects.filter(status='Placed').count()
+    total_applications = JobApplication.objects.count()
+    
+    # Calculate exam statistics
+    total_exams = ExamAttempt.objects.count()
+    avg_score = 0
+    if total_exams > 0:
+        score_data = ExamAttempt.objects.aggregate(avg_score=models.Avg('score'))
+        avg_score = score_data.get('avg_score', 0) if score_data else 0
+    
+    # Count active students
+    active_students = students.filter(is_active=True).count()
+    
+    # Count total jobs
+    total_jobs = Job.objects.count()
+    
+    return Response({
+        'success': True,
+        'total_students': students.count(),
+        'total_faculty': faculty.count(),
+        'total_users': users.count(),
+        'active_students': active_students,
+        'placed_students': placed_applications,
+        'total_jobs': total_jobs,
+        'total_applications': total_applications,
+        'placement_rate': round((placed_applications / total_applications * 100), 2) if total_applications > 0 else 0,
+        'total_exams': total_exams,
+        'average_score': round(avg_score, 2),
+        'recent_activity': 'Dashboard loaded successfully'
+    })
 
 
 # STUDENTS LIST API
@@ -65,56 +59,50 @@ def dashboard_stats_api(request):
 @permission_classes([AllowAny])
 def students_api(request):
     """Get list of all students with real data"""
-    try:
-        # Get students with role='student'
-        student_users = User.objects.filter(role='student')
-        students_list = []
+    # Get students with role='student'
+    student_users = User.objects.filter(role='student')
+    students_list = []
+    
+    for user in student_users:
+        # Get student profile
+        profile = StudentProfile.objects.filter(user=user).first()
         
-        for user in student_users:
-            # Get student profile
-            profile = StudentProfile.objects.filter(user=user).first()
-            
-            # Get exam attempts for this student
-            exams = ExamAttempt.objects.filter(user=user)
-            avg_score = 0
-            if exams.exists():
-                scores = [exam.score for exam in exams if hasattr(exam, 'score') and exam.score is not None]
-                if scores:
-                    avg_score = sum(scores) / len(scores)
-            
-            # Get job applications for this student
-            job_app = JobApplication.objects.filter(user_id=user.id).first()
-            
-            # Construct a dynamic full name
-            full_name = f"{user.first_name} {user.last_name}".strip()
-            display_name = full_name if full_name else user.username
-            
-            students_list.append({
-                'id': user.id,
-                'studentId': profile.student_id if profile and profile.student_id else user.id,
-                'name': display_name,
-                'username': user.username,
-                'email': user.email,
-                'phone': profile.phone if profile and profile.phone else '',
-                'mobileNo': profile.phone if profile and profile.phone else '', # Alias for frontend compatibility
-                'course_title': profile.course.title if profile and profile.course else 'Not assigned',
-                'college': profile.college if profile and profile.college else 'N/A',
-                'cgpa': profile.cgpa if profile and profile.cgpa else 0,
-                'status': 'Active' if user.is_active else 'Inactive',
-                'is_active': user.is_active,
-                'progress': round(avg_score, 2) if avg_score else 0,
-                'exam_count': exams.count(),
-                'job_status': job_app.status if job_app else 'Not Applied',
-                'date_joined': user.date_joined,
-                'last_login': user.last_login
-            })
+        # Get exam attempts for this student
+        exams = ExamAttempt.objects.filter(user=user)
+        avg_score = 0
+        if exams.exists():
+            scores = [exam.score for exam in exams if hasattr(exam, 'score') and exam.score is not None]
+            if scores:
+                avg_score = sum(scores) / len(scores)
         
-        return Response(students_list)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        # Get job applications for this student
+        job_app = JobApplication.objects.filter(user_id=user.id).first()
+        
+        # Construct a dynamic full name
+        full_name = f"{user.first_name} {user.last_name}".strip()
+        display_name = full_name if full_name else user.username
+        
+        students_list.append({
+            'id': user.id,
+            'studentId': profile.student_id if profile and profile.student_id else user.id,
+            'name': display_name,
+            'username': user.username,
+            'email': user.email,
+            'phone': profile.phone if profile and profile.phone else '',
+            'mobileNo': profile.phone if profile and profile.phone else '', # Alias for frontend compatibility
+            'course_title': profile.course.title if profile and profile.course else 'Not assigned',
+            'college': profile.college if profile and profile.college else 'N/A',
+            'cgpa': profile.cgpa if profile and profile.cgpa else 0,
+            'status': 'Active' if user.is_active else 'Inactive',
+            'is_active': user.is_active,
+            'progress': round(avg_score, 2) if avg_score else 0,
+            'exam_count': exams.count(),
+            'job_status': job_app.status if job_app else 'Not Applied',
+            'date_joined': user.date_joined,
+            'last_login': user.last_login
+        })
+    
+    return Response(students_list)
 
 
 # STUDENT STATS API (alias for student_stats function)

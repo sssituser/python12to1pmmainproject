@@ -129,11 +129,8 @@ def login(request):
         # If faculty was inactive, this save will also activate them
         user.save(update_fields=['last_login', 'is_active'])
         
-        try:
-            tokens = get_tokens(user)
-            print(f"DEBUG: Tokens generated for {user.username}")
-        except Exception as e:
-            return Response({"detail": f"Token generation failed: {str(e)}"}, status=500)
+        tokens = get_tokens(user)
+        print(f"DEBUG: Tokens generated for {user.username}")
         user_email = user.email or ""
         login_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
         user_ip = get_client_ip(request)
@@ -208,22 +205,18 @@ def send_otp(request):
     
     OTP.objects.create(username=identifier, email=target_email, otp=otp)
 
-    try:
-        subject = f"Your OTP for {settings.PLATFORM_NAME}"
-        message = f"Hello {user.username if user else 'User'},\n\nYour One-Time Password (OTP) for login is: {otp}\n\nThis code will expire shortly. Do not share it with anyone."
-        
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [target_email],
-            fail_silently=False,
-        )
-        print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
-        return Response({"message": "OTP sent successfully"})
-    except Exception as e:
-        print(f"DEBUG: Failed to send OTP email: {str(e)}")
-        return Response({"error": f"Failed to send email: {str(e)}"}, status=500)
+    subject = f"Your OTP for {settings.PLATFORM_NAME}"
+    message = f"Hello {user.username if user else 'User'},\n\nYour One-Time Password (OTP) for login is: {otp}\n\nThis code will expire shortly. Do not share it with anyone."
+    
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [target_email],
+        fail_silently=False,
+    )
+    print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
+    return Response({"message": "OTP sent successfully"})
 
 
 # ✅ VERIFY OTP

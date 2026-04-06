@@ -79,53 +79,37 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
             return AppliedJob.objects.filter(user=user).select_related('user', 'job').order_by('-applied_date')
     
     def list(self, request, *args, **kwargs):
-        try:
-            queryset = self.get_queryset()
-            print(f"Queryset count: {queryset.count()}")
-            
-            # Debug: Print first few applications
-            for app in queryset[:3]:
-                print(f"App: {app.id}, user: {app.user.username}, job: {app.job.job_title if app.job else 'No job'}")
-            
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            print(f"Error in FacultyApplicationsViewSet.list: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return Response(
-                {"error": f"Internal server error: {str(e)}"}, 
-                status=500
-            )
+        queryset = self.get_queryset()
+        print(f"Queryset count: {queryset.count()}")
+        
+        # Debug: Print first few applications
+        for app in queryset[:3]:
+            print(f"App: {app.id}, user: {app.user.username}, job: {app.job.job_title if app.job else 'No job'}")
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         """
         Accept or reject student applications
         """
-        try:
-            application = self.get_object()
-            action = request.data.get('action')  # 'accept' or 'reject'
-            
-            if action not in ['accept', 'reject']:
-                return Response({"error": "Invalid action. Use 'accept' or 'reject'."}, status=400)
-            
-            # Update application status
-            application.status = action
-            application.save()
-            
-            print(f"Application {application.id} {action}ed by {request.user.username}")
-            
-            return Response({
-                "message": f"Application {action}ed successfully",
-                "application_id": application.id,
-                "status": application.status
-            })
-            
-        except Exception as e:
-            print(f"Error updating application: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return Response({"error": str(e)}, status=500)
+        application = self.get_object()
+        action = request.data.get('action')  # 'accept' or 'reject'
+        
+        if action not in ['accept', 'reject']:
+            return Response({"error": "Invalid action. Use 'accept' or 'reject'."}, status=400)
+        
+        # Update application status
+        application.status = action
+        application.save()
+        
+        print(f"Application {application.id} {action}ed by {request.user.username}")
+        
+        return Response({
+            "message": f"Application {action}ed successfully",
+            "application_id": application.id,
+            "status": application.status
+        })
 
 
 # ================= ADMIN JOB API =================

@@ -51,147 +51,133 @@ def user_combined_results_api(request):
     API endpoint to fetch combined exam results for a specific user.
     Used by PlaygroundResults.jsx component.
     """
-    try:
-        username = request.GET.get('username')
-        
-        if not username:
-            return Response({
-                'success': False,
-                'error': 'Username parameter is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Get user by username
-        try:
-            target_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({
-                'success': False,
-                'error': f'User "{username}" not found'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        # Get exam attempts for this user
-        exam_attempts = ExamAttempt.objects.filter(user=target_user).order_by('-start_time')
-        
-        # Get applied jobs for this user
-        applied_jobs = AppliedJob.objects.filter(user=target_user).order_by('-applied_date')
-        
-        # Format exam results
-        exam_results = []
-        for attempt in exam_attempts:
-            exam_results.append({
-                'id': attempt.id,
-                'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
-                'score': attempt.score or 0,
-                'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
-                'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
-                'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
-                'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
-                'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
-                'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
-                'user': {
-                    'username': target_user.username,
-                    'id': target_user.id
-                }
-            })
-        
-        # Format job applications
-        job_applications = []
-        for job in applied_jobs:
-            job_applications.append({
-                'id': job.id,
-                'jobTitle': job.job.title if job.job else 'Unknown Job',
-                'company': job.job.company if job.job else 'Unknown Company',
-                'appliedDate': job.applied_date.strftime('%Y-%m-%d %H:%M:%S') if job.applied_date else '',
-                'status': job.status,
-                'randomId': f"job_{job.id}_{job.applied_date.timestamp()}" if job.applied_date else f"job_{job.id}",
-                'user': {
-                    'username': target_user.username,
-                    'id': target_user.id
-                }
-            })
-        
-        # Combine all results
-        all_results = exam_results + job_applications
-        
-        return Response({
-            'success': True,
-            'data': all_results,
-            'user': {
-                'username': target_user.username,
-                'id': target_user.id,
-                'email': target_user.email
-            },
-            'stats': {
-                'totalExams': len(exam_results),
-                'totalApplications': len(job_applications),
-                'passedExams': len([e for e in exam_results if e['status'] == 'Pass']),
-                'failedExams': len([e for e in exam_results if e['status'] == 'Fail'])
-            }
-        }, status=status.HTTP_200_OK)
-        
-    except Exception as e:
+    username = request.GET.get('username')
+    
+    if not username:
         return Response({
             'success': False,
-            'error': f'Server error: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': 'Username parameter is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get user by username
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': f'User "{username}" not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get exam attempts for this user
+    exam_attempts = ExamAttempt.objects.filter(user=target_user).order_by('-start_time')
+    
+    # Get applied jobs for this user
+    applied_jobs = AppliedJob.objects.filter(user=target_user).order_by('-applied_date')
+    
+    # Format exam results
+    exam_results = []
+    for attempt in exam_attempts:
+        exam_results.append({
+            'id': attempt.id,
+            'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
+            'score': attempt.score or 0,
+            'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
+            'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
+            'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
+            'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
+            'user': {
+                'username': target_user.username,
+                'id': target_user.id
+            }
+        })
+    
+    # Format job applications
+    job_applications = []
+    for job in applied_jobs:
+        job_applications.append({
+            'id': job.id,
+            'jobTitle': job.job.title if job.job else 'Unknown Job',
+            'company': job.job.company if job.job else 'Unknown Company',
+            'appliedDate': job.applied_date.strftime('%Y-%m-%d %H:%M:%S') if job.applied_date else '',
+            'status': job.status,
+            'randomId': f"job_{job.id}_{job.applied_date.timestamp()}" if job.applied_date else f"job_{job.id}",
+            'user': {
+                'username': target_user.username,
+                'id': target_user.id
+            }
+        })
+    
+    # Combine all results
+    all_results = exam_results + job_applications
+    
+    return Response({
+        'success': True,
+        'data': all_results,
+        'user': {
+            'username': target_user.username,
+            'id': target_user.id,
+            'email': target_user.email
+        },
+        'stats': {
+            'totalExams': len(exam_results),
+            'totalApplications': len(job_applications),
+            'passedExams': len([e for e in exam_results if e['status'] == 'Pass']),
+            'failedExams': len([e for e in exam_results if e['status'] == 'Fail'])
+        }
+    }, status=status.HTTP_200_OK)
 
 # ==================== LEAVE REQUEST API ====================
 
 @api_view(['GET', 'POST'])
 def leave_requests_api(request):
-    try:
-        if request.method == 'GET':
-            leave_requests = LeaveRequest.objects.all().order_by('-created_at')
-            serializer = LeaveRequestSerializer(leave_requests, many=True)
+    if request.method == 'GET':
+        leave_requests = LeaveRequest.objects.all().order_by('-created_at')
+        serializer = LeaveRequestSerializer(leave_requests, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = LeaveRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Leave request created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = LeaveRequestSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Leave request created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT', 'DELETE'])
 def leave_request_detail_api(request, pk):
-    try:
-        leave_request = get_object_or_404(LeaveRequest, pk=pk)
-        
-        if request.method == 'PUT':
-            serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Leave request updated successfully',
-                    'data': serializer.data
-                })
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        elif request.method == 'DELETE':
-            leave_request.delete()
+    leave_request = get_object_or_404(LeaveRequest, pk=pk)
+    
+    if request.method == 'PUT':
+        serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
-                'message': 'Leave request deleted successfully'
+                'message': 'Leave request updated successfully',
+                'data': serializer.data
             })
-    except Exception as e:
-        
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        leave_request.delete()
+        return Response({
+            'success': True,
+            'message': 'Leave request deleted successfully'
+        })
 
 # ==================== PLAYGROUND API ====================
 
@@ -220,57 +206,51 @@ def playground_api(request):
 
 @api_view(['GET', 'POST'])
 def code_templates_api(request):
-    try:
-        if request.method == 'GET':
-            templates = CodeTemplate.objects.all()
-            serializer = CodeTemplateSerializer(templates, many=True)
+    if request.method == 'GET':
+        templates = CodeTemplate.objects.all()
+        serializer = CodeTemplateSerializer(templates, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = CodeTemplateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Code template created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = CodeTemplateSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Code template created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 def code_snippets_api(request):
-    try:
-        if request.method == 'GET':
-            snippets = CodeSnippet.objects.all()
-            serializer = CodeSnippetSerializer(snippets, many=True)
+    if request.method == 'GET':
+        snippets = CodeSnippet.objects.all()
+        serializer = CodeSnippetSerializer(snippets, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = CodeSnippetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Code snippet created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = CodeSnippetSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Code snippet created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def execute_code_api(request):
@@ -567,6 +547,53 @@ def exam_report_detail_api(request, pk):
         }
     })
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def exam_proctoring_logs_api(request, pk):
+    """
+    GET: Get proctoring snapshots for a specific exam attempt
+    """
+    attempt = get_object_or_404(ExamAttempt, pk=pk)
+    user = attempt.user
+    
+    snapshots_data = []
+    if user and user.email:
+        sessions = ExamSession.objects.filter(student_email__iexact=user.email)
+        
+        # Cross-reference with attempt time range
+        if attempt.start_time and attempt.end_time:
+            snapshots = WebcamSnapshot.objects.filter(
+                session__in=sessions,
+                timestamp__gte=attempt.start_time,
+                timestamp__lte=attempt.end_time
+            ).order_by('timestamp')
+        elif attempt.start_time:
+            # Fallback for old/legacy attempts: check same day
+            snapshots = WebcamSnapshot.objects.filter(
+                session__in=sessions,
+                timestamp__date=attempt.start_time.date()
+            ).order_by('timestamp')
+        else:
+            snapshots = []
+
+        for s in snapshots:
+            snapshots_data.append({
+                'id': s.id,
+                'image': s.image_path,
+                'timestamp': s.timestamp.isoformat(),
+                'is_suspicious': s.is_suspicious,
+                'reason': s.reason or "Automatic Snapshot"
+            })
+            
+    return Response({
+        'success': True,
+        'data': snapshots_data,
+        'summary': {
+            'total': len(snapshots_data),
+            'suspicious': len([s for s in snapshots_data if s['is_suspicious']])
+        }
+    })
+
 
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
@@ -574,142 +601,135 @@ def save_exam_report_api(request):
     """
     POST: Save new exam report.
     """
-    try:
-        data = request.data
-        from django.utils import timezone
+    data = request.data
+    from django.utils import timezone
 
-        # Resolve user
-        user = None
-        if request.user and request.user.is_authenticated:
-            user = request.user
-        else:
-            username = data.get('username')
-            if not username and isinstance(data.get('user'), dict):
-                username = data['user'].get('username')
+    # Resolve user
+    user = None
+    if request.user and request.user.is_authenticated:
+        user = request.user
+    else:
+        username = data.get('username')
+        if not username and isinstance(data.get('user'), dict):
+            username = data['user'].get('username')
 
-            if username:
-                username = username.strip()
-                user = User.objects.filter(username__iexact=username).first()
-                if not user:
-                    user, _ = User.objects.get_or_create(
-                        username=username,
-                        defaults={'email': f"{username}@example.com"}
-                    )
+        if username:
+            username = username.strip()
+            user = User.objects.filter(username__iexact=username).first()
+            if not user:
+                user, _ = User.objects.get_or_create(
+                    username=username,
+                    defaults={'email': f"{username}@example.com"}
+                )
 
-        if not user:
-            return Response({
-                'success': False,
-                'error': 'Could not identify user'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        now = timezone.now()
-        start_time = data.get('start_time') or data.get('startTime') or now
-        end_time = data.get('end_time') or data.get('endTime') or now
-
-        # Prioritize permanent Student ID from profile over any random ID from frontend
-        random_id_val = ""
-        try:
-            profile = StudentProfile.objects.get(user=user)
-            if profile.student_id:
-                random_id_val = str(profile.student_id)
-        except StudentProfile.DoesNotExist:
-            pass
-
-        if not random_id_val:
-            random_id_val = data.get('random_id') or data.get('randomId') or ''
-            if not random_id_val and isinstance(data.get('user'), dict):
-                random_id_val = data['user'].get('randomId') or ''
-
-        # Priority: Check if explicitly flagged as cheated/violated first
-        raw_status = str(data.get('status', '')).strip()
-        lower_status = raw_status.lower()
-        
-        # pass/fail
-        passed_input = data.get('passed')
-        
-        if 'cheat' in lower_status or 'violated' in lower_status:
-            final_status = 'Cheated'
-            # Maybe include the specific reason in status if available
-            reason = data.get('reason') or data.get('submissionReason')
-            if reason:
-                # Truncate if too long, but include it
-                final_status = f"Cheated: {reason}"[:20] 
-                # Actually, better to keep it just 'Cheated' for internal logic 
-                # but maybe store the detailed reason in the status string
-                final_status = f"Cheated"
-        elif passed_input is True:
-            final_status = 'Pass'
-        elif passed_input is False:
-            final_status = 'Fail'
-        else:
-            marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-            total_marks = data.get('total_marks') or data.get('totalMarks') or 60
-            
-            # Calculate percentage for pass/fail decision
-            percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
-            
-            if percentage >= 33.33:
-                final_status = 'Pass'
-            else:
-                final_status = 'Fail'
-
-        # 🛡️ PREVENT ACCIDENTAL DOUBLE-SUBMISSIONS (Only ignore repeat within 10 seconds)
-        ten_seconds_ago = timezone.now() - timezone.timedelta(seconds=10)
-        exists = ExamAttempt.objects.filter(
-            user=user,
-            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
-            score=data.get('score', 0),
-            exam_date__gte=ten_seconds_ago
-        ).exists()
-
-        if exists:
-            return Response({
-                'success': True,
-                'message': 'Duplicate attempt ignored',
-                'saved_username': user.username
-            })
-
-        attempt = ExamAttempt.objects.create(
-            user=user,
-            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
-            exam_type=data.get('exam_type') or data.get('examType', 'daily'),
-            score=data.get('score', 0),
-            total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
-            correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
-            incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
-            marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-            total_marks=data.get('total_marks') or data.get('totalMarks', 60),
-            time_taken=data.get('time_taken') or data.get('timeTaken', 0),
-            start_time=start_time,
-            end_time=end_time,
-            status=final_status,
-            random_id=str(random_id_val),
-            answers_json=json.dumps(data.get('answers', [])),
-            questions_json=json.dumps(data.get('questions', []))
-        )
-
-        # Get student's course information for response
-        student_course = None
-        try:
-            student_profile = StudentProfile.objects.get(user=user)
-            if student_profile.course:
-                student_course = student_profile.course.title
-        except StudentProfile.DoesNotExist:
-            pass
-
-        return Response({
-            'success': True,
-            'message': 'Exam report saved successfully',
-            'saved_username': user.username,
-            'course': student_course,
-            'data': ExamAttemptSerializer(attempt).data
-        }, status=status.HTTP_201_CREATED)
-
-    except Exception as e:
+    if not user:
         return Response({
             'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': 'Could not identify user'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    now = timezone.now()
+    start_time = data.get('start_time') or data.get('startTime') or now
+    end_time = data.get('end_time') or data.get('endTime') or now
+
+    # Prioritize permanent Student ID from profile over any random ID from frontend
+    random_id_val = ""
+    try:
+        profile = StudentProfile.objects.get(user=user)
+        if profile.student_id:
+            random_id_val = str(profile.student_id)
+    except StudentProfile.DoesNotExist:
+        pass
+
+    if not random_id_val:
+        random_id_val = data.get('random_id') or data.get('randomId') or ''
+        if not random_id_val and isinstance(data.get('user'), dict):
+            random_id_val = data['user'].get('randomId') or ''
+
+    # Priority: Check if explicitly flagged as cheated/violated first
+    raw_status = str(data.get('status', '')).strip()
+    lower_status = raw_status.lower()
+    
+    # pass/fail
+    passed_input = data.get('passed')
+    
+    if 'cheat' in lower_status or 'violated' in lower_status:
+        final_status = 'Cheated'
+        # Maybe include the specific reason in status if available
+        reason = data.get('reason') or data.get('submissionReason')
+        if reason:
+            # Truncate if too long, but include it
+            final_status = f"Cheated: {reason}"[:20] 
+            # Actually, better to keep it just 'Cheated' for internal logic 
+            # but maybe store the detailed reason in the status string
+            final_status = f"Cheated"
+    elif passed_input is True:
+        final_status = 'Pass'
+    elif passed_input is False:
+        final_status = 'Fail'
+    else:
+        marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
+        total_marks = data.get('total_marks') or data.get('totalMarks') or 60
+        
+        # Calculate percentage for pass/fail decision
+        percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
+        
+        if percentage >= 33.33:
+            final_status = 'Pass'
+        else:
+            final_status = 'Fail'
+
+    # 🛡️ PREVENT ACCIDENTAL DOUBLE-SUBMISSIONS (Only ignore repeat within 10 seconds)
+    ten_seconds_ago = timezone.now() - timezone.timedelta(seconds=10)
+    exists = ExamAttempt.objects.filter(
+        user=user,
+        exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+        score=data.get('score', 0),
+        exam_date__gte=ten_seconds_ago
+    ).exists()
+
+    if exists:
+        return Response({
+            'success': True,
+            'message': 'Duplicate attempt ignored',
+            'saved_username': user.username
+        })
+
+    attempt = ExamAttempt.objects.create(
+        user=user,
+        exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+        exam_type=data.get('exam_type') or data.get('examType', 'daily'),
+        score=data.get('score', 0),
+        total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
+        correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
+        incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
+        marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
+        total_marks=data.get('total_marks') or data.get('totalMarks', 60),
+        time_taken=data.get('time_taken') or data.get('timeTaken', 0),
+        start_time=start_time,
+        end_time=end_time,
+        status=final_status,
+        random_id=str(random_id_val),
+        answers_json=json.dumps(data.get('answers', [])),
+        questions_json=json.dumps(data.get('questions', []))
+    )
+
+    # Get student's course information for response
+    student_course = None
+    try:
+        student_profile = StudentProfile.objects.get(user=user)
+        if student_profile.course:
+            student_course = student_profile.course.title
+    except StudentProfile.DoesNotExist:
+        pass
+
+    return Response({
+        'success': True,
+        'message': 'Exam report saved successfully',
+        'saved_username': user.username,
+        'course': student_course,
+        'data': ExamAttemptSerializer(attempt).data
+    }, status=status.HTTP_201_CREATED)
 @api_view(['DELETE'])
 def delete_exam_report_api(request, pk):
     """

@@ -16,7 +16,8 @@ from .views.python_views import (
     playground_questions_api, run_code_api, exam_reports_api, 
     exam_report_detail_api, save_exam_report_api, delete_exam_report_api, 
     weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, 
-    exam_settings_api, leaderboard_api, toggle_student_active, user_combined_results_api
+    exam_settings_api, leaderboard_api, toggle_student_active, user_combined_results_api,
+    exam_proctoring_logs_api
 )
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
 from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
@@ -80,6 +81,7 @@ urlpatterns = [
     path('exam-reports/', exam_reports_api),
     path('exam-reports/<int:pk>/', exam_report_detail_api),
     path('exam-report-detail/<int:pk>/', exam_report_detail_api),
+    path('exam-proctoring-logs/<int:pk>/', exam_proctoring_logs_api),
     path('exam-reports/save/', save_exam_report_api),
     path('save-exam-report/', save_exam_report_api),
     path('exam-reports/delete/<int:pk>/', delete_exam_report_api),
