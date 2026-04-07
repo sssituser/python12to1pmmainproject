@@ -27,8 +27,42 @@ import {
   FaGoogle,
   FaApple,
   FaAndroid,
-  FaPlay
+  FaPlay,
+  FaArrowRight
 } from "react-icons/fa";
+
+import { defaultCourses } from "../components/CourseData.jsx";
+
+// Icon mapping for automatic logo generation
+const getIconForCourse = (courseName) => {
+  const lowerName = String(courseName || "").toLowerCase();
+  
+  if (lowerName.includes('python')) return FaPython;
+  if (lowerName.includes('javascript') || lowerName.includes('js')) return FaJs;
+  if (lowerName.includes('java')) return FaJava;
+  if (lowerName.includes('sql') || lowerName.includes('database')) return FaDatabase;
+  if (lowerName.includes('.net') || lowerName.includes('dotnet')) return FaMicrosoft;
+  if (lowerName.includes('react')) return FaReact;
+  if (lowerName.includes('ai') || lowerName.includes('artificial')) return FaBrain;
+  if (lowerName.includes('agentic') || lowerName.includes('agent')) return FaRobot;
+  if (lowerName.includes('cloud')) return FaCloud;
+  if (lowerName.includes('security') || lowerName.includes('cyber')) return FaShieldAlt;
+  if (lowerName.includes('data') || lowerName.includes('analytics')) return FaChartLine;
+  if (lowerName.includes('mobile') || lowerName.includes('app')) return FaMobile;
+  if (lowerName.includes('game') || lowerName.includes('gaming')) return FaGamepad;
+  if (lowerName.includes('blockchain') || lowerName.includes('crypto')) return FaLink;
+  if (lowerName.includes('server') || lowerName.includes('backend')) return FaServer;
+  if (lowerName.includes('devops') || lowerName.includes('tools')) return FaCogs;
+  if (lowerName.includes('web') || lowerName.includes('frontend')) return FaLaptopCode;
+  if (lowerName.includes('git') || lowerName.includes('version')) return FaGitAlt;
+  if (lowerName.includes('docker') || lowerName.includes('container')) return FaDocker;
+  if (lowerName.includes('aws') || lowerName.includes('amazon')) return FaAws;
+  if (lowerName.includes('google') || lowerName.includes('gcp')) return FaGoogle;
+  if (lowerName.includes('apple') || lowerName.includes('ios')) return FaApple;
+  if (lowerName.includes('android')) return FaAndroid;
+  
+  return FaCode; // Default icon
+};
 
 function CoursesPage() {
   const navigate = useNavigate();
@@ -38,8 +72,9 @@ function CoursesPage() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [studentCourse, setStudentCourse] = useState("");
   const [isValidating, setIsValidating] = useState(true);
+  
+  // Icon and course state initialization
   const [courses, setCourses] = useState(() => {
-    // Initial fetch from localStorage to ensure permanent data availability on this laptop
     const facultySaved = localStorage.getItem('facultyCourses');
     const genericSaved = localStorage.getItem('courses');
     const saved = facultySaved || genericSaved;
@@ -50,53 +85,23 @@ function CoursesPage() {
         if (Array.isArray(parsed)) {
           return parsed.map(course => ({
             ...course,
-            icon: getIconForCourse(typeof course === 'string' ? course : course.title)
+            icon: getIconForCourse(typeof course === 'string' ? course : (course.title || "Course"))
           }));
         }
       } catch (e) {
         console.error("Error parsing local courses:", e);
       }
     }
-    return [];
+    return defaultCourses;
   });
-  const [loading, setLoading] = useState(false); // Start as false because we load from disk first
+  
+  const [loading, setLoading] = useState(false);
   const isFirstRender = useRef(true);
 
   // Helper function to get auth token
   const getStoredToken = (key) => {
     const raw = localStorage.getItem(key);
     return raw ? raw.replace(/^"|"$/g, "") : null;
-  };
-
-  // Icon mapping for automatic logo generation
-  const getIconForCourse = (courseName) => {
-    const lowerName = courseName.toLowerCase();
-    
-    if (lowerName.includes('python')) return FaPython;
-    if (lowerName.includes('javascript') || lowerName.includes('js')) return FaJs;
-    if (lowerName.includes('java')) return FaJava;
-    if (lowerName.includes('sql') || lowerName.includes('database')) return FaDatabase;
-    if (lowerName.includes('.net') || lowerName.includes('dotnet')) return FaMicrosoft;
-    if (lowerName.includes('react')) return FaReact;
-    if (lowerName.includes('ai') || lowerName.includes('artificial')) return FaBrain;
-    if (lowerName.includes('agentic') || lowerName.includes('agent')) return FaRobot;
-    if (lowerName.includes('cloud')) return FaCloud;
-    if (lowerName.includes('security') || lowerName.includes('cyber')) return FaShieldAlt;
-    if (lowerName.includes('data') || lowerName.includes('analytics')) return FaChartLine;
-    if (lowerName.includes('mobile') || lowerName.includes('app')) return FaMobile;
-    if (lowerName.includes('game') || lowerName.includes('gaming')) return FaGamepad;
-    if (lowerName.includes('blockchain') || lowerName.includes('crypto')) return FaLink;
-    if (lowerName.includes('server') || lowerName.includes('backend')) return FaServer;
-    if (lowerName.includes('devops') || lowerName.includes('tools')) return FaCogs;
-    if (lowerName.includes('web') || lowerName.includes('frontend')) return FaLaptopCode;
-    if (lowerName.includes('git') || lowerName.includes('version')) return FaGitAlt;
-    if (lowerName.includes('docker') || lowerName.includes('container')) return FaDocker;
-    if (lowerName.includes('aws') || lowerName.includes('amazon')) return FaAws;
-    if (lowerName.includes('google') || lowerName.includes('gcp')) return FaGoogle;
-    if (lowerName.includes('apple') || lowerName.includes('ios')) return FaApple;
-    if (lowerName.includes('android')) return FaAndroid;
-    
-    return FaCode; // Default icon
   };
 
   // Sync courses with backend on mount to ensure all devices see the same curriculum
@@ -110,7 +115,6 @@ function CoursesPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Handle DRF ViewSet variations: paginated (.results), wrapped (.data.success), or raw array
         let courseData = [];
         if (response.data.results && Array.isArray(response.data.results)) {
           courseData = response.data.results;
@@ -123,21 +127,33 @@ function CoursesPage() {
         if (courseData.length > 0) {
           const coursesWithIcons = courseData.map(course => ({
             ...course,
+            customVideos: course.customVideos || course.custom_videos || {},
             icon: getIconForCourse(course.title)
           }));
           setCourses(coursesWithIcons);
-          // Permanently save to this laptop
           localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
           localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
         }
       } catch (error) {
-        console.error('Error fetching courses from API, staying with local data:', error);
+        console.error('Error fetching courses from API:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
+
+    // Add automatic update listener for assessment results
+    const handleExamDataUpdate = (event) => {
+       console.log("🔄 Course - Exam updated, refreshing data...");
+       fetchCourses();
+    };
+
+    window.addEventListener('examDataUpdated', handleExamDataUpdate);
+
+    return () => {
+       window.removeEventListener('examDataUpdated', handleExamDataUpdate);
+    };
   }, []);
 
   // Removed old loose filtering useEffect to ensure student sees exactly what faculty added.
@@ -145,7 +161,9 @@ function CoursesPage() {
   
   useEffect(() => {
     const fetchStudentInfo = async () => {
-      const token = getStoredToken("access");
+      const storedToken = localStorage.getItem("access");
+      const token = storedToken ? storedToken.replace(/^"|"$/g, "") : null;
+      
       if (!token) {
         setIsValidating(false);
         return;
@@ -156,20 +174,34 @@ function CoursesPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (response.data && response.data.course_title) {
-          setStudentCourse(response.data.course_title);
-        } else if (response.data && response.data.course) {
-          setStudentCourse(response.data.course);
+        let enrollments = [];
+        if (response.data && response.data.enrolled_courses) {
+          enrollments = response.data.enrolled_courses;
+        } else if (response.data && response.data.course_title) {
+          enrollments = [response.data.course_title];
         }
+        
+        setStudentCourse(enrollments);
+        
+        // GLOBAL SYNC: Ensuring the main user object matches the API
+        try {
+          const userStr = localStorage.getItem("user");
+          if (userStr) {
+            const userObj = JSON.parse(userStr);
+            userObj.enrolledCourses = enrollments;
+            localStorage.setItem("user", JSON.stringify(userObj));
+          }
+        } catch (e) {}
+
       } catch (error) {
-        console.error('Critical: Failed to validate student registration:', error);
+        console.error("Dashboard profile sync error:", error);
       } finally {
         setIsValidating(false);
       }
     };
 
     fetchStudentInfo();
-  }, []);
+  }, [navigate]);
 
   // Handle URL parameter for specific course
   useEffect(() => {
@@ -214,9 +246,11 @@ function CoursesPage() {
   // Handle Watch Click intercepting specific customized config properties dynamically identically bridging faculty configurations safely over!
   const handleWatchClick = (courseTitle, topic) => {
     const topicTitle = typeof topic === 'string' ? topic : topic.title;
+    const customVideoData = (selectedCourse?.customVideos && selectedCourse.customVideos[topicTitle]) || 
+                         (selectedCourse?.custom_videos && selectedCourse.custom_videos[topicTitle]);
     
-    if (selectedCourse?.customVideos && selectedCourse.customVideos[topicTitle]) {
-      localStorage.setItem('currentCustomVideo', JSON.stringify(selectedCourse.customVideos[topicTitle]));
+    if (customVideoData) {
+      localStorage.setItem('currentCustomVideo', JSON.stringify(customVideoData));
     } else {
       localStorage.removeItem('currentCustomVideo');
     }
@@ -236,9 +270,9 @@ function CoursesPage() {
         <div className="flex justify-start items-center mb-6">
           <button
             onClick={handleBackToTopics}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold text-lg"
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold text-sm tracking-tight transition-all"
           >
-            <span className="text-xl">←</span> Back
+            <span className="text-sm">←</span> Back
           </button>
         </div>
 
@@ -249,14 +283,14 @@ function CoursesPage() {
               selectedCourse.modules.map((module, idx) => (
                 <div 
                   key={idx} 
-                  className="bg-white rounded-xl border border-gray-100 shadow-md p-5 flex items-center justify-between hover:border-blue-300 transition-all group"
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between hover:border-blue-200 transition-all group"
                 >
-                  <div className="flex items-center gap-6">
-                    <span className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg">
+                  <div className="flex items-center gap-5">
+                    <span className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
                       {idx + 1}
                     </span>
                     <div>
-                      <h3 className="text-2xl font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
                         {module.title}
                       </h3>
                     </div>
@@ -264,10 +298,10 @@ function CoursesPage() {
                   
                   <button
                     onClick={() => setSelectedSubject(module.title)}
-                    className="flex items-center gap-2 bg-blue-50 text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+                    className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
                   >
                     GO TO TOPICS
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </button>
@@ -298,37 +332,31 @@ function CoursesPage() {
                   return (
                     <div 
                       key={idx} 
-                      className="group bg-white rounded-2xl border border-gray-100 p-6 flex items-center justify-between shadow-sm hover:shadow-xl hover:border-blue-200 transition-all duration-350 transform hover:-translate-y-1 cursor-pointer"
+                      className="group bg-white rounded-2xl border border-gray-100 p-5 flex items-center justify-between shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
                       onClick={() => handleWatchClick(selectedCourse.title, topic)}
                     >
-                      <div className="flex items-center gap-8">
+                      <div className="flex items-center gap-6">
                         {/* Status/Index Circle */}
                         <div className="relative">
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xl shadow-indigo-200 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-blue-100 shadow-md group-hover:scale-105 transition-transform duration-300">
                             {idx + 1}
                           </div>
-                          {/* Success tick or icon could go here later */}
                         </div>
 
                         <div>
-                          <h4 className="text-2xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                          <h4 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
                             {topicTitle}
                           </h4>
-                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-500 uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                          <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                             Ready to Watch
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <div className="hidden sm:block text-right mr-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-xs font-black text-gray-400 uppercase">Interactive Session</p>
-                          <p className="text-sm font-bold text-blue-600">Click to Play</p>
-                        </div>
-                        
-                        <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner group-hover:shadow-lg">
-                          <FaPlay className="text-xl ml-1 group-hover:animate-pulse" />
+                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner group-hover:shadow-lg">
+                          <FaPlay className="text-sm ml-0.5 group-hover:animate-pulse" />
                         </div>
                       </div>
                     </div>
@@ -368,7 +396,7 @@ function CoursesPage() {
     <div className="min-h-screen bg-white p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-gray-900 text-2xl font-bold">
+          <h2 className="text-3xl font-black text-amber-900 tracking-tight">
             Courses
           </h2>
 
@@ -378,78 +406,77 @@ function CoursesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {courses
           .filter((course) => {
-            // Strictly enforce individual course access
-            if (!studentCourse) return false;
+            // Strictly enforce individual course access (Support multiple courses)
+            if (!studentCourse || (Array.isArray(studentCourse) && studentCourse.length === 0)) return false;
             
-            const registrationIdentifier = String(studentCourse).toUpperCase().trim();
+            const registrationIdentifiers = Array.isArray(studentCourse) 
+              ? studentCourse.map(sc => String(sc).toUpperCase().trim())
+              : [String(studentCourse).toUpperCase().trim()];
+
             const courseTitle = String(course.title || "").toUpperCase().trim();
             const courseIdString = String(course.id || "").toUpperCase().trim();
             
             // Match against either Title or ID for absolute reliability across all laptops
-            return courseTitle === registrationIdentifier || courseIdString === registrationIdentifier;
+            return registrationIdentifiers.some(id => id === courseTitle || id === courseIdString);
           })
           .map((course, index) => {
-            const Icon = course.icon || FaCode;
 
           return (
             <div
               key={index}
-              className="bg-white text-gray-900 rounded-xl p-6 shadow-lg border border-gray-100 duration-300 relative overflow-hidden flex flex-col h-[400px] w-full"
+              className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200 border border-white hover:border-slate-200 transition-all duration-300 relative overflow-hidden flex flex-col h-[440px] w-full cursor-pointer hover:-translate-y-1.5"
             >
-              {/* Background faded icon - precisely centered */}
-              <div className="absolute inset-0 flex items-center justify-center text-[10rem] opacity-[0.02] pointer-events-none">
-                <Icon />
-              </div>
+              {/* Subtle accent gradient */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-[3rem] group-hover:bg-blue-50 transition-colors duration-500 -mr-10 -mt-10" />
 
               <div className="relative z-10 flex flex-col h-full">
-                {/* Top Row: Icon + Lock */}
-                <div className="flex justify-between items-start mb-2 h-10">
-                  <div className="text-4xl text-blue-600">
-                    <Icon />
+                {/* Top Row: Standardized Icon Area */}
+                <div className="flex justify-between items-start mb-6 shrink-0 h-12">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-md transition-all">
+                    {course.icon && React.createElement(course.icon, { className: "text-xl" })}
                   </div>
                   {course.locked && (
-                    <FaLock className="text-gray-400 mt-1" />
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <FaLock className="text-slate-300 text-sm" />
+                    </div>
                   )}
                 </div>
 
-                {/* Title Area: Optimized for symmetry and zero gap */}
-                <div className="mb-2" style={{ minHeight: '95px' }}>
-                  <h3 className="text-xl font-bold uppercase tracking-tight leading-tight text-gray-900">
+                {/* Title Area: Fixed Height for Symmetry */}
+                <div className="mb-4 min-h-[92px] flex items-center">
+                  <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight uppercase group-hover:text-amber-900 transition-colors line-clamp-3">
                     {course.title?.toUpperCase()}
                   </h3>
                 </div>
 
-                {/* Progress Bar Area: Balanced spacing */}
-                <div className="w-full h-14 flex flex-col justify-center">
+                {/* Progress Indicators: Pinned Position */}
+                <div className="mb-6 shrink-0 h-24 flex flex-col justify-end">
                   {!course.locked && (
-                    <div className="w-full">
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-2">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100/50 shadow-inner">
+                      <div className="flex justify-between items-end mb-2">
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Progress Flow</span>
+                         <span className="text-xs font-black text-slate-800">{course.progress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden p-0.5">
                         <div
-                          className="bg-green-500 h-full rounded-full transition-all duration-500 shadow-sm"
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-sm"
                           style={{ width: `${course.progress}%` }}
                         ></div>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Progress</span>
-                        <span className="text-[10px] font-black text-blue-600 uppercase">{course.progress}%</span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Spacer to keep card bottom-heavy and symmetric */}
-                <div className="flex-grow"></div>
-
-                {/* Action Button: High contrast and high impact */}
-                <div className="mt-2">
+                {/* Action Button: Bottom Pinned */}
+                <div className="mt-auto shrink-0">
                   {course.locked ? (
-                    <button className="w-full bg-gray-50 text-gray-300 py-3 rounded-xl font-bold cursor-not-allowed text-xs uppercase tracking-widest border border-gray-100">
+                    <button className="w-full bg-slate-50 text-slate-300 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] cursor-not-allowed border border-slate-100 transition-colors">
                       Locked
                     </button>
                   ) : (
                     <button
                       onClick={() => handleViewDetails(course)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-black transition-all text-sm uppercase tracking-widest shadow-md hover:shadow-blue-200 outline-none active:scale-[0.98]"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black transition-all text-sm uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:shadow-blue-300 active:scale-95"
                     >
                       VIEW DETAILS
                     </button>

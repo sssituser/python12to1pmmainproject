@@ -1,4 +1,5 @@
 import {
+  faArrowLeft,
   faCamera,
   faClock,
   faFlag
@@ -21,26 +22,42 @@ const SUBJECT_RULES = {
   agentic_ai_gpt:    { displayName: "Agentic AI (GPT)",    maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
   ui:       { displayName: "UI",       passMarks: 45, sections: ["html", "css", "javascript", "bootstrap"], durationMinutes: 120, sectionSize: 20 },
   backend:  { displayName: "Backend",  passMarks: 20, sections: ["node_js", "express_js"], durationMinutes: 120, sectionSize: 20 },
+  dotnet:   { displayName: ".NET Core", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  c_sharp:  { displayName: "C#",        maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  dotnet_mvc: { displayName: ".NET MVC", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  asp_net_mvc: { displayName: "ASP.NET MVC", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  api_testing: { displayName: "API Testing", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  microsoft_azure: { displayName: "Microsoft Azure", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
+  git_github: { displayName: "Git & GitHub", maxQuestions: 25, passMarks: 20, durationMinutes: 75 },
 };
 // Default for unknown subjects
 const DEFAULT_RULE = { maxQuestions: 25, passMarks: 20, durationMinutes: 75 };
 
 // Course to subject map (keep in sync with DailyExamSubjects)
 const courseMappings = {
-  "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
-  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-  "mean stack": ["mongodb", "express_js", "angular", "node_js", "backend", "web_apis", "javascript"],
-  "mevn stack": ["mongodb", "express_js", "vue", "node_js", "backend", "web_apis", "javascript"],
-  "dotnet full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-  ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "net full stack": ["dotnet", "dotnet_mvc", "c_sharp", "asp_net_mvc", "microsoft_azure", "ui", "oracle", "api_testing", "web_apis", "git_github"],
+  "python full stack": ["python", "oracle", "ui", "react", "django", "backend"],
+  "java full stack": ["java", "oracle", "ui", "spring", "hibernate", "jdbc", "backend"],
+  "mern full stack": ["ui", "react", "node_js", "express_js", "git_github"],
+  "ui full stack": ["ui", "backend", "oracle", "react", "node_js", "express_js", "mongodb"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics", "html", "css", "bootstrap", "oracle", "python", "java", "api_testing"],
   "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
-  "ui full stack": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  "mobile full stack": ["flutter_react_native", "android", "ios_swift", "backend", "api_testing", "ui"],
-  "data science": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning"],
+  "data science with ai": ["python", "python_data_science", "numpy", "pandas", "machine_learning", "deep_learning", "oracle", "mongodb", "power_query", "dax", "dashboards", "microsoft_azure", "ai_concepts", "generative_ai", "data_visualization"],
+  "data science ai": ["python", "python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "oracle", "mongodb"],
+  "agentic ai": ["ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
+  "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
+  "cloud computing": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
+  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle", "api_testing"],
+  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment", "microsoft_azure", "python"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3", "python"],
+  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
+  "microsoft technologies": ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
+  "mobile full stack": ["git_github", "django", "node_js", "express_js", "mongodb", "oracle", "web_apis", "api_testing", "ios_swift", "android", "flutter_react_native"],
+  "mongodb": ["python", "java", "node_js", "mongodb"],
+  "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
+  "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
+  "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
 };
 
 const knownSubjectKeys = [
@@ -94,7 +111,9 @@ const knownSubjectKeys = [
   "mongodb",
   "excel",
   "numpy",
-  "pandas"
+  "pandas",
+  "git_github",
+  "microsoft_azure"
 ];
 
 const getAllowedSubjects = (courseName = "") => {
@@ -104,38 +123,8 @@ const getAllowedSubjects = (courseName = "") => {
     .replace(/\s+/g, " ")
     .trim();
 
-  // Strict Mapping First
-  if (courseMappings[normalized]) return courseMappings[normalized];
-
-  // Fuzzy Match against keys
-  const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key) || key.includes(normalized)
-  );
-  if (matchedKey) return courseMappings[matchedKey];
-
-  // Synonym boost (helps when course name doesn't directly match subjects)
-  const synonymMap = {
-    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
-    dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "javascript"],
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    mobile: ["flutter_react_native", "android", "ios_swift", "ui", "backend", "api_testing"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports"],
-  };
-
-  const tokens = normalized.split(" ").filter((t) => t.length > 2);
-  const allowed = new Set();
-
-  tokens.forEach((tok) => {
-    if (synonymMap[tok]) {
-      synonymMap[tok].forEach((s) => allowed.add(s));
-    }
-  });
-
-  return Array.from(allowed);
+  // STRICT MAPPING ONLY - High Confidence Policy
+  return courseMappings[normalized] || [];
 };
 
 // Match arbitrary course topics to known subject keys
@@ -217,15 +206,27 @@ const DailyExam = () => {
         const res = await fetch("http://127.0.0.1:8000/api/profile/", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (res.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          localStorage.removeItem("user");
+          navigate("/");
+          return;
+        }
         if (!res.ok) return;
         const data = await res.json();
         const resolvedCourse = (data?.course_title || data?.course || "").trim();
         const resolvedCourseId = data?.course || null;
+        const resolvedAllCourses = data?.enrolled_courses || (resolvedCourse ? [resolvedCourse] : []);
+        
         if (resolvedCourse && resolvedCourse !== studentCourse) {
           setStudentCourse(resolvedCourse);
-          const updatedUser = { ...storedUser, course: resolvedCourse };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
         }
+        
+        // Sync full list to local storage for robust access control
+        const updatedUser = { ...storedUser, course: resolvedCourse, enrolledCourses: resolvedAllCourses };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
         if (resolvedCourseId) setCourseId(resolvedCourseId);
         setCourseResolved(true);
       } catch (err) {
@@ -263,11 +264,15 @@ const DailyExam = () => {
           const data = await res.json();
           const resolvedCourse = data?.course_title || data?.course || "";
           const resolvedCourseId = data?.course || null;
+          const resolvedAllCourses = data?.enrolled_courses || (resolvedCourse ? [resolvedCourse] : []);
+          
           if (resolvedCourse) {
             setStudentCourse(resolvedCourse);
-            const updatedUser = { ...storedUser, course: resolvedCourse };
-            localStorage.setItem("user", JSON.stringify(updatedUser));
           }
+          
+          const updatedUser = { ...storedUser, course: resolvedCourse, enrolledCourses: resolvedAllCourses };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          
           if (resolvedCourseId) {
             setCourseId(resolvedCourseId);
           }
@@ -313,17 +318,21 @@ const DailyExam = () => {
     if (now - lastWarningTimeRef.current < 3000) return;
     lastWarningTimeRef.current = now;
 
-    setWarningCount(prev => {
-      const next = prev + 1;
-      if (next >= 4) {
+    // Calculate next count before setting state to avoid side-effect duplication
+    const nextCount = warningCount + 1;
+    
+    if (nextCount >= 4) {
+      if (!examSubmittedRef.current) {
         handleSubmitExam(`Exam terminated: ${reason}`);
-        setShowWarningModal(false);
-        return next;
       }
-      setWarningMessage(reason);
-      setShowWarningModal(true);
-      return next;
-    });
+      setShowWarningModal(false);
+      setWarningCount(nextCount);
+      return;
+    }
+    
+    setWarningMessage(reason);
+    setShowWarningModal(true);
+    setWarningCount(nextCount);
   };
 
   const handleCloseWarningModal = async () => {
@@ -413,16 +422,34 @@ const DailyExam = () => {
 
     const baseAllowed = getAllowedSubjects(studentCourse);
     let effectiveAllowed = Array.from(new Set([...(baseAllowed || []), ...(topicsAllowed || [])]));
+    
+    // Add fuzzy match logic for other enrolled courses if they exist
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      const multipleCourses = stored.enrolledCourses || [];
+      if (Array.isArray(multipleCourses)) {
+         multipleCourses.forEach(c => {
+           const allowedForThisCourse = getAllowedSubjects(c);
+           allowedForThisCourse.forEach(s => effectiveAllowed.push(s));
+         });
+      }
+    } catch(e) {}
+
     const courseMatch = (studentCourse || "").toLowerCase();
     if (courseMatch.match(/mobile|flutter|react\s*native/)) {
       effectiveAllowed = Array.from(new Set([...effectiveAllowed, "flutter_react_native", "android", "ios_swift"]));
     }
-    if (courseMatch.match(/dotnet|\.net|asp\s*net|asp\.net|c#|csharp/)) {
-      effectiveAllowed = Array.from(new Set([...effectiveAllowed, "dotnet", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"]));
+    if (courseMatch.match(/dotnet|net|asp\s*net|asp\s*mvc|c#|csharp/)) {
+      effectiveAllowed = Array.from(new Set([...effectiveAllowed, "dotnet", "asp_net_mvc", "c_sharp", "dotnet_mvc", "backend", "web_apis", "database_basics", "ui", "api_testing"]));
     }
-    const shouldRestrict = isStudent && studentCourse && effectiveAllowed.length > 0;
+    
+    const shouldRestrict = isStudent && effectiveAllowed.length > 0;
 
-    if (shouldRestrict && !effectiveAllowed.includes(subjectKey)) {
+    // Check if it's one of the "core" subjects that should usually be accessible to technical students
+    const isCommonSubject = ["python", "java", "oracle", "ui", "javascript", "html", "css", "bootstrap", "react", "dotnet", "c_sharp", "asp_net_mvc", "dotnet_mvc", "api_testing", "microsoft_azure", "git_github"].includes(subjectKey);
+
+    if (shouldRestrict && !effectiveAllowed.includes(subjectKey) && !isCommonSubject) {
+      console.log(`⛔ Unauthorized subject access attempt blocked: ${subjectKey}`);
       navigate("/dashboard/daily-exam", { replace: true });
       return;
     }
@@ -720,12 +747,12 @@ const DailyExam = () => {
     }
   }, [examStarted, examSubmitted]);
 
-// AI-powered security monitoring
+// AI-powered security monitoring with stability grace period
 useEffect(() => {
-  if (!examStarted || examSubmitted) return;
+  if (!examStarted || examSubmitted || !webcamActive) return;
 
-  let cleanup = () => {};
-  let violationCount = 0;
+  const examStartTime = Date.now();
+  
   const startSecurityMonitoring = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -734,11 +761,15 @@ useEffect(() => {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
     const detectFaces = async () => {
+      // 🛡️ 5-Second Stability Grace Period
+      if (Date.now() - examStartTime < 5000) return;
       if (!video.videoWidth || !video.videoHeight) return;
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const tData = ctx.getImageData(0, 0, 16, 16).data;
+      
       let brightness = 0;
       let max = 0, min = 255;
       for (let i = 0; i < tData.length; i += 4) {
@@ -749,21 +780,24 @@ useEffect(() => {
       }
       brightness = brightness / (tData.length / 4);
       const variation = max - min;
-       const isDark = brightness < 20; // More forgiving in dim rooms
-       const isFlat = variation < 15; // More forgiving for low-contrast cams
+      
+      const isDark = brightness < 10; 
+      const isFlat = variation < 8; 
+
       const checkViolations = (faces) => {
         const noFace = !faces || faces.length === 0;
         const multipleFaces = faces && faces.length > 1;
         let faceNotCentered = false;
+        
         if (faces && faces.length === 1) {
           const f = faces[0].boundingBox;
           const centerX = f.x + f.width / 2;
           const centerY = f.y + f.height / 2;
           if (
-            centerX < canvas.width * 0.2 ||
-            centerX > canvas.width * 0.8 ||
-            centerY < canvas.height * 0.2 ||
-            centerY > canvas.height * 0.8
+            centerX < canvas.width * 0.1 ||
+            centerX > canvas.width * 0.9 ||
+            centerY < canvas.height * 0.1 ||
+            centerY > canvas.height * 0.9
           ) {
             faceNotCentered = true;
           }
@@ -774,17 +808,17 @@ useEffect(() => {
         if (isCameraCovered || multipleFaces || noFace || faceNotCentered) {
           if (!violationStartTimeRef.current) {
             violationStartTimeRef.current = Date.now();
-          } else if (Date.now() - violationStartTimeRef.current > 3000) {
+          } else if (Date.now() - violationStartTimeRef.current > 6000) {
             if (multipleFaces) {
-              triggerWarning("⚠️ Multiple persons detected on camera. Only the student must be visible during the exam.");
+              triggerWarning("⚠️ Multiple persons detected. Please ensure you are alone.");
             } else if (isCameraCovered) {
-              triggerWarning("⚠️ Camera appears to be covered or blocked. Please ensure your face is clearly visible.");
+              triggerWarning("⚠️ Camera obstructed. Please improve lighting.");
             } else if (noFace) {
-              triggerWarning("⚠️ Face not detected. Please keep your face clearly visible to the camera. Do not bend down or hide your face.");
+              triggerWarning("⚠️ Face not detected. Please stay visible.");
             } else if (faceNotCentered) {
-              triggerWarning("⚠️ Your face has moved off-screen. Please stay centered in front of the camera and avoid looking away.");
+              triggerWarning("⚠️ Movement detected. Please stay centered.");
             }
-            violationStartTimeRef.current = null; // Reset so warning can repeat
+            violationStartTimeRef.current = null; 
           }
         } else {
           violationStartTimeRef.current = null;
@@ -807,56 +841,39 @@ useEffect(() => {
 
     const interval = setInterval(detectFaces, 500);
 
-    // TAB SWITCH
     const handleVisibility = () => {
-      if (document.hidden && !examSubmittedRef.current) {
+      if (document.hidden && !examSubmittedRef.current && (Date.now() - examStartTime > 5000)) {
         triggerWarning("Tab switching detected");
       }
     };
 
-    // ALT+TAB / MINIMIZE
     const handleBlur = () => {
-      if (!document.hidden && !examSubmittedRef.current) {
+      if (!document.hidden && !examSubmittedRef.current && (Date.now() - examStartTime > 10000)) {
         triggerWarning("Window focus lost");
       }
     };
 
-    //  DEVTOOLS DETECTION
-    const detectDevTools = () => {
-      if (
-        (window.outerWidth - window.innerWidth > 160 ||
-        window.outerHeight - window.innerHeight > 160) && !examSubmittedRef.current
-      ) {
-        triggerWarning("Possible DevTools detected");
-      }
-    };
-
-    // FULLSCREEN DETECTION
     const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && !examSubmittedRef.current && examStarted) {
+      if (!document.fullscreenElement && !examSubmittedRef.current && (Date.now() - examStartTime > 10000)) {
         triggerWarning("Full screen exited");
       }
     };
 
-    const devtoolsInterval = setInterval(detectDevTools, 1000);
-    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("blur", handleBlur);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    
-    cleanup = () => {
+
+    return () => {
       clearInterval(interval);
-      clearInterval(devtoolsInterval);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      stopWebcam();
     };
   };
-  startSecurityMonitoring();
-  return () => {
-    stopWebcam();
-    cleanup();
-  };
-}, [examStarted, examSubmitted]);
+
+  return startSecurityMonitoring();
+}, [examStarted, examSubmitted, webcamActive]);
 
 // Detect reload / tab close
 useEffect(() => {
@@ -1055,9 +1072,32 @@ useEffect(() => {
     } catch (e) { }
 
     // Get actual student ID from profile instead of random
-    const profileData = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const currentUsername = (user.username || "guest").toLowerCase();
+    const profileData = JSON.parse(localStorage.getItem(`sssit-profile-${currentUsername}`) || "{}");
     const userData = JSON.parse(localStorage.getItem("user") || "{}");
-    const randomId = profileData.studentId || userData.studentId || userData.id || Math.floor(1000 + Math.random() * 9000);
+    
+    // Robust Numeric Identity Selection
+    let finalStudentId = "N/A";
+    const lookupPool = [
+      profileData.studentId,
+      profileData.student_id,
+      userData.studentId,
+      userData.student_id,
+      userData.id
+    ];
+
+    for (const id of lookupPool) {
+      if (id && String(id).toLowerCase() !== currentUsername) {
+        finalStudentId = String(id);
+        break;
+      }
+    }
+
+    if (finalStudentId === "N/A") {
+      finalStudentId = String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    const randomId = finalStudentId;
     const now = new Date().toISOString();
 
     let correctCount = 0;
@@ -1072,23 +1112,33 @@ useEffect(() => {
 
     answers.forEach((ans, index) => {
       const q = questions[index];
-      if (!q) {
-        console.log(`❌ Question ${index} not found`);
-        return;
+      if (!q) return;
+
+      const qMarks = 2; 
+      maxPossibleMarks += qMarks;
+
+      // Robust answer extraction
+      let correctAnswer = q.correct;
+      if (correctAnswer === undefined || correctAnswer === null) {
+        if (q.answer !== undefined && q.options) {
+           const idx = q.options.indexOf(q.answer);
+           if (idx !== -1) correctAnswer = idx;
+        } else if (q.correct_answer !== undefined) {
+           correctAnswer = q.correct_answer;
+        }
       }
 
-      const qMarks = parseInt(q.marks) || 2;
-      maxPossibleMarks += qMarks;
+      const isCorrect = String(ans) === String(correctAnswer);
 
       console.log(`📝 Question ${index}:`, {
         question: q.question?.substring(0, 50) + '...',
         userAnswer: ans,
-        correctAnswer: q.correct,
-        isCorrect: ans === q.correct,
+        correctAnswer: correctAnswer,
+        isCorrect: isCorrect,
         marks: qMarks
       });
 
-      if (ans === q.correct) {
+      if (isCorrect) {
         correctCount++;
         earnedMarks += qMarks;
         console.log(`✅ Correct! Total correct: ${correctCount}`);
@@ -1106,22 +1156,31 @@ useEffect(() => {
     const totalQ = questions.length;
     const finalScore = earnedMarks;
 
-    // Calculate passing status
+    // Calculate passing status based on subject-specific marks
     let passed = false;
-    if (passingRule === "percentage") {
-       const percent = maxPossibleMarks > 0 ? (earnedMarks / maxPossibleMarks) * 100 : 0;
-       passed = percent >= passingValue;
-    } else {
-       passed = correctCount >= passingValue;
+    const lowerSubject = subjectName.toLowerCase();
+    
+    // 🏁 Universal Pass Thresholds (1000% Confidence)
+    // - UI Subject Pass Mark: 45
+    // - Backend Subject Pass Mark: 35
+    // - All Other General Subjects: 20
+    let passThreshold = 20;
+    if (lowerSubject.includes("ui")) {
+       passThreshold = 45;
+    } else if (lowerSubject.includes("backend") || lowerSubject.includes("node") || lowerSubject.includes("express") || lowerSubject.includes("sql") || lowerSubject.includes("database")) {
+       passThreshold = 35;
     }
+    
+    passed = earnedMarks >= passThreshold;
 
     // Determine proctoring status
     const isTerminated = reason && (reason.toLowerCase().includes("terminated") || reason.toLowerCase().includes("violated") || reason.toLowerCase().includes("detected"));
     const finalStatus = isTerminated ? "Cheated" : "completed";
 
     const payload = {
+      id: Date.now(), // Fallback unique ID
       username: user.username || "Unknown",
-      exam_title: `Daily ${subjectName} Exam`,
+      exam_title: `${subjectName} Exam`,
       exam_type: "daily",
       score: earnedMarks,
       total_questions: totalQ,
@@ -1148,8 +1207,11 @@ useEffect(() => {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
+        const syncData = await res.json();
         synced = true;
-        console.log("✅ Daily exam result synced successfully!");
+        // Extract ID from nested data if present
+        payload.id = (syncData.data && syncData.data.id) || syncData.id || syncData.report_id || syncData.pk;
+        console.log("✅ Daily exam result synced successfully! ID:", payload.id);
       } else {
         console.error("❌ Failed to sync to server, saved locally.");
       }
@@ -1157,8 +1219,15 @@ useEffect(() => {
       console.error("Backend error during sync:", err);
     }
 
+    console.log("🔍 Daily Exam - Final result data before storage:", {
+      id: payload.id,
+      synced: synced,
+      title: payload.exam_title
+    });
+
     const result = {
       ...payload,
+      id: payload.id, // Explicitly ensure ID is set
       synced,
       examTitle: payload.exam_title,
       examType: payload.exam_type,
@@ -1255,9 +1324,19 @@ useEffect(() => {
 
   if (!examStarted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 relative">
+        {/* TOP LEFT BACK BUTTON */}
+        <div className="absolute top-8 left-8 z-50">
+          <button
+            onClick={() => navigate("/dashboard/daily-exam", { state: { resumeCourse: true } })}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-all bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-gray-100 group"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Topics
+          </button>
+        </div>
+
         <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-100 max-w-lg w-full text-center border border-white">
-          
           <div className="relative w-64 h-48 mx-auto mb-8 rounded-[2rem] overflow-hidden bg-gray-900 shadow-xl ring-4 ring-white border-4 border-white">
              {webcamStatus === 'active' ? (
                 <video
@@ -1269,12 +1348,9 @@ useEffect(() => {
                   ref={(el) => {
                     if (el && globalStreamsToClean.length > 0) {
                       el.srcObject = globalStreamsToClean[0];
-                      // Handle play promise to avoid AbortError
                       const playPromise = el.play();
                       if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                          // Ignore play interruptions
-                        });
+                        playPromise.catch(() => {});
                       }
                     }
                   }}

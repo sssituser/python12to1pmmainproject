@@ -22,6 +22,16 @@ function LeaveRequest() {
     const loadLeaveSummary = async () => {
       try {
         const token = localStorage.getItem('access');
+        
+        // 🔄 IDENTITY SYNC: Ensure 1000% permanence across sessions/devices
+        const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (savedUser.email) {
+           if (!localStorage.getItem('permanentEmail')) localStorage.setItem('permanentEmail', savedUser.email);
+           if (!localStorage.getItem('permanentName')) localStorage.setItem('permanentName', savedUser.name || savedUser.username);
+           if (!localStorage.getItem('permanentStudentId')) localStorage.setItem('permanentStudentId', savedUser.studentId || savedUser.username);
+           if (!localStorage.getItem('permanentPhone')) localStorage.setItem('permanentPhone', savedUser.phone || "");
+        }
+
         const userName = localStorage.getItem('permanentName');
         const userStudentId = localStorage.getItem('permanentStudentId');
         const userPhone = localStorage.getItem('permanentPhone');
@@ -37,14 +47,28 @@ function LeaveRequest() {
           const data = await response.json();
           const allRequests = data.data || [];
           
-          // Enforce strict local isolation (users should only see stats for their own device's history)
+          // IDENTITY-AWARE ROBUST FILTERING
           let requests = [];
-          if (userName && userStudentId && userPhone) {
-            requests = allRequests.filter(r => 
-               r.name === userName && 
-               r.student_id?.toString() === userStudentId.toString() &&
-               r.phone?.toString() === userPhone.toString()
-            );
+          if (userName || userStudentId) {
+            requests = allRequests.filter(r => {
+               if (!r) return false;
+               
+               // Normalize Request Data
+               const rName = (r.name || "").toString().trim().toLowerCase();
+               const rEmail = (r.email || "").toString().trim().toLowerCase();
+               const rId = (r.student_id || "").toString().trim();
+               
+               // Normalize Session Data
+               const sName = (userName || "").toString().trim().toLowerCase();
+               const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
+               const sId = (userStudentId || "").toString().trim();
+
+               const matchesEmail = rEmail && sEmail && rEmail === sEmail;
+               const matchesName = rName && sName && rName === sName;
+               const matchesId = rId && sId && rId === sId;
+
+               return matchesEmail && (matchesName || matchesId);
+            });
           }
           
           const totalApplied = requests.length;
@@ -78,9 +102,9 @@ function LeaveRequest() {
       <div className="w-full px-0 py-0">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="max-w-7xl mx-auto px-6 py-0">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-slate-900 mb-2 font-sans tracking-tight">
+              <h1 className="text-3xl font-bold text-slate-900 my-0 py-2 font-sans tracking-tight">
                 Leave Management System
               </h1>
             </div>

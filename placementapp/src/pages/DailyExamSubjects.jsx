@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum
+  faPython, faJava, faReact, faNodeJs, faSwift, faDocker, faAws, faMicrosoft, faGoogle, faGitAlt, faEthereum, faJs, faBootstrap
 } from "@fortawesome/free-brands-svg-icons";
 import {
   faDatabase, faCode, faLayerGroup, faGlobe, faVrCardboard, faFileSignature, faArrowRight,
@@ -21,6 +22,10 @@ const subjects = [
   { name: "Node JS", key: "node_js", icon: faNodeJs, textStyle: "text-green-600", bgStyle: "bg-green-50", hoverBorder: "hover:border-green-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(22,163,74,0.2)]" },
   { name: "Express JS", key: "express_js", icon: faServer, textStyle: "text-gray-600", bgStyle: "bg-gray-50", hoverBorder: "hover:border-gray-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(75,85,99,0.2)]" },
   { name: "UI", key: "ui", icon: faLayerGroup, textStyle: "text-purple-500", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(168,85,247,0.2)]" },
+  { name: "JavaScript", key: "javascript", icon: faJs, textStyle: "text-yellow-500", bgStyle: "bg-yellow-50", hoverBorder: "hover:border-yellow-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(234,179,8,0.2)]" },
+  { name: "HTML", key: "html", icon: faFileCode, textStyle: "text-orange-500", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(249,115,22,0.2)]" },
+  { name: "CSS", key: "css", icon: faFileCode, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
+  { name: "Bootstrap", key: "bootstrap", icon: faBootstrap, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
 
   // NEW TRENDING TECH
   { name: "Web3", key: "web3", icon: faGlobe, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
@@ -102,23 +107,25 @@ const subjects = [
 
 // Course-specific subject mappings (lowercase keys)
 const courseMappings = {
-  "python full stack": ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-  "java full stack": ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
-  "mern full stack": ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
-  ".net full stack": ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
+  "net full stack": ["dotnet", "dotnet_mvc", "c_sharp", "asp_net_mvc", "microsoft_azure", "ui", "oracle", "api_testing", "web_apis", "git_github"],
+  "python full stack": ["python", "oracle", "ui", "react", "django", "backend"],
+  "java full stack": ["java", "oracle", "ui", "spring", "hibernate", "jdbc", "backend"],
+  "mern full stack": ["ui", "react", "node_js", "express_js", "git_github"],
+  "ui full stack": ["ui", "backend", "oracle", "react", "node_js", "express_js", "mongodb"],
+  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics", "html", "css", "bootstrap", "oracle", "python", "java", "api_testing"],
   "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
   "data science with ai": ["python", "python_data_science", "numpy", "pandas", "machine_learning", "deep_learning", "oracle", "mongodb", "power_query", "dax", "dashboards", "microsoft_azure", "ai_concepts", "generative_ai", "data_visualization"],
+  "data science ai": ["python", "python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "oracle", "mongodb"],
+  "agentic ai": ["ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
   "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
   "cloud computing": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
-  "ui full stack": ["ui", "react", "oracle", "backend", "node_js", "express_js", "mongodb"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "database_basics"],
-  "frontend": ["ui", "react"],
-  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle"],
+  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
+  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle", "api_testing"],
   "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment", "microsoft_azure", "python"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
+  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3", "python"],
   "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
   "microsoft technologies": ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
-  "mobile full stack": ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
+  "mobile full stack": ["git_github", "django", "node_js", "express_js", "mongodb", "oracle", "web_apis", "api_testing", "ios_swift", "android", "flutter_react_native"],
   "mongodb": ["python", "java", "node_js", "mongodb"],
   "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
   "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
@@ -132,167 +139,89 @@ const getAllowedSubjects = (courseName = "") => {
     .replace(/\s+/g, " ")
     .trim();
 
-  // Strict Mapping First
-  if (courseMappings[normalized]) return courseMappings[normalized];
-
-  // Fuzzy Match
-  const matchedKey = Object.keys(courseMappings).find((key) =>
-    normalized.includes(key) || key.includes(normalized)
-  );
-  if (matchedKey) return courseMappings[matchedKey];
-
-  // Synonym boost
-  const synonymMap = {
-    python: ["python", "oracle", "django", "ui", "backend", "react", "python_data_science"],
-    java: ["java", "oracle", "ui", "backend", "spring", "hibernate", "jdbc", "react"],
-    dotnet: ["dotnet", "asp_net_mvc", "c_sharp", "backend", "api_testing", "web_apis", "database_basics", "ui"],
-    mern: ["mongodb", "express_js", "react", "node_js", "backend", "web_apis", "ui"],
-    cyber: ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3"],
-    cloud: ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
-    agentic: ["agentic_ai_claude", "agentic_ai_gpt", "generative_ai", "ai_concepts", "python"],
-    mobile: ["git_github", "python", "django", "node_js", "express_js", "spring", "mongodb", "oracle", "web_apis", "api_testing", "microsoft_azure", "ios_swift", "android", "flutter_react_native"],
-    powerbi: ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
-    mongodb: ["python", "java", "node_js", "mongodb"],
-    microsoft: ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
-    "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
-  };
-
-  const tokens = normalized.split(" ").filter((t) => t.length > 2);
-  const allowed = new Set();
-
-  tokens.forEach((tok) => {
-    if (synonymMap[tok]) {
-      synonymMap[tok].forEach((s) => allowed.add(s));
-    }
-  });
-
-  return Array.from(allowed);
+  // STRICT MAPPING ONLY - High Confidence Policy
+  return courseMappings[normalized] || [];
 };
 
 function DailyExamSubjects() {
   const navigate = useNavigate();
 
-  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const [studentCourse, setStudentCourse] = useState(storedUser.course || "");
-  const [courseId, setCourseId] = useState(null);
-  const [topicsAllowed, setTopicsAllowed] = useState([]);
+  const [activeCourse, setActiveCourse] = useState(null);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [isValidating, setIsValidating] = useState(true);
-  const userRole = (storedUser.role || "").toLowerCase();
-  const isStudent = userRole === "student";
 
+  const location = useLocation();
+ 
   useEffect(() => {
-    // Self-healing synchronization for different laptops/devices
-    const token = localStorage.getItem("access");
-    if (!isStudent || !token) {
-      setIsValidating(false);
-      return;
+    // Intelligently restore session ONLY if returning from a specific exam intro stage.
+    // This allows the "Back to Topics" button to lead back to DevOps (or similar) 
+    // while keeping a fresh landing page for global entry points.
+    if (location.state?.resumeCourse) {
+      const savedCourse = sessionStorage.getItem("active_assessment_course");
+      if (savedCourse) {
+         setActiveCourse(savedCourse);
+      }
     }
 
-    const fetchCourseFromProfile = async () => {
+    const fetchProfile = async () => {
+      const storedToken = localStorage.getItem("access");
+      const token = storedToken ? storedToken.replace(/^"|"$/g, "") : null;
+      
+      if (!token) {
+        setIsValidating(false);
+        return;
+      }
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/profile/", {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get("http://127.0.0.1:8000/api/profile/", {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        if (!res.ok) {
-          setIsValidating(false);
-          return;
+        const courses = response.data.enrolled_courses || (response.data.course_title ? [response.data.course_title] : []);
+        setEnrolledCourses(courses);
+        
+        // Auto-select if only one course exists (only on fresh landing)
+        const savedCourse = sessionStorage.getItem("active_assessment_course");
+        if (courses.length === 1 && !savedCourse) {
+           setActiveCourse(courses[0]);
+           sessionStorage.setItem("active_assessment_course", courses[0]);
         }
-        const data = await res.json();
-        const resolvedCourse = data?.course_title || data?.course || "";
-        const resolvedCourseId = data?.course || null;
-        if (resolvedCourse) {
-          setStudentCourse(resolvedCourse);
-          // Persist the verified course name to local storage for instant access across reloads
-          const updatedUser = { ...storedUser, course: resolvedCourse };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
-        if (resolvedCourseId) setCourseId(resolvedCourseId);
+
+        // Enrollment sync with local user state
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          userObj.enrolledCourses = courses;
+          localStorage.setItem("user", JSON.stringify(userObj));
+        } catch (e) {}
+
       } catch (err) {
-        console.error("Critical: Failed to validate student registration on this device:", err);
+        console.error("Profile fetch error in DailyExam", err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          localStorage.removeItem("user");
+          navigate("/");
+        }
       } finally {
-        // Only allow subject rendering after we've attempted to sync with the central server
         setIsValidating(false);
       }
     };
+    fetchProfile();
+  }, [navigate]);
 
-    fetchCourseFromProfile();
-  }, [isStudent, storedUser.username]);
-
-  // Fetch topics for the student's course to build dynamic subject mapping
-  useEffect(() => {
-    const token = localStorage.getItem("access");
-    if (!isStudent || !token) return;
-    if (!courseId) return;
-
-    const fetchTopics = async () => {
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/api/courses/${courseId}/topics/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const topicList = Array.isArray(json.topics) ? json.topics : [];
-        const matchedKeys = matchTopicsToSubjects(topicList);
-        if (matchedKeys.length > 0) {
-          setTopicsAllowed(matchedKeys);
-        }
-      } catch (err) {
-        console.error("Failed to fetch course topics:", err);
-      }
-    };
-
-    fetchTopics();
-  }, [isStudent, courseId]);
-
-  const matchTopicsToSubjects = (topicList = []) => {
-    const normalizedSubjects = subjects.map((s) => ({
-      key: s.key.toLowerCase(),
-      name: s.name.toLowerCase(),
-    }));
-    const results = new Set();
-
-    topicList.forEach((topicRaw) => {
-      const topic = String(topicRaw || "").toLowerCase();
-      const slug = topic.replace(/[^a-z0-9]+/g, "_");
-
-      normalizedSubjects.forEach((subj) => {
-        const hit =
-          subj.key.includes(slug) ||
-          slug.includes(subj.key) ||
-          subj.name.includes(topic) ||
-          topic.includes(subj.name) ||
-          subj.key.includes(topic) ||
-          topic.includes(subj.key);
-        if (hit) results.add(subj.key);
-      });
-    });
-
-    return Array.from(results);
-  };
-
-  const allowedSubjectKeys = getAllowedSubjects(studentCourse);
-  let effectiveAllowed = Array.from(new Set([...(allowedSubjectKeys || []), ...(topicsAllowed || [])]));
-  const courseMatch = (studentCourse || "").toLowerCase();
-  if (courseMatch.match(/mobile|flutter|react\s*native/)) {
-    effectiveAllowed = Array.from(new Set([...effectiveAllowed, "flutter_react_native", "android", "ios_swift"]));
-  }
-  if (courseMatch.match(/dotnet|\.net|asp\s*net|asp\.net|c#|csharp/)) {
-    effectiveAllowed = Array.from(new Set([...effectiveAllowed, "dotnet", "asp_net_mvc", "c_sharp", "backend", "web_apis", "database_basics", "ui"]));
-  }
-  const shouldRestrict = isStudent && studentCourse && effectiveAllowed.length > 0;
-
-  let filteredSubjects = shouldRestrict
-    ? subjects.filter((subject) => effectiveAllowed.includes(subject.key))
-    : subjects;
-
-  // Safety: if course mentions .NET and dotnet card is missing, append it
-  if (shouldRestrict && courseMatch.match(/dotnet|\.net|asp\s*net|asp\.net|c#|csharp|net\s+full/)) {
-    const hasDotnetCard = filteredSubjects.some((s) => s.key === "dotnet");
-    if (!hasDotnetCard) {
-      const dotnetCard = subjects.find((s) => s.key === "dotnet");
-      if (dotnetCard) filteredSubjects = [...filteredSubjects, dotnetCard];
+  const filteredSubjects = subjects.filter((subject) => {
+    if (!activeCourse) return false;
+    const allowed = getAllowedSubjects(activeCourse);
+    
+    // Add specific overrides for Mobile and .NET if needed
+    const courseMatch = String(activeCourse).toLowerCase();
+    if (courseMatch.match(/mobile|flutter|react\s*native/) && ["flutter_react_native", "android", "ios_swift"].includes(subject.key)) {
+        return true;
     }
-  }
+    if (courseMatch === "net full stack" || courseMatch === ".net full stack") {
+        return ["dotnet", "dotnet_mvc", "c_sharp", "asp_net_mvc", "microsoft_azure", "ui", "oracle", "api_testing", "web_apis", "git_github"].includes(subject.key);
+    }
+    
+    return allowed.includes(subject.key);
+  });
 
   useEffect(() => {
     // Clear any previous exam result flag so we don't instantly bounce back to results
@@ -331,8 +260,24 @@ function DailyExamSubjects() {
 
       <div className="relative z-10 max-w-6xl w-full">
 
-        {/* TOP LEFT BACK BUTTON */}
-        <div className="absolute top-0 left-0 pt-2 z-20">
+        {/* TOP LEFT BACK TO SELECTION BUTTON (Swapped) */}
+        {activeCourse && enrolledCourses.length > 1 && (
+          <div className="absolute top-0 left-0 pt-2 z-20">
+            <button
+              onClick={() => {
+                setActiveCourse(null);
+                sessionStorage.removeItem("active_assessment_course");
+              }}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-all bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 group"
+            >
+              <span className="group-hover:-translate-x-1 transition-transform">←</span>
+              Back to Course Selection
+            </button>
+          </div>
+        )}
+
+        {/* TOP RIGHT BACK BUTTON (Swapped) */}
+        <div className="absolute top-0 right-0 pt-2 z-20">
           <button
             onClick={() => navigate("/dashboard/playground")}
             className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-all bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 group"
@@ -346,54 +291,88 @@ function DailyExamSubjects() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30 mb-6 transform transition-transform hover:scale-110 hover:rotate-3 duration-300">
             <FontAwesomeIcon icon={faCode} className="text-3xl text-white" />
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-gray-900 mb-4 tracking-tight">
-            Daily Assessment Center
+          <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4 tracking-tight uppercase">
+            {activeCourse ? `${activeCourse} ASSESSMENT` : "Assessment Center"}
           </h2>
           <div className="h-1.5 w-24 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full mb-6"></div>
           <p className="text-gray-500 font-medium leading-relaxed max-w-2xl mx-auto text-lg">
-            Choose your technical domain. Each assessment delivers curated questions dynamically shuffled to validate your proficiency.
+            {activeCourse 
+              ? `Choose a technical domain from the ${activeCourse} curriculum to start your evaluation.`
+              : "Please select the registered course you wish to view assessments for."}
           </p>
-          {shouldRestrict && filteredSubjects.length === 0 && (
-            <p className="text-sm text-red-500 font-semibold">
-              No daily exams are mapped to your course yet. Please contact faculty to assign course subjects.
+          
+
+          {!activeCourse && enrolledCourses.length === 0 && !isValidating && (
+            <p className="text-sm text-red-500 font-semibold mt-4">
+              Detailed course mapping not found. Please contact faculty.
             </p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSubjects.map((subject) => (
-            <Link
-              key={subject.key}
-              to={`/dashboard/daily-exam/${subject.key}`}
-              className={`group relative flex items-center justify-between w-full p-6 bg-white rounded-3xl border border-gray-100 hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden shadow-sm ${subject.hoverShadow} ${subject.hoverBorder}`}
-            >
-              <div className="flex items-center gap-5">
-                {/* Icon Container */}
-                <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${subject.bgStyle}`}>
-                  <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
+        {/* Dynamic Branching: Course Selection OR Subject Grid */}
+        {!activeCourse && enrolledCourses.length > 1 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {enrolledCourses.map((courseTitle) => (
+              <button
+                key={courseTitle}
+                onClick={() => {
+                  setActiveCourse(courseTitle);
+                  sessionStorage.setItem("active_assessment_course", courseTitle);
+                }}
+                className="group relative p-10 bg-white rounded-[2rem] border-2 border-slate-100 hover:border-blue-500 shadow-xl shadow-slate-200/50 transition-all duration-500 hover:-translate-y-2 text-center overflow-hidden"
+              >
+                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <FontAwesomeIcon icon={faCode} className="text-6xl" />
+                 </div>
+                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                    <FontAwesomeIcon icon={faArrowRight} className="text-2xl" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-800 uppercase tracking-tight mb-2">
+                    {courseTitle}
+                 </h3>
+                 <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
+                    Enter Curriculum
+                 </p>
+                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSubjects.map((subject) => (
+              <Link
+                key={subject.key}
+                to={`/dashboard/daily-exam/${subject.key}`}
+                className={`group relative flex items-center justify-between w-full p-6 bg-white rounded-3xl border border-gray-100 hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden shadow-sm ${subject.hoverShadow} ${subject.hoverBorder}`}
+              >
+                <div className="flex items-center gap-5">
+                  {/* Icon Container */}
+                  <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${subject.bgStyle}`}>
+                    <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
+                  </div>
+  
+                  {/* Text Info */}
+                  <div className="text-left flex flex-col justify-center">
+                    <h3 className="text-lg font-bold text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
+                      {subject.name}
+                    </h3>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
+                      Select Topic
+                    </p>
+                  </div>
                 </div>
-
-                {/* Text Info */}
-                <div className="text-left flex flex-col justify-center">
-                  <h3 className="text-xl font-black text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
-                    {subject.name}
-                  </h3>
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1.5 group-hover:text-gray-500 transition-colors">
-                    Select Topic
-                  </p>
+  
+                {/* Right side decoration */}
+                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                  <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
                 </div>
-              </div>
-
-              {/* Right side decoration */}
-              <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
-              </div>
-
-              {/* Hover highlight line */}
-              <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>
-            </Link>
-          ))}
-        </div>
+  
+                {/* Hover highlight line */}
+                <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -267,8 +267,11 @@ function WeeklyExamReports() {
 
                   <button
                     onClick={() => {
-                        if (exam.id) {
-                            navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Weekly' } });
+                        const rId = exam.id || exam.report_id || exam.pk;
+                        if (rId && rId !== "undefined") {
+                            navigate(`/dashboard/exam-report-detail/${rId}`, { 
+                                state: { examNumber: exams.length - index, examType: 'Weekly' } 
+                            });
                         } else {
                             // Local unsynced exam fallback
                             const localStr = localStorage.getItem("allExamResults");

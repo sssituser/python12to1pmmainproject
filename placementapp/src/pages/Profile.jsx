@@ -1,14 +1,16 @@
 import axios from "axios";
 import { Edit3 } from "lucide-react";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [editMode, setEditMode] = useState(false);
-  const localStorageKey = "sssit-profile";
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUsername = storedUser.username || "guest";
+  const localStorageKey = `sssit-profile-${currentUsername}`;
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,7 +29,7 @@ export default function Profile() {
     skills: [],
     projects: [],
     education: [],
-    course: ""
+    courses: []
   });
 
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -47,6 +49,10 @@ export default function Profile() {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     localStorage.removeItem("user");
+    // Clear all profile-related caches
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith("sssit-profile")) localStorage.removeItem(key);
+    });
     if (message) toast.error(message);
     navigate("/");
   };
@@ -70,7 +76,6 @@ export default function Profile() {
       });
   };
 
-  // Fetch
   useEffect(() => {
     const token = getStoredToken("access");
     if (!token) {
@@ -78,13 +83,15 @@ export default function Profile() {
       return;
     }
 
+    setLoading(true);
+
     // Fetch profile data
     axios.get("http://127.0.0.1:8000/api/profile/", {
       headers: getAuthHeaders(token)
     })
       .then(res => {
         const nextData = {
-          name: res.data.name || "",
+          name: res.data.name || res.data.email?.split('@')[0] || "Student",
           email: res.data.email || "",
           phone: res.data.phone || "",
           parentPhone: res.data.parent_phone || res.data.parentPhone || "",
@@ -100,25 +107,33 @@ export default function Profile() {
           skills: Array.isArray(res.data.skills) ? res.data.skills : [],
           projects: Array.isArray(res.data.projects) ? res.data.projects : [],
           education: Array.isArray(res.data.education) ? res.data.education : [],
-          course: res.data.course_title || ""
+          courses: res.data.enrolled_courses || []
         };
+        
+        // Sync the main 'user' object in localStorage
+        try {
+          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+          userObj.enrolledCourses = nextData.courses;
+          userObj.course = nextData.courses[0] || "";
+          localStorage.setItem("user", JSON.stringify(userObj));
+        } catch (e) {}
+
         setFormData(nextData);
         localStorage.setItem(localStorageKey, JSON.stringify(nextData));
         setLoading(false);
       })
       .catch(err => {
-        console.error("Error fetching profile:", err);
+        console.error("Profile fetch error:", err);
         if (err.response?.status === 401) {
           clearSession("Unauthorized. Please log in again.");
           return;
         }
+        
         const cached = localStorage.getItem(localStorageKey);
         if (cached) {
           try {
             setFormData(JSON.parse(cached));
-          } catch (parseErr) {
-            console.error("Error parsing cached profile:", parseErr);
-          }
+          } catch (pe) {}
         }
         setLoading(false);
       });
@@ -126,22 +141,25 @@ export default function Profile() {
     // Fetch leave requests
     fetchLeaveRequests(token);
 
-    // Listen for leave request updates
-    const handleLeaveRequestUpdate = () => {
-      fetchLeaveRequests(token);
+    // Listen for leave request updates and exam completions
+    const handleLeaveRequestUpdate = () => fetchLeaveRequests(token);
+    const handleExamUpdate = () => {
+       console.log("🔄 Profile - Exam completed, refreshing data...");
+       axios.get("http://127.0.0.1:8000/api/profile/", { 
+         headers: getAuthHeaders(token) 
+       }).then(res => setFormData(prev => ({...prev, ...res.data})));
     };
-
     window.addEventListener("leaveRequestUpdated", handleLeaveRequestUpdate);
+    window.addEventListener("examDataUpdated", handleExamUpdate);
     window.addEventListener("storage", (e) => {
-      if (e.key === "leaveRequestUpdated") {
-        handleLeaveRequestUpdate();
-      }
+      if (e.key === "leaveRequestUpdated") handleLeaveRequestUpdate();
     });
 
     return () => {
-      window.removeEventListener("leaveRequestUpdated", handleLeaveRequestUpdate);
+       window.removeEventListener("leaveRequestUpdated", handleLeaveRequestUpdate);
+       window.removeEventListener("examDataUpdated", handleExamUpdate);
     };
-  }, []);
+  }, [localStorageKey]);
 
   // 📝 change
   const handleChange = (e) =>
@@ -338,8 +356,8 @@ const addSkill = () => {
         return;
       }
 
-      if (key === "course") {
-        data.append("course", value);
+      if (key === "courses") {
+        data.append("courses", JSON.stringify(value));
         return;
       }
 
@@ -376,13 +394,13 @@ const addSkill = () => {
         skills: Array.isArray(refreshed.data.skills) ? refreshed.data.skills : [],
         projects: Array.isArray(refreshed.data.projects) ? refreshed.data.projects : [],
         education: Array.isArray(refreshed.data.education) ? refreshed.data.education : [],
-        course: refreshed.data.course_title || ""
+        courses: refreshed.data.enrolled_courses || (refreshed.data.course_title ? [refreshed.data.course_title] : [])
       };
       setFormData(refreshedData);
       localStorage.setItem(localStorageKey, JSON.stringify(refreshedData));
       setProfileImagePreview("");
       addNotification("Profile Updated", "Your profile was saved successfully.");
-      toast.success("Profile Saved ✅");
+      toast.success("profile saved successfully");
       setEditMode(false);
       
       // Notify Navbar to refresh profile image
@@ -413,6 +431,7 @@ const addSkill = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Toaster />
 
       {/* PROFILE CARD */}
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
@@ -527,18 +546,20 @@ const addSkill = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
-                {editMode ? (
-                  <input
-                    name="course"
-                    value={formData.course}
-                    onChange={handleChange}
-                    placeholder="Enter your course name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                ) : (
-                  <p className="text-gray-700">{formData.course || "-"}</p>
-                )}
+                <label className="block text-sm font-medium text-gray-700 mb-1 leading-relaxed">
+                   Enrolled Programs
+                </label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {(Array.isArray(formData.courses) && formData.courses.length > 0) ? (
+                    formData.courses.map((c, i) => (
+                      <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-black rounded-lg border border-blue-100 uppercase tracking-tight">
+                        {c}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-400 italic text-sm">No courses registered</p>
+                  )}
+                </div>
               </div>
 
               <div className="md:col-span-2">

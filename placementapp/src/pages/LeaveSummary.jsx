@@ -226,6 +226,15 @@ function LeaveSummary() {
     }
     
     try {
+      // 🔄 IDENTITY SYNC: Ensure 1000% permanence across sessions/devices
+      const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (savedUser.email) {
+         if (!localStorage.getItem('permanentEmail')) localStorage.setItem('permanentEmail', savedUser.email);
+         if (!localStorage.getItem('permanentName')) localStorage.setItem('permanentName', savedUser.name || savedUser.username);
+         if (!localStorage.getItem('permanentStudentId')) localStorage.setItem('permanentStudentId', savedUser.studentId || savedUser.username);
+         if (!localStorage.getItem('permanentPhone')) localStorage.setItem('permanentPhone', savedUser.phone || "");
+      }
+
       const token = localStorage.getItem('access');
       if (!token) {
         console.log("No token found - user not logged in");
@@ -345,27 +354,26 @@ function LeaveSummary() {
 
       if (found) {
         // Filter requests for current user only - SECURITY: Ensures students see only their own data
+        // Filter requests for current user only - IDENTITY-AWARE ROBUST FILTERING
         const userRequests = data.filter(request => {
-          const nameMatch = request.name === userName;
-          const idMatch = request.student_id && request.student_id.toString() === userStudentId.toString();
-          const phoneMatch = request.phone && request.phone.toString() === userPhone.toString();
+          if (!request) return false;
+
+          // Normalize Request Data
+          const rName = (request.name || "").toString().trim().toLowerCase();
+          const rEmail = (request.email || "").toString().trim().toLowerCase();
+          const rId = (request.student_id || "").toString().trim();
           
-          // Security logging
-          if (!nameMatch || !idMatch || !phoneMatch) {
-            console.warn("Security: Request filtered out - User/ID/Phone mismatch:", {
-              requestName: request.name,
-              storedName: userName,
-              requestId: request.student_id,
-              storedId: userStudentId,
-              requestPhone: request.phone,
-              storedPhone: userPhone,
-              nameMatch,
-              idMatch,
-              phoneMatch
-            });
-          }
-          
-          return nameMatch && idMatch && phoneMatch;
+          // Normalize Session Data
+          const sName = (userName || "").toString().trim().toLowerCase();
+          const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
+          const sId = (userStudentId || "").toString().trim();
+
+          // IDENTITY-AWARE MATCH: Link history via Email + (Name or ID)
+          const matchesEmail = rEmail && sEmail && rEmail === sEmail;
+          const matchesName = rName && sName && rName === sName;
+          const matchesId = rId && sId && rId === sId;
+
+          return matchesEmail && (matchesName || matchesId);
         });
         
         console.log(`Found ${userRequests.length} requests for user: ${userName}`);

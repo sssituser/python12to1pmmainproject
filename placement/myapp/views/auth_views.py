@@ -160,7 +160,8 @@ def login(request):
                 "email": user_email,
                 "name": user.first_name or user.username,
                 "role": user.role or "unknown",
-                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course is not None else ""
+                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course is not None else "",
+                "enrolled_courses": StudentProfile.objects.filter(user=user).first().enrolled_courses_titles() if user.role == 'student' and StudentProfile.objects.filter(user=user).exists() else []
             },
             "email_sent": email_sent
         }
@@ -259,7 +260,8 @@ def verify_otp(request):
                 "email": user.email,
                 "name": user.first_name or user.username,
                 "role": user.role or "student",
-                "course": course_title if user.role == 'student' else ""
+                "course": course_title if user.role == 'student' else "",
+                "enrolled_courses": StudentProfile.objects.filter(user=user).select_related('course').first().enrolled_courses_titles() if user.role == 'student' and StudentProfile.objects.filter(user=user).exists() else [course_title] if course_title else []
             },
         })
 
@@ -354,33 +356,42 @@ def register(request):
         user.role = role
         user.save()
         
-        # Create StudentProfile with course for students
-        if role == 'student' and course:
-            from myapp.models import StudentProfile, Course
+        # Normalize role for consistent checking
+        role_normalized = role.lower().strip() if role else ""
+        
+        # Create StudentProfile with course(s) for students
+        if role_normalized == 'student' and course:
+            from myapp.models import StudentProfile, Course, CourseEnrollment
             
-            # Create course if it doesn't exist
-            course_obj, created = Course.objects.get_or_create(
-                title=course,
-                defaults={
-                    'level': 'Beginner',
-                    'duration': 'Self-paced',
-                    'topics': [f'Introduction to {course}'],
-                    'progress': 0,
-                    'locked': False
-                }
-            )
-            if created:
-                print(f"DEBUG: Created new course: {course}")
-            else:
-                print(f"DEBUG: Using existing course: {course}")
+            # Handle multiple courses if 'course' is a list
+            course_titles = course if isinstance(course, list) else [course]
+            primary_course_obj = None
             
-            # Numeric sync for optimized lookups
-            sp_kwargs = {"user": user, "course": course_obj}
+            for title in course_titles:
+                # Create course if it doesn't exist
+                course_obj, created = Course.objects.get_or_create(
+                    title=title,
+                    defaults={
+                        'level': 'Beginner',
+                        'duration': 'Self-paced',
+                        'topics': [f'Introduction to {title}'],
+                        'progress': 0,
+                        'locked': False
+                    }
+                )
+                if not primary_course_obj:
+                    primary_course_obj = course_obj
+                
+                # Also create enrollment for each course
+                CourseEnrollment.objects.get_or_create(user=user, course=course_obj)
+            
+            # Numeric sync for optimized lookups (StudentProfile)
+            sp_kwargs = {"user": user, "course": primary_course_obj}
             if str(username).isdigit():
                 sp_kwargs["student_id"] = int(username)
                 
             student_profile = StudentProfile.objects.create(**sp_kwargs)
-            print(f"DEBUG: Created student profile for {username} with course: {course} and ID: {sp_kwargs.get('student_id')}")
+            print(f"DEBUG: Created student profile for {username} with {len(course_titles)} courses.")
 
     if role == 'faculty':
         # Generate & Send OTP for verification
@@ -423,7 +434,8 @@ def register(request):
             "username": user.username,
             "email": user.email,
             "role": user.role,
-            "course": course_title if user.role == 'student' else ""
+            "course": course_title if user.role == 'student' else "",
+            "enrolled_courses": student_profile.enrolled_courses_titles() if (user.role.lower().strip() == 'student' if user.role else False) and student_profile else ([course] if isinstance(course, str) else course)
         },
         "message": "Registration successful"
     })
