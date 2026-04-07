@@ -142,11 +142,30 @@ class ProjectSerializer(serializers.ModelSerializer):
 class StudentProfileSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True,read_only=True)
     projects = ProjectSerializer(many=True,read_only=True)
-    course_title = serializers.CharField(source='course.title', read_only=True)
+    course_title = serializers.SerializerMethodField()
+    enrolled_courses = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
-        fields = "__all__"
+        fields = [
+            'id', 'user', 'student_id', 'age', 'state', 'phone', 
+            'parent_phone', 'college', 'year', 'cgpa', 'tenth_percentage', 
+            'twelfth_percentage', 'github', 'linkedin', 'education', 
+            'profile_image', 'resume', 'course', 'course_title', 
+            'enrolled_courses', 'skills', 'projects'
+        ]
+
+    def get_course_title(self, obj):
+        return obj.course.title if obj.course else ""
+
+    def get_enrolled_courses(self, obj):
+        from .models import CourseEnrollment
+        enrollments = CourseEnrollment.objects.filter(user=obj.user).select_related('course')
+        titles = list(set([e.course.title for e in enrollments if e.course]))
+        # Fallback to profile.course if enrollments are empty
+        if not titles and obj.course:
+            titles = [obj.course.title]
+        return titles
 
     def update(self, instance, validated_data):
         skills_data = validated_data.pop('skills', [])

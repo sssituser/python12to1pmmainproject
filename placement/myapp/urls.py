@@ -23,6 +23,7 @@ from .views.stats_views import dashboard_stats_api, students_api, student_stats_
 from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
+from .views.playground_dispatcher import playground_questions_dispatcher
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
 router.register(r'applied-jobs', AppliedJobViewSet, basename='applied-job')
@@ -117,6 +118,7 @@ urlpatterns = [
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
     path('playground-questions/python/', playground_questions_api, name='playground-questions-python'),
+    path('playground-questions/<str:subject>/', playground_questions_dispatcher, name='playground-questions-subject'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),

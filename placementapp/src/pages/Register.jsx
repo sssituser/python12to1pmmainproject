@@ -18,7 +18,7 @@ function Register() {
     password: "",
     confirmPassword: "",
     role: "Student",
-    course: "",
+    course: [],
     phone_number: "",
   });
 
@@ -54,7 +54,7 @@ function Register() {
     if (!formData.studentId) err.studentId = "Student ID required";
     if (!formData.email.includes("@")) err.email = "Enter valid email";
     if (!formData.phone_number) err.phone_number = "Phone number required";
-    if (!formData.course) err.course = "Please select a course";
+    if (formData.course.length === 0) err.course = "Please select at least one course";
     return err;
   };
 
@@ -177,104 +177,121 @@ function Register() {
           {/* STEP 1 */}
           {step === 1 && (
             <>
-              <input
-                type="text"
-                placeholder="Username"
-                className="form-control py-3 mb-2 focus:ring-2 focus:ring-blue-500"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-              />
-              {errors.username && (
-                <p className="text-red-500 text-sm">{errors.username}</p>
-              )}
+              <div className="space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                  />
+                  {errors.username && (
+                    <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.username}</p>
+                  )}
+                </div>
 
-              <input
-                type="text"
-                placeholder="Student ID"
-                className="form-control py-3 mb-2 mt-3 focus:ring-2 focus:ring-blue-500"
-                value={formData.studentId}
-                onChange={(e) =>
-                  setFormData({ ...formData, studentId: e.target.value })
-                }
-              />
-              {errors.studentId && (
-                <p className="text-red-500 text-sm">{errors.studentId}</p>
-              )}
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Student ID"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                    value={formData.studentId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, studentId: e.target.value })
+                    }
+                  />
+                  {errors.studentId && (
+                    <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.studentId}</p>
+                  )}
+                </div>
 
-              <input
-                type="email"
-                placeholder="Email"
-                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>
+                  )}
+                </div>
+              </div>
 
-              {/* COURSE SELECTION */}
-              <select
-                className="form-select py-3 mt-3 focus:ring-2 focus:ring-blue-500"
-                value={formData.course}
-                onChange={(e) =>
-                  setFormData({ ...formData, course: e.target.value })
-                }
-              >
-                <option value="">-- Select Your Course --</option>
-                {courses.length > 0 ? (
-                  courses.map((c) => (
-                    <option key={c.id} value={c.title}>{c.title}</option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Python Full Stack">Python Full Stack</option>
-                    <option value="Java Full Stack">Java Full Stack</option>
-                    <option value=".net Full Stack">.net Full Stack</option>
-                    <option value="Mern Full Stack">Mern Full Stack</option>
-                    <option value="Data Science and Agentic AI">Data Science and Agentic AI</option>
-                    <option value="UI Full Stack">UI Full Stack</option>
-                  </>
-                )}
-              </select>
+              {/* COURSE SELECTION (MULTI) */}
+              <div className="mt-4 p-4 border rounded-lg bg-gray-50 border-gray-200">
+                <p className="text-gray-700 text-sm font-semibold mb-3">Select Courses (Multiple allowed):</p>
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                  {(courses.length > 0 ? courses.map(c => c.title || c) : [
+                    "Python Full Stack", 
+                    "Java Full Stack", 
+                    ".net Full Stack", 
+                    "Mern Full Stack", 
+                    "Data Science and Agentic AI", 
+                    "UI Full Stack"
+                  ]).map((courseTitle) => (
+                    <label key={courseTitle} className="flex items-center gap-3 p-2 bg-white rounded border border-gray-100 hover:border-blue-400 cursor-pointer transition-colors group">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 checked:bg-blue-600"
+                        checked={formData.course.includes(courseTitle)}
+                        onChange={(e) => {
+                          const updated = e.target.checked
+                            ? [...formData.course, courseTitle]
+                            : formData.course.filter(c => c !== courseTitle);
+                          setFormData({ ...formData, course: updated });
+                        }}
+                      />
+                      <span className="text-gray-700 text-sm font-medium group-hover:text-blue-600 transition-colors uppercase">
+                        {courseTitle}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
               {errors.course && (
                 <p className="text-red-500 text-sm mt-1">{errors.course}</p>
               )}
               
-              <input
-                type="text"
-                placeholder="Phone Number"
-                className="form-control py-3 mt-3 focus:ring-2 focus:ring-blue-500"
-                onChange={(e) =>
-                  setFormData({ ...formData, phone_number: e.target.value })
-                }
-                value={formData.phone_number}
-              />
-              {errors.phone_number && (
-                <p className="text-red-500 text-sm">{errors.phone_number}</p>
-              )}
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Phone Number"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone_number: e.target.value })
+                  }
+                  value={formData.phone_number}
+                />
+                {errors.phone_number && (
+                  <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.phone_number}</p>
+                )}
+              </div>
 
               <button
                 onClick={handleNext}
-                className="btn btn-primary w-100 mt-4 py-3"
+                className="w-full mt-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all transform active:scale-95"
               >
-                Next →
+                Continue to Security
               </button>
             </>
           )}
 
           {/* STEP 2 */}
           {step === 2 && (
-            <>
+            <div className="space-y-4">
               {/* PASSWORD */}
-              <div className="relative mb-3">
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Create Password"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -282,21 +299,21 @@ function Register() {
                 />
                 <span
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-3 cursor-pointer text-gray-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-blue-500 transition-colors"
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.password}</p>
               )}
 
               {/* CONFIRM PASSWORD */}
-              <div className="relative mb-4">
+              <div className="relative">
                 <input
                   type={showConfirm ? "text" : "password"}
                   placeholder="Confirm Password"
-                  className="form-control py-3 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400"
                   value={formData.confirmPassword}
                   onChange={(e) =>
                     setFormData({
@@ -307,44 +324,49 @@ function Register() {
                 />
                 <span
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-4 top-3 cursor-pointer text-gray-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-blue-500 transition-colors"
                 >
                   {showConfirm ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm">
-                  {errors.confirmPassword}
-                </p>
+                <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.confirmPassword}</p>
               )}
 
               {/* ROLE */}
               <select
-                className="form-select py-3 mb-3 focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all cursor-pointer appearance-none"
                 value={formData.role}
                 onChange={(e) =>
                   setFormData({ ...formData, role: e.target.value })
                 }
               >
-                <option value="Student">Student</option>
-                <option value="Faculty">Faculty</option>
+                <option value="Student">Register as Student</option>
+                <option value="Faculty">Register as Faculty</option>
               </select>
 
               {/* FACULTY INFO */}
               {formData.role === "Faculty" && (
-                <p className="text-sm text-orange-600 mb-3">
-                  Faculty accounts require OTP verification
+                <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider px-1">
+                  * Faculty accounts require OTP verification
                 </p>
               )}
 
-              {/* BUTTON */}
+              {/* BUTTONS */}
               <button
                 onClick={handleSubmit}
-                className="btn btn-success w-100 py-3 text-lg shadow-md hover:scale-[1.02] transition"
+                className="w-full mt-8 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all transform active:scale-95"
               >
                 CREATE ACCOUNT
               </button>
-            </>
+
+              <button
+                onClick={() => setStep(1)}
+                className="w-full mt-3 py-3 text-gray-500 font-medium hover:text-gray-800 transition-colors"
+              >
+                Go Back to Details
+              </button>
+            </div>
           )}
 
         </div>

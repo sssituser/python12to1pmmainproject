@@ -99,12 +99,25 @@ function Login() {
 
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
+      // 🛡️ PERMANENT LEAVE IDENTITY SYNC (OTP)
+      if (savedUser.username) {
+        localStorage.setItem("permanentName", savedUser.name || savedUser.username);
+        localStorage.setItem("permanentEmail", savedUser.email || "");
+        localStorage.setItem("permanentStudentId", savedUser.studentId || savedUser.username);
+        localStorage.setItem("permanentPhone", savedUser.phone || "");
+      }
+
       localStorage.setItem(
         "user",
         JSON.stringify({ 
           username: savedUser.username, 
+          studentId: savedUser.studentId || savedUser.username,
+          name: savedUser.name || "",
+          email: savedUser.email || "",
+          phone: savedUser.phone || "",
           role: normalizedRole,
-          course: res.data.user?.course || "" 
+          course: savedUser.course || "",
+          enrolledCourses: savedUser.enrolled_courses || []
         })
       );
 
@@ -193,13 +206,26 @@ function Login() {
       localStorage.removeItem("recentExam");
       localStorage.removeItem("examFailure");
       const normalizedRole = (res.data.user?.role || "student").toString().trim().toLowerCase();
+      // 🛡️ PERMANENT LEAVE IDENTITY SYNC (ensures 1000% history permanence)
+      const userData = res.data.user || {};
+      if (userData.username || form.studentId) {
+        localStorage.setItem("permanentName", userData.name || userData.username || form.studentId);
+        localStorage.setItem("permanentEmail", userData.email || "");
+        localStorage.setItem("permanentStudentId", userData.studentId || form.studentId);
+        localStorage.setItem("permanentPhone", userData.phone || "");
+      }
+
       localStorage.setItem(
         "user",
         JSON.stringify({
-          username: res.data.user?.username || form.studentId,
-          studentId: res.data.user?.studentId || form.studentId,
+          username: userData.username || form.studentId,
+          studentId: userData.studentId || form.studentId,
+          name: userData.name || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
           role: normalizedRole,
-          course: res.data.user?.course || ""
+          course: userData.course || "",
+          enrolledCourses: userData.enrolled_courses || []
         })
       );
 

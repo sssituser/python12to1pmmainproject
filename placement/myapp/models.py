@@ -58,6 +58,14 @@ class StudentProfile(models.Model):
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='student_profiles')
 
+    def enrolled_courses_titles(self):
+        from .models import CourseEnrollment
+        enrollments = CourseEnrollment.objects.filter(user=self.user).select_related('course')
+        titles = list(set([e.course.title for e in enrollments if e.course]))
+        if not titles and self.course:
+            titles = [self.course.title]
+        return titles
+
     def __str__(self):
         return self.user.username
 

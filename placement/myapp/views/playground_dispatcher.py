@@ -137,9 +137,14 @@ def playground_questions_dispatcher(request, subject):
         'c_data_structures': 'c_data_structures',
     }
     
+    # 1. Normalize and resolve the internal key
     if key in subject_map:
         key = subject_map[key]
     
+    # 2. Hardened logic for specialized topics
+    if key == 'microsoft_azure': key = 'azure'
+    if key == 'git_github': key = 'gitgithub'
+
     # Construct the expected function name: playground_questions_<subject>_api
     func_name = f"playground_questions_{key}_api"
     
