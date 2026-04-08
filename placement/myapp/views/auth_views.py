@@ -54,13 +54,13 @@ def login(request):
             # 1. Profile Lookup (Primary for Students)
             student_profile = None
             if str(studentId).isdigit():
-                student_profile = StudentProfile.objects.filter(student_id=int(studentId)).first()
+                student_profile = StudentProfile.objects.filter(student_id=int(studentId)).select_related('user').first()
             
             if not student_profile:
                 student_profile = StudentProfile.objects.filter(
                     Q(user__username__iexact=studentId) | 
                     Q(user__first_name__iexact=studentId)
-                ).first()
+                ).select_related('user').first()
             
             if student_profile:
                 user = student_profile.user
@@ -136,22 +136,24 @@ def login(request):
         user_ip = get_client_ip(request)
         browser_info = get_browser_info(request)
 
-        email_sent = False
+        # 🚀 ASYNC EMAIL SENDING (Prevents login lag)
+        import threading
         if user_email:
             try:
-                email_sent = send_login_email(
-                    user_email=user_email,
-                    username=username,
-                    login_time=login_time,
-                    user_ip=user_ip,
-                    browser_info=browser_info,
-                    user=user
+                email_thread = threading.Thread(
+                    target=send_login_email,
+                    args=(user_email, username or user.username, login_time, user_ip, browser_info, user)
                 )
-                print(f"DEBUG: Login email {'sent' if email_sent else 'failed to send'} for user {username}")
+                email_thread.daemon = True
+                email_thread.start()
+                print(f"DEBUG: Login email triggered in background for {user.username}")
             except Exception as e:
-                print(f"Email error for user {username}: {e}")
-        else:
-            print(f"DEBUG: No email address for user {username}, skipping login confirmation email")
+                print(f"DEBUG: Failed to start email thread: {e}")
+
+        # 🏎️ OPTIMIZED PROFILE LOOKUP
+        student_profile = None
+        if user.role == 'student':
+            student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
 
         response_data = {
             **tokens,
@@ -160,20 +162,16 @@ def login(request):
                 "email": user_email,
                 "name": user.first_name or user.username,
                 "role": user.role or "unknown",
-                "course": StudentProfile.objects.filter(user=user).select_related('course').first().course.title if user.role == 'student' and StudentProfile.objects.filter(user=user).select_related('course').exists() and StudentProfile.objects.filter(user=user).select_related('course').first().course is not None else "",
-                "enrolled_courses": StudentProfile.objects.filter(user=user).first().enrolled_courses_titles() if user.role == 'student' and StudentProfile.objects.filter(user=user).exists() else []
+                "course": student_profile.course.title if student_profile and student_profile.course else "",
+                "enrolled_courses": student_profile.enrolled_courses_titles() if student_profile else []
             },
-            "email_sent": email_sent
+            "email_sent": True
         }
         
         # Add studentId to response for students
-        if user.role == 'student':
-            try:
-                student_profile = StudentProfile.objects.filter(user=user).first()
-                if student_profile and student_profile.student_id:
-                    response_data["user"]["studentId"] = student_profile.student_id
-            except:
-                pass
+        if user.role == 'student' and student_profile:
+            if student_profile.student_id:
+                response_data["user"]["studentId"] = student_profile.student_id
         
         print(f"DEBUG: Response data successful for {user.username}")
         return Response(response_data)
@@ -209,14 +207,25 @@ def send_otp(request):
     subject = f"Your OTP for {settings.PLATFORM_NAME}"
     message = f"Hello {user.username if user else 'User'},\n\nYour One-Time Password (OTP) for login is: {otp}\n\nThis code will expire shortly. Do not share it with anyone."
     
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [target_email],
-        fail_silently=False,
-    )
-    print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
+    # 🚀 ASYNC OTP EMAIL (Prevents UI hang)
+    import threading
+    def send_async_otp():
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [target_email],
+                fail_silently=False,
+            )
+            print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
+        except Exception as e:
+            print(f"DEBUG: Failed to send OTP email: {e}")
+
+    email_thread = threading.Thread(target=send_async_otp)
+    email_thread.daemon = True
+    email_thread.start()
+
     return Response({"message": "OTP sent successfully"})
 
 
@@ -251,8 +260,10 @@ def verify_otp(request):
             user.save(update_fields=['is_active'])
 
         tokens = get_tokens(user)
+        # 🏎️ OPTIMIZED PROFILE LOOKUP
         student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
         course_title = student_profile.course.title if student_profile and student_profile.course else ""
+        
         return Response({
             **tokens,
             "user": {
@@ -261,7 +272,7 @@ def verify_otp(request):
                 "name": user.first_name or user.username,
                 "role": user.role or "student",
                 "course": course_title if user.role == 'student' else "",
-                "enrolled_courses": StudentProfile.objects.filter(user=user).select_related('course').first().enrolled_courses_titles() if user.role == 'student' and StudentProfile.objects.filter(user=user).exists() else [course_title] if course_title else []
+                "enrolled_courses": student_profile.enrolled_courses_titles() if student_profile else ([course_title] if course_title else [])
             },
         })
 
@@ -398,30 +409,33 @@ def register(request):
         otp = str(random.randint(100000, 999999))
         OTP.objects.create(username=username, email=email, otp=otp)
         
-        try:
-            subject = f"Verify Your Faculty Account - {settings.PLATFORM_NAME}"
-            message = f"Hello {username},\n\nThank you for registering as faculty. To activate your account, please use the following OTP:\n\nOTP: {otp}\n\nDo not share this code."
-            
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-            print(f"DEBUG: Registration OTP {otp} sent to {email}")
-            return Response({
-                "message": "Registration successful. Please verify your OTP to activate your account.",
-                "user": {"username": username, "role": role},
-                "verification_required": True
-            })
-        except Exception as e:
-            print(f"DEBUG: Failed to send registration email: {e}")
-            # Even if email fails, account is created (but inactive)
-            return Response({
-                "message": "Account created, but failed to send verification email. Please contact admin.",
-                "verification_required": True
-            }, status=201)
+        # 🚀 ASYNC REGISTRATION EMAIL
+        import threading
+        def send_async_reg_email():
+            try:
+                subject = f"Verify Your Faculty Account - {settings.PLATFORM_NAME}"
+                message = f"Hello {username},\n\nThank you for registering as faculty. To activate your account, please use the following OTP:\n\nOTP: {otp}\n\nDo not share this code."
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+                print(f"DEBUG: Registration OTP {otp} sent to {email}")
+            except Exception as e:
+                print(f"DEBUG: Failed to send registration email: {e}")
+
+        email_thread = threading.Thread(target=send_async_reg_email)
+        email_thread.daemon = True
+        email_thread.start()
+
+        return Response({
+            "message": "Registration successful. Please verify your OTP to activate your account.",
+            "user": {"username": username, "role": role},
+            "verification_required": True
+        })
 
     # Student flow (immediate login)
     tokens = get_tokens(user)
