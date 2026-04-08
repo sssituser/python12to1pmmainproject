@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaArrowRight, FaEye } from "react-icons/fa";
+import { FaEye, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaCode, FaCheckCircle, FaLock, FaBuilding } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 function AllJobs() {
   const navigate = useNavigate();
 
   const [jobsData, setJobsData] = useState([]);
-  const [page, setPage] = useState(1);
-  const [perPage] = useState(10);
   const [search, setSearch] = useState("");
   const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(true);
 
   const toggleDescription = (id) => {
     setExpandedDescriptions((prev) => {
@@ -23,247 +22,231 @@ function AllJobs() {
     });
   };
 
-  // ==============================
-  // APPLY JOB
-  // ==============================
   async function applyJob(jobId, externalLink = null) {
     const token = localStorage.getItem("access");
-
-    // 🔐 Block if not logged in
     if (!token) {
-    alert("Please login first ");
+      alert("Please login first");
       return;
     }
 
     try {
-      const res = await fetch(
-        "http://127.0.0.1:8000/api/applied-jobs/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ job: jobId }),
-        }
-      );
+      const res = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ job: jobId }),
+      });
 
       const data = await res.json();
 
       if (res.status === 201) {
-        console.log("Applied Successfully ✅");
-
         setJobsData((prev) =>
           prev.map((job) =>
             job.id === jobId ? { ...job, status: "Applied" } : job
           )
         );
-
-        // ✅ Open external link if provided
-        if (externalLink) {
-          window.open(externalLink, "_blank");
-        }
+        if (externalLink) window.open(externalLink, "_blank");
       } else {
-        console.log(data?.detail || data?.error || "Already Applied ⚠️");
-        
-        // Even if already applied, if they click again, maybe they want to see the link
-        if (externalLink) {
-          window.open(externalLink, "_blank");
-        }
+        if (externalLink) window.open(externalLink, "_blank");
       }
     } catch (err) {
-      console.log(err);
-      console.error("Error ❌");
+      console.error("Error ❌", err);
     }
   }
 
-  // ==============================
-  // FETCH JOBS + APPLIED STATUS
-  // ==============================
   useEffect(() => {
     const token = localStorage.getItem("access");
-
     async function fetchData() {
+      setIsLoading(true);
       try {
-        // ✅ PUBLIC JOBS
         const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
         const jobs = await jobsRes.json();
-
         let appliedIds = [];
 
-        // 🔐 Fetch applied jobs only if logged in
         if (token) {
           try {
-            const appliedRes = await fetch(
-              "http://127.0.0.1:8000/api/applied-jobs/",
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
+            const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             if (appliedRes.ok) {
               const appliedJobs = await appliedRes.json();
-
-              // ✅ Safe handling
               if (Array.isArray(appliedJobs)) {
                 appliedIds = appliedJobs.map((a) =>
                   typeof a.job === "object" ? a.job.id : a.job
                 );
               }
-            } else {
-              console.log("Unauthorized → skipping applied jobs");
             }
           } catch (err) {
             console.log("Applied jobs error:", err);
           }
         }
 
-        // ✅ Always update jobs
         const updated = jobs.map((j) => ({
           ...j,
           status: appliedIds.includes(j.id) ? "Applied" : j.status,
         }));
-
         setJobsData(updated);
       } catch (err) {
         console.log("Jobs fetch error:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
-  // ==============================
-  // SEARCH
-  // ==============================
   const filteredJobs = jobsData.filter((job) =>
     job.company?.toLowerCase().includes(search.toLowerCase()) ||
     job.job_title?.toLowerCase().includes(search.toLowerCase()) ||
     job.primary_skills?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ==============================
-  // PAGINATION
-  // ==============================
-  const totalPages = Math.ceil(filteredJobs.length / perPage);
-  const records = filteredJobs.slice(
-    (page - 1) * perPage,
-    page * perPage
-  );
-
-  // ==============================
-  // UI
-  // ==============================
   return (
-    <div className="container mt-4">
-      <h4>All Job Openings</h4>
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* 🔹 Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+              All Job <span className="text-blue-600">Openings</span>
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Discover your next career move among our top-tier opportunities.
+            </p>
+          </div>
 
-      <input
-        className="form-control mb-3"
-        placeholder="Search jobs..."
-        style={{ width: "300px" }}
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value);
-        }}
-      />
+          <div className="relative group w-full md:w-96">
+            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search by company, title, or skills..."
+              className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
 
-      {/* Jobs List */}
-      <table className="table table-bordered table-hover shadow-sm">
-        <thead className="table-dark">
-          <tr>
-            <th className="text-center align-middle">Company</th>
-            <th className="text-center align-middle">Job Title</th>
-            <th className="text-center align-middle">Description</th>
-            <th className="text-center align-middle">Skills</th>
-            <th className="text-center align-middle">Deadline</th>
-            <th className="text-center align-middle">Location</th>
-            <th className="text-center align-middle">Status</th>
-            <th className="text-center align-middle">Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredJobs.length === 0 ? (
-            <tr>
-              <td colSpan="8" className="text-center">
-                No Jobs
-              </td>
-            </tr>
-          ) : (
-            filteredJobs.map((job) => (
-              <tr key={job.id}>
-                <td>{job.company}</td>
-                <td>{job.job_title}</td>
-                <td className="text-start" style={{ minWidth: "300px" }}>
-                  {job.description ? (
-                    job.description.length > 100 ? (
-                      <>
-                        {expandedDescriptions.has(job.id)
-                          ? job.description
-                          : `${job.description.substring(0, 100)}... `}
-                        <span
-                          onClick={() => toggleDescription(job.id)}
-                          className="text-primary font-weight-bold"
-                          style={{ cursor: "pointer", fontSize: "0.8rem", textDecoration: "underline" }}
-                        >
-                          {expandedDescriptions.has(job.id) ? "View Less" : "View More"}
-                        </span>
-                      </>
-                    ) : (
-                      job.description
-                    )
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-                <td className="text-center">{job.primary_skills || "N/A"}</td>
-                <td>{job.deadline}</td>
-                <td>{job.location}</td>
-
-                <td>
+        {/* 🔹 Jobs Grid */}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : filteredJobs.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaSearch size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">No jobs found</h3>
+            <p className="text-slate-500 mt-1">Try adjusting your search criteria.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredJobs.map((job) => (
+              <div 
+                key={job.id} 
+                className="group bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col justify-between overflow-hidden relative"
+              >
+                {/* Status Badge */}
+                <div className="absolute top-6 right-6">
                   {job.status === "Applied" ? (
-                    <span className="badge bg-success">Applied</span>
+                    <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-emerald-100">
+                      <FaCheckCircle size={12} /> APPLIED
+                    </span>
                   ) : job.status === "Closed" ? (
-                    <span className="badge bg-secondary">Closed</span>
+                    <span className="flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200">
+                      <FaLock size={12} /> CLOSED
+                    </span>
                   ) : (
-                    <span className="badge bg-primary">Open</span>
+                    <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-blue-100">
+                      OPEN
+                    </span>
                   )}
-                </td>
+                </div>
 
-                <td className="text-center align-middle">
-                  <div className="d-flex flex-column gap-2 align-items-center justify-content-center" style={{ minWidth: "100px" }}>
-                    <button
-                      className="btn btn-sm btn-primary w-100 py-2 font-weight-bold"
-                      onClick={() =>
-                        navigate(`/dashboard/jobs/${job.id}`)
-                      }
-                    >
-                      VIEW
-                    </button>
+                <div className="space-y-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+                      <FaBuilding size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+                        {job.job_title}
+                      </h3>
+                      <p className="text-slate-500 text-sm font-semibold">{job.company}</p>
+                    </div>
+                  </div>
 
-                    {job.status === "Applied" ? (
-                      <button className="btn btn-secondary btn-sm w-100 py-2 font-weight-bold" disabled>
-                        APPLIED
-                      </button>
+                  {/* Skills tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {(job.primary_skills || "General").split(",").slice(0, 3).map((skill, idx) => (
+                      <span key={idx} className="bg-slate-50 text-slate-600 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md border border-slate-100">
+                        {skill.trim()}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2 text-[13px] font-medium text-slate-600">
+                    <div className="flex items-center gap-2.5">
+                      <FaMapMarkerAlt className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      <span>{job.location || "Remote"}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <FaCalendarAlt className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                      <span>Deadline: {job.deadline || "TBA"}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[13px] text-slate-600 leading-relaxed">
+                    {job.description ? (
+                      job.description.length > 120 ? (
+                        <>
+                          {expandedDescriptions.has(job.id)
+                            ? job.description
+                            : `${job.description.substring(0, 120)}...`}
+                          <button
+                            onClick={() => toggleDescription(job.id)}
+                            className="text-blue-600 font-bold ml-1 hover:underline text-[12px]"
+                          >
+                            {expandedDescriptions.has(job.id) ? "Show Less" : "Read More"}
+                          </button>
+                        </>
+                      ) : (
+                        job.description
+                      )
                     ) : (
-                      <button
-                        className={`btn btn-sm w-100 py-2 font-weight-bold ${job.status === 'Closed' ? 'btn-secondary shadow-sm' : 'btn-success shadow'}`}
-                        onClick={() => job.status !== 'Closed' && applyJob(job.id, job.external_application_link)}
-                        disabled={job.status === 'Closed'}
-                      >
-                        {job.status === 'Closed' ? 'CLOSED' : 'APPLY'}
-                      </button>
+                      "No detailed description provided."
                     )}
                   </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <button
+                    onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
+                    className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-[13px] hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <FaEye size={14} /> VIEW
+                  </button>
+
+                  <button
+                    onClick={() => job.status !== 'Closed' && job.status !== 'Applied' && applyJob(job.id, job.external_application_link)}
+                    disabled={job.status === 'Closed' || job.status === 'Applied'}
+                    className={`flex-1 py-3 rounded-2xl font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-sm
+                      ${job.status === 'Closed' || job.status === 'Applied' 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30'}`}
+                  >
+                    {job.status === 'Applied' ? 'APPLIED' : job.status === 'Closed' ? 'CLOSED' : 'APPLY'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

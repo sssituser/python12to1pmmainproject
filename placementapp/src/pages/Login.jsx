@@ -184,7 +184,12 @@ function Login() {
     try {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        { studentId: form.studentId, password: form.password, role: "student" },
+        { 
+          username: form.studentId, 
+          studentId: form.studentId, 
+          password: form.password, 
+          role: "student" 
+        },
         {
           headers: {
             'Content-Type': 'application/json',
