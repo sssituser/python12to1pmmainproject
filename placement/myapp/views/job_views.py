@@ -53,9 +53,6 @@ class AppliedJobViewSet(viewsets.ModelViewSet):
 
 # ================= FACULTY APPLICATIONS API =================
 class FacultyApplicationsViewSet(viewsets.ModelViewSet):
-    """
-    API for faculty to view all student job applications
-    """
     queryset = AppliedJob.objects.all().select_related('user', 'job').order_by('-applied_date')
     serializer_class = AppliedJobSerializer
     
@@ -63,53 +60,41 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
     
     def get_queryset(self):
-        # For faculty users, return all applications (not filtered by current user)
         user = self.request.user
         username = self.request.query_params.get('username')
-        print(f"Current user: {user}, role: {getattr(user, 'role', 'unknown')}, is_staff: {getattr(user, 'is_staff', 'unknown')}, filter_username: {username}")
-        
+
         if user and (user.is_staff or getattr(user, 'role', None) == 'faculty'):
-            print("Returning all applications for faculty user")
             qs = AppliedJob.objects.all().select_related('user', 'job').order_by('-applied_date')
             if username:
                 qs = qs.filter(user__username__iexact=username)
             return qs
         else:
-            print(f"Returning filtered applications for user: {user}")
             return AppliedJob.objects.filter(user=user).select_related('user', 'job').order_by('-applied_date')
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        print(f"Queryset count: {queryset.count()}")
-        
-        # Debug: Print first few applications
-        for app in queryset[:3]:
-            print(f"App: {app.id}, user: {app.user.username}, job: {app.job.job_title if app.job else 'No job'}")
-        
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    # ✅ MOVE HERE (INSIDE CLASS)
     def update(self, request, *args, **kwargs):
-        """
-        Accept or reject student applications
-        """
         application = self.get_object()
-        action = request.data.get('action')  # 'accept' or 'reject'
-        
-        if action not in ['accept', 'reject']:
-            return Response({"error": "Invalid action. Use 'accept' or 'reject'."}, status=400)
-        
-        # Update application status
-        application.status = action
+        action = request.data.get('action')
+
+        if action == "accept":
+            application.status = "accepted"
+        elif action == "reject":
+            application.status = "rejected"
+        else:
+            return Response({"error": "Invalid action"}, status=400)
+
         application.save()
-        
-        print(f"Application {application.id} {action}ed by {request.user.username}")
-        
+
         return Response({
-            "message": f"Application {action}ed successfully",
-            "application_id": application.id,
+            "message": "Status updated successfully",
             "status": application.status
         })
+  
 
 
 # ================= ADMIN JOB API =================
@@ -130,4 +115,4 @@ class AdminJobViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
-
+

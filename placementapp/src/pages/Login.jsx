@@ -182,14 +182,19 @@ function Login() {
     setLoading(true);
 
     try {
+      const hostname = window.location.hostname;
+      const requestData = { 
+        username: form.studentId, 
+        studentId: form.studentId, 
+        password: form.password, 
+        role: "student" 
+      };
+      
+      console.log("DEBUG: Sending login request:", requestData);
+      
       const res = await axios.post(
-        `http://${window.location.hostname}:8000/api/login/`,
-        { 
-          username: form.studentId, 
-          studentId: form.studentId, 
-          password: form.password, 
-          role: "student" 
-        },
+        `http://${hostname}:8000/api/login/`,
+        requestData,
         {
           headers: {
             'Content-Type': 'application/json',

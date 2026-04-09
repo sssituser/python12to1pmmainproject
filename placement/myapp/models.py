@@ -137,11 +137,15 @@ class AppliedJob(models.Model):
     user = models.ForeignKey('myapp.User', on_delete=models.CASCADE)
     job = models.ForeignKey(Job,on_delete=models.CASCADE)
     applied_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default='pending', choices=[
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
+    status = models.CharField(
+    max_length=20,
+    default='pending',
+    choices=[
+        ('pending', 'Under Process'),
+        ('accepted', 'Selected'),
         ('rejected', 'Rejected')
-    ])
+    ]
+)
 
     def __str__(self):
         return f"{self.user.username} - {self.job.job_title}"

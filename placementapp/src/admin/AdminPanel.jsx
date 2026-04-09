@@ -19,6 +19,8 @@ import {
   Download,
   Edit,
   Trash2,
+  UserX,
+  UserCheck,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -48,6 +50,17 @@ function AdminPanel() {
   const [faculty, setFaculty] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    password: '',
+    is_active: true
+  });
   const [showPassword, setShowPassword] = useState(false);
   
   // Enhanced state for search and filtering
@@ -142,45 +155,124 @@ function AdminPanel() {
   };
 
   const fetchUsers = async () => {
-    console.log("🔄 Starting fetchUsers function...");
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/all-users/`);
+      const hostname = window.location.hostname;
+      const response = await makeAuthenticatedRequest(`http://${hostname}:8000/api/all-users/`);
       
-      if (response.ok) {
+      if (response && response.ok) {
         const data = await response.json();
-        console.log("✅ Users data received:", data.length, "total users");
+        setUsers(data);
         
-        const facultyData = data.filter(u => u.role === 'faculty');
-        const studentData = data.filter(u => u.role === 'student');
+        // Filter into faculty and students
+        const facultyUsers = data.filter(u => u.role === 'faculty');
+        const studentUsers = data.filter(u => u.role === 'student');
         
-        console.log("📚 Faculty found:", facultyData.length);
-        console.log("👨‍🎓 Students found:", studentData.length);
+        setFaculty(facultyUsers);
+        setStudents(studentUsers);
         
-        setFaculty(facultyData);
-        setStudents(studentData);
-        
-        // Calculate statistics
-        const newStats = {
-          totalFaculty: facultyData.length,
-          activeFaculty: facultyData.filter(f => f.is_active).length,
-          totalStudents: studentData.length,
-          activeStudents: studentData.filter(s => s.is_active).length,
-          blockedStudents: studentData.filter(s => !s.is_active).length,
-          placedStudents: Math.floor(studentData.filter(s => s.is_active).length * 0.65), // Simulated placement data
-        };
-        
-        setStats(newStats);
-        console.log("📊 User management stats calculated:", newStats);
+        // Update Stats
+        setStats({
+          totalFaculty: facultyUsers.length,
+          activeFaculty: facultyUsers.filter(u => u.is_active).length,
+          totalStudents: studentUsers.length,
+          activeStudents: studentUsers.filter(u => u.is_active).length,
+          blockedStudents: studentUsers.filter(u => !u.is_active).length,
+          placedStudents: studentUsers.filter(u => u.studentprofile?.is_placed).length
+        });
       } else {
-        console.log("❌ Failed to fetch users, status:", response.status);
+        console.error("Failed to fetch users, status:", response?.status);
+        showMessage('error', "Failed to load user data");
       }
     } catch (error) {
       console.error("❌ Failed to fetch users:", error);
-      setMessage({ type: 'error', text: 'Failed to load user data' });
+      showMessage('error', "Network error. Please try again.");
     } finally {
       setLoading(false);
-      console.log("🏁 fetchUsers completed, loading set to false");
+    }
+  };
+
+  // --- DELETE USER ---
+  const deleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    try {
+      const response = await makeAuthenticatedRequest(`http://127.0.0.1:8000/api/delete-user/${userId}/`, {
+        method: "DELETE"
+      });
+      if (response && response.ok) {
+        showMessage('success', "User deleted successfully");
+        fetchUsers();
+      } else {
+        showMessage('error', "Failed to delete user");
+      }
+    } catch (err) {
+      showMessage('error', "Error deleting user");
+    }
+  };
+
+  // --- TOGGLE USER STATUS ---
+  const toggleUserStatus = async (user) => {
+    const role = user.role === 'admin' ? 'faculty' : (user.role || 'student');
+    const endpoint = role === 'faculty' 
+      ? `http://127.0.0.1:8000/api/toggle-faculty-status/${user.id}/`
+      : `http://127.0.0.1:8000/api/toggle-student-status/${user.id}/`;
+
+    try {
+      const response = await makeAuthenticatedRequest(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !user.is_active })
+      });
+      if (response && response.ok) {
+        showMessage('success', "User status updated successfully");
+        fetchUsers();
+      } else {
+        showMessage('error', "Failed to update status");
+      }
+    } catch (err) {
+      showMessage('error', "Error updating user status");
+    }
+  };
+
+  // --- EDIT USER ---
+  const startEditUser = (user) => {
+    setEditUser(user);
+    setEditFormData({
+      email: user.email || '',
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      password: '', // Keep password empty for security
+      is_active: user.is_active,
+      student_id: user.studentprofile?.student_id || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    if (!editUser) return;
+
+    const role = editUser.role || 'student';
+    const endpoint = role === 'faculty' 
+      ? `http://127.0.0.1:8000/api/update-faculty/${editUser.id}/`
+      : `http://127.0.0.1:8000/api/update-student/${editUser.id}/`;
+
+    try {
+      const response = await makeAuthenticatedRequest(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editFormData)
+      });
+      if (response && response.ok) {
+        showMessage('success', "User updated successfully");
+        setIsEditModalOpen(false);
+        setEditUser(null);
+        fetchUsers();
+      } else {
+        showMessage('error', "Failed to update user");
+      }
+    } catch (err) {
+      showMessage('error', "Error updating user");
     }
   };
 
@@ -640,36 +732,40 @@ function AdminPanel() {
                     </td>
                   </tr>
                 ) : (
-                  filteredFaculty.map((f) => (
-                    <tr key={f.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">{f.username}</td>
-                      <td className="p-3">{f.first_name} {f.last_name}</td>
-                      <td className="p-3">{f.email}</td>
+                  filteredFaculty.map((u) => (
+                    <tr key={u.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">{u.username}</td>
+                      <td className="p-3">{u.first_name} {u.last_name}</td>
+                      <td className="p-3">{u.email}</td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          f.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {f.is_active ? 'Active' : 'Inactive'}
+                          {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => toggleFacultyStatus(f.id, f.is_active)}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              f.is_active
-                                ? 'bg-red-600 text-white hover:bg-red-700'
-                                : 'bg-green-600 text-white hover:bg-green-700'
-                            }`}
+                            onClick={() => startEditUser(u)}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Edit"
                           >
-                            {f.is_active ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button className="text-blue-600 hover:text-blue-800 p-1">
                             <Edit size={16} />
                           </button>
-                          <button 
-                            onClick={() => deleteFaculty(f.id)}
+                          <button
+                            onClick={() => toggleUserStatus(u)}
+                            className={`p-1 rounded transition-colors ${
+                              u.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
+                            }`}
+                            title={u.is_active ? 'Block' : 'Unblock'}
+                          >
+                            {u.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                          </button>
+                          <button
+                            onClick={() => deleteUser(u.id)}
                             className="text-red-600 hover:text-red-800 p-1"
+                            title="Delete"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -726,36 +822,36 @@ function AdminPanel() {
                       <td className="p-3">{s.email}</td>
                       <td className="p-3">{s.studentprofile?.course?.title || 'Not assigned'}</td>
                       <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            s.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {s.is_active ? 'Active' : 'Blocked'}
-                          </span>
-                          {s.studentprofile?.is_placed && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Placed
-                            </span>
-                          )}
-                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          s.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {s.is_active ? 'Active' : 'Blocked'}
+                        </span>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => toggleStudentStatus(s.id, s.is_active)}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              s.is_active
-                                ? 'bg-red-600 text-white hover:bg-red-700'
-                                : 'bg-green-600 text-white hover:bg-green-700'
-                            }`}
+                            onClick={() => startEditUser(s)}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Edit"
                           >
-                            {s.is_active ? 'Block' : 'Unblock'}
-                          </button>
-                          <button className="text-blue-600 hover:text-blue-800 p-1">
                             <Edit size={16} />
                           </button>
-                          <button className="text-purple-600 hover:text-purple-800 p-1">
-                            <FileText size={16} />
+                          <button
+                            onClick={() => toggleUserStatus(s)}
+                            className={`p-1 rounded transition-colors ${
+                              s.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
+                            }`}
+                            title={s.is_active ? 'Block' : 'Unblock'}
+                          >
+                            {s.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                          </button>
+                          <button
+                            onClick={() => deleteUser(s.id)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -764,6 +860,118 @@ function AdminPanel() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
+              <h3 className="text-lg font-bold">Edit {editUser?.role?.charAt(0).toUpperCase() + editUser?.role?.slice(1)}</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="hover:bg-blue-700 p-1 rounded-full transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.first_name}
+                    onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.last_name}
+                    onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Email Address</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                />
+              </div>
+
+              {editUser?.role === 'student' && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Student ID (Numeric)</label>
+                  <input
+                    type="text"
+                    value={editFormData.student_id}
+                    onChange={(e) => setEditFormData({...editFormData, student_id: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">New Password (leave blank to keep current)</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={editFormData.password}
+                    onChange={(e) => setEditFormData({...editFormData, password: e.target.value})}
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="edit_active"
+                  checked={editFormData.is_active}
+                  onChange={(e) => setEditFormData({...editFormData, is_active: e.target.checked})}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="edit_active" className="text-sm font-medium text-gray-700">Account Active</label>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md shadow-blue-100 transition"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -122,6 +122,10 @@ function Applications() {
   };
 
   const handleAccept = async (applicationId) => {
+<<<<<<< HEAD
+  try {
+    const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
+=======
     try {
       const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
@@ -129,14 +133,29 @@ function Applications() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'accept' })
       });
+>>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
 
-      if (res.ok) fetchApps();
-    } catch (error) {
-      console.error("Error accepting application:", error);
-    }
-  };
+    const res = await makeAuthenticatedRequest(url, {
+      method: 'PATCH',   // ✅ FIXED
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'accept' })
+    });
+
+    const data = await res.json();
+    console.log("ACCEPT RESPONSE:", data);
+
+    if (res.ok) fetchApps();
+
+  } catch (error) {
+    console.error("Error accepting application:", error);
+  }
+};
 
   const handleReject = async (applicationId) => {
+<<<<<<< HEAD
+  try {
+    const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
+=======
     try {
       const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
@@ -144,12 +163,23 @@ function Applications() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reject' })
       });
+>>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
 
-      if (res.ok) fetchApps();
-    } catch (error) {
-      console.error("Error rejecting application:", error);
-    }
-  };
+    const res = await makeAuthenticatedRequest(url, {
+      method: 'PATCH',   // ✅ FIXED
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reject' })
+    });
+
+    const data = await res.json();
+    console.log("REJECT RESPONSE:", data);
+
+    if (res.ok) fetchApps();
+
+  } catch (error) {
+    console.error("Error rejecting application:", error);
+  }
+};
 
   const token = localStorage.getItem("access");
 
@@ -239,14 +269,38 @@ function Applications() {
                         </span>
                       </td>
                       <td className="text-center">
-                        <span className={`badge px-3 py-2 rounded-pill ${
-                          status === 'accepted' ? 'bg-success' :
-                          status === 'rejected' ? 'bg-danger' :
-                          'bg-info'
-                        }`}>
-                          {status === 'pending' ? 'Applied' : status.charAt(0).toUpperCase() + status.slice(1)}
-                        </span>
-                      </td>
+
+                          <span className={`badge px-3 py-2 rounded-pill ${
+                            status === 'accepted' ? 'bg-success' :
+                            status === 'rejected' ? 'bg-danger' :
+                            'bg-warning'
+                          }`}>
+                            {status === 'accepted'
+                              ? 'Selected'
+                              : status === 'rejected'
+                              ? 'Rejected'
+                              : 'Under Process'}
+                          </span>
+
+                          {status === 'pending' && (
+                            <div className="mt-2 d-flex gap-2 justify-content-center">
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleAccept(app.id)}
+                              >
+                                Accept
+                              </button>
+
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleReject(app.id)}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+
+                        </td>
                     </tr>
                   );
                 })}

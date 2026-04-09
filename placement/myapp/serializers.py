@@ -201,6 +201,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 # JOBS
 # ===============================
 from datetime import date
+from datetime import date
 
 class JobSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
@@ -212,17 +213,21 @@ class JobSerializer(serializers.ModelSerializer):
     def get_status(self, obj):
         request = self.context.get('request')
 
-        # ❌ if no user → just return Open/Closed
         if not request or not request.user.is_authenticated:
             return "Open"
 
         user = request.user
 
-        # ✅ Check already applied
-        if AppliedJob.objects.filter(user=user, job=obj).exists():
-            return "Applied"
+        application = AppliedJob.objects.filter(user=user, job=obj).first()
 
-        # ✅ Check deadline
+        if application:
+            if application.status == "accepted":
+                return "Selected"
+            elif application.status == "rejected":
+                return "Rejected"
+            else:
+                return "Under Process"
+
         if obj.deadline and obj.deadline < date.today():
             return "Closed"
 

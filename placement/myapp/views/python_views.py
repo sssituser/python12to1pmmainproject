@@ -60,14 +60,14 @@ def user_combined_results_api(request):
     for attempt in exam_attempts:
         exam_results.append({
             'id': attempt.id,
-            'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
+            'examTitle': attempt.exam_title or 'Unknown Exam',
             'score': attempt.score or 0,
-            'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
-            'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'totalQuestions': attempt.total_questions or 1,
+            'examDate': attempt.exam_date.strftime('%Y-%m-%d %H:%M:%S') if attempt.exam_date else '',
             'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
             'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
-            'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
-            'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
+            'status': attempt.status,
+            'randomId': attempt.random_id or f"exam_{attempt.id}",
             'user': {
                 'username': target_user.username,
                 'id': target_user.id
