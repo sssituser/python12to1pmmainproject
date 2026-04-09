@@ -57,7 +57,7 @@ function Login() {
     setOtpLoading(true);
     try {
       await axios.post(
-        "http://127.0.0.1:8000/api/send_otp/",
+        `http://${window.location.hostname}:8000/api/send_otp/`,
         { username: otpUsername.trim() },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -81,7 +81,7 @@ function Login() {
     setOtpLoading(true);
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/verify_otp/",
+        `http://${window.location.hostname}:8000/api/verify_otp/`,
         { username: otpUsername.trim(), otp: otpCode.trim(), role: "student" },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -145,7 +145,7 @@ function Login() {
     setLoading(true);
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/reset-password/",
+        `http://${window.location.hostname}:8000/api/reset-password/`,
         {
           username: forgotUsername.trim(),
           password: newPassword.trim(),
@@ -182,14 +182,19 @@ function Login() {
     setLoading(true);
 
     try {
+      const hostname = window.location.hostname;
+      const requestData = { 
+        username: form.studentId, 
+        studentId: form.studentId, 
+        password: form.password, 
+        role: "student" 
+      };
+      
+      console.log("DEBUG: Sending login request:", requestData);
+      
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/login/",
-        { 
-          username: form.studentId, 
-          studentId: form.studentId, 
-          password: form.password, 
-          role: "student" 
-        },
+        `http://${hostname}:8000/api/login/`,
+        requestData,
         {
           headers: {
             'Content-Type': 'application/json',

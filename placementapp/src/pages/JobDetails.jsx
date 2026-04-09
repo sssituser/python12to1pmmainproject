@@ -17,14 +17,14 @@ function JobDetails() {
       setLoading(true);
       try {
         // Fetch specific job
-        const jobRes = await fetch(`http://127.0.0.1:8000/api/jobs/${id}/`, {
+        const jobRes = await fetch(`http://${window.location.hostname}:8000/api/jobs/${id}/`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const jobData = await jobRes.json();
         setJob(jobData);
 
         // Fetch application status
-        const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+        const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const appliedData = await appliedRes.json();
@@ -44,7 +44,7 @@ function JobDetails() {
   const handleApply = async () => {
     const token = localStorage.getItem("access");
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

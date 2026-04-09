@@ -293,7 +293,7 @@ function NewLeaveRequest() {
         console.log("Trying authenticated API call...");
         console.log("Token exists:", !!token);
         
-        const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
@@ -343,7 +343,7 @@ function NewLeaveRequest() {
     // Method 2: Try without authentication (if endpoint allows)
     try {
       console.log("Trying unauthenticated API call...");
-      const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, {
         headers: {
           "Content-Type": "application/json"
         }
@@ -422,7 +422,7 @@ function NewLeaveRequest() {
       try {
         const token = localStorage.getItem("access");
         if (token) {
-          const response = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+          const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, {
             headers: {
               "Authorization": `Bearer ${token}`,
               "Content-Type": "application/json"
@@ -592,7 +592,7 @@ function NewLeaveRequest() {
       console.log("Token being used:", token ? "Present" : "Missing");
       
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/leave-requests/create/', {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/create/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

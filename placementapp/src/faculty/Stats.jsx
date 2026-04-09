@@ -32,7 +32,7 @@ function Stats() {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +87,7 @@ function Stats() {
     const fetchStudentData = async () => {
       try {
         // Primary: Try students endpoint
-        const studentsRes = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/students/");
+        const studentsRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/students/`);
 
         if (studentsRes.ok) {
           const data = await studentsRes.json();
@@ -132,7 +132,7 @@ function Stats() {
 
       // Fallback 1: Try student-stats endpoint
       try {
-        const studentStatsRes = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/student-stats/");
+        const studentStatsRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/student-stats/`);
 
         if (studentStatsRes.ok) {
           const data = await studentStatsRes.json();

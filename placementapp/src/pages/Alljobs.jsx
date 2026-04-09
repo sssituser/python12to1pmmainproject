@@ -30,7 +30,7 @@ function AllJobs() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,11 +61,12 @@ function AllJobs() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
+        const jobsRes = await fetch(`http://${window.location.hostname}:8000/api/jobs/`);
         const jobs = await jobsRes.json();
         let appliedJobs = [];
 
         if (token) {
+<<<<<<< HEAD
           const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -73,6 +74,22 @@ function AllJobs() {
           if (appliedRes.ok) {
             const data = await appliedRes.json();
             appliedJobs = Array.isArray(data) ? data : data.results || [];
+=======
+          try {
+            const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (appliedRes.ok) {
+              const appliedJobs = await appliedRes.json();
+              if (Array.isArray(appliedJobs)) {
+                appliedIds = appliedJobs.map((a) =>
+                  typeof a.job === "object" ? a.job.id : a.job
+                );
+              }
+            }
+          } catch (err) {
+            console.log("Applied jobs error:", err);
+>>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
           }
         }
 

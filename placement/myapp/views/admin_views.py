@@ -142,3 +142,65 @@ def update_faculty_api(request, faculty_id):
         
     except User.DoesNotExist:
         return Response({'error': 'Faculty not found'}, status=404)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_student_api(request, student_id):
+    """Update student user information and profile"""
+    try:
+        student = User.objects.get(id=student_id, role='student')
+        data = request.data
+        
+        # Update user fields
+        if 'email' in data:
+            if data['email'] != student.email and User.objects.filter(email=data['email']).exists():
+                return Response({'error': 'Email already exists'}, status=400)
+            student.email = data['email']
+        
+        if 'first_name' in data:
+            student.first_name = data['first_name']
+        
+        if 'last_name' in data:
+            student.last_name = data['last_name']
+        
+        if 'password' in data and data['password']:
+            student.password = make_password(data['password'])
+            
+        if 'is_active' in data:
+            student.is_active = data['is_active']
+            
+        student.save()
+        
+        # Update profile fields if provided
+        profile = StudentProfile.objects.filter(user=student).first()
+        if profile:
+            if 'student_id' in data:
+                profile.student_id = data['student_id']
+            # Add other profile fields to update as needed
+            profile.save()
+            
+        return Response({
+            'success': True,
+            'message': 'Student updated successfully'
+        })
+        
+    except User.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=404)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def toggle_faculty_status_api(request, faculty_id):
+    """Toggle faculty active/blocked status"""
+    try:
+        faculty = User.objects.get(id=faculty_id, role='faculty')
+        faculty.is_active = not faculty.is_active
+        faculty.save()
+        
+        return Response({
+            'success': True,
+            'message': f'Faculty {"unblocked" if faculty.is_active else "blocked"} successfully',
+            'is_active': faculty.is_active
+        })
+        
+    except User.DoesNotExist:
+        return Response({'error': 'Faculty not found'}, status=404)

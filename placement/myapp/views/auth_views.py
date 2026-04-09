@@ -48,56 +48,84 @@ def login(request):
 
     user = None
     
-    # Handle student ID login
-    if studentId:
-        try:
-            # 1. Profile Lookup (Primary for Students)
-            student_profile = None
-            if str(studentId).isdigit():
-                student_profile = StudentProfile.objects.filter(student_id=int(studentId)).select_related('user').first()
-            
-            if not student_profile:
-                student_profile = StudentProfile.objects.filter(
-                    Q(user__username__iexact=studentId) | 
-                    Q(user__first_name__iexact=studentId)
-                ).select_related('user').first()
-            
-            if student_profile:
-                user = student_profile.user
-                print(f"DEBUG: Found user via StudentProfile: {user.username}")
-            else:
-                # 2. GLOBAL FALLBACK: Check User table directly (Fix for legacy/incomplete profiles)
-                user = User.objects.filter(Q(username__iexact=studentId) | Q(email__iexact=studentId)).first()
-                if user:
-                     print(f"DEBUG: Found user via Direct User Lookup: {user.username}")
-        except Exception as e:
-            print(f"DEBUG: Student lookup error: {e}")
-            pass
+    # 📉 DB DIAGNOSTIC (Print total counts to see if DB is even populated)
+    print(f"DIAGNOSTIC: User count={User.objects.count()}, Profile count={StudentProfile.objects.count()}")
     
-    # Handle regular username/email login (alternate input name)
-    elif username:
-        user = User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username)).first()
+    # 🔍 SUPER LOOKUP: Exhaustive user discovery across all identifiers
+    try:
+        # Sanitize inputs
+        clean_sid = str(studentId).strip() if studentId else ""
+        clean_user = str(username).strip() if username else ""
+        identifier = clean_sid if clean_sid else clean_user
+        
+        if identifier:
+            # 1. Direct User Table Match (Username/Email)
+            user = User.objects.filter(Q(username__iexact=identifier) | Q(email__iexact=identifier)).first()
+            
+            # 2. StudentProfile student_id Match (Integer conversion)
+            if not user and identifier.isdigit():
+                profile = StudentProfile.objects.filter(student_id=int(identifier)).select_related('user').first()
+                if profile:
+                    user = profile.user
+            
+            # 3. StudentProfile Phone Match
+            if not user:
+                profile = StudentProfile.objects.filter(phone=identifier).select_related('user').first()
+                if profile:
+                    user = profile.user
+                    
+            # 4. Final Fallback: Check if username/email was stored in the other field
+            if not user and clean_user:
+                 user = User.objects.filter(Q(username__iexact=clean_user) | Q(email__iexact=clean_user)).first()
+
+        if user:
+            print(f"DEBUG: Identified user {user.username} via Super Lookup")
+        else:
+            print(f"DEBUG: Super Lookup failed for identifier: '{identifier}'")
+            
+    except Exception as e:
+        print(f"DEBUG: Critical error during Super Lookup: {e}")
+        return Response({"detail": "Error identifying user."}, status=500)
 
     required_role = request.data.get("role")
 
     if user:
         # 🔐 Verify password FIRST before checking active status
         password_valid = user.check_password(password)
+        
+        # 🩹 SELF-HEALING: If password check fails but we suspect a plain-text password in DB
+        if not password_valid and user.password == password:
+            print(f"🛠️ AUTO-REPAIR: User {user.username} has a PLAIN-TEXT password. Hashing and fixing now...")
+            user.set_password(password)
+            user.save()
+            password_valid = True # Mark as valid since it matched exactly before hashing
+            print(f"✅ AUTO-REPAIR: User {user.username} password has been hashed and updated.")
+        
         print(f"DEBUG: User found: {user.username}, Password valid: {password_valid}")
-
+        
         if not password_valid:
-            return Response({"detail": "Invalid credentials"}, status=401)
+            return Response({"detail": "Invalid credentials. Please check your Student ID and Password."}, status=401)
             
         # 🛡️ Role separation check
         if required_role:
             user_role = (user.role or "student").lower().strip()
             req_role = required_role.lower().strip()
             
+            print(f"DEBUG: Role check - User: {user_role}, Required: {req_role}")
+            
             if req_role == "student" and user_role != "student":
+                print(f"DEBUG: Role mismatch (403) - Found {user_role}")
                 return Response({"detail": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
             
             if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+                print(f"DEBUG: Role mismatch (403) - Found {user_role}")
                 return Response({"detail": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
+        
+        # 🔒 Lock check
+        if user.role == 'student':
+            profile = StudentProfile.objects.filter(user=user).first()
+            if profile and hasattr(profile, 'is_locked') and profile.is_locked:
+                 return Response({"detail": "Your account is locked. Please contact support."}, status=403)
 
         # ⚡ AUTO-ACTIVATE FACULTY ON CORRECT LOGIN (Fix for stuck accounts)
         if user.role == 'faculty' and not user.is_active:
@@ -176,7 +204,7 @@ def login(request):
         print(f"DEBUG: Response data successful for {user.username}")
         return Response(response_data)
     else:
-        print("DEBUG: User not found")
+        print(f"DEBUG: No user found for input (username={username}, studentId={studentId})")
 
     return Response({"detail": "Invalid credentials"}, status=401)
 
@@ -332,22 +360,24 @@ def change_password(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
-    username = request.data.get("username") or request.data.get("studentId")
-    password = request.data.get("password")
-    email = request.data.get("email", "")
+    username = request.data.get("username", "").strip()
+    studentId = request.data.get("studentId", "").strip() # 🔥 FIX: Explicitly get studentId
+    password = request.data.get("password", "").strip()
+    email = request.data.get("email", "").strip()
     role = request.data.get("role", "student").strip().lower()
     course = request.data.get("course", "")
     phone_number = request.data.get("phone_number", "")
 
-    print(f"DEBUG REGISTER: username={username}, password={password}, email={email}, role={role}, course={course}")
+    print(f"DEBUG REGISTER: username={username}, studentId={studentId}, role={role}")
 
     if not username or not password:
-        return Response({"error": "Student ID and password required"}, status=400)
+        return Response({"error": "Username and password required"}, status=400)
 
-    existing_user = User.objects.filter(username=username).first()
+    # Check if a user already exists with this username OR email
+    existing_user = User.objects.filter(Q(username=username) | Q(email=email)).first()
     if existing_user:
         if existing_user.is_active:
-            return Response({"error": "Username already exists and is active. Please login."}, status=400)
+            return Response({"error": "User with this username or email already exists."}, status=400)
         
         # If it's an inactive faculty, we allow "re-registering" to get a new OTP
         if existing_user.role == 'faculty':
@@ -396,13 +426,19 @@ def register(request):
                 # Also create enrollment for each course
                 CourseEnrollment.objects.get_or_create(user=user, course=course_obj)
             
-            # Numeric sync for optimized lookups (StudentProfile)
+            # 🛡️ ROBUST SYNC: Save studentId to profile and link courses
             sp_kwargs = {"user": user, "course": primary_course_obj}
-            if str(username).isdigit():
-                sp_kwargs["student_id"] = int(username)
+            
+            # Prioritize external studentId from request, fallback to username if numeric
+            final_sid = studentId if studentId else (username if str(username).isdigit() else None)
+            
+            if final_sid and str(final_sid).isdigit():
+                sp_kwargs["student_id"] = int(final_sid)
+            elif phone_number:
+                sp_kwargs["phone"] = phone_number
                 
             student_profile = StudentProfile.objects.create(**sp_kwargs)
-            print(f"DEBUG: Created student profile for {username} with {len(course_titles)} courses.")
+            print(f"DEBUG: Created profile for {username} with SID: {sp_kwargs.get('student_id', 'None')}")
 
     if role == 'faculty':
         # Generate & Send OTP for verification

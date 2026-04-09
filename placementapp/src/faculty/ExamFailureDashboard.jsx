@@ -47,7 +47,7 @@ function ExamFailureDashboard() {
       }
 
       // Use the faculty-appropriate endpoint for exam results
-      const response = await axios.get("http://127.0.0.1:8000/api/all-exam-results/", {
+      const response = await axios.get(`http://${window.location.hostname}:8000/api/all-exam-results/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

@@ -64,7 +64,7 @@ const DailyExam = () => {
     if (!isStudent || !token) { setCourseResolved(true); return; }
     const sync = async () => {
        try {
-         const res = await fetch("http://127.0.0.1:8000/api/profile/", { headers: { Authorization: `Bearer ${token}` } });
+         const res = await fetch(`http://${window.location.hostname}:8000/api/profile/`, { headers: { Authorization: `Bearer ${token}` } });
          if (res.ok) {
            const d = await res.json();
            setStudentCourse((d.course_title || d.course || "").trim());
@@ -111,7 +111,7 @@ const DailyExam = () => {
 
     const restoreState = () => {
       try {
-        const saved = sessionStorage.getItem('dailyExamState');
+        const saved = localStorage.getItem('dailyExamState');
         if (saved) {
           const s = JSON.parse(saved);
           if (s.subjectKey === subjectKey) {
@@ -143,7 +143,7 @@ const DailyExam = () => {
         
         let cnf = null;
         try {
-          const r = await fetch(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(normCourse)}`);
+          const r = await fetch(`http://${window.location.hostname}:8000/api/automated-exam-config/?course_name=${encodeURIComponent(normCourse)}`);
           if (r.ok) cnf = await r.json();
         } catch (e) {}
 
@@ -161,14 +161,14 @@ const DailyExam = () => {
         const slug = subjectKey.replace(/\s+/g, "_");
         let pool = [];
         try {
-          const res = await fetch(`http://127.0.0.1:8000/api/playground-questions/${slug}/`);
+          const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/${slug}/`);
           const d = await res.json();
           pool = d.data || d.questions || d || [];
         } catch (e) {}
 
         if (!Array.isArray(pool) || pool.length === 0) {
           try {
-            const res = await fetch("http://127.0.0.1:8000/api/playground-questions/general_programming/");
+            const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/general_programming/`);
             const d = await res.json();
             pool = d.data || d.questions || d || [];
           } catch (e) {}
@@ -220,13 +220,25 @@ const DailyExam = () => {
     };
   }, [examStarted, examSubmitted]);
 
+  // 🛡️ STATE PERSISTENCE ENGINE (Point 7: Anti-Refresh Security)
+  useEffect(() => {
+    if (examStarted && !examSubmitted) {
+      const state = {
+        examStarted, questions, answers, timeLeft, examDuration,
+        warningCount, currentQuestion, subjectKey,
+        marksPerQuestion, passingRule, passingValue
+      };
+      localStorage.setItem('dailyExamState', JSON.stringify(state));
+    }
+  }, [examStarted, questions, answers, timeLeft, currentQuestion, warningCount]);
+
   // Submit Hook
   const handleSubmitExam = async (reason = "Manual") => {
     if (examSubmittedRef.current) return;
     examSubmittedRef.current = true;
     setExamSubmitted(true);
     stopWebcam();
-    sessionStorage.removeItem("dailyExamState");
+    localStorage.removeItem("dailyExamState");
 
     let score = 0;
     answers.forEach((ans, idx) => {

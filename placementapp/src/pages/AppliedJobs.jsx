@@ -13,8 +13,18 @@ useEffect(() => {
     return;
   }
 
+<<<<<<< HEAD
   const fetchJobs = () => {
     fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+=======
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+>>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
       headers: {
         Authorization: `Bearer ${token}`,
       },

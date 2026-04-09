@@ -38,7 +38,7 @@ export default function ChangePassword() {
 
     setLoading(true);
     const token = localStorage.getItem("access");
-    const url = "http://127.0.0.1:8000/api/change-password/";
+    const url = `http://${window.location.hostname}:8000/api/change-password/`;
     const payload = {
       current_password: formData.currentPassword,
       old_password: formData.currentPassword,

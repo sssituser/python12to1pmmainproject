@@ -62,7 +62,7 @@ export default function Profile() {
   // Fetch leave requests
   const fetchLeaveRequests = (token) => {
     setLoadingLeaveRequests(true);
-    axios.get("http://127.0.0.1:8000/api/leave-requests/my-requests/", {
+    axios.get(`http://${window.location.hostname}:8000/api/leave-requests/my-requests/`, {
       headers: getAuthHeaders(token)
     })
       .then(res => {
@@ -86,7 +86,7 @@ export default function Profile() {
     setLoading(true);
 
     // Fetch profile data
-    axios.get("http://127.0.0.1:8000/api/profile/", {
+    axios.get(`http://${window.location.hostname}:8000/api/profile/`, {
       headers: getAuthHeaders(token)
     })
       .then(res => {
@@ -145,7 +145,7 @@ export default function Profile() {
     const handleLeaveRequestUpdate = () => fetchLeaveRequests(token);
     const handleExamUpdate = () => {
        console.log("🔄 Profile - Exam completed, refreshing data...");
-       axios.get("http://127.0.0.1:8000/api/profile/", { 
+       axios.get(`http://${window.location.hostname}:8000/api/profile/`, { 
          headers: getAuthHeaders(token) 
        }).then(res => setFormData(prev => ({...prev, ...res.data})));
     };
@@ -237,7 +237,7 @@ const addSkill = () => {
   const resolveMediaUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `http://127.0.0.1:8000${path}`;
+    return `http://${window.location.hostname}:8000${path}`;
   };
 
   const profileImageSrc =
@@ -369,11 +369,11 @@ const addSkill = () => {
     console.log("DEBUG: Form data being sent:", Object.fromEntries(data.entries()));
 
     try {
-      await axios.put("http://127.0.0.1:8000/api/profile/update/", data, {
+      await axios.put(`http://${window.location.hostname}:8000/api/profile/update/`, data, {
         headers: getAuthHeaders(token)
       });
 
-      const refreshed = await axios.get("http://127.0.0.1:8000/api/profile/", {
+      const refreshed = await axios.get(`http://${window.location.hostname}:8000/api/profile/`, {
         headers: getAuthHeaders(token)
       });
       console.log("DEBUG: Refreshed API response after save:", refreshed.data);
@@ -410,7 +410,7 @@ const addSkill = () => {
       if (refreshedData.profileImageUrl) {
         const imageUrl = refreshedData.profileImageUrl.startsWith('http') 
           ? refreshedData.profileImageUrl 
-          : `http://127.0.0.1:8000${refreshedData.profileImageUrl}`;
+          : `http://${window.location.hostname}:8000${refreshedData.profileImageUrl}`;
         localStorage.setItem("userProfileImage", imageUrl);
       }
     } catch (err) {

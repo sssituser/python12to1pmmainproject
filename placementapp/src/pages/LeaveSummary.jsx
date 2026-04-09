@@ -308,11 +308,11 @@ function LeaveSummary() {
       
       // Try different endpoints to find the leave requests data
       const endpoints = [
-        'http://127.0.0.1:8000/api/leave-requests/',
-        'http://127.0.0.1:8000/api/leave-requests/all/',
-        'http://127.0.0.1:8000/api/leave-requests/list/',
-        'http://127.0.0.1:8000/api/leave/all/',
-        'http://127.0.0.1:8000/api/leaves/'
+        `http://${window.location.hostname}:8000/api/leave-requests/`,
+        `http://${window.location.hostname}:8000/api/leave-requests/all/`,
+        `http://${window.location.hostname}:8000/api/leave-requests/list/`,
+        `http://${window.location.hostname}:8000/api/leave/all/`,
+        `http://${window.location.hostname}:8000/api/leaves/`
       ];
 
       let data = [];

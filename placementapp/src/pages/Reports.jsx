@@ -8,14 +8,14 @@ const Reports = () => {
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/exam/sessions/")
+    fetch(`http://${window.location.hostname}:8000/api/exam/sessions/`)
       .then(res => res.json())
       .then(data => setReports(data))
       .catch(err => console.log(err));
   }, []);
 
   const deleteReport = (id) => {
-    fetch(`http://127.0.0.1:8000/api/exam/${id}/delete/`, {
+    fetch(`http://${window.location.hostname}:8000/api/exam/${id}/delete/`, {
       method: "DELETE"
     }).then(() => {
       setReports(reports.filter(r => r.id !== id));
