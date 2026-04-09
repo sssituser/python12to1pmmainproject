@@ -186,10 +186,12 @@ function PlaygroundResults() {
       return;
     }
 
-    const totalQ = result.totalQuestions || result.questions?.length || 20;
-    const isRaw = totalQ <= 25;
-    const finalMarks = isRaw ? ((result.score || result.marks_obtained || (result.correctAnswers || 0)) * 2) : (result.score || result.marks_obtained);
-    const finalTotal = isRaw ? (totalQ * 2) : totalQ;
+    const totalQ = result.totalQuestions || result.total_questions || result.questions?.length || 20;
+
+    // 🛡️ Data Integrity Check: Priority to backend synced weighted marks
+    const finalMarks = result.marks_obtained ?? result.score ?? 0;
+    const finalTotal = result.total_marks ?? result.totalMarks ?? (totalQ * (result.marks_per_question || 2));
+
     
     const currentPassThreshold = getPassingScore(result.examTitle || result.exam_title || result.title || "");
     const passed = finalMarks >= currentPassThreshold;
@@ -414,15 +416,14 @@ function PlaygroundResults() {
 
                   return allResults.map((result, index) => {
                     const isDaily = (result.examType || "").toLowerCase() === "daily" || (result.exam_title || "").toLowerCase().includes("daily") || (result.title || "").toLowerCase().includes("daily");
-                    const totalQuestions = result.allQuestions?.length || result.questions?.length || 25;
+                    const totalQuestions = result.totalQuestions || result.total_questions || result.questions?.length || 25;
                     
-                    // 🛡️ Data Recovery: If old results only have 'score' but no 'correctAnswers' counts
-                    const rawCorrect = result.correctAnswers ?? result.correct_answers ?? result.correct_count ?? (result.score <= 25 ? result.score : 0);
-                    const correctCount = rawCorrect ?? 0;
-                    
-                    const totalMarks = isDaily ? (totalQuestions * 2) : (result.totalMarks || result.total_marks || (totalQuestions * 2) || 40);
-                    const scoreValue = isDaily ? (correctCount * 2) : (result.score || result.marks_obtained || (correctCount * 2));
+                    // 🛡️ Data Integrity Check: Priority to backend synced weighted marks
+                    const scoreValue = result.marks_obtained ?? result.score ?? 0;
+                    const totalMarks = result.total_marks ?? result.totalMarks ?? (totalQuestions * (result.marks_per_question || 2));
+
                     const percentage = totalMarks > 0 ? (scoreValue / totalMarks) * 100 : 0;
+
                     
                     const uniqueId = result.id || result.start_time || result.examDate;
                     const displayTitle = nameMap.get(uniqueId) || formatExamTitle(result.examTitle || result.exam_title || result.title);

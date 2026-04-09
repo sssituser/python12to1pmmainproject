@@ -202,16 +202,16 @@ function DailyExamReports() {
         ) : exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {exams.map((exam, index) => {
-              const totalQ = exam.totalQuestions || exam.allQuestions?.length || exam.questions?.length || 25;
-              const rawCorrect = exam.correctAnswers ?? exam.correct_answers ?? exam.correct_count ?? (exam.score <= 25 ? exam.score : 0);
-              const correctQ = rawCorrect ?? 0;
+              const totalQ = exam.totalQuestions || exam.total_questions || (exam.questions?.length || 20);
               
-              const total = totalQ * 2;
-              const scoreValue = correctQ * 2;
+              // 🛡️ Use actual marks from the synced report if available, else fallback
+              const scoreValue = exam.marks_obtained ?? exam.score ?? 0;
+              const total = exam.total_marks ?? exam.totalMarks ?? (totalQ * 2);
               
               const percentage = total > 0 ? (scoreValue / total) * 100 : 0;
               const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
+
 
               return (
                 <div 

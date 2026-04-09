@@ -10,8 +10,10 @@ import {
   faVial, faClipboardCheck, faShieldHalved, faNetworkWired, faBrain,
   faMobileScreenButton, faRobot, faCloudArrowUp, faFileCode, faGear,
   faLaptopCode, faFileLines, faChartLine, faChartPie, faServer, faInfinity,
-  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon
+  faDesktop, faFileWord, faFileExcel, faFilePowerpoint, faTable, faDatabase as faDbIcon,
+  faInfoCircle
 } from "@fortawesome/free-solid-svg-icons";
+
 
 const subjects = [
   { name: "Python", key: "python", icon: faPython, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
@@ -106,49 +108,17 @@ const subjects = [
 ];
 
 // Course-specific subject mappings (lowercase keys)
-const courseMappings = {
-  "net full stack": ["dotnet", "dotnet_mvc", "c_sharp", "asp_net_mvc", "microsoft_azure", "ui", "oracle", "api_testing", "web_apis", "git_github"],
-  "python full stack": ["python", "oracle", "ui", "react", "django", "backend"],
-  "java full stack": ["java", "oracle", "ui", "spring", "hibernate", "jdbc", "backend"],
-  "mern full stack": ["ui", "react", "node_js", "express_js", "git_github"],
-  "ui full stack": ["ui", "backend", "oracle", "react", "node_js", "express_js", "mongodb"],
-  "full stack": ["ui", "backend", "react", "node_js", "express_js", "web_apis", "javascript", "database_basics", "html", "css", "bootstrap", "oracle", "python", "java", "api_testing"],
-  "data science and agentic ai": ["python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
-  "data science with ai": ["python", "python_data_science", "numpy", "pandas", "machine_learning", "deep_learning", "oracle", "mongodb", "power_query", "dax", "dashboards", "microsoft_azure", "ai_concepts", "generative_ai", "data_visualization"],
-  "data science ai": ["python", "python_data_science", "numpy", "pandas", "data_visualization", "machine_learning", "ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "oracle", "mongodb"],
-  "agentic ai": ["ai_concepts", "generative_ai", "deep_learning", "agentic_ai_claude", "agentic_ai_gpt", "python"],
-  "data analytics": ["oracle", "python", "power_query", "dax", "dashboards", "excel", "web_apis"],
-  "cloud computing": ["cloud_basics", "ec2_s3", "iam", "google_cloud", "microsoft_azure", "deployment", "docker", "kubernetes_basics", "python", "ci_cd"],
-  "frontend": ["ui", "react", "javascript", "html", "css", "bootstrap"],
-  "backend": ["backend", "node_js", "express_js", "web_apis", "database_basics", "oracle", "api_testing"],
-  "devops": ["git_github", "ci_cd", "docker", "kubernetes_basics", "cloud_basics", "ec2_s3", "iam", "deployment", "microsoft_azure", "python"],
-  "cyber security": ["network_security", "penetration_testing", "ethical_hacking", "cloud_basics", "iam", "ec2_s3", "python"],
-  "power bi": ["power_query", "dax", "dashboards", "data_visualization", "reports", "python", "excel", "oracle"],
-  "microsoft technologies": ["dotnet", "dotnet_mvc", "c_sharp", "ms_office", "microsoft_azure", "power_query", "dax", "dashboards", "oracle"],
-  "mobile full stack": ["git_github", "django", "node_js", "express_js", "mongodb", "oracle", "web_apis", "api_testing", "ios_swift", "android", "flutter_react_native"],
-  "mongodb": ["python", "java", "node_js", "mongodb"],
-  "dca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "pgdca": ["computer_fundamentals", "programming_basics", "ms_office", "database_basics"],
-  "doa": ["ms_word", "excel", "powerpoint", "data_handling"]
-};
-
-const getAllowedSubjects = (courseName = "") => {
-  const normalized = String(courseName || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  // STRICT MAPPING ONLY - High Confidence Policy
-  return courseMappings[normalized] || [];
-};
 
 function DailyExamSubjects() {
   const navigate = useNavigate();
 
-  const [activeCourse, setActiveCourse] = useState(null);
+  const [activeCourse, setActiveCourse] = useState(() => sessionStorage.getItem("active_assessment_course"));
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [isValidating, setIsValidating] = useState(true);
+  const [allCourseData, setAllCourseData] = useState(() => JSON.parse(localStorage.getItem("cache_all_courses") || "[]"));
+  const [isDataFetching, setIsDataFetching] = useState(() => !localStorage.getItem("cache_all_courses"));
+  const [dynamicSubjects, setDynamicSubjects] = useState([]);
+
 
   const location = useLocation();
  
@@ -156,49 +126,61 @@ function DailyExamSubjects() {
     // Intelligently restore session ONLY if returning from a specific exam intro stage.
     // This allows the "Back to Topics" button to lead back to DevOps (or similar) 
     // while keeping a fresh landing page for global entry points.
-    if (location.state?.resumeCourse) {
-      const savedCourse = sessionStorage.getItem("active_assessment_course");
-      if (savedCourse) {
-         setActiveCourse(savedCourse);
-      }
-    }
+    
 
-    const fetchProfile = async () => {
-      const storedToken = localStorage.getItem("access");
-      const token = storedToken ? storedToken.replace(/^"|"$/g, "") : null;
-      
-      if (!token) {
-        setIsValidating(false);
-        return;
-      }
+        const fetchProfile = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/profile/", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const courses = response.data.enrolled_courses || (response.data.course_title ? [response.data.course_title] : []);
+        const storedToken = localStorage.getItem("access");
+        const token = storedToken ? storedToken.replace(/^"|"$/g, "").trim() : null;
+        if (!token) {
+          setIsValidating(false);
+          return;
+        }
+
+        // 🚀 OVERDRIVE PARALLEL FETCH
+        const initialActive = activeCourse || sessionStorage.getItem("active_assessment_course");
+        
+        const fetchPromises = [
+          axios.get("http://127.0.0.1:8000/api/profile/", { headers: { "Authorization": `Bearer ${token}` } }),
+          axios.get("http://127.0.0.1:8000/api/courses/", { headers: { "Authorization": `Bearer ${token}` } })
+        ];
+
+        // If we know the course, fetch its config in the same burst
+        if (initialActive) {
+          fetchPromises.push(axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(initialActive)}&_t=${Date.now()}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          }));
+        }
+
+        const resArray = await Promise.all(fetchPromises);
+        const profileRes = resArray[0];
+        const courseRes = resArray[1];
+        const configRes = resArray[2];
+
+        const data = profileRes.data || {};
+        const courses = data.enrolled_courses || (data.course_title ? [data.course_title] : []);
         setEnrolledCourses(courses);
         
-        // Auto-select if only one course exists (only on fresh landing)
-        const savedCourse = sessionStorage.getItem("active_assessment_course");
-        if (courses.length === 1 && !savedCourse) {
+        const cData = courseRes.data || [];
+        setAllCourseData(cData);
+        localStorage.setItem("cache_all_courses", JSON.stringify(cData));
+        
+        if (configRes && configRes.data && configRes.data.status === "success") {
+           setAutomatedConfig(configRes.data);
+        }
+
+        if (courses.length === 1 && !initialActive) {
            setActiveCourse(courses[0]);
            sessionStorage.setItem("active_assessment_course", courses[0]);
         }
-
-        // Enrollment sync with local user state
-        try {
-          const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-          userObj.enrolledCourses = courses;
-          localStorage.setItem("user", JSON.stringify(userObj));
-        } catch (e) {}
-
       } catch (err) {
-        console.error("Profile fetch error in DailyExam", err);
         if (err.response?.status === 401) {
-          localStorage.removeItem("access");
-          localStorage.removeItem("refresh");
-          localStorage.removeItem("user");
-          navigate("/");
+           
+           localStorage.removeItem("access");
+           localStorage.removeItem("user");
+           // navigate('/'); // Uncomment if you want auto-redirect on unauthorized
+        } else {
+           
         }
       } finally {
         setIsValidating(false);
@@ -207,21 +189,97 @@ function DailyExamSubjects() {
     fetchProfile();
   }, [navigate]);
 
-  const filteredSubjects = subjects.filter((subject) => {
-    if (!activeCourse) return false;
-    const allowed = getAllowedSubjects(activeCourse);
-    
-    // Add specific overrides for Mobile and .NET if needed
-    const courseMatch = String(activeCourse).toLowerCase();
-    if (courseMatch.match(/mobile|flutter|react\s*native/) && ["flutter_react_native", "android", "ios_swift"].includes(subject.key)) {
-        return true;
+  const [automatedConfig, setAutomatedConfig] = useState(null);
+  const refreshAllData = async () => {
+    try {
+      const storedToken = localStorage.getItem("access");
+      const token = storedToken ? storedToken.replace(/^"|"$/g, "").trim() : null;
+      
+      const courseRes = await axios.get("http://127.0.0.1:8000/api/courses/", { headers: { "Authorization": `Bearer ${token}` } });
+      setAllCourseData(courseRes.data || []);
+      
+      if (activeCourse) {
+        const configRes = await axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
+          headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        });
+        if (configRes.data && configRes.data.status === "success") {
+           setAutomatedConfig(configRes.data);
+        }
+      }
+    } catch (e) {} finally {
+      setIsDataFetching(false);
     }
-    if (courseMatch === "net full stack" || courseMatch === ".net full stack") {
-        return ["dotnet", "dotnet_mvc", "c_sharp", "asp_net_mvc", "microsoft_azure", "ui", "oracle", "api_testing", "web_apis", "git_github"].includes(subject.key);
+  };
+
+  useEffect(() => {
+    if (!activeCourse) return;
+    const fetchAutomatedConfig = async () => {
+      try {
+        const token = (localStorage.getItem("access") || "").replace(/^"|"$/g, "");
+      const res = await axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {}
+      });
+
+        if (res.data && res.data.status === "success") {
+          setAutomatedConfig(res.data);
+        } else {
+          setAutomatedConfig(null);
+        }
+      } catch (err) {
+        setAutomatedConfig(null);
+      }
+    };
+    fetchAutomatedConfig();
+  }, [activeCourse]);
+
+
+  // 🛡️ 5000% STRICT DATABASE SYNC ENGINE
+  useEffect(() => {
+    if (!activeCourse) {
+      setDynamicSubjects([]);
+      return;
     }
     
-    return allowed.includes(subject.key);
-  });
+    const normalize = (val) => String(val || "").toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    const activeCourseClean = normalize(activeCourse);
+    
+    // 1. Fetch live Course Data and Master Exam Config
+    const activeObj = allCourseData.find(c => normalize(c.title) === activeCourseClean);
+    const facultyModuleList = (activeObj && activeObj.modules && activeObj.modules.length > 0) ? activeObj.modules : [];
+    const facultyExamSubjects = (automatedConfig && Array.isArray(automatedConfig.subjects)) ? automatedConfig.subjects : [];
+
+    // 2. Identify the definitive subject list (Priority: Automated Config > Course Modules)
+    let rawSubjectNames = [];
+    if (facultyExamSubjects.length > 0) {
+       rawSubjectNames = facultyExamSubjects;
+    } else {
+       rawSubjectNames = facultyModuleList.map(m => (m.title || m.name || m));
+    }
+
+    // 3. Map to UI Objects with Rich Metadata
+    const finalSubjects = rawSubjectNames.filter(name => !!name).map(name => {
+       const title = String(name).trim();
+       const predefined = subjects.find(s => s.name.toUpperCase() === title.toUpperCase());
+       if (predefined) return predefined;
+       
+       return {
+          name: title,
+          key: title.toLowerCase().replace(/\s+/g, "_"),
+          icon: faClipboardCheck,
+          textStyle: "text-blue-600",
+          bgStyle: "bg-blue-50",
+          hoverBorder: "hover:border-blue-400",
+          hoverShadow: "hover:shadow-lg shadow-blue-100"
+       };
+    });
+
+    setDynamicSubjects(finalSubjects);
+  }, [activeCourse, allCourseData, automatedConfig]);
+
+  const filteredSubjects = dynamicSubjects;
+
+
+
 
   useEffect(() => {
     // Clear any previous exam result flag so we don't instantly bounce back to results
@@ -261,7 +319,7 @@ function DailyExamSubjects() {
       <div className="relative z-10 max-w-6xl w-full">
 
         {/* TOP LEFT BACK TO SELECTION BUTTON (Swapped) */}
-        {activeCourse && enrolledCourses.length > 1 && (
+        {activeCourse && enrolledCourses.length > 1 ? (
           <div className="absolute top-0 left-0 pt-2 z-20">
             <button
               onClick={() => {
@@ -274,7 +332,7 @@ function DailyExamSubjects() {
               Back to Course Selection
             </button>
           </div>
-        )}
+        ) : null}
 
         {/* TOP RIGHT BACK BUTTON (Swapped) */}
         <div className="absolute top-0 right-0 pt-2 z-20">
@@ -337,7 +395,13 @@ function DailyExamSubjects() {
               </button>
             ))}
           </div>
-        ) : (
+        ) : (isDataFetching && filteredSubjects.length === 0 && activeCourse) ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6 shadow-sm"></div>
+            <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tight">Syncing Live Curriculum...</h2>
+            <p className="text-slate-500 font-bold mt-2">Fetching the latest subjects from the faculty dashboard.</p>
+          </div>
+        ) : filteredSubjects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSubjects.map((subject) => (
               <Link
@@ -346,12 +410,9 @@ function DailyExamSubjects() {
                 className={`group relative flex items-center justify-between w-full p-6 bg-white rounded-3xl border border-gray-100 hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1.5 overflow-hidden shadow-sm ${subject.hoverShadow} ${subject.hoverBorder}`}
               >
                 <div className="flex items-center gap-5">
-                  {/* Icon Container */}
                   <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 ${subject.bgStyle}`}>
                     <FontAwesomeIcon icon={subject.icon} className={`text-3xl ${subject.textStyle} transition-transform duration-300`} />
                   </div>
-  
-                  {/* Text Info */}
                   <div className="text-left flex flex-col justify-center">
                     <h3 className="text-lg font-bold text-gray-800 tracking-wide group-hover:text-gray-900 transition-colors uppercase">
                       {subject.name}
@@ -361,18 +422,23 @@ function DailyExamSubjects() {
                     </p>
                   </div>
                 </div>
-  
-                {/* Right side decoration */}
                 <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
                   <FontAwesomeIcon icon={faArrowRight} className="text-xs group-hover:translate-x-0.5" />
                 </div>
-  
-                {/* Hover highlight line */}
                 <div className={`absolute bottom-0 left-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 w-0 group-hover:w-full`}></div>
               </Link>
             ))}
           </div>
-        )}
+        ) : (activeCourse && !isDataFetching) ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100 shadow-sm">
+               <FontAwesomeIcon icon={faInfoCircle} className="text-3xl text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2 font-black uppercase">Subjects are not there</h2>
+            <p className="text-gray-500 font-bold max-w-md">The faculty has not manually configured any subjects for the <span className="text-blue-600">"{activeCourse}"</span> course yet.</p>
+          </div>
+        ) : null}
+
       </div>
     </div>
   );

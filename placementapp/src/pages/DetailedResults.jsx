@@ -116,14 +116,15 @@ function DetailedResults() {
   }
 
   // ─── Shared exam calculations (computed at component scope) ───
-  const totalQuestions = result?.totalQuestions || parsedQuestions.length || 20;
-  const totalMarks = result?.totalMarks || result?.total_marks || (totalQuestions * 2);
+  const totalQuestions = result?.totalQuestions || result?.total_questions || parsedQuestions.length || 20;
+  
+  // 🛡️ Data Integrity Check: Priority to backend synced weighted marks
+  const totalMarks = result?.total_marks ?? result?.totalMarks ?? (totalQuestions * (result?.marks_per_question || 2));
+  const dynamicScore = result?.marks_obtained ?? result?.score ?? 0;
+  
   const passingScore = getPassingScore(result?.examTitle || result?.title || result?.exam_title);
+  const passed = result?.passed ?? (dynamicScore >= passingScore);
 
-  // Use the 'passed' status saved in the result (calculated by faculty rules at submission)
-  // 🛡️ dynamic pass/fail recalculation for 1000% confidence
-  const dynamicScore = (result?.correctAnswers ?? result?.correct_answers ?? (result?.score <= 25 ? result?.score : 0)) * 2;
-  const passed = dynamicScore >= passingScore;
 
   const passingScoreText = result && result.passed !== undefined ? "Faculty Rule Applied" : `${passingScore} marks`;
 
@@ -190,11 +191,14 @@ function DetailedResults() {
     y += 15;
 
     // 📊 Header 3: Performance Info
-    const totalQuestions = result.questions?.length || 25;
-    const correctCount = result.correctAnswers ?? result.correct_answers ?? 0;
-    const totalMarks = totalQuestions * 2;
-    const finalScore = correctCount * 2;
-    const percentage = ((correctCount / totalQuestions) * 100).toFixed(1);
+    const totalQuestions = result.total_questions || result.totalQuestions || result.questions?.length || 25;
+    const correctCount = result.correct_answers ?? result.correctAnswers ?? 0;
+    
+    // 🛡️ Use direct synced marks
+    const totalMarksVal = result.total_marks ?? result.totalMarks ?? (totalQuestions * 2);
+    const finalScoreVal = result.marks_obtained ?? result.score ?? 0;
+    const percentage = totalMarksVal > 0 ? ((finalScoreVal / totalMarksVal) * 100).toFixed(1) : "0.0";
+
 
     doc.setFont('helvetica', 'bold');
     doc.text('Performance Summary:', 20, y);
@@ -204,10 +208,11 @@ function DetailedResults() {
     y += 10;
     doc.text(`Date: ${examDate}`, 20, y);
     y += 10;
-    doc.text(`Score: ${dynamicScore} / ${totalMarks}`, 20, y);
+    doc.text(`Score: ${finalScoreVal} / ${totalMarksVal}`, 20, y);
     y += 10;
     doc.text(`Status: ${passed ? 'PASS' : 'FAIL'} (Req: ${passingScoreText})`, 20, y);
     y += 15;
+
 
     // 📝 Header 4: Question details
     doc.setFontSize(14);
@@ -362,8 +367,9 @@ function DetailedResults() {
               <div className="space-y-1 text-right md:text-left">
                 <p className="text-gray-400 text-sm font-medium">Final Score</p>
                 <p className="text-lg font-bold text-indigo-600">
-                  {(result.correctAnswers ?? 0) * 2} <span className="text-gray-300 font-normal">/ {totalQuestions * 2}</span>
+                  {dynamicScore} <span className="text-gray-300 font-normal">/ {totalMarks}</span>
                 </p>
+
               </div>
               <div className="space-y-1 text-right md:text-left">
                 <p className="text-gray-400 text-sm font-medium">Status</p>

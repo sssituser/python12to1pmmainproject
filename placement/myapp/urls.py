@@ -9,7 +9,7 @@ from rest_framework import routers
 from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp
 from .views.profile_views import profile_view, update_profile, upload_resume, faculty_profile_view, faculty_profile_update, faculty_avatar_upload, faculty_avatar_delete, faculty_profile_public, faculty_list_minimal, faculty_stats, faculty_profile_minimal_test
 from .views.leave_views import get_all_leave_requests, create_leave_request, get_leave_request, approve_leave_request, reject_leave_request, delete_leave_request, my_leave_requests
-from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions
+from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions, automated_exam_config_view
 from .views.playground_views import create_playground, get_playground, delete_playground
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet
 from .views.python_views import (
@@ -77,6 +77,7 @@ urlpatterns = [
     path('exam/<int:session_id>/end/', end_exam_session),
     path('exam/webcam/snapshot/', save_webcam_snapshot),
     path('exam/sessions/', get_exam_sessions),
+    path('automated-exam-config/', automated_exam_config_view),
     
     # Daily Exam System URLs
     path('exam-reports/', exam_reports_api),

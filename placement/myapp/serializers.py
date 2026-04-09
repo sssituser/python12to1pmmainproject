@@ -29,7 +29,14 @@ from .models import (
     FacultyAchievement,
     FacultyResearch,
     FacultyCourseHistory,
+    AutomatedExamConfig,
 )
+
+
+class AutomatedExamConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AutomatedExamConfig
+        fields = "__all__"
 
 
 # ===============================

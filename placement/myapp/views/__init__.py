@@ -80,3 +80,4 @@ from . import smart_contracts_views
 from . import virtual_reality_views
 from . import web3_views
 from . import web_apis_views
+from . import springboot_views
