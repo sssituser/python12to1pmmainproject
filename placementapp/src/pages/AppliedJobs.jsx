@@ -7,13 +7,13 @@ function AppliedJobs() {
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("access");
+useEffect(() => {
+  if (!token) {
+    setLoading(false);
+    return;
+  }
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchJobs = () => {
     fetch("http://127.0.0.1:8000/api/applied-jobs/", {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -41,7 +41,19 @@ function AppliedJobs() {
         setJobs([]);
         setLoading(false);
       });
-  }, [token]);
+  };
+
+  // 👉 First load
+  fetchJobs();
+
+  // 👉 Auto refresh every 5 seconds
+  const interval = setInterval(() => {
+    fetchJobs();
+  }, 5000);
+
+  return () => clearInterval(interval);
+
+}, [token]);
 
   const filteredJobs = jobs.filter((j) => {
     const title = j.job_details?.job_title?.toLowerCase() || "";
@@ -142,14 +154,18 @@ function AppliedJobs() {
                       </td>
                       <td className="px-6 py-6 text-center">
                         <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-300 shadow-sm
-                          ${j.status === 'accepted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            j.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                            'bg-blue-50 text-blue-600 border-blue-100'}
+                          ${j.status === 'accepted'
+                            ? 'bg-success text-white'
+                            : j.status === 'rejected'
+                            ? 'bg-danger text-white'
+                            : 'bg-warning text-dark'}
                         `}>
                           {j.status === 'accepted' ? <FaCheckCircle /> : <FaInfoCircle />}
-                          {j.status && j.status !== 'pending' 
-                            ? j.status 
-                            : 'Applied'}
+                          {j.status === 'accepted'
+                                        ? '🎉 Selected'
+                                        : j.status === 'rejected'
+                                        ? '❌ Rejected'
+                                        : '⏳ Under Process'}
                         </span>
                       </td>
                     </tr>

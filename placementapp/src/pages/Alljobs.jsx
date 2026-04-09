@@ -63,30 +63,35 @@ function AllJobs() {
       try {
         const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
         const jobs = await jobsRes.json();
-        let appliedIds = [];
+        let appliedJobs = [];
 
         if (token) {
-          try {
-            const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (appliedRes.ok) {
-              const appliedJobs = await appliedRes.json();
-              if (Array.isArray(appliedJobs)) {
-                appliedIds = appliedJobs.map((a) =>
-                  typeof a.job === "object" ? a.job.id : a.job
-                );
-              }
-            }
-          } catch (err) {
-            console.log("Applied jobs error:", err);
+          const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (appliedRes.ok) {
+            const data = await appliedRes.json();
+            appliedJobs = Array.isArray(data) ? data : data.results || [];
           }
         }
 
-        const updated = jobs.map((j) => ({
+      const updated = jobs.map((j) => {
+        const app = appliedJobs.find((a) =>
+          (typeof a.job === "object" ? a.job.id : a.job) === j.id
+        );
+
+        return {
           ...j,
-          status: appliedIds.includes(j.id) ? "Applied" : j.status,
-        }));
+          status: app
+            ? app.status === "accepted"
+              ? "Selected"
+              : app.status === "rejected"
+              ? "Rejected"
+              : "Under Process"
+            : j.status,
+        };
+      });
         setJobsData(updated);
       } catch (err) {
         console.log("Jobs fetch error:", err);
