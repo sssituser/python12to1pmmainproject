@@ -313,5 +313,31 @@
             "created_at": "2026-04-09 10:26:21.471797+00:00"
         }
     ],
+<<<<<<< HEAD
     "configs": []
+=======
+    "configs": [
+        {
+            "id": 1,
+            "exam_name": "Daily Assessment",
+            "course_name": "PYTHON FULL STACK",
+            "subjects": [
+                "Python",
+                "HTML",
+                "CSS",
+                "JAVASCRIPT",
+                "BOOTSTRAP",
+                "REACT",
+                "DJANGO",
+                "RESTFRAMEWORK"
+            ],
+            "duration": 240,
+            "passing_strategy": "percentage",
+            "requirement": 50,
+            "question_count": 100,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-09 16:16:55.052401+00:00"
+        }
+    ]
+>>>>>>> 41802f24a103f242e2df23cae23643fa039c150f
 }
