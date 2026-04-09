@@ -88,6 +88,21 @@ class Project(models.Model):
         return self.title
 
 
+class AutomatedExamConfig(models.Model):
+    exam_name = models.CharField(max_length=255, default="Daily Assessment")
+    course_name = models.CharField(max_length=255, unique=True)
+    subjects = models.JSONField(default=list)
+    duration = models.IntegerField(default=80)
+    passing_strategy = models.CharField(max_length=50, default="percentage")
+    requirement = models.IntegerField(default=50)
+    question_count = models.IntegerField(default=25)
+    marks_per_question = models.IntegerField(default=2)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.course_name} - {self.exam_name}"
+
+
 # ===============================
 # Jobs
 # ===============================

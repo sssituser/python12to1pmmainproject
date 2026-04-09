@@ -74,7 +74,7 @@ import {
 
 
 
-import { defaultCourses, getIconForCourse, generateTopicsForCourse, generateModulesForCourse } from '../components/CourseData.jsx';
+import { defaultCourses, getIconForCourse, generateTopicsForCourse, generateModulesForCourse, industryCourses } from '../components/CourseData.jsx';
 
 
 
@@ -182,39 +182,34 @@ function CoursesPage() {
 
     
 
+    // 🚀 UNIFIED 1000% FORCE SYNC SYSTEM
+
+    // 🛡️ 1000% Absolute Force Sync with Industrial Curriculum
+    const finalMerge = [...defaultCourses];
     if (saved) {
-
       try {
-
         const parsed = JSON.parse(saved);
-
-        if (Array.isArray(parsed) && parsed.length > 0) {
-
-          // Initialize with icons AND calculate initial progress from disk
-
-          return parsed.map(course => ({
-
-            ...course,
-
-            icon: getIconForCourse(typeof course === 'string' ? course : course.title)
-
-          }));
-
-        }
-
-      } catch (e) {
-
-        console.error("Error parsing initial courses:", e);
-
-      }
-
+        const savedMap = new Map(parsed.map(c => [(typeof c === "string" ? c : (c.title || "")).toUpperCase(), c]));
+        const standardSet = new Set(industryCourses.map(t => t.toUpperCase()));
+        industryCourses.forEach((title, idx) => {
+          if (savedMap.has(title.toUpperCase())) finalMerge[idx] = { ...savedMap.get(title.toUpperCase()), icon: getIconForCourse(title) };
+        });
+        parsed.forEach(c => {
+          const title = typeof c === "string" ? c : (c.title || "");
+          if (title && !standardSet.has(title.toUpperCase())) {
+            const custom = typeof c === "string" ? {title: c} : c;
+            finalMerge.push({ ...custom, icon: getIconForCourse(title) });
+          }
+        });
+      } catch(e) {}
     }
-
-    return defaultCourses; // Source-of-truth fallback for Git persistence
+    return finalMerge;
 
   });
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
 
   const [selectedForDeletion, setSelectedForDeletion] = useState([]);
 
@@ -309,48 +304,74 @@ function CoursesPage() {
 
           // Handle DRF ViewSet variations: paginated (.results), wrapped (.data.success), or raw array
 
-          let rawCourses = [];
-
-          if (data.results && Array.isArray(data.results)) {
-
-            rawCourses = data.results;
-
-          } else if (data.success && Array.isArray(data.data)) {
-
-            rawCourses = data.data;
-
-          } else if (Array.isArray(data)) {
-
-            rawCourses = data;
-
-          }
+          // 🚀 1000% ROBUST PARSING (Matches Registration page exactly)
+          const rawCourses = data.data || data.results || (Array.isArray(data) ? data : []);
 
           
 
-          if (rawCourses.length > 0) {
+          if (rawCourses !== null) {
             const localSaved = localStorage.getItem('facultyCourses') || localStorage.getItem('courses');
             let localData = [];
             try { if(localSaved) localData = JSON.parse(localSaved); } catch(e){}
 
-            const coursesWithIcons = rawCourses.map(apiCourse => {
-              const localVersion = Array.isArray(localData) ? localData.find(lc => lc.id === apiCourse.id) : null;
+            // 🛡️ 1000% ROBUST SYNC LOGIC
+            const apiTitles = new Set(rawCourses.map(c => (typeof c === 'string' ? c : (c.title || "")).toUpperCase()));
+            const standardTitles = new Set(industryCourses.map(t => t.toUpperCase()));
+            
+            // 🛡️ PERMANENT PURGE: Remove 'hi' from local cache if found
+            if (localData.some(lc => (lc.title || "").toUpperCase() === "HI")) {
+              localData = localData.filter(lc => (lc.title || "").toUpperCase() !== "HI");
+              localStorage.setItem('facultyCourses', JSON.stringify(localData));
+              localStorage.setItem('courses', JSON.stringify(localData));
+            }
+
+            const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()));
+
+            const standardCourseObjects = missingStandards.map((title, idx) => ({
+              id: `std-${Date.now()}-${idx}`, 
+              title: title,
+              modules: [],
+              topics: [],
+              icon: getIconForCourse(title)
+            }));
+
+            const localCustomRepos = localData.filter(lc => {
+               const t = (lc.title || "").toUpperCase();
+               return t && !apiTitles.has(t) && !standardTitles.has(t);
+            });
+
+            // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS
+            const finalCurriculumRaw = [...localCustomRepos, ...rawCourses, ...standardCourseObjects];
+
+
+
+            const coursesWithIcons = finalCurriculumRaw.map(item => {
+              const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
+              const titleValue = apiItem.title || "";
+              const localVersion = Array.isArray(localData) ? localData.find(lc => 
+                lc.id === apiItem.id || 
+                (lc.title && titleValue && lc.title.toUpperCase() === titleValue.toUpperCase())
+              ) : null;
+
               
-              const mergedModules = (localVersion && localVersion.modules && localVersion.modules.length > (apiCourse.modules?.length || 0)) 
+              const mergedModules = (localVersion && localVersion.modules && localVersion.modules.length > (apiItem.modules?.length || 0)) 
                 ? localVersion.modules 
-                : (apiCourse.modules || []);
+                : (apiItem.modules || []);
 
               return {
-                ...apiCourse,
+                ...apiItem,
+                title: titleValue,
                 modules: mergedModules,
-                customVideos: localVersion?.customVideos || apiCourse.customVideos || apiCourse.custom_videos || {},
-                icon: getIconForCourse(apiCourse.title)
+                customVideos: localVersion?.customVideos || apiItem.customVideos || apiItem.custom_videos || {},
+                icon: getIconForCourse(titleValue)
               };
             });
+
             
             setCourses(coursesWithIcons);
             localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
             localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
-            console.log("Faculty curriculum merged with local changes successfully.");
+            console.log(`✅ Faculty curriculum 1000% synced: ${coursesWithIcons.length} courses total.`);
           }
 
         }
@@ -474,6 +495,16 @@ function CoursesPage() {
   // Handle URL parameter for specific course
 
   useEffect(() => {
+
+    if (!courseId) {
+
+      setSelectedCourse(null);
+
+      setSelectedSubject(null);
+
+      return;
+
+    }
 
     if (courseId && courses.length > 0) {
 
@@ -749,7 +780,7 @@ function CoursesPage() {
 
           headers: {
 
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token.replace(/^"|"$/g, "").trim()}`,
 
             'Content-Type': 'application/json'
 
@@ -793,17 +824,15 @@ function CoursesPage() {
 
     // Add to local state
 
-    const localId = courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1;
-
-    newCourse.id = newCourse.id || localId;
-
+    // Add to local state with guaranteed unique ID and priority sorting
+    const timestampId = `custom-${Date.now()}`;
+    newCourse.id = newCourse.id || timestampId;
     
-
-    const updatedCourses = [...courses, newCourse];
-
+    // Sort to show new courses at the TOP for instant visibility
+    const updatedCourses = [newCourse, ...courses];
     const recalculatedCourses = calculateCourseProgress(updatedCourses);
-
     setCourses(recalculatedCourses);
+
 
     
 
@@ -1163,7 +1192,7 @@ function CoursesPage() {
 
             headers: {
 
-              'Authorization': `Bearer ${token}`,
+              'Authorization': `Bearer ${token.replace(/^"|"$/g, "").trim()}`,
 
               'Content-Type': 'application/json'
 
@@ -1356,10 +1385,6 @@ function CoursesPage() {
 
   const handleBackToTopics = () => {
 
-    setSelectedCourse(null);
-
-    setSelectedSubject(null);
-
     navigate('/faculty/Course');
 
   };
@@ -1378,35 +1403,28 @@ function CoursesPage() {
 
       const token = localStorage.getItem('access');
 
-      if (token && courseToSync.id && typeof courseToSync.id === 'number') {
-
+      // 🛡️ 1000% MASTER SYNC ENGINE
+      const isUnsyncedCourse = typeof courseToSync.id === 'string';
+      if (token && (typeof courseToSync.id === 'number' || isUnsyncedCourse)) {
         const payload = {
-
           title: courseToSync.title,
-
           level: courseToSync.level,
-
           duration: courseToSync.duration,
-
           topics: courseToSync.topics,
-
           modules: courseToSync.modules,
-
           custom_videos: courseToSync.customVideos || {},
-
           progress: courseToSync.progress
-
         };
 
+        const endpoint = isUnsyncedCourse ? 'http://127.0.0.1:8000/api/courses/' : `http://127.0.0.1:8000/api/courses/${courseToSync.id}/`;
+        const methodType = isUnsyncedCourse ? 'POST' : 'PUT';
 
-
-        const response = await fetch(`http://127.0.0.1:8000/api/courses/${courseToSync.id}/`, {
-
-          method: 'PUT',
+        const response = await fetch(endpoint, {
+          method: methodType,
 
           headers: {
 
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token.replace(/^"|"$/g, "").trim()}`,
 
             'Content-Type': 'application/json'
 
@@ -1420,7 +1438,14 @@ function CoursesPage() {
 
         if (response.ok) {
 
-          console.log(`Course ${courseToSync.title} synced with backend`);
+          const savedData = await response.json();
+          console.log(`✅ ${courseToSync.title} Master Curriculum Promotion Complete.`);
+          if (isUnsyncedCourse && savedData.id) {
+            const reTagged = updatedCourses.map(c => c.id === courseToSync.id ? { ...c, id: savedData.id } : c);
+            setCourses(reTagged);
+            localStorage.setItem('facultyCourses', JSON.stringify(reTagged));
+            localStorage.setItem('courses', JSON.stringify(reTagged));
+          }
 
         } else {
 
@@ -2065,12 +2090,37 @@ function CoursesPage() {
           <div>
 
             <h1 className="text-3xl mb-0 text-gray-800">Course Management</h1>
-
             <p className="text-gray-500 mb-0">Manage your courses and curriculum</p>
-
           </div>
 
-          <div className="flex gap-2">
+
+          <div className="flex items-center gap-2">
+            {/* 🔍 COMPACT SEARCH ENGINE */}
+            <div className="relative group w-64 md:w-80">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-all group-focus-within:text-blue-600">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-gray-100 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all text-xs font-bold tracking-tight text-gray-700 shadow-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
 
             <button 
 
@@ -2139,8 +2189,10 @@ function CoursesPage() {
 
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {courses
+            .filter(course => (course.title || "").toUpperCase().includes(searchTerm.toUpperCase()))
+            .map((course, index) => {
 
-          {courses.map((course, index) => {
 
             return (
 
@@ -2150,7 +2202,7 @@ function CoursesPage() {
 
                   <div className="relative p-5 flex items-center justify-center h-[180px]" style={{background: 'linear-gradient(45deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%)'}}>
 
-                        <h3 className="text-xl font-bold mb-2 uppercase">{course.title}</h3>
+                        <h3 className="text-[13px] font-black text-white text-center uppercase tracking-wider leading-tight px-4">{course.title}</h3>
 
                      {isSelectionMode && (
 

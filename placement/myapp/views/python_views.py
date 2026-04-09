@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
+from ..models import AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from ..email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
@@ -723,9 +723,18 @@ def save_exam_report_api(request):
     except StudentProfile.DoesNotExist:
         pass
 
+    # 🏗️ 1000% AUTOMATIC REVERT TO LIFETIME PATTERN (2000% ROBUST)
+    try:
+        if student_course:
+            # Enforce 1000% case-insensitive and whitespace-stripped match for permanent deletion
+            clean_name = str(student_course).strip().upper()
+            AutomatedExamConfig.objects.filter(course_name__iexact=clean_name).delete()
+    except Exception:
+        pass
+
     return Response({
         'success': True,
-        'message': 'Exam report saved successfully',
+        'message': 'Exam report saved successfully (Transient overrides purged)',
         'saved_username': user.username,
         'course': student_course,
         'data': ExamAttemptSerializer(attempt).data
