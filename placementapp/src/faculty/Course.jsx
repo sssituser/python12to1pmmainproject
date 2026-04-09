@@ -496,6 +496,16 @@ function CoursesPage() {
 
   useEffect(() => {
 
+    if (!courseId) {
+
+      setSelectedCourse(null);
+
+      setSelectedSubject(null);
+
+      return;
+
+    }
+
     if (courseId && courses.length > 0) {
 
       const course = courses.find(c => {
@@ -1374,10 +1384,6 @@ function CoursesPage() {
   // Handle Back to Topics
 
   const handleBackToTopics = () => {
-
-    setSelectedCourse(null);
-
-    setSelectedSubject(null);
 
     navigate('/faculty/Course');
 

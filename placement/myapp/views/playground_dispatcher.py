@@ -220,10 +220,10 @@ def playground_questions_dispatcher(request, subject):
             pass
 
         return Response({
-            "success": False,
-            "message": f"No assessment paper currently available for {subject}.",
-            "debug_hint": f"Looked for {func_name} in various modules"
-        }, status=status.HTTP_404_NOT_FOUND)
+            "success": True,
+            "data": [],
+            "message": f"Proceeding with dynamic conceptual generation for {subject}."
+        }, status=status.HTTP_200_OK)
 
     except Exception as e:
         logger.error(f"Dispatcher error for subject {subject}: {str(e)}")

@@ -136,28 +136,21 @@ function DailyExamReports() {
     };
   }, []);
 
-  // ANIMATION AFTER DATA LOAD
+  // ⚡ LIGHTHOUSE OPTIMIZED ANIMATION (Single-Shot Transition)
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam, index) => {
-      const total = exam.totalMarks || 40;
-      const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+    const timer = setTimeout(() => {
+      const finalProgress = {};
+      exams.forEach((exam, index) => {
+        const total = exam.totalMarks || 40;
+        const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+        finalProgress[exam.id || index] = percentage;
+      });
+      setProgress(finalProgress);
+    }, 100);
 
-      let value = 0;
-      const interval = setInterval(() => {
-        value += 2;
-        if (value >= percentage) {
-          value = percentage;
-          clearInterval(interval);
-        }
-        setProgress((prev) => ({
-          ...prev,
-          [exam.id || index]: value,
-        }));
-      }, 20);
-    });
-
+    return () => clearTimeout(timer);
   }, [exams]);
 
   // COLOR LOGIC
