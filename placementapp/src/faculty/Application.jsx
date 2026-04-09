@@ -13,7 +13,7 @@ function Applications() {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,14 +80,14 @@ function Applications() {
 
       console.log("Fetching student applied jobs...");
 
-      let res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/faculty-applications/");
+      let res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/faculty-applications/`);
       
       if (!res.ok) {
         const alternatives = [
-          "http://127.0.0.1:8000/api/applied-jobs/",
-          "http://127.0.0.1:8000/api/student/applied-jobs/",
-          "http://127.0.0.1:8000/api/applications/",
-          "http://127.0.0.1:8000/api/students/applied-jobs/"
+          `http://${window.location.hostname}:8000/api/applied-jobs/`,
+          `http://${window.location.hostname}:8000/api/student/applied-jobs/`,
+          `http://${window.location.hostname}:8000/api/applications/`,
+          `http://${window.location.hostname}:8000/api/students/applied-jobs/`
         ];
 
         for (const endpoint of alternatives) {
@@ -123,7 +123,7 @@ function Applications() {
 
   const handleAccept = async (applicationId) => {
     try {
-      const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
+      const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +138,7 @@ function Applications() {
 
   const handleReject = async (applicationId) => {
     try {
-      const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
+      const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

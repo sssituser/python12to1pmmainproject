@@ -32,7 +32,7 @@ function VerifyFaculty() {
     }
     setLoading(true);
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/verify_otp/", {
+      const res = await axios.post(`http://${window.location.hostname}:8000/api/verify_otp/`, {
         username: email, // Backend expects 'username' as the identifier
         otp: otp
       });
@@ -55,7 +55,7 @@ function VerifyFaculty() {
     if (!canResend) return;
     
     try {
-      await axios.post("http://127.0.0.1:8000/api/send_otp/", {
+      await axios.post(`http://${window.location.hostname}:8000/api/send_otp/`, {
         username: email
       });
       toast.success("New OTP sent to your email");

@@ -41,7 +41,7 @@ function LeaveRequest() {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch('http://127.0.0.1:8000/api/leave-requests/', { headers });
+        const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, { headers });
         
         if (response.ok) {
           const data = await response.json();

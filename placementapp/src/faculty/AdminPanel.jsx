@@ -22,7 +22,7 @@ function AdminPanel() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/courses/");
+        const res = await fetch(`http://${window.location.hostname}:8000/api/courses/`);
         if (res.ok) {
           const data = await res.json();
           setAvailableCourses(Array.isArray(data) ? data : (data.data || []));
@@ -46,7 +46,7 @@ function AdminPanel() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/students/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/students/`, {
         method: "GET",
         headers,
       });
@@ -73,7 +73,7 @@ function AdminPanel() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/students/${studentId}/toggle-status/`, {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/students/${studentId}/toggle-status/`, {
         method: "PATCH",
         headers,
         body: JSON.stringify({ is_active: !currentStatus }),
@@ -109,7 +109,7 @@ function AdminPanel() {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/admin/create-credentials/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/admin/create-credentials/`, {
         method: "POST",
         headers,
         body: JSON.stringify({ username, email, password, role, course, phone }),

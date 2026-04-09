@@ -111,7 +111,7 @@ function CoursesPage() {
       if (!token) return;
 
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/courses/", {
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -170,7 +170,7 @@ function CoursesPage() {
       }
 
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/profile/", {
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/profile/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

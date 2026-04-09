@@ -36,7 +36,7 @@ function Register() {
       try {
         setLoadingCourses(true);
         // 1. Fetch live courses from Faculty Database
-        const res = await fetch("http://127.0.0.1:8000/api/courses/");
+        const res = await fetch(`http://${window.location.hostname}:8000/api/courses/`);
         let apiCourses = [];
         if (res.ok) {
           const data = await res.json();
@@ -98,7 +98,7 @@ function Register() {
     if (Object.keys(err).length > 0) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/register/", {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

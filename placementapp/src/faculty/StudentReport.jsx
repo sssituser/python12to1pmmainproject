@@ -20,13 +20,13 @@ function StudentReport() {
             const token = localStorage.getItem("access");
 
             // 1. Fetch Exam results
-            const examRes = await fetch(`http://127.0.0.1:8000/api/user-combined-results/?username=${username}`, {
+            const examRes = await fetch(`http://${window.location.hostname}:8000/api/user-combined-results/?username=${username}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             const examData = await examRes.json();
 
             // 2. Fetch Applied Jobs
-            const jobRes = await fetch(`http://127.0.0.1:8000/api/faculty-applications/?username=${username}`, {
+            const jobRes = await fetch(`http://${window.location.hostname}:8000/api/faculty-applications/?username=${username}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             const jobData = await jobRes.json();
@@ -68,7 +68,7 @@ function StudentReport() {
             {/* OFFICIAL LOGO HEADER - ONLY IN PRINT */}
             <div className="only-show-print text-center mb-6">
                 <div className="flex items-center justify-center gap-4 mb-2">
-                    <img src="http://127.0.0.1:8000/static/images/logo.png" alt="SSSIT" className="h-16" />
+                    <img src=`http://${window.location.hostname}:8000/static/images/logo.png" alt="SSSIT" className="h-16" />
                     <div className="text-left border-l-2 border-gray-800 pl-4">
                         <h1 className="text-3xl font-black text-gray-900 m-0">SSSIT</h1>
                         <p className="text-gray-600 font-bold m-0 italic">Computer Education & ISO Certified</p>

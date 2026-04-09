@@ -56,7 +56,7 @@ function Dashboard() {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +121,7 @@ function Dashboard() {
 
         // Try students endpoint
         try {
-          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/students/");
+          const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/students/`);
           if (res.ok) {
             const data = await res.json();
             console.log("Students data from API:", data);
@@ -162,7 +162,7 @@ function Dashboard() {
         // If above failed, try student-stats endpoint
         if (!success) {
           try {
-            const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/student-stats/");
+            const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/student-stats/`);
             if (res.ok) {
               allStudentData = await res.json();
               success = true;
@@ -227,7 +227,7 @@ function Dashboard() {
       
       if (token && user.role === "faculty") {
         try {
-          const res = await fetch("http://127.0.0.1:8000/api/dashboard-stats/", {
+          const res = await fetch(`http://${window.location.hostname}:8000/api/dashboard-stats/`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -275,7 +275,7 @@ function Dashboard() {
       // For faculty users, use existing all-exam-results endpoint
       if (token && user.role === "faculty") {
         try {
-          const res = await fetch("http://127.0.0.1:8000/api/all-exam-results/", {
+          const res = await fetch(`http://${window.location.hostname}:8000/api/all-exam-results/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

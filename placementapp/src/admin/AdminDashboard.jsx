@@ -74,7 +74,7 @@ function AdminDashboard() {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +135,7 @@ function AdminDashboard() {
         
         // Fetch dashboard stats first
         try {
-          const res = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/dashboard-stats/");
+          const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/dashboard-stats/`);
           
           if (res.ok) {
             const data = await res.json();
@@ -154,7 +154,7 @@ function AdminDashboard() {
         // Fetch all users for detailed stats
         try {
           console.log("🔄 Fetching all users data...");
-          const usersRes = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/all-users/");
+          const usersRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/all-users/`);
           
           if (usersRes.ok) {
             const usersData = await usersRes.json();

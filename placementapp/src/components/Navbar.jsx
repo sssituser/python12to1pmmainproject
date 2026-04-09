@@ -47,7 +47,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,8 +106,8 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
 
     // Use faculty profile endpoint for faculty users
     const profileEndpoint = user.role === "faculty" 
-      ? "http://127.0.0.1:8000/api/faculty/profile/"
-      : "http://127.0.0.1:8000/api/profile/";
+      ? `http://${window.location.hostname}:8000/api/faculty/profile/`
+      : `http://${window.location.hostname}:8000/api/profile/`;
 
     makeAuthenticatedRequest(profileEndpoint)
     .then(res => {
@@ -121,13 +121,13 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       if (data && data.avatar) {
         const imageUrl = data.avatar.startsWith('http') 
           ? data.avatar 
-          : `http://127.0.0.1:8000${data.avatar}`;
+          : `http://${window.location.hostname}:8000${data.avatar}`;
         setProfileImage(imageUrl);
       } else if (data && data.profile_image) {
         // Fallback for student profile
         const imageUrl = data.profile_image.startsWith('http') 
           ? data.profile_image 
-          : `http://127.0.0.1:8000${data.profile_image}`;
+          : `http://${window.location.hostname}:8000${data.profile_image}`;
         setProfileImage(imageUrl);
       }
 

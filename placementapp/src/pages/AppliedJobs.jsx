@@ -14,7 +14,7 @@ function AppliedJobs() {
       return;
     }
 
-    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+    fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

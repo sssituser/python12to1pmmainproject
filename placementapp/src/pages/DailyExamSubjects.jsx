@@ -137,26 +137,13 @@ function DailyExamSubjects() {
           return;
         }
 
-        // 🚀 OVERDRIVE PARALLEL FETCH
-        const initialActive = activeCourse || sessionStorage.getItem("active_assessment_course");
-        
+        // 🚀 OVERDRIVE PARALLEL FETCH (Optimized Hub)
         const fetchPromises = [
-          axios.get("http://127.0.0.1:8000/api/profile/", { headers: { "Authorization": `Bearer ${token}` } }),
-          axios.get("http://127.0.0.1:8000/api/courses/", { headers: { "Authorization": `Bearer ${token}` } })
+          axios.get(`http://${window.location.hostname}:8000/api/profile/`, { headers: { "Authorization": `Bearer ${token}` } }),
+          axios.get(`http://${window.location.hostname}:8000/api/courses/`, { headers: { "Authorization": `Bearer ${token}` } })
         ];
 
-        // If we know the course, fetch its config in the same burst
-        if (initialActive) {
-          fetchPromises.push(axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(initialActive)}&_t=${Date.now()}`, {
-            headers: { "Authorization": `Bearer ${token}` }
-          }));
-        }
-
-        const resArray = await Promise.all(fetchPromises);
-        const profileRes = resArray[0];
-        const courseRes = resArray[1];
-        const configRes = resArray[2];
-
+        const [profileRes, courseRes] = await Promise.all(fetchPromises);
         const data = profileRes.data || {};
         const courses = data.enrolled_courses || (data.course_title ? [data.course_title] : []);
         setEnrolledCourses(courses);
@@ -165,13 +152,11 @@ function DailyExamSubjects() {
         setAllCourseData(cData);
         localStorage.setItem("cache_all_courses", JSON.stringify(cData));
         
+        // 🛡️ 1000% LANDING PAGE INTEGRITY: 
+        // We no longer auto-select a course on refresh. Users must choose their track 
+        // at the Assessment Center to ensure they are writing the correct exam.
         if (configRes && configRes.data && configRes.data.status === "success") {
            setAutomatedConfig(configRes.data);
-        }
-
-        if (courses.length === 1 && !initialActive) {
-           setActiveCourse(courses[0]);
-           sessionStorage.setItem("active_assessment_course", courses[0]);
         }
       } catch (err) {
         if (err.response?.status === 401) {
@@ -195,11 +180,11 @@ function DailyExamSubjects() {
       const storedToken = localStorage.getItem("access");
       const token = storedToken ? storedToken.replace(/^"|"$/g, "").trim() : null;
       
-      const courseRes = await axios.get("http://127.0.0.1:8000/api/courses/", { headers: { "Authorization": `Bearer ${token}` } });
+      const courseRes = await axios.get(`http://${window.location.hostname}:8000/api/courses/`, { headers: { "Authorization": `Bearer ${token}` } });
       setAllCourseData(courseRes.data || []);
       
       if (activeCourse) {
-        const configRes = await axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
+        const configRes = await axios.get(`http://${window.location.hostname}:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
           headers: token ? { "Authorization": `Bearer ${token}` } : {}
         });
         if (configRes.data && configRes.data.status === "success") {
@@ -216,7 +201,7 @@ function DailyExamSubjects() {
     const fetchAutomatedConfig = async () => {
       try {
         const token = (localStorage.getItem("access") || "").replace(/^"|"$/g, "");
-      const res = await axios.get(`http://127.0.0.1:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
+      const res = await axios.get(`http://${window.location.hostname}:8000/api/automated-exam-config/?course_name=${encodeURIComponent(activeCourse)}&_t=${Date.now()}`, {
         headers: token ? { "Authorization": `Bearer ${token}` } : {}
       });
 
@@ -285,19 +270,21 @@ function DailyExamSubjects() {
     // Clear any previous exam result flag so we don't instantly bounce back to results
     localStorage.removeItem("examResult");
 
-    // Intercept the browser back button ("windows arrow button left side")
-    // to ensure it always goes directly back to the playground.
+    // 🛡️ 1000% Stable Navigation Firewall
     const handlePopState = (e) => {
-      e.preventDefault();
-      navigate('/dashboard/playground', { replace: true });
+      // Only redirect if we are actually at the SUBJECT LIST level
+      if (window.location.pathname === "/dashboard/daily-exam") {
+         navigate('/dashboard/playground', { replace: true });
+      }
     };
 
-    window.history.pushState(null, null, window.location.href);
+    // Initialize state to capture future pops
+    if (!window.history.state) {
+       window.history.replaceState({ subjectsLoaded: true }, "");
+    }
+    
     window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [navigate]);
 
   const handleSelectSubject = (subjectKey) => {
