@@ -18,23 +18,25 @@ class ExceptionMiddleware:
             response = self.get_response(request)
             return response
         except Exception as e:
-            return self.process_exception(request, e)
+            return self.handle_exception(request, e)
 
-    def process_exception(self, request, exception):
-        # Log the exception for debugging
-        logger.error(f"Unhandled exception at {request.path}: {str(exception)}")
+    def handle_exception(self, request, exception):
+        # Log the exception with traceback for debugging
+        logger.error(f"Global Exception Handler: Unhandled exception at {request.method} {request.path}: {str(exception)}")
         logger.error(traceback.format_exc())
 
-        # Determine if we should include the trace (only in DEBUG mode)
+        # Standardized Error Format for the entire application
         error_data = {
             'success': False,
             'error': str(exception)
         }
         
+        # Include trace ONLY if DEBUG is True to avoid leaking sensitive info in production
         if settings.DEBUG:
-            error_data['trace'] = traceback.format_exc()
+            error_data['trace'] = traceback.format_exc().split('\n')[-3:] # Last few lines for context
+            error_data['full_trace'] = traceback.format_exc()
 
-        # Return a standardized error response
+        # Return a standardized JSON response with 500 status code
         return JsonResponse(error_data, status=500)
 
 class APIResponseMiddleware(MiddlewareMixin):

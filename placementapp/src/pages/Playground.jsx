@@ -70,148 +70,124 @@ function Playground() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow">
+    <div className="min-h-screen bg-gray-50/50">
+      {/* 🔹 Header */}
+      <header className="bg-blue-600 text-white shadow-sm overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-
           <div>
-            <h1 className="text-2xl font-semibold">Code Playground</h1>
-            <p className="text-sm opacity-90">
+            <h1 className="text-2xl font-bold tracking-tight">Code Playground</h1>
+            <p className="text-sm text-blue-100 mt-0.5">
               Practice coding and improve your skills
             </p>
           </div>
-
-          <div className="text-2xl bg-white/20 px-3 py-2 rounded-lg font-mono">
+          <div className="text-2xl bg-white/20 px-3 py-2 rounded-lg font-mono tracking-tighter shadow-inner">
             {"</>"}
           </div>
-
         </div>
       </header>
 
-
-      {/* Main Section */}
+      {/* 🔹 Main Section */}
       <main className="max-w-6xl mx-auto px-6 py-10">
-
         {/* Greeting */}
-        <div className="mb-4">
-          <p className="text-sm text-gray-500">
-            Hi {username ? username : "User"},
+        <div className="mb-8">
+          <p className="text-sm text-slate-500 font-medium">
+            Hi {username || "User"},
           </p>
-
-          <h2 className="text-3xl font-bold text-gray-800 mt-1">
+          <h2 className="text-3xl font-bold text-slate-800 mt-1">
             Welcome Back 👋
           </h2>
-
         </div>
 
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
           📚 Available Coding Sessions
         </h3>
 
-        {/* Three Exam Cards (Daily is static, Weekly/Monthly are dynamic) */}
+        {/* 🔹 Assessment Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-
-          {/* Daily Exam Card (Restored to its original static version) */}
-          <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between">
-
+          
+          {/* Daily Exam Card */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
             <div>
-              <div className="flex items-center justify-between mb-3">
-
-                <h3 className="text-base font-semibold text-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Daily Exam
                 </h3>
-
-                <span className="text-purple-500 text-lg">📊</span>
-
+                <span className="text-lg bg-blue-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4">
-                Daily practice exam to test your {studentCourse || 'Python'} programming skills. Cover variables, operators, data types, control flow, functions, and more with 20 multiple choice questions.
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
+                A daily practice exam designed to evaluate programming skills. It helps improve problem-solving ability and strengthen coding proficiency.
               </p>
 
-              <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full">
+              <span className="inline-block bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">
                 Daily practice exam
               </span>
             </div>
 
             <button
               onClick={() => navigate("/dashboard/daily-exam")}
-              className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition"
+              className="mt-6 bg-blue-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-sm hover:shadow-blue-200 active:scale-[0.98]"
             >
               Start Exam
             </button>
-
           </div>
 
           {/* Weekly Exam Card */}
-          <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between">
-
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
             <div>
-              <div className="flex items-center justify-between mb-3">
-
-                <h3 className="text-base font-semibold text-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Weekly Exam
                 </h3>
-
-                <span className="text-green-500 text-lg">📊</span>
-
+                <span className="text-lg bg-emerald-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
                 Comprehensive weekly exam to test your knowledge. Cover all topics with multiple choice questions for thorough assessment.
               </p>
 
-              <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+              <span className="inline-block bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100">
                 {weeklyQuestions} MCQs • {weeklyTime} min
               </span>
             </div>
 
             <button
               onClick={() => navigate("/dashboard/weekly-exam")}
-              className="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition"
+              className="mt-6 bg-emerald-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm hover:shadow-emerald-200 active:scale-[0.98]"
             >
               Start Exam
             </button>
-
           </div>
 
           {/* Monthly Exam Card */}
-          <div className="bg-white rounded-lg border shadow-md p-5 hover:shadow-lg transition duration-300 flex flex-col justify-between border-purple-50">
-
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
             <div>
-              <div className="flex items-center justify-between mb-3">
-
-                <h3 className="text-base font-semibold text-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Monthly Exam
                 </h3>
-
-                <span className="text-purple-500 text-lg">📊</span>
-
+                <span className="text-lg bg-indigo-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
                 Extensive monthly exam for complete evaluation. Test advanced concepts with multiple choice questions for comprehensive assessment.
               </p>
-              <span className="inline-block bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-semibold">
-                {monthlyQuestions} MCQs • {monthlyTime} min
+
+              <span className="inline-block bg-indigo-50 text-indigo-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-indigo-100">
+                 {monthlyQuestions} MCQs • {monthlyTime} min
               </span>
             </div>
 
             <button
               onClick={() => navigate("/dashboard/monthly-exam")}
-              className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition"
+              className="mt-6 bg-indigo-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm hover:shadow-indigo-200 active:scale-[0.98]"
             >
               Start Exam
             </button>
-
           </div>
 
         </div>
-
       </main>
-
     </div>
   );
 }

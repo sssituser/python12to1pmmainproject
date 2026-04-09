@@ -65,6 +65,16 @@ function LeaveHistory() {
       }
       
       setLoading(true);
+      
+      // 🔄 IDENTITY SYNC: Ensure 1000% permanence across sessions/devices
+      const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (savedUser.email) {
+         if (!localStorage.getItem('permanentEmail')) localStorage.setItem('permanentEmail', savedUser.email);
+         if (!localStorage.getItem('permanentName')) localStorage.setItem('permanentName', savedUser.name || savedUser.username);
+         if (!localStorage.getItem('permanentStudentId')) localStorage.setItem('permanentStudentId', savedUser.studentId || savedUser.username);
+         if (!localStorage.getItem('permanentPhone')) localStorage.setItem('permanentPhone', savedUser.phone || "");
+      }
+
       const token = localStorage.getItem("access");
       if (!token) {
         console.log("No token found - user not logged in");
@@ -100,11 +110,27 @@ function LeaveHistory() {
       const data = await response.json();
       const allRequests = data.data || data || [];
       
-      // Filter requests for current user only
+      // Filter requests for current user only - IDENTITY-AWARE ROBUST FILTERING
       const userRequests = allRequests.filter(request => {
-        return request.name === userName && 
-               request.student_id.toString() === userStudentId.toString() &&
-               request.phone.toString() === userPhone.toString();
+        if (!request) return false;
+        
+        // Normalize Request Data
+        const rName = (request.name || "").toString().trim().toLowerCase();
+        const rEmail = (request.email || "").toString().trim().toLowerCase();
+        const rId = (request.student_id || "").toString().trim();
+        
+        // Normalize Session Data
+        const sName = (userName || "").toString().trim().toLowerCase();
+        const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
+        const sId = (userStudentId || "").toString().trim();
+
+        // IDENTITY-AWARE MATCH: Show if Email matches AND (Name matches OR ID matches)
+        // This ensures the student sees their history even if they typoed their ID or it changed.
+        const matchesEmail = rEmail && sEmail && rEmail === sEmail;
+        const matchesName = rName && sName && rName === sName;
+        const matchesId = rId && sId && rId === sId;
+
+        return matchesEmail && (matchesName || matchesId);
       });
       
       console.log(`Found ${userRequests.length} requests for user: ${userName}`);

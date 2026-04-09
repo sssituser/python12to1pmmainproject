@@ -47,6 +47,16 @@ function ExamLeaderboard() {
   // Trigger fetch when filters change
   useEffect(() => {
     fetchLeaderboard(true);
+
+    const handleExamUpdate = () => {
+       console.log("🔄 Leaderboard - Exam updated, refreshing rankings...");
+       fetchLeaderboard(false);
+    };
+    window.addEventListener('examDataUpdated', handleExamUpdate);
+
+    return () => {
+       window.removeEventListener('examDataUpdated', handleExamUpdate);
+    };
   }, [date, batch, examType]);
 
   //  SILENT AUTO REFRESH every 45 sec

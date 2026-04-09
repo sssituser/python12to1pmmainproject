@@ -82,17 +82,19 @@ function StudentReport() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 no-print gap-4">
                 <button 
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-all"
+                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-all w-fit"
                 >
                     <FaArrowLeft /> Back to Dashboard
                 </button>
                 
-                <button 
-                    onClick={handlePrint}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                >
-                    <FaDownload /> Download Report (PDF)
-                </button>
+                <div className="flex justify-end w-full md:w-auto">
+                    <button 
+                        onClick={handlePrint}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 w-fit"
+                    >
+                        <FaDownload /> Download Report (PDF)
+                    </button>
+                </div>
             </div>
 
             {/* REPORT HEADER */}

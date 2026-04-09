@@ -58,6 +58,14 @@ class StudentProfile(models.Model):
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='student_profiles')
 
+    def enrolled_courses_titles(self):
+        from .models import CourseEnrollment
+        enrollments = CourseEnrollment.objects.filter(user=self.user).select_related('course')
+        titles = list(set([e.course.title for e in enrollments if e.course]))
+        if not titles and self.course:
+            titles = [self.course.title]
+        return titles
+
     def __str__(self):
         return self.user.username
 
@@ -78,6 +86,21 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class AutomatedExamConfig(models.Model):
+    exam_name = models.CharField(max_length=255, default="Daily Assessment")
+    course_name = models.CharField(max_length=255, unique=True)
+    subjects = models.JSONField(default=list)
+    duration = models.IntegerField(default=80)
+    passing_strategy = models.CharField(max_length=50, default="percentage")
+    requirement = models.IntegerField(default=50)
+    question_count = models.IntegerField(default=25)
+    marks_per_question = models.IntegerField(default=2)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.course_name} - {self.exam_name}"
 
 
 # ===============================

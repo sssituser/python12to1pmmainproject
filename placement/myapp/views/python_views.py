@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
+from ..models import AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
 from ..email_utils import send_exam_confirmation_email
 from datetime import datetime, timedelta
@@ -51,147 +51,133 @@ def user_combined_results_api(request):
     API endpoint to fetch combined exam results for a specific user.
     Used by PlaygroundResults.jsx component.
     """
-    try:
-        username = request.GET.get('username')
-        
-        if not username:
-            return Response({
-                'success': False,
-                'error': 'Username parameter is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Get user by username
-        try:
-            target_user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response({
-                'success': False,
-                'error': f'User "{username}" not found'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        # Get exam attempts for this user
-        exam_attempts = ExamAttempt.objects.filter(user=target_user).order_by('-start_time')
-        
-        # Get applied jobs for this user
-        applied_jobs = AppliedJob.objects.filter(user=target_user).order_by('-applied_date')
-        
-        # Format exam results
-        exam_results = []
-        for attempt in exam_attempts:
-            exam_results.append({
-                'id': attempt.id,
-                'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
-                'score': attempt.score or 0,
-                'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
-                'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
-                'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
-                'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
-                'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
-                'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
-                'user': {
-                    'username': target_user.username,
-                    'id': target_user.id
-                }
-            })
-        
-        # Format job applications
-        job_applications = []
-        for job in applied_jobs:
-            job_applications.append({
-                'id': job.id,
-                'jobTitle': job.job.title if job.job else 'Unknown Job',
-                'company': job.job.company if job.job else 'Unknown Company',
-                'appliedDate': job.applied_date.strftime('%Y-%m-%d %H:%M:%S') if job.applied_date else '',
-                'status': job.status,
-                'randomId': f"job_{job.id}_{job.applied_date.timestamp()}" if job.applied_date else f"job_{job.id}",
-                'user': {
-                    'username': target_user.username,
-                    'id': target_user.id
-                }
-            })
-        
-        # Combine all results
-        all_results = exam_results + job_applications
-        
-        return Response({
-            'success': True,
-            'data': all_results,
-            'user': {
-                'username': target_user.username,
-                'id': target_user.id,
-                'email': target_user.email
-            },
-            'stats': {
-                'totalExams': len(exam_results),
-                'totalApplications': len(job_applications),
-                'passedExams': len([e for e in exam_results if e['status'] == 'Pass']),
-                'failedExams': len([e for e in exam_results if e['status'] == 'Fail'])
-            }
-        }, status=status.HTTP_200_OK)
-        
-    except Exception as e:
+    username = request.GET.get('username')
+    
+    if not username:
         return Response({
             'success': False,
-            'error': f'Server error: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': 'Username parameter is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get user by username
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': f'User "{username}" not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get exam attempts for this user
+    exam_attempts = ExamAttempt.objects.filter(user=target_user).order_by('-start_time')
+    
+    # Get applied jobs for this user
+    applied_jobs = AppliedJob.objects.filter(user=target_user).order_by('-applied_date')
+    
+    # Format exam results
+    exam_results = []
+    for attempt in exam_attempts:
+        exam_results.append({
+            'id': attempt.id,
+            'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
+            'score': attempt.score or 0,
+            'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
+            'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
+            'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
+            'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
+            'user': {
+                'username': target_user.username,
+                'id': target_user.id
+            }
+        })
+    
+    # Format job applications
+    job_applications = []
+    for job in applied_jobs:
+        job_applications.append({
+            'id': job.id,
+            'jobTitle': job.job.title if job.job else 'Unknown Job',
+            'company': job.job.company if job.job else 'Unknown Company',
+            'appliedDate': job.applied_date.strftime('%Y-%m-%d %H:%M:%S') if job.applied_date else '',
+            'status': job.status,
+            'randomId': f"job_{job.id}_{job.applied_date.timestamp()}" if job.applied_date else f"job_{job.id}",
+            'user': {
+                'username': target_user.username,
+                'id': target_user.id
+            }
+        })
+    
+    # Combine all results
+    all_results = exam_results + job_applications
+    
+    return Response({
+        'success': True,
+        'data': all_results,
+        'user': {
+            'username': target_user.username,
+            'id': target_user.id,
+            'email': target_user.email
+        },
+        'stats': {
+            'totalExams': len(exam_results),
+            'totalApplications': len(job_applications),
+            'passedExams': len([e for e in exam_results if e['status'] == 'Pass']),
+            'failedExams': len([e for e in exam_results if e['status'] == 'Fail'])
+        }
+    }, status=status.HTTP_200_OK)
 
 # ==================== LEAVE REQUEST API ====================
 
 @api_view(['GET', 'POST'])
 def leave_requests_api(request):
-    try:
-        if request.method == 'GET':
-            leave_requests = LeaveRequest.objects.all().order_by('-created_at')
-            serializer = LeaveRequestSerializer(leave_requests, many=True)
+    if request.method == 'GET':
+        leave_requests = LeaveRequest.objects.all().order_by('-created_at')
+        serializer = LeaveRequestSerializer(leave_requests, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = LeaveRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Leave request created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = LeaveRequestSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Leave request created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT', 'DELETE'])
 def leave_request_detail_api(request, pk):
-    try:
-        leave_request = get_object_or_404(LeaveRequest, pk=pk)
-        
-        if request.method == 'PUT':
-            serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Leave request updated successfully',
-                    'data': serializer.data
-                })
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        elif request.method == 'DELETE':
-            leave_request.delete()
+    leave_request = get_object_or_404(LeaveRequest, pk=pk)
+    
+    if request.method == 'PUT':
+        serializer = LeaveRequestSerializer(leave_request, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
-                'message': 'Leave request deleted successfully'
+                'message': 'Leave request updated successfully',
+                'data': serializer.data
             })
-    except Exception as e:
-        
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        leave_request.delete()
+        return Response({
+            'success': True,
+            'message': 'Leave request deleted successfully'
+        })
 
 # ==================== PLAYGROUND API ====================
 
@@ -220,57 +206,51 @@ def playground_api(request):
 
 @api_view(['GET', 'POST'])
 def code_templates_api(request):
-    try:
-        if request.method == 'GET':
-            templates = CodeTemplate.objects.all()
-            serializer = CodeTemplateSerializer(templates, many=True)
+    if request.method == 'GET':
+        templates = CodeTemplate.objects.all()
+        serializer = CodeTemplateSerializer(templates, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = CodeTemplateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Code template created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = CodeTemplateSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Code template created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 def code_snippets_api(request):
-    try:
-        if request.method == 'GET':
-            snippets = CodeSnippet.objects.all()
-            serializer = CodeSnippetSerializer(snippets, many=True)
+    if request.method == 'GET':
+        snippets = CodeSnippet.objects.all()
+        serializer = CodeSnippetSerializer(snippets, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
+    elif request.method == 'POST':
+        serializer = CodeSnippetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response({
                 'success': True,
+                'message': 'Code snippet created successfully',
                 'data': serializer.data
-            })
-        
-        elif request.method == 'POST':
-            serializer = CodeSnippetSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    'success': True,
-                    'message': 'Code snippet created successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
-            return Response({
-                'success': False,
-                'errors': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def execute_code_api(request):
@@ -567,6 +547,53 @@ def exam_report_detail_api(request, pk):
         }
     })
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def exam_proctoring_logs_api(request, pk):
+    """
+    GET: Get proctoring snapshots for a specific exam attempt
+    """
+    attempt = get_object_or_404(ExamAttempt, pk=pk)
+    user = attempt.user
+    
+    snapshots_data = []
+    if user and user.email:
+        sessions = ExamSession.objects.filter(student_email__iexact=user.email)
+        
+        # Cross-reference with attempt time range
+        if attempt.start_time and attempt.end_time:
+            snapshots = WebcamSnapshot.objects.filter(
+                session__in=sessions,
+                timestamp__gte=attempt.start_time,
+                timestamp__lte=attempt.end_time
+            ).order_by('timestamp')
+        elif attempt.start_time:
+            # Fallback for old/legacy attempts: check same day
+            snapshots = WebcamSnapshot.objects.filter(
+                session__in=sessions,
+                timestamp__date=attempt.start_time.date()
+            ).order_by('timestamp')
+        else:
+            snapshots = []
+
+        for s in snapshots:
+            snapshots_data.append({
+                'id': s.id,
+                'image': s.image_path,
+                'timestamp': s.timestamp.isoformat(),
+                'is_suspicious': s.is_suspicious,
+                'reason': s.reason or "Automatic Snapshot"
+            })
+            
+    return Response({
+        'success': True,
+        'data': snapshots_data,
+        'summary': {
+            'total': len(snapshots_data),
+            'suspicious': len([s for s in snapshots_data if s['is_suspicious']])
+        }
+    })
+
 
 @api_view(['GET','POST'])
 @permission_classes([AllowAny])
@@ -574,142 +601,144 @@ def save_exam_report_api(request):
     """
     POST: Save new exam report.
     """
-    try:
-        data = request.data
-        from django.utils import timezone
+    data = request.data
+    from django.utils import timezone
 
-        # Resolve user
-        user = None
-        if request.user and request.user.is_authenticated:
-            user = request.user
-        else:
-            username = data.get('username')
-            if not username and isinstance(data.get('user'), dict):
-                username = data['user'].get('username')
+    # Resolve user
+    user = None
+    if request.user and request.user.is_authenticated:
+        user = request.user
+    else:
+        username = data.get('username')
+        if not username and isinstance(data.get('user'), dict):
+            username = data['user'].get('username')
 
-            if username:
-                username = username.strip()
-                user = User.objects.filter(username__iexact=username).first()
-                if not user:
-                    user, _ = User.objects.get_or_create(
-                        username=username,
-                        defaults={'email': f"{username}@example.com"}
-                    )
+        if username:
+            username = username.strip()
+            user = User.objects.filter(username__iexact=username).first()
+            if not user:
+                user, _ = User.objects.get_or_create(
+                    username=username,
+                    defaults={'email': f"{username}@example.com"}
+                )
 
-        if not user:
-            return Response({
-                'success': False,
-                'error': 'Could not identify user'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        now = timezone.now()
-        start_time = data.get('start_time') or data.get('startTime') or now
-        end_time = data.get('end_time') or data.get('endTime') or now
-
-        # Prioritize permanent Student ID from profile over any random ID from frontend
-        random_id_val = ""
-        try:
-            profile = StudentProfile.objects.get(user=user)
-            if profile.student_id:
-                random_id_val = str(profile.student_id)
-        except StudentProfile.DoesNotExist:
-            pass
-
-        if not random_id_val:
-            random_id_val = data.get('random_id') or data.get('randomId') or ''
-            if not random_id_val and isinstance(data.get('user'), dict):
-                random_id_val = data['user'].get('randomId') or ''
-
-        # Priority: Check if explicitly flagged as cheated/violated first
-        raw_status = str(data.get('status', '')).strip()
-        lower_status = raw_status.lower()
-        
-        # pass/fail
-        passed_input = data.get('passed')
-        
-        if 'cheat' in lower_status or 'violated' in lower_status:
-            final_status = 'Cheated'
-            # Maybe include the specific reason in status if available
-            reason = data.get('reason') or data.get('submissionReason')
-            if reason:
-                # Truncate if too long, but include it
-                final_status = f"Cheated: {reason}"[:20] 
-                # Actually, better to keep it just 'Cheated' for internal logic 
-                # but maybe store the detailed reason in the status string
-                final_status = f"Cheated"
-        elif passed_input is True:
-            final_status = 'Pass'
-        elif passed_input is False:
-            final_status = 'Fail'
-        else:
-            marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-            total_marks = data.get('total_marks') or data.get('totalMarks') or 60
-            
-            # Calculate percentage for pass/fail decision
-            percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
-            
-            if percentage >= 33.33:
-                final_status = 'Pass'
-            else:
-                final_status = 'Fail'
-
-        # 🛡️ PREVENT ACCIDENTAL DOUBLE-SUBMISSIONS (Only ignore repeat within 10 seconds)
-        ten_seconds_ago = timezone.now() - timezone.timedelta(seconds=10)
-        exists = ExamAttempt.objects.filter(
-            user=user,
-            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
-            score=data.get('score', 0),
-            exam_date__gte=ten_seconds_ago
-        ).exists()
-
-        if exists:
-            return Response({
-                'success': True,
-                'message': 'Duplicate attempt ignored',
-                'saved_username': user.username
-            })
-
-        attempt = ExamAttempt.objects.create(
-            user=user,
-            exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
-            exam_type=data.get('exam_type') or data.get('examType', 'daily'),
-            score=data.get('score', 0),
-            total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
-            correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
-            incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
-            marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-            total_marks=data.get('total_marks') or data.get('totalMarks', 60),
-            time_taken=data.get('time_taken') or data.get('timeTaken', 0),
-            start_time=start_time,
-            end_time=end_time,
-            status=final_status,
-            random_id=str(random_id_val),
-            answers_json=json.dumps(data.get('answers', [])),
-            questions_json=json.dumps(data.get('questions', []))
-        )
-
-        # Get student's course information for response
-        student_course = None
-        try:
-            student_profile = StudentProfile.objects.get(user=user)
-            if student_profile.course:
-                student_course = student_profile.course.title
-        except StudentProfile.DoesNotExist:
-            pass
-
-        return Response({
-            'success': True,
-            'message': 'Exam report saved successfully',
-            'saved_username': user.username,
-            'course': student_course,
-            'data': ExamAttemptSerializer(attempt).data
-        }, status=status.HTTP_201_CREATED)
-
-    except Exception as e:
+    if not user:
         return Response({
             'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': 'Could not identify user'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    now = timezone.now()
+    start_time = data.get('start_time') or data.get('startTime') or now
+    end_time = data.get('end_time') or data.get('endTime') or now
+
+    # Prioritize permanent Student ID from profile over any random ID from frontend
+    random_id_val = ""
+    try:
+        profile = StudentProfile.objects.get(user=user)
+        if profile.student_id:
+            random_id_val = str(profile.student_id)
+    except StudentProfile.DoesNotExist:
+        pass
+
+    if not random_id_val:
+        random_id_val = data.get('random_id') or data.get('randomId') or ''
+        if not random_id_val and isinstance(data.get('user'), dict):
+            random_id_val = data['user'].get('randomId') or ''
+
+    # Priority: Check if explicitly flagged as cheated/violated first
+    raw_status = str(data.get('status', '')).strip()
+    lower_status = raw_status.lower()
+    
+    # pass/fail
+    passed_input = data.get('passed')
+    
+    if 'cheat' in lower_status or 'violated' in lower_status:
+        final_status = 'Cheated'
+        # Maybe include the specific reason in status if available
+        reason = data.get('reason') or data.get('submissionReason')
+        if reason:
+            # Truncate if too long, but include it
+            final_status = f"Cheated: {reason}"[:20] 
+            # Actually, better to keep it just 'Cheated' for internal logic 
+            # but maybe store the detailed reason in the status string
+            final_status = f"Cheated"
+    elif passed_input is True:
+        final_status = 'Pass'
+    elif passed_input is False:
+        final_status = 'Fail'
+    else:
+        marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
+        total_marks = data.get('total_marks') or data.get('totalMarks') or 60
+        
+        # Calculate percentage for pass/fail decision
+        percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
+        
+        if percentage >= 33.33:
+            final_status = 'Pass'
+        else:
+            final_status = 'Fail'
+
+    # 🛡️ PREVENT ACCIDENTAL DOUBLE-SUBMISSIONS (Only ignore repeat within 10 seconds)
+    ten_seconds_ago = timezone.now() - timezone.timedelta(seconds=10)
+    exists = ExamAttempt.objects.filter(
+        user=user,
+        exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+        score=data.get('score', 0),
+        exam_date__gte=ten_seconds_ago
+    ).exists()
+
+    if exists:
+        return Response({
+            'success': True,
+            'message': 'Duplicate attempt ignored',
+            'saved_username': user.username
+        })
+
+    attempt = ExamAttempt.objects.create(
+        user=user,
+        exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
+        exam_type=data.get('exam_type') or data.get('examType', 'daily'),
+        score=data.get('score', 0),
+        total_questions=data.get('total_questions') or data.get('totalQuestions', 30),
+        correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
+        incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
+        marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
+        total_marks=data.get('total_marks') or data.get('totalMarks', 60),
+        time_taken=data.get('time_taken') or data.get('timeTaken', 0),
+        start_time=start_time,
+        end_time=end_time,
+        status=final_status,
+        random_id=str(random_id_val),
+        answers_json=json.dumps(data.get('answers', [])),
+        questions_json=json.dumps(data.get('questions', []))
+    )
+
+    # Get student's course information for response
+    student_course = None
+    try:
+        student_profile = StudentProfile.objects.get(user=user)
+        if student_profile.course:
+            student_course = student_profile.course.title
+    except StudentProfile.DoesNotExist:
+        pass
+
+    # 🏗️ 1000% AUTOMATIC REVERT TO LIFETIME PATTERN (2000% ROBUST)
+    try:
+        if student_course:
+            # Enforce 1000% case-insensitive and whitespace-stripped match for permanent deletion
+            clean_name = str(student_course).strip().upper()
+            AutomatedExamConfig.objects.filter(course_name__iexact=clean_name).delete()
+    except Exception:
+        pass
+
+    return Response({
+        'success': True,
+        'message': 'Exam report saved successfully (Transient overrides purged)',
+        'saved_username': user.username,
+        'course': student_course,
+        'data': ExamAttemptSerializer(attempt).data
+    }, status=status.HTTP_201_CREATED)
 @api_view(['DELETE'])
 def delete_exam_report_api(request, pk):
     """
@@ -1293,97 +1322,202 @@ RAPID_API_KEY = "aac9ffcb0fmsh4ac5d4bab4c3bb1p1067c8jsn143eef6e423b"
 @permission_classes([AllowAny])
 def run_code_api(request):
     """
-    POST: Run code using Judge0 API and evaluate test cases.
-    Payload: {
-        "code": "...",
-        "language": "python",
-        "stdin": "...",
-        "test_cases": [{"input": "...", "expected": "..."}]
-    }
+    POST: Run code locally via Subprocess without relying on external APIs.
     """
+    import subprocess
+    import sys
+    import tempfile
+    import os
+    
     data = request.data
     source_code = data.get('code', '')
-    language = data.get('language', 'python')
+    language = data.get('language', 'python').lower()
     test_cases = data.get('test_cases', [])
-    
-    # 71 = Python (3.8.1), 54 = C++ (GCC 9.2.0), 62 = Java (OpenJDK 13.0.1)
-    lang_ids = {
-        'python': 71,
-        'cpp': 54,
-        'java': 62
-    }
-    lang_id = lang_ids.get(language, 71)
 
     results = []
     passed = 0
 
     try:
-        # If no test cases provided (scratchpad mode), perform a single default execution
+        # If no test cases provided (scratchpad mode), perform a single execution
         working_test_cases = test_cases if test_cases else [{"input": data.get('stdin', ''), "expected": ""}]
         
-        for tc in working_test_cases:
-            tc_input = tc.get('input', '')
-            tc_expected = tc.get('expected', '').strip()
+        # Determine executable and file extension based on language
+        executable = None
+        ext = '.txt'
+        compile_cmd = None
+        run_cmd = None
+        
+        if language == 'python':
+            ext = '.py'
+            run_cmd = [sys.executable, '{tc_file}']
+        elif language == 'javascript' or language == 'js':
+            ext = '.js'
+            run_cmd = ['node', '{tc_file}']
+        elif language == 'c':
+            ext = '.c'
+            compile_cmd = ['gcc', '{tc_file}', '-o', '{tc_exe}']
+            run_cmd = ['{tc_exe}']
+        elif language == 'cpp':
+            ext = '.cpp'
+            compile_cmd = ['g++', '{tc_file}', '-o', '{tc_exe}']
+            run_cmd = ['{tc_exe}']
+        elif language == 'java':
+            ext = '.java'
+            # Java class name must match file name usually. We'll use Main.java.
+            compile_cmd = ['javac', '{tc_file}']
+            run_cmd = ['java', '-cp', '{tc_dir}', 'Main']
             
-            # Prepare payload for Judge0
-            payload = {
-                "source_code": source_code,
-                "language_id": lang_id,
-                "stdin": tc_input,
-                "expected_output": tc_expected if tc_expected else None,
-            }
-            
-            # Using Judge0 Community Edition on RapidAPI
-            headers = {
-                "content-type": "application/json",
-                "X-RapidAPI-Key": RAPID_API_KEY,
-                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-            }
-            
-            # Direct Wait Submission (Wait=true)
-            url = "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true"
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            
-            if response.status_code == 201 or response.status_code == 200:
-                result = response.json()
-                stdout = (result.get('stdout') or "").strip()
-                status = result.get('status', {}).get('description', '')
-                
-                # Check status
-                # If tc_expected is empty (scratchpad), we consider it passed if it executed without error
-                if not tc_expected:
-                    is_pass = status.lower() == 'accepted'
+        temp_file = None
+        temp_exe = None
+        temp_dir = None
+        
+        try:
+            if run_cmd:
+                temp_dir = tempfile.mkdtemp()
+                if language == 'java':
+                    temp_file = os.path.join(temp_dir, 'Main.java')
                 else:
-                    is_pass = (status.lower() == 'accepted' or stdout == tc_expected)
+                    descriptor, temp_file = tempfile.mkstemp(suffix=ext, dir=temp_dir)
+                    os.close(descriptor)
+                    
+                if language in ['c', 'cpp']:
+                    temp_exe = os.path.join(temp_dir, 'program.exe' if os.name == 'nt' else 'program')
+
+                # To simulate a true interactive terminal visually over HTTP,
+                # we dynamically patch the python input() function 
+                # to echo its captured STDIN back to STDOUT.
+                modified_code = source_code
+                if language == 'python':
+                    patch = (
+                        "import builtins as __b\n"
+                        "__og_in = getattr(__b, 'input', None)\n"
+                        "def __echo_in(p=''):\n"
+                        "    try: v = __og_in(p)\n"
+                        "    except EOFError: raise EOFError('EOF when reading a line')\n"
+                        "    print(v)\n"
+                        "    return v\n"
+                        "if __og_in: __b.input = __echo_in\n# --- END INTERNAL ENGINE PATCH ---\n\n"
+                    )
+                    modified_code = patch + source_code
+
+                with open(temp_file, 'w', encoding='utf-8') as f:
+                    f.write(modified_code)
+                    
+                # Compile phase
+                compile_error = None
+                if compile_cmd:
+                    try:
+                        cmd = [c.format(tc_file=temp_file, tc_exe=temp_exe, tc_dir=temp_dir) for c in compile_cmd]
+                        compilation = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+                        if compilation.returncode != 0:
+                            compile_error = compilation.stderr.strip()
+                    except Exception as e:
+                        compile_error = f"Compiler not found or error. Make sure {compile_cmd[0]} is installed. Details: {str(e)}"
                 
-                if is_pass: passed += 1
-                
-                results.append({
-                    "input": tc_input,
-                    "expected": tc_expected,
-                    "output": stdout,
-                    "status": status,
-                    "error": result.get('stderr') or result.get('compile_output'),
-                    "passed": is_pass
-                })
+                for tc in working_test_cases:
+                    tc_input = tc.get('input', '')
+                    tc_expected = tc.get('expected', '').strip()
+                    
+                    if compile_error:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Compilation Error",
+                            "error": compile_error,
+                            "passed": False
+                        })
+                        continue
+
+                    try:
+                        cmd = [c.format(tc_file=temp_file, tc_exe=temp_exe, tc_dir=temp_dir) for c in run_cmd]
+                        process = subprocess.run(
+                            cmd,
+                            input=tc_input,
+                            capture_output=True,
+                            text=True,
+                            timeout=5
+                        )
+                        
+                        stdout = process.stdout.strip()
+                        stderr = process.stderr.strip()
+                        code_status = process.returncode
+                        
+                        # Clean up internal paths from output
+                        if stderr:
+                            stderr = stderr.replace(temp_file, f"main{ext}")
+                            
+                            # Filter out harmless JVM environment warnings
+                            filtered_stderr_lines = []
+                            for line in stderr.split('\n'):
+                                if not line.startswith('Picked up JAVA_TOOL_OPTIONS:') and not line.startswith('Picked up _JAVA_OPTIONS:'):
+                                    filtered_stderr_lines.append(line)
+                            stderr = '\n'.join(filtered_stderr_lines).strip()
+                            
+                            if "EOFError: EOF when reading a line" in stderr:
+                                stderr += "\n\n💡 [HINT]: This compiler runs in batch mode! You must provide ALL inputs upfront in the 'stdin' tab before running!"
+                            
+                        # If expecting empty string or it wasn't passed, pass strictly on process return code
+                        if not tc_expected:
+                            is_pass = code_status == 0
+                        else:
+                            is_pass = (code_status == 0 and stdout == tc_expected)
+                            
+                        if is_pass: passed += 1
+                        
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": stdout,
+                            "status": "Accepted" if code_status == 0 else "Runtime Error",
+                            "error": stderr if stderr else None,
+                            "passed": is_pass
+                        })
+                    except subprocess.TimeoutExpired:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Time Limit Exceeded",
+                            "error": "Execution timed out (5s limit). Infinite loop detected?",
+                            "passed": False
+                        })
+                    except Exception as ex:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Execution Engine Error",
+                            "error": f"Failed to run executable. Ensure runtime '{run_cmd[0]}' is installed. Error: {str(ex)}",
+                            "passed": False
+                        })
             else:
-                results.append({
-                    "error": f"Internal Execution Error: {response.text}",
-                    "passed": False
-                })
+                for tc in working_test_cases:
+                    results.append({
+                        "input": tc.get('input', ''),
+                        "expected": tc.get('expected', ''),
+                        "output": f"Language '{language}' execution is currently unsupported locally.",
+                        "status": "Unsupported Language",
+                        "error": "Engine missing",
+                        "passed": False
+                    })
+        finally:
+            import shutil
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
         return Response({
             "success": True,
             "passed_count": passed,
-            "total_count": len(test_cases),
+            "total_count": len(test_cases) if test_cases else 1,
             "results": results,
-            "passed": passed == len(test_cases) if test_cases else True
+            "passed": passed == len(working_test_cases)
         })
 
     except Exception as e:
         return Response({
             "success": False,
-            "error": str(e)
+            "error": f"Unhandled Server Error: {str(e)}"
         }, status=500)
 
 from rest_framework.decorators import  permission_classes

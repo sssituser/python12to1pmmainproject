@@ -9,19 +9,21 @@ from rest_framework import routers
 from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp
 from .views.profile_views import profile_view, update_profile, upload_resume, faculty_profile_view, faculty_profile_update, faculty_avatar_upload, faculty_avatar_delete, faculty_profile_public, faculty_list_minimal, faculty_stats, faculty_profile_minimal_test
 from .views.leave_views import get_all_leave_requests, create_leave_request, get_leave_request, approve_leave_request, reject_leave_request, delete_leave_request, my_leave_requests
-from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions
+from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, save_webcam_snapshot, get_exam_sessions, automated_exam_config_view
 from .views.playground_views import create_playground, get_playground, delete_playground
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet
 from .views.python_views import (
     playground_questions_api, run_code_api, exam_reports_api, 
     exam_report_detail_api, save_exam_report_api, delete_exam_report_api, 
     weekly_exam_reports_api, monthly_exam_reports_api, exam_questions_api, 
-    exam_settings_api, leaderboard_api, toggle_student_active, user_combined_results_api
+    exam_settings_api, leaderboard_api, toggle_student_active, user_combined_results_api,
+    exam_proctoring_logs_api
 )
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
 from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
+from .views.playground_dispatcher import playground_questions_dispatcher
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
 router.register(r'applied-jobs', AppliedJobViewSet, basename='applied-job')
@@ -75,11 +77,13 @@ urlpatterns = [
     path('exam/<int:session_id>/end/', end_exam_session),
     path('exam/webcam/snapshot/', save_webcam_snapshot),
     path('exam/sessions/', get_exam_sessions),
+    path('automated-exam-config/', automated_exam_config_view),
     
     # Daily Exam System URLs
     path('exam-reports/', exam_reports_api),
     path('exam-reports/<int:pk>/', exam_report_detail_api),
     path('exam-report-detail/<int:pk>/', exam_report_detail_api),
+    path('exam-proctoring-logs/<int:pk>/', exam_proctoring_logs_api),
     path('exam-reports/save/', save_exam_report_api),
     path('save-exam-report/', save_exam_report_api),
     path('exam-reports/delete/<int:pk>/', delete_exam_report_api),
@@ -115,6 +119,7 @@ urlpatterns = [
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
     path('playground-questions/python/', playground_questions_api, name='playground-questions-python'),
+    path('playground-questions/<str:subject>/', playground_questions_dispatcher, name='playground-questions-subject'),
     path('playgrounds/create/', create_playground),
     path('playgrounds/<int:pk>/', get_playground),
     path('playgrounds/delete/<int:pk>/', delete_playground),

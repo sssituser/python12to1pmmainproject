@@ -1,12 +1,77 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 import json
 
-from ..models import ExamSession, ExamAnswer, PythonQuestion, Choice, WebcamSnapshot
-from ..serializers import PythonQuestionSerializer
+from ..models import ExamSession, ExamAnswer, PythonQuestion, Choice, WebcamSnapshot, AutomatedExamConfig
+from ..serializers import PythonQuestionSerializer, AutomatedExamConfigSerializer
+
+# ---------------- AUTOMATED EXAM CONFIG ----------------
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def automated_exam_config_view(request):
+    if request.method == 'POST':
+        data = request.data
+        course_name = data.get('course_name', '').strip()
+        
+        if not course_name:
+            return Response({"error": "course_name required"}, status=400)
+
+        # 🛡️ 1000% Persist automated configuration for the entire Course (Safe Case-Insensitive Match)
+        course_name_normalized = course_name.strip().upper()
+        
+        config = AutomatedExamConfig.objects.filter(course_name__iexact=course_name_normalized).first()
+        
+        defaults = {
+            'course_name': course_name_normalized, 
+            'exam_name': data.get('exam_name', 'Daily Assessment'),
+            'subjects': data.get('subjects', []),
+            'duration': int(data.get('duration', 80)),
+            'passing_strategy': data.get('passing_strategy', 'percentage'),
+            'requirement': int(data.get('requirement', 50)),
+            'question_count': int(data.get('question_count', 25)),
+            'marks_per_question': int(data.get('marks_per_question', 2)),
+        }
+
+        if config:
+            for key, value in defaults.items():
+                setattr(config, key, value)
+            config.save()
+            msg = f"Successfully updated automated config for {course_name_normalized}"
+        else:
+            config = AutomatedExamConfig.objects.create(**defaults)
+            msg = f"Successfully created automated config for {course_name_normalized}"
+
+        return Response({
+            "status": "success", 
+            "config_id": config.id, 
+            "message": msg
+        })
+
+
+    # GET logic: Fetch the active config for a specific course (🛡️ Robust Lookup)
+    course_name = request.query_params.get('course_name', '').strip()
+    if not course_name:
+        return Response({"error": "course_name is required"}, status=400)
+        
+    config = AutomatedExamConfig.objects.filter(course_name__iexact=course_name).first()
+    if not config:
+        return Response({"status": "not_found", "message": "No specific faculty override found for this course."}, status=200)
+
+        
+    return Response({
+        "status": "success",
+        "exam_name": config.exam_name,
+        "subjects": config.subjects,
+        "duration": config.duration,
+        "passing_strategy": config.passing_strategy,
+        "requirement": config.requirement,
+        "question_count": config.question_count,
+        "marks_per_question": config.marks_per_question,
+    })
 
 
 # ---------------- START EXAM SESSION ----------------

@@ -259,6 +259,8 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
           <img
             src="/sssit-logo.png"
             alt="Logo"
+            width="36"
+            height="36"
             className="h-9 object-contain"
           />
           <div className="hidden md:flex flex-col leading-tight">

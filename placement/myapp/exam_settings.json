@@ -8,48 +8,7 @@
     },
     "Python Full Stack_Weekly": {
         "maxQuestions": 2,
-        "questions": [
-            {
-                "type": "mcq",
-                "question": "zcbnmb,nmmn,mbvxcfdfnm,",
-                "options": [
-                    "zcbxvnbm,m.",
-                    "xvzcbxvnbmn,m",
-                    "xzcbvnbmv",
-                    "fzgvcbmn,b"
-                ],
-                "answer": "xvzcbxvnbmn,m",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
-                "marks": 2,
-                "id": 1775394955465
-            },
-            {
-                "type": "mcq",
-                "question": "sdafsdgfhgjhkjlk.,vcmxnz",
-                "options": [
-                    "dafszgdhfxjgkh/,",
-                    "xzdafsgdhfjgkh.",
-                    "gfadfsgdfhgjkh,.",
-                    "xaesgdhfjgkh."
-                ],
-                "answer": "dafszgdhfxjgkh/,",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
-                "marks": 2,
-                "id": 1775397878914
-            }
-        ],
+        "questions": [],
         "passingRule": "correct_answers",
         "passingValue": 2,
         "duration": 1

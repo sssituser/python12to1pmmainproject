@@ -2,126 +2,9 @@ import {
   FaPython, FaJs, FaJava, FaDatabase, FaMicrosoft, FaReact, FaLock, FaCode,
   FaBrain, FaRobot, FaCloud, FaShieldAlt, FaChartLine, FaMobile, FaGamepad,
   FaServer, FaCogs, FaLaptopCode, FaGitAlt, FaDocker, FaAws, FaGoogle,
-  FaApple, FaAndroid
-} from "react-icons/fa";
+  FaApple, FaAndroid, FaBook, FaChartBar, FaUsers, FaBootstrap, FaHtml5, FaCss3
+} from "./LightweightIcons.jsx";
 
-// Default courses for first-time setup
-  export const defaultCourses = [
-    {
-      id: 1,
-      title: "Python (Basic)",
-      icon: FaPython,
-      level: "Beginner",
-      duration: "3 hrs",
-      progress: 60,
-      locked: false,
-      topics: [
-        "Python Basics",
-        "Variables and Data Types",
-        "Loops",
-        "Functions",
-        "Lists and Tuples",
-        "Dictionaries",
-        "File Handling",
-        "Exception Handling"
-      ]
-    },
-    {
-      id: 2,
-      title: "JavaScript (Basic)",
-      icon: FaJs,
-      level: "Beginner",
-      duration: "2.5 hrs",
-      progress: 40,
-      locked: false,
-      topics: [
-        "JS Basics",
-        "ES6",
-        "DOM Manipulation",
-        "React Basics",
-        "Arrays and Objects",
-        "Async Programming",
-        "Event Handling",
-        "Error Handling"
-      ]
-    },
-    {
-      id: 3,
-      title: "Java (Intermediate)",
-      icon: FaJava,
-      level: "Intermediate",
-      duration: "4 hrs",
-      progress: 20,
-      locked: false,
-      topics: [
-        "Introduction to Java",
-        "Java Operators",
-        "Data Types",
-        "Control Flow",
-        "Methods",
-        "Classes and Objects",
-        "Inheritance",
-        "Polymorphism"
-      ]
-    },
-    {
-      id: 4,
-      title: "SQL (Basic)",
-      icon: FaDatabase,
-      level: "Beginner",
-      duration: "2 hrs",
-      progress: 80,
-      locked: false,
-      topics: [
-        "SQL Basics",
-        "SELECT Queries",
-        "Joins",
-        "Aggregate Functions",
-        "Subqueries",
-        "Indexes",
-        "Transactions",
-        "Database Normalization"
-      ]
-    },
-    {
-      id: 5,
-      title: ".NET (Intermediate)",
-      icon: FaMicrosoft,
-      level: "Intermediate",
-      duration: "5 hrs",
-      progress: 0,
-      locked: false,
-      topics: [
-        ".NET Introduction",
-        "C# Basics",
-        "ASP.NET Core",
-        "MVC Pattern",
-        "Entity Framework",
-        "Dependency Injection",
-        "Authentication",
-        "Web API Development"
-      ]
-    },
-    {
-      id: 6,
-      title: "React (Basic)",
-      icon: FaReact,
-      level: "Beginner",
-      duration: "3 hrs",
-      progress: 30,
-      locked: false,
-      topics: [
-        "React Intro",
-        "Components",
-        "State Management",
-        "Hooks",
-        "Props and PropTypes",
-        "Conditional Rendering",
-        "Forms in React",
-        "React Router"
-      ]
-    }
-  ];
 
 
 
@@ -151,6 +34,9 @@ import {
     if (lowerName.includes('google') || lowerName.includes('gcp')) return FaGoogle;
     if (lowerName.includes('apple') || lowerName.includes('ios')) return FaApple;
     if (lowerName.includes('android')) return FaAndroid;
+    if (lowerName.includes('bootstrap')) return FaBootstrap;
+    if (lowerName.includes('html')) return FaHtml5;
+    if (lowerName.includes('css')) return FaCss3;
     
     return FaCode; // Default icon
   };
@@ -2185,3 +2071,58 @@ export const generateModulesForCourse = (courseName) => {
   // Return base modules for all courses
   return baseModules;
 };
+
+// Standard industrial curriculum (Synchronized with Daily Exam system)
+export const industryCourses = [
+  "PYTHON FULL STACK",
+  "JAVA FULL STACK",
+  ".NET FULL STACK",
+  "MERN FULL STACK",
+  "UI FULL STACK",
+  "FULL STACK DEVELOPMENT",
+  "DATA SCIENCE AND AGENTIC AI",
+  "ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING",
+  "ADVANCED MACHINE LEARNING",
+  "DATA SCIENCE WITH AI",
+  "AGENTIC AI",
+  "DATA ANALYTICS",
+  "CLOUD COMPUTING",
+  "DEVOPS",
+  "CYBER SECURITY",
+  "POWER BI",
+  "MICROSOFT TECHNOLOGIES",
+  "MOBILE FULL STACK",
+  "MONGODB",
+  "DCA",
+  "PGDCA",
+  "DOA",
+  "FRONTEND",
+  "BACKEND",
+  "IOS SWIFT",
+  "ANDROID DEVELOPMENT",
+  "FLUTTER DEVELOPMENT",
+  "JAVA DEVELOPER",
+  "PYTHON DEVELOPMENT",
+  "ORACLE DATABASE",
+  "NODE JS DEVELOPMENT",
+  "REACT JS DEVELOPMENT",
+  "AWS SOLUTIONS ARCHITECT",
+  "MICROSOFT AZURE",
+  "GOOGLE CLOUD PLATFORM",
+  "SAP DEVELOPER",
+  "C AND DATA STRUCTURES"
+];
+
+// Default courses for first-time setup (Unified across Registration & Faculty)
+export const defaultCourses = industryCourses.map((title, index) => ({
+  id: index + 1,
+  title: title,
+  icon: getIconForCourse(title),
+  level: "Professional",
+  duration: "Self-paced",
+  progress: 0,
+  locked: false,
+  modules: [],
+  topics: [] 
+}));
+

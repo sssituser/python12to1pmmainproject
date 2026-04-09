@@ -17,5 +17,17 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+          'framer-vendor': ['framer-motion'],
+          'vendor': ['react', 'react-dom', 'react-router-dom', 'axios'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   }
 })

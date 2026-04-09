@@ -57,19 +57,30 @@ function DailyExamReports() {
 
       // 🛡️ SMART DEDUPLICATE: Merge local unsynced exams with backend exams
       const seenKeys = new Map();
-      
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
          if (type !== 'daily' && type !== '') return;
          
-         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
-         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
-         const uniqueKey = exam.id 
-           ? `db_${exam.id}` 
-           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
+         const timestamp = exam.examDate || exam.date || exam.start_time || '0';
+         const cleanTimestamp = new Date(timestamp).getTime();
+         const minuteBucket = Math.floor(cleanTimestamp / 60000);
+         const title = (exam.examTitle || exam.exam_title || "Daily Exam").toLowerCase();
          
-         if (!seenKeys.has(uniqueKey)) {
-           seenKeys.set(uniqueKey, exam);
+         // 🛡️ DEDUPLICATE: Pair backend synched records with local unsynched records
+         // Using only time + title ensures different ID names don't create multiple cards.
+         const fingerprint = `${minuteBucket}_${title}`;
+         
+         if (seenKeys.has(fingerprint)) {
+            const existing = seenKeys.get(fingerprint);
+            const incomingTotal = exam.totalMarks || exam.total_marks || 0;
+            const existingTotal = existing.totalMarks || existing.total_marks || 0;
+            
+            // Prefer the record that has a real database ID and more complete scoring data
+            if ((exam.id && !existing.id) || (incomingTotal > existingTotal)) {
+               seenKeys.set(fingerprint, exam);
+            }
+         } else {
+            seenKeys.set(fingerprint, exam);
          }
       });
 
@@ -109,32 +120,37 @@ function DailyExamReports() {
     } catch (e) {
       console.error("Failed to read cached daily reports:", e);
     }
+    // Add automatic update listener for seamless synchronization across pages
+    const handleExamDataUpdate = (event) => {
+       console.log("🔄 DailyExamReports - Data updated, refreshing list...");
+       fetchReports(false);
+    };
+
+    window.addEventListener('examDataUpdated', handleExamDataUpdate);
+
     // Only show full-screen loading spinner if we don't have cached data to show
     fetchReports(!hasCache);
+
+    return () => {
+       window.removeEventListener('examDataUpdated', handleExamDataUpdate);
+    };
   }, []);
 
-  // ANIMATION AFTER DATA LOAD
+  // ⚡ LIGHTHOUSE OPTIMIZED ANIMATION (Single-Shot Transition)
   useEffect(() => {
     if (!Array.isArray(exams) || exams.length === 0) return;
 
-    exams.forEach((exam, index) => {
-      const total = exam.totalMarks || 40;
-      const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+    const timer = setTimeout(() => {
+      const finalProgress = {};
+      exams.forEach((exam, index) => {
+        const total = exam.totalMarks || 40;
+        const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+        finalProgress[exam.id || index] = percentage;
+      });
+      setProgress(finalProgress);
+    }, 100);
 
-      let value = 0;
-      const interval = setInterval(() => {
-        value += 2;
-        if (value >= percentage) {
-          value = percentage;
-          clearInterval(interval);
-        }
-        setProgress((prev) => ({
-          ...prev,
-          [exam.id || index]: value,
-        }));
-      }, 20);
-    });
-
+    return () => clearTimeout(timer);
   }, [exams]);
 
   // COLOR LOGIC
@@ -146,7 +162,7 @@ function DailyExamReports() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[98%] mx-auto">
         
         {/* BACK BUTTON */}
         <button
@@ -179,10 +195,16 @@ function DailyExamReports() {
         ) : exams.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {exams.map((exam, index) => {
-              const total = exam.totalMarks || 40;
-              const percentage = total > 0 ? (exam.score / total) * 100 : 0;
+              const totalQ = exam.totalQuestions || exam.total_questions || (exam.questions?.length || 20);
+              
+              // 🛡️ Use actual marks from the synced report if available, else fallback
+              const scoreValue = exam.marks_obtained ?? exam.score ?? 0;
+              const total = exam.total_marks ?? exam.totalMarks ?? (totalQ * 2);
+              
+              const percentage = total > 0 ? (scoreValue / total) * 100 : 0;
               const value = progress[exam.id || index] || 0;
               const color = getColor(percentage);
+
 
               return (
                 <div 
@@ -191,10 +213,19 @@ function DailyExamReports() {
                 >
                   <div className="w-full mb-4 text-center">
                     <h3 className="text-lg font-bold text-gray-800 truncate px-2">
-                       {exam.examTitle || exam.title || `Daily Exam ${exams.length - index}`}
+                       {(exam.examTitle || exam.title || "Exam").replace(/^Daily\s+/i, "")}
                     </h3>
-                    <p className="text-xs text-gray-400 font-medium tracking-wide uppercase mt-1">
-                      {exam.user?.username || "Practice User"}
+                    <p className="text-[10px] text-gray-400 font-black tracking-[0.15em] uppercase mt-1">
+                       {exam.user?.username || exam.username || "Student"} | {(() => {
+                         const uname = (exam.user?.username || exam.username || "").toLowerCase();
+                         const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || "{}");
+                         const u = JSON.parse(localStorage.getItem("user") || "{}");
+                         const pool = [p.studentId, p.student_id, u.studentId, u.student_id, exam.random_id, exam.studentId];
+                         for (const id of pool) {
+                           if (id && String(id).toLowerCase() !== uname) return id;
+                         }
+                         return "N/A";
+                       })()}
                     </p>
                   </div>
 
@@ -215,7 +246,7 @@ function DailyExamReports() {
                   <div className="w-full space-y-3 mb-6">
                     <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
                        <span className="text-gray-500">Score</span>
-                       <span className="font-bold text-gray-800">{exam.score} / {total}</span>
+                       <span className="font-bold text-gray-800">{scoreValue} / {total}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                        <span className="text-gray-400">Date</span>
@@ -226,7 +257,17 @@ function DailyExamReports() {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/dashboard/exam-report-detail/${exam.id}`, { state: { examNumber: exams.length - index, examType: 'Daily' } })}
+                    onClick={() => {
+                      const rId = exam.id || exam.report_id || exam.pk;
+                      // Strict check for "undefined" or null
+                      if (!rId || rId === "undefined") {
+                         alert("This report is still being synced from server. Please refresh or wait a moment.");
+                         return;
+                      }
+                      navigate(`/dashboard/exam-report-detail/${rId}`, { 
+                        state: { examNumber: exams.length - index, examType: 'Daily' } 
+                      });
+                    }}
                     className="w-full py-3 bg-gray-50 text-indigo-600 rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
                   >
                     View Analysis 

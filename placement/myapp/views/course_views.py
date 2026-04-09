@@ -111,141 +111,20 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 # Course data for students
 def get_student_courses():
-    """Get course data for student view"""
-    return [
-        {
-            "id": 1,
-            "title": "Python (Basic)",
-            "level": "Beginner",
-            "duration": "3 hrs",
-            "progress": 60,
-            "locked": False,
-            "topics": [
-                "Python Basics",
-                "Variables and Data Types",
-                "Loops",
-                "Functions",
-                "Lists and Tuples",
-                "Dictionaries",
-                "File Handling",
-                "Exception Handling",
-                "Modules and Packages",
-                "OOP Concepts",
-                "Decorators",
-                "Generators"
-            ]
-        },
-        {
-            "id": 2,
-            "title": "JavaScript",
-            "level": "Intermediate",
-            "duration": "4 hrs",
-            "progress": 45,
-            "locked": False,
-            "topics": [
-                "JavaScript Basics",
-                "Variables and Data Types",
-                "Functions",
-                "Arrays and Objects",
-                "DOM Manipulation",
-                "Events",
-                "Async JavaScript",
-                "ES6+ Features",
-                "Modules",
-                "Error Handling",
-                "Fetch API",
-                "Local Storage"
-            ]
-        },
-        {
-            "id": 3,
-            "title": "Java",
-            "level": "Advanced",
-            "duration": "6 hrs",
-            "progress": 30,
-            "locked": False,
-            "topics": [
-                "Java Basics",
-                "Variables and Data Types",
-                "Control Flow",
-                "Methods",
-                "Arrays",
-                "OOP Concepts",
-                "Inheritance",
-                "Polymorphism",
-                "Exception Handling",
-                "Collections",
-                "File I/O",
-                "Multithreading"
-            ]
-        }
-    ]
+    """Get dynamic course data from DB for student view"""
+    from ..models import Course
+    from ..serializers import CourseStudentSerializer
+    courses = Course.objects.all()
+    serializer = CourseStudentSerializer(courses, many=True)
+    return serializer.data
 
-# Course data for faculty
 def get_faculty_courses():
-    """Get course data for faculty view"""
-    return [
-        {
-            "id": 1,
-            "title": "Python (Basic)",
-            "level": "Beginner",
-            "duration": "3 hrs",
-            "topics": [
-                "Python Basics",
-                "Variables and Data Types",
-                "Loops",
-                "Functions",
-                "Lists and Tuples",
-                "Dictionaries",
-                "File Handling",
-                "Exception Handling",
-                "Modules and Packages",
-                "OOP Concepts",
-                "Decorators",
-                "Generators"
-            ]
-        },
-        {
-            "id": 2,
-            "title": "JavaScript",
-            "level": "Intermediate",
-            "duration": "4 hrs",
-            "topics": [
-                "JavaScript Basics",
-                "Variables and Data Types",
-                "Functions",
-                "Arrays and Objects",
-                "DOM Manipulation",
-                "Events",
-                "Async JavaScript",
-                "ES6+ Features",
-                "Modules",
-                "Error Handling",
-                "Fetch API",
-                "Local Storage"
-            ]
-        },
-        {
-            "id": 3,
-            "title": "Java",
-            "level": "Advanced",
-            "duration": "6 hrs",
-            "topics": [
-                "Java Basics",
-                "Variables and Data Types",
-                "Control Flow",
-                "Methods",
-                "Arrays",
-                "OOP Concepts",
-                "Inheritance",
-                "Polymorphism",
-                "Exception Handling",
-                "Collections",
-                "File I/O",
-                "Multithreading"
-            ]
-        }
-    ]
+    """Get dynamic course data from DB for faculty view"""
+    from ..models import Course
+    from ..serializers import CourseFacultySerializer
+    courses = Course.objects.all()
+    serializer = CourseFacultySerializer(courses, many=True)
+    return serializer.data
 
 @api_view(["GET"])
 def student_courses(request):
@@ -286,19 +165,14 @@ def faculty_courses(request):
 def get_course_details(request, course_id):
     """API endpoint to get specific course details"""
     try:
-        course_id = int(course_id)
-        courses = get_student_courses()  # Can be used for both student and faculty
-
-        course = None
-        for c in courses:
-            if c["id"] == course_id:
-                course = c
-                break
-
+        from ..models import Course
+        from ..serializers import CourseStudentSerializer
+        course = Course.objects.filter(id=course_id).first()
         if course:
+            serializer = CourseStudentSerializer(course)
             return JsonResponse({
                 "success": True,
-                "data": course,
+                "data": serializer.data,
                 "message": "Course details retrieved successfully"
             })
         else:
@@ -308,12 +182,6 @@ def get_course_details(request, course_id):
                 "message": f"Course with ID {course_id} not found"
             }, status=404)
 
-    except ValueError:
-        return JsonResponse({
-            "success": False,
-            "error": "Invalid course ID",
-            "message": "Course ID must be a valid integer"
-        }, status=400)
     except Exception as e:
         return JsonResponse({
             "success": False,
