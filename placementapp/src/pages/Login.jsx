@@ -182,14 +182,18 @@ function Login() {
     setLoading(true);
 
     try {
+      const requestData = { 
+        username: form.studentId, 
+        studentId: form.studentId, 
+        password: form.password, 
+        role: "student" 
+      };
+      
+      console.log("DEBUG: Sending login request:", requestData);
+      
       const res = await axios.post(
         "http://127.0.0.1:8000/api/login/",
-        { 
-          username: form.studentId, 
-          studentId: form.studentId, 
-          password: form.password, 
-          role: "student" 
-        },
+        requestData,
         {
           headers: {
             'Content-Type': 'application/json',

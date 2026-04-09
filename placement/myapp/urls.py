@@ -20,7 +20,7 @@ from .views.python_views import (
     exam_proctoring_logs_api
 )
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
-from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api
+from .views.admin_views import all_users_api, create_faculty_api, toggle_student_status_api, delete_user_api, update_faculty_api, update_student_api, toggle_faculty_status_api
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
@@ -113,8 +113,10 @@ urlpatterns = [
     path('all-users/', all_users_api),
     path('create-faculty/', create_faculty_api),
     path('toggle-student-status/<int:student_id>/', toggle_student_status_api),
+    path('toggle-faculty-status/<int:faculty_id>/', toggle_faculty_status_api),
     path('delete-user/<int:user_id>/', delete_user_api),
     path('update-faculty/<int:faculty_id>/', update_faculty_api),
+    path('update-student/<int:student_id>/', update_student_api),
     
     # Playground URLs
     path('playground-questions/', playground_questions_api, name='playground-questions'),
