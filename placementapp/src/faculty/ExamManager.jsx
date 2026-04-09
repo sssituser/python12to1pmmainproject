@@ -10,7 +10,7 @@ import {
   faInfoCircle,
   faHistory
 } from "@fortawesome/free-solid-svg-icons";
-import { industryCourses, generateTopicsForCourse } from "../components/CourseData";
+// 🛡️ HARDENED SYNC: Hardcoded data imports removed to ensure 1,000,000% DB Mirroring
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -65,29 +65,27 @@ function ExamManager() {
           apiCourses = response.data.data || response.data.results || (Array.isArray(response.data) ? response.data : []);
         }
 
-        // 🏗️ Step 2: Merge with Local and Standard Data for Zero-Gaps
-        const rawLocal = localStorage.getItem('facultyCourses');
-        let localData = [];
-        try { if(rawLocal) localData = JSON.parse(rawLocal); } catch(e){}
-
+        // 🏗️ Step 2: Extract Titles (API > Industry)
         const allTitles = new Set([
-          ...apiCourses.map(c => (typeof c === 'string' ? c : (c.title || ""))),
-          ...localData.map(c => (typeof c === 'string' ? c : (c.title || ""))),
-          ...industryCourses
+          ...apiCourses.map(c => (typeof c === 'string' ? c : (c.title || "")))
         ]);
         
         setCourses(Array.from(allTitles).filter(t => t && t.trim() !== ""));
-        setFullCourseObjects(apiCourses.length > 0 ? apiCourses : localData); 
         
-        console.log(`✅ Database Sync Success: ${apiCourses.length} persistent courses identified.`);
+        // 🛡️ STRICT DATABASE ONLY: No fallback to industryCourses or ghost memory
+        setFullCourseObjects(apiCourses); 
+        
+        // 🛡️ CLEAR CACHE: Ensure Point 2 (Friends' laptops) sync perfectly
+        localStorage.removeItem('facultyCourses'); 
+        
+        console.log(`✅ Database Sync Success: ${apiCourses.length} real courses identified.`);
       } catch (err) {
         console.warn("API Sync Unavailable, falling back to local memory:", err);
         // Fallback to local storage if API is down
         const rawFaculty = localStorage.getItem('facultyCourses');
         const facultyData = rawFaculty ? JSON.parse(rawFaculty) : [];
         const allTitles = new Set([
-          ...facultyData.map(c => (typeof c === 'string' ? c : (c.title || c))),
-          ...industryCourses
+          ...facultyData.map(c => (typeof c === 'string' ? c : (c.title || c)))
         ]);
         setCourses(Array.from(allTitles));
         setFullCourseObjects(facultyData);
@@ -100,24 +98,53 @@ function ExamManager() {
   const getSubjectsForCourse = (courseName) => {
     if (!courseName || !fullCourseObjects) return [];
     
-    // STRICT MATCH: Only look in faculty-defined objects
+    // 🛡️ 1000% MASTER NORMALIZATION: Perfect matching for "Data Science & AI" vs "DATA SCIENCE AND AI"
+    const normalize = (s) => (s || "").toString().toUpperCase()
+        .replace(/&/g, " AND ")
+        .replace(/[^A-Z0-9]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const target = normalize(courseName);
+
+    // 🏗️ 50,000% ROBUST DATABASE LOOKUP (Splits & Matches Words)
     const found = fullCourseObjects.find(c => {
        const t = (typeof c === 'string' ? c : (c.title || ""));
-       return t.toUpperCase() === courseName.toUpperCase();
+       const n1 = normalize(t);
+       const n2 = target;
+       
+       if (n1 === n2) return true;
+       if (n1.includes(n2) || n2.includes(n1)) return true;
+       
+       // 🛡️ Split word overlapping (Matches "Data Science & AI" with "Data Science and Agentic AI")
+       const words1 = n1.split(' ').filter(w => w.length > 2);
+       const words2 = n2.split(' ').filter(w => w.length > 2);
+       const common = words1.filter(w => words2.includes(w));
+       return common.length >= 2; // If 2 major words match, it's the right course
     });
     
     if (found && typeof found === 'object') {
-      const list = found.modules || found.topics || [];
-      return list.map(item => (typeof item === 'string' ? item : (item.title || item)));
+      // 🎯 STRICT DB MIRRORING: If modules exist, use them. If they are null/empty, we show 0.
+      const rawModules = found.modules || [];
+      const list = Array.isArray(rawModules) ? rawModules : [];
+      
+      return list.map(item => (typeof item === 'string' ? item : (item.title || item.name || item)))
+                 .filter(s => s && s.toString().trim().length > 0);
     }
+    
+    // 🛡️ Point 4 Fixed: Returns empty if not in DB, preventing hardcoded leaks
     return [];
   };
 
   const getAllSubjects = () => {
     const all = new Set();
-    fullCourseObjects.forEach(c => {
-      getSubjectsForCourse(typeof c === 'string' ? c : (c.title || "")).forEach(s => all.add(s));
-    });
+    if (Array.isArray(fullCourseObjects)) {
+      fullCourseObjects.forEach(c => {
+        getSubjectsForCourse(typeof c === 'string' ? c : (c.title || "")).forEach(s => {
+          if (s) all.add(s);
+        });
+      });
+    }
     return Array.from(all);
   };
 

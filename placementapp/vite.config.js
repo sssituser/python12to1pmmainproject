@@ -6,6 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    port: 5174,
+    host: false,
+    strictPort: true,
     proxy: {
       '/yt-search': {
         target: 'https://www.youtube.com/results',

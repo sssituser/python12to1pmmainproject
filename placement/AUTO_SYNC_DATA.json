@@ -1,0 +1,508 @@
+{
+    "courses": [
+        {
+            "id": 1,
+            "title": "PYTHON FULL STACK",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 25,
+            "locked": false,
+            "topics": [
+                "POLYMORPHISM",
+                "INHERITANCE ",
+                "FILE HANDLING ",
+                "PACKAGES "
+            ],
+            "modules": [
+                {
+                    "title": "Python",
+                    "topics": [
+                        {
+                            "title": "POLYMORPHISM",
+                            "video": "https://youtu.be/UPT4Q_sTOpY?si=NVtYN6IChoBB8Zf3"
+                        },
+                        {
+                            "title": "INHERITANCE",
+                            "video": "https://youtu.be/4SO3sScshvA?si=zYNXoMv2VYhr3NLJ"
+                        },
+                        {
+                            "title": "FILE HANDLING ",
+                            "video": "https://youtu.be/Sx1Hjr67xO0?si=TBhMFTRNyeKlRNE5"
+                        },
+                        {
+                            "title": "PACKAGES ",
+                            "video": "https://youtu.be/bcDMDlH3Vu8?si=9WUDfPXEv1t8ZhJ3"
+                        }
+                    ]
+                },
+                {
+                    "title": "HTML",
+                    "topics": []
+                },
+                {
+                    "title": "CSS",
+                    "topics": []
+                },
+                {
+                    "title": "JAVASCRIPT",
+                    "topics": []
+                },
+                {
+                    "title": "BOOTSTRAP",
+                    "topics": []
+                },
+                {
+                    "title": "REACT",
+                    "topics": []
+                },
+                {
+                    "title": "DJANGO",
+                    "topics": []
+                },
+                {
+                    "title": "RESTFRAMEWORK",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {
+                "PACKAGES ": {
+                    "url": "https://youtu.be/bcDMDlH3Vu8?si=9WUDfPXEv1t8ZhJ3",
+                    "type": "link"
+                },
+                "INHERITANCE": {
+                    "url": "https://youtu.be/4SO3sScshvA?si=zYNXoMv2VYhr3NLJ",
+                    "type": "link"
+                },
+                "POLYMORPHISM": {
+                    "url": "https://youtu.be/UPT4Q_sTOpY?si=NVtYN6IChoBB8Zf3",
+                    "type": "link"
+                },
+                "FILE HANDLING ": {
+                    "url": "https://youtu.be/Sx1Hjr67xO0?si=TBhMFTRNyeKlRNE5",
+                    "type": "link"
+                }
+            },
+            "created_at": "2026-04-04 13:04:34.926539+00:00"
+        },
+        {
+            "id": 4,
+            "title": "Cyber Security",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Cyber Security"
+            ],
+            "modules": [
+                {
+                    "title": "Python",
+                    "topics": []
+                },
+                {
+                    "title": "java",
+                    "topics": []
+                },
+                {
+                    "title": "Javascript",
+                    "topics": []
+                },
+                {
+                    "title": "C#",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "PHP",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 18:04:19.651856+00:00"
+        },
+        {
+            "id": 5,
+            "title": "Mobile Full Stack",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Mobile Full Stack"
+            ],
+            "modules": [
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "Django",
+                    "topics": []
+                },
+                {
+                    "title": "Mongo DB",
+                    "topics": []
+                },
+                {
+                    "title": "C#",
+                    "topics": []
+                },
+                {
+                    "title": "PHP",
+                    "topics": []
+                },
+                {
+                    "title": "Swift",
+                    "topics": []
+                },
+                {
+                    "title": "Kotlin",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 18:22:18.047880+00:00"
+        },
+        {
+            "id": 6,
+            "title": "UI FULL STACK",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to UI FULL STACK",
+                "TEXT FORMATTING TAGS",
+                "Lists "
+            ],
+            "modules": [
+                {
+                    "title": "HTML",
+                    "topics": [
+                        {
+                            "title": "TEXT FORMATTING TAGS",
+                            "video": "https://youtu.be/R-oAzoBH_TU?si=KxlGyW0lA5rIhPAA"
+                        },
+                        {
+                            "title": "Lists ",
+                            "video": "https://youtu.be/nFH2VjXisMs?si=oNN3T0Bm83CD-TiO"
+                        }
+                    ]
+                },
+                {
+                    "title": "CSS",
+                    "topics": []
+                },
+                {
+                    "title": "JAVASCRIPT",
+                    "topics": []
+                },
+                {
+                    "title": "BOOTSTRAP",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {
+                "Lists ": {
+                    "url": "https://youtu.be/nFH2VjXisMs?si=oNN3T0Bm83CD-TiO",
+                    "type": "link"
+                },
+                "TEXT FORMATTING TAGS": {
+                    "url": "https://youtu.be/R-oAzoBH_TU?si=KxlGyW0lA5rIhPAA",
+                    "type": "link"
+                }
+            },
+            "created_at": "2026-04-04 18:36:43.586855+00:00"
+        },
+        {
+            "id": 7,
+            "title": ".NET FULL STACK",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to .NET FULL STACK"
+            ],
+            "modules": [
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "C#",
+                    "topics": []
+                },
+                {
+                    "title": "ASP.NET CORE",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 18:38:19.099227+00:00"
+        },
+        {
+            "id": 8,
+            "title": "Cloud Computing",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Cloud Computing"
+            ],
+            "modules": [
+                {
+                    "title": "Python",
+                    "topics": []
+                },
+                {
+                    "title": "java",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "Javascript",
+                    "topics": []
+                },
+                {
+                    "title": "C#",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 19:17:25.243914+00:00"
+        },
+        {
+            "id": 9,
+            "title": "Devops",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Devops"
+            ],
+            "modules": [
+                {
+                    "title": "python",
+                    "topics": []
+                },
+                {
+                    "title": "Bash",
+                    "topics": []
+                },
+                {
+                    "title": "javascript",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "C#",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 19:18:48.051407+00:00"
+        },
+        {
+            "id": 10,
+            "title": "Data Science & AI",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Data Science & AI"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-04 19:20:58.189399+00:00"
+        },
+        {
+            "id": 11,
+            "title": "Microsoft Technologies",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Microsoft Technologies"
+            ],
+            "modules": [
+                {
+                    "title": "C#",
+                    "topics": []
+                },
+                {
+                    "title": "HTML",
+                    "topics": []
+                },
+                {
+                    "title": "CSS",
+                    "topics": []
+                },
+                {
+                    "title": "Javascript",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "XAML",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 19:22:08.821139+00:00"
+        },
+        {
+            "id": 12,
+            "title": "Agentic AI",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Agentic AI"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-05 01:50:02.699996+00:00"
+        },
+        {
+            "id": 13,
+            "title": "data analytics",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to data analytics "
+            ],
+            "modules": [
+                {
+                    "title": "Python",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "R",
+                    "topics": []
+                },
+                {
+                    "title": "SAS",
+                    "topics": []
+                },
+                {
+                    "title": "Scala",
+                    "topics": []
+                },
+                {
+                    "title": "Excel",
+                    "topics": []
+                },
+                {
+                    "title": "Matlab",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-05 02:19:32.658229+00:00"
+        },
+        {
+            "id": 14,
+            "title": "mongodb",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to mongodb"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-05 02:25:41.161296+00:00"
+        },
+        {
+            "id": 15,
+            "title": "power bi",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to power bi"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-05 02:30:22.238000+00:00"
+        },
+        {
+            "id": 18,
+            "title": "JAVA FULL STACK",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [
+                {
+                    "title": "Java",
+                    "topics": []
+                },
+                {
+                    "title": "Oracle",
+                    "topics": []
+                },
+                {
+                    "title": "UI",
+                    "topics": []
+                },
+                {
+                    "title": "Springboot",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-07 06:29:46.888369+00:00"
+        }
+    ],
+    "configs": [
+        {
+            "id": 1,
+            "exam_name": "Daily Assessment",
+            "course_name": "PYTHON FULL STACK",
+            "subjects": [
+                "Python",
+                "HTML",
+                "CSS",
+                "JAVASCRIPT",
+                "BOOTSTRAP",
+                "REACT",
+                "DJANGO",
+                "RESTFRAMEWORK"
+            ],
+            "duration": 240,
+            "passing_strategy": "percentage",
+            "requirement": 50,
+            "question_count": 100,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-09 15:49:41.386316+00:00"
+        }
+    ]
+}
