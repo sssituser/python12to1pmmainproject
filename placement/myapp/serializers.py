@@ -201,7 +201,6 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 # JOBS
 # ===============================
 from datetime import date
-from datetime import date
 
 class JobSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
@@ -361,6 +360,8 @@ class StudentTopicProgressSerializer(serializers.ModelSerializer):
         fields = ['id', 'topic', 'is_completed', 'completed_at']
 
 
+class CourseStudentSerializer(serializers.ModelSerializer):
+    """Serializer for student view - includes progress and locked status"""
     modules = serializers.SerializerMethodField()
     topics = serializers.SerializerMethodField()
 
@@ -375,6 +376,8 @@ class StudentTopicProgressSerializer(serializers.ModelSerializer):
         return obj.topics if isinstance(obj.topics, list) else []
 
 
+class CourseFacultySerializer(serializers.ModelSerializer):
+    """Serializer for faculty view - without progress tracking"""
     modules = serializers.SerializerMethodField()
     topics = serializers.SerializerMethodField()
 

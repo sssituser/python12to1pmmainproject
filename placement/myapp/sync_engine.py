@@ -64,7 +64,7 @@ def import_sync_data():
                     }
                 )
             
-        print("✅ 1000% Reliable Sync: Local Subjects and Topics mirrored successfully.")
+        # Silent sync for 1000% clean terminal
     except Exception as e:
         print(f"⚠️ Sync Import Warning: {e}")
 

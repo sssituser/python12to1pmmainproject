@@ -96,7 +96,7 @@ function ExamManager() {
   }, []);
 
   const getSubjectsForCourse = (courseName) => {
-    if (!courseName || !fullCourseObjects) return [];
+    if (!courseName) return [];
     
     // 🛡️ 1000% MASTER NORMALIZATION: Perfect matching for "Data Science & AI" vs "DATA SCIENCE AND AI"
     const normalize = (s) => (s || "").toString().toUpperCase()
@@ -107,33 +107,41 @@ function ExamManager() {
 
     const target = normalize(courseName);
 
-    // 🏗️ 50,000% ROBUST DATABASE LOOKUP (Splits & Matches Words)
-    const found = fullCourseObjects.find(c => {
-       const t = (typeof c === 'string' ? c : (c.title || ""));
-       const n1 = normalize(t);
-       const n2 = target;
-       
-       if (n1 === n2) return true;
-       if (n1.includes(n2) || n2.includes(n1)) return true;
-       
-       // 🛡️ Split word overlapping (Matches "Data Science & AI" with "Data Science and Agentic AI")
-       const words1 = n1.split(' ').filter(w => w.length > 2);
-       const words2 = n2.split(' ').filter(w => w.length > 2);
-       const common = words1.filter(w => words2.includes(w));
-       return common.length >= 2; // If 2 major words match, it's the right course
-    });
+    // 🏗️ 100,000% MASTER DATABASE MERGER (Fulfills Point 1 & 4)
+    // We collect subjects from ALL courses that are part of this title
+    const allCollectedSubjects = new Set();
     
-    if (found && typeof found === 'object') {
-      // 🎯 STRICT DB MIRRORING: If modules exist, use them. If they are null/empty, we show 0.
-      const rawModules = found.modules || [];
-      const list = Array.isArray(rawModules) ? rawModules : [];
-      
-      return list.map(item => (typeof item === 'string' ? item : (item.title || item.name || item)))
-                 .filter(s => s && s.toString().trim().length > 0);
+    if (Array.isArray(fullCourseObjects)) {
+      fullCourseObjects.forEach(c => {
+        const t = (typeof c === 'string' ? c : (c.title || ""));
+        const n1 = normalize(t);
+        const n2 = target;
+        
+        let isMatch = false;
+        if (n1 === n2 || n1.includes(n2) || n2.includes(n1)) {
+          isMatch = true;
+        } else {
+          // 🛡️ Split word overlapping for combination titles
+          const words1 = n1.split(' ').filter(w => w.length > 2);
+          const words2 = n2.split(' ').filter(w => w.length > 2);
+          const common = words1.filter(w => words2.includes(w));
+          if (common.length >= 2) isMatch = true;
+        }
+
+        if (isMatch) {
+          const rawModules = c.modules || [];
+          const list = Array.isArray(rawModules) ? rawModules : [];
+          list.forEach(item => {
+            const subjectTitle = typeof item === 'string' ? item : (item.title || item.name || item);
+            if (subjectTitle && subjectTitle.toString().trim() !== "") {
+              allCollectedSubjects.add(subjectTitle.toString().trim());
+            }
+          });
+        }
+      });
     }
-    
-    // 🛡️ Point 4 Fixed: Returns empty if not in DB, preventing hardcoded leaks
-    return [];
+
+    return Array.from(allCollectedSubjects);
   };
 
   const getAllSubjects = () => {
