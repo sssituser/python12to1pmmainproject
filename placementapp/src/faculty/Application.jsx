@@ -122,10 +122,6 @@ function Applications() {
   };
 
   const handleAccept = async (applicationId) => {
-<<<<<<< HEAD
-  try {
-    const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
-=======
     try {
       const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
@@ -133,29 +129,19 @@ function Applications() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'accept' })
       });
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
 
-    const res = await makeAuthenticatedRequest(url, {
-      method: 'PATCH',   // ✅ FIXED
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'accept' })
-    });
-
-    const data = await res.json();
-    console.log("ACCEPT RESPONSE:", data);
-
-    if (res.ok) fetchApps();
-
-  } catch (error) {
-    console.error("Error accepting application:", error);
-  }
-};
+      if (res.ok) {
+        fetchApps();
+      } else {
+        const data = await res.json();
+        console.error("Accept failed:", data);
+      }
+    } catch (error) {
+      console.error("Error accepting application:", error);
+    }
+  };
 
   const handleReject = async (applicationId) => {
-<<<<<<< HEAD
-  try {
-    const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
-=======
     try {
       const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
       const res = await makeAuthenticatedRequest(url, {
@@ -163,23 +149,17 @@ function Applications() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reject' })
       });
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
 
-    const res = await makeAuthenticatedRequest(url, {
-      method: 'PATCH',   // ✅ FIXED
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'reject' })
-    });
-
-    const data = await res.json();
-    console.log("REJECT RESPONSE:", data);
-
-    if (res.ok) fetchApps();
-
-  } catch (error) {
-    console.error("Error rejecting application:", error);
-  }
-};
+      if (res.ok) {
+        fetchApps();
+      } else {
+        const data = await res.json();
+        console.error("Reject failed:", data);
+      }
+    } catch (error) {
+      console.error("Error rejecting application:", error);
+    }
+  };
 
   const token = localStorage.getItem("access");
 
