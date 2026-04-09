@@ -2,9 +2,11 @@
 import os
 import sys
 import django
+from pathlib import Path
 
 # Set up Django environment
-sys.path.append(r'd:\SSSIT MAIN PROJECT\python12to1pmmainproject\placement')
+BASE_DIR = Path(__file__).resolve().parent / 'placement'
+sys.path.append(str(BASE_DIR))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'placement.settings')
 django.setup()
 
