@@ -1322,97 +1322,202 @@ RAPID_API_KEY = "aac9ffcb0fmsh4ac5d4bab4c3bb1p1067c8jsn143eef6e423b"
 @permission_classes([AllowAny])
 def run_code_api(request):
     """
-    POST: Run code using Judge0 API and evaluate test cases.
-    Payload: {
-        "code": "...",
-        "language": "python",
-        "stdin": "...",
-        "test_cases": [{"input": "...", "expected": "..."}]
-    }
+    POST: Run code locally via Subprocess without relying on external APIs.
     """
+    import subprocess
+    import sys
+    import tempfile
+    import os
+    
     data = request.data
     source_code = data.get('code', '')
-    language = data.get('language', 'python')
+    language = data.get('language', 'python').lower()
     test_cases = data.get('test_cases', [])
-    
-    # 71 = Python (3.8.1), 54 = C++ (GCC 9.2.0), 62 = Java (OpenJDK 13.0.1)
-    lang_ids = {
-        'python': 71,
-        'cpp': 54,
-        'java': 62
-    }
-    lang_id = lang_ids.get(language, 71)
 
     results = []
     passed = 0
 
     try:
-        # If no test cases provided (scratchpad mode), perform a single default execution
+        # If no test cases provided (scratchpad mode), perform a single execution
         working_test_cases = test_cases if test_cases else [{"input": data.get('stdin', ''), "expected": ""}]
         
-        for tc in working_test_cases:
-            tc_input = tc.get('input', '')
-            tc_expected = tc.get('expected', '').strip()
+        # Determine executable and file extension based on language
+        executable = None
+        ext = '.txt'
+        compile_cmd = None
+        run_cmd = None
+        
+        if language == 'python':
+            ext = '.py'
+            run_cmd = [sys.executable, '{tc_file}']
+        elif language == 'javascript' or language == 'js':
+            ext = '.js'
+            run_cmd = ['node', '{tc_file}']
+        elif language == 'c':
+            ext = '.c'
+            compile_cmd = ['gcc', '{tc_file}', '-o', '{tc_exe}']
+            run_cmd = ['{tc_exe}']
+        elif language == 'cpp':
+            ext = '.cpp'
+            compile_cmd = ['g++', '{tc_file}', '-o', '{tc_exe}']
+            run_cmd = ['{tc_exe}']
+        elif language == 'java':
+            ext = '.java'
+            # Java class name must match file name usually. We'll use Main.java.
+            compile_cmd = ['javac', '{tc_file}']
+            run_cmd = ['java', '-cp', '{tc_dir}', 'Main']
             
-            # Prepare payload for Judge0
-            payload = {
-                "source_code": source_code,
-                "language_id": lang_id,
-                "stdin": tc_input,
-                "expected_output": tc_expected if tc_expected else None,
-            }
-            
-            # Using Judge0 Community Edition on RapidAPI
-            headers = {
-                "content-type": "application/json",
-                "X-RapidAPI-Key": RAPID_API_KEY,
-                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-            }
-            
-            # Direct Wait Submission (Wait=true)
-            url = "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true"
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            
-            if response.status_code == 201 or response.status_code == 200:
-                result = response.json()
-                stdout = (result.get('stdout') or "").strip()
-                status = result.get('status', {}).get('description', '')
-                
-                # Check status
-                # If tc_expected is empty (scratchpad), we consider it passed if it executed without error
-                if not tc_expected:
-                    is_pass = status.lower() == 'accepted'
+        temp_file = None
+        temp_exe = None
+        temp_dir = None
+        
+        try:
+            if run_cmd:
+                temp_dir = tempfile.mkdtemp()
+                if language == 'java':
+                    temp_file = os.path.join(temp_dir, 'Main.java')
                 else:
-                    is_pass = (status.lower() == 'accepted' or stdout == tc_expected)
+                    descriptor, temp_file = tempfile.mkstemp(suffix=ext, dir=temp_dir)
+                    os.close(descriptor)
+                    
+                if language in ['c', 'cpp']:
+                    temp_exe = os.path.join(temp_dir, 'program.exe' if os.name == 'nt' else 'program')
+
+                # To simulate a true interactive terminal visually over HTTP,
+                # we dynamically patch the python input() function 
+                # to echo its captured STDIN back to STDOUT.
+                modified_code = source_code
+                if language == 'python':
+                    patch = (
+                        "import builtins as __b\n"
+                        "__og_in = getattr(__b, 'input', None)\n"
+                        "def __echo_in(p=''):\n"
+                        "    try: v = __og_in(p)\n"
+                        "    except EOFError: raise EOFError('EOF when reading a line')\n"
+                        "    print(v)\n"
+                        "    return v\n"
+                        "if __og_in: __b.input = __echo_in\n# --- END INTERNAL ENGINE PATCH ---\n\n"
+                    )
+                    modified_code = patch + source_code
+
+                with open(temp_file, 'w', encoding='utf-8') as f:
+                    f.write(modified_code)
+                    
+                # Compile phase
+                compile_error = None
+                if compile_cmd:
+                    try:
+                        cmd = [c.format(tc_file=temp_file, tc_exe=temp_exe, tc_dir=temp_dir) for c in compile_cmd]
+                        compilation = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+                        if compilation.returncode != 0:
+                            compile_error = compilation.stderr.strip()
+                    except Exception as e:
+                        compile_error = f"Compiler not found or error. Make sure {compile_cmd[0]} is installed. Details: {str(e)}"
                 
-                if is_pass: passed += 1
-                
-                results.append({
-                    "input": tc_input,
-                    "expected": tc_expected,
-                    "output": stdout,
-                    "status": status,
-                    "error": result.get('stderr') or result.get('compile_output'),
-                    "passed": is_pass
-                })
+                for tc in working_test_cases:
+                    tc_input = tc.get('input', '')
+                    tc_expected = tc.get('expected', '').strip()
+                    
+                    if compile_error:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Compilation Error",
+                            "error": compile_error,
+                            "passed": False
+                        })
+                        continue
+
+                    try:
+                        cmd = [c.format(tc_file=temp_file, tc_exe=temp_exe, tc_dir=temp_dir) for c in run_cmd]
+                        process = subprocess.run(
+                            cmd,
+                            input=tc_input,
+                            capture_output=True,
+                            text=True,
+                            timeout=5
+                        )
+                        
+                        stdout = process.stdout.strip()
+                        stderr = process.stderr.strip()
+                        code_status = process.returncode
+                        
+                        # Clean up internal paths from output
+                        if stderr:
+                            stderr = stderr.replace(temp_file, f"main{ext}")
+                            
+                            # Filter out harmless JVM environment warnings
+                            filtered_stderr_lines = []
+                            for line in stderr.split('\n'):
+                                if not line.startswith('Picked up JAVA_TOOL_OPTIONS:') and not line.startswith('Picked up _JAVA_OPTIONS:'):
+                                    filtered_stderr_lines.append(line)
+                            stderr = '\n'.join(filtered_stderr_lines).strip()
+                            
+                            if "EOFError: EOF when reading a line" in stderr:
+                                stderr += "\n\n💡 [HINT]: This compiler runs in batch mode! You must provide ALL inputs upfront in the 'stdin' tab before running!"
+                            
+                        # If expecting empty string or it wasn't passed, pass strictly on process return code
+                        if not tc_expected:
+                            is_pass = code_status == 0
+                        else:
+                            is_pass = (code_status == 0 and stdout == tc_expected)
+                            
+                        if is_pass: passed += 1
+                        
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": stdout,
+                            "status": "Accepted" if code_status == 0 else "Runtime Error",
+                            "error": stderr if stderr else None,
+                            "passed": is_pass
+                        })
+                    except subprocess.TimeoutExpired:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Time Limit Exceeded",
+                            "error": "Execution timed out (5s limit). Infinite loop detected?",
+                            "passed": False
+                        })
+                    except Exception as ex:
+                        results.append({
+                            "input": tc_input,
+                            "expected": tc_expected,
+                            "output": "",
+                            "status": "Execution Engine Error",
+                            "error": f"Failed to run executable. Ensure runtime '{run_cmd[0]}' is installed. Error: {str(ex)}",
+                            "passed": False
+                        })
             else:
-                results.append({
-                    "error": f"Internal Execution Error: {response.text}",
-                    "passed": False
-                })
+                for tc in working_test_cases:
+                    results.append({
+                        "input": tc.get('input', ''),
+                        "expected": tc.get('expected', ''),
+                        "output": f"Language '{language}' execution is currently unsupported locally.",
+                        "status": "Unsupported Language",
+                        "error": "Engine missing",
+                        "passed": False
+                    })
+        finally:
+            import shutil
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
         return Response({
             "success": True,
             "passed_count": passed,
-            "total_count": len(test_cases),
+            "total_count": len(test_cases) if test_cases else 1,
             "results": results,
-            "passed": passed == len(test_cases) if test_cases else True
+            "passed": passed == len(working_test_cases)
         })
 
     except Exception as e:
         return Response({
             "success": False,
-            "error": str(e)
+            "error": f"Unhandled Server Error: {str(e)}"
         }, status=500)
 
 from rest_framework.decorators import  permission_classes

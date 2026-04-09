@@ -186,6 +186,14 @@ function Sidebar({ sidebarOpen }) {
               <div className="ml-6 mt-2 space-y-1 text-sm">
 
                 <NavLink
+                  to="/dashboard/playground/python"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                >
+                  <Code size={14} />
+                  Coding
+                </NavLink>
+
+                <NavLink
                   to="/dashboard/playground"
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
