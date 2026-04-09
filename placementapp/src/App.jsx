@@ -78,6 +78,7 @@ function App() {
     }
 
     const isExamPage = location.pathname.includes('/python-exam') || 
+                      location.pathname.includes('/daily-exam') || 
                       location.pathname.includes('/weekly-exam') || 
                       location.pathname.includes('/monthly-exam');
 

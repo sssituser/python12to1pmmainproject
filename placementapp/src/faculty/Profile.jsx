@@ -60,7 +60,7 @@ function FacultyProfile() {
         return;
       }
 
-      const response = await fetch('http://127.0.0.1:8000/api/faculty/profile/', {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/faculty/profile/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ function FacultyProfile() {
   const refreshStats = async () => {
     try {
       const token = localStorage.getItem('access');
-      const response = await fetch('http://127.0.0.1:8000/api/faculty/profile/stats/', {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/faculty/profile/stats/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -219,7 +219,7 @@ function FacultyProfile() {
         website: tempProfile.socialLinks.website.trim(),
       };
 
-      const response = await fetch('http://127.0.0.1:8000/api/faculty/profile/update/', {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/faculty/profile/update/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -284,7 +284,7 @@ function FacultyProfile() {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        const response = await fetch('http://127.0.0.1:8000/api/faculty/profile/avatar/upload/', {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/faculty/profile/avatar/upload/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -328,7 +328,7 @@ function FacultyProfile() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access');
-      const response = await fetch('http://127.0.0.1:8000/api/faculty/profile/avatar/delete/', {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/faculty/profile/avatar/delete/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

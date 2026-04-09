@@ -286,7 +286,7 @@ function CoursesPage() {
 
       try {
 
-        const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
 
           headers: {
 
@@ -774,7 +774,7 @@ function CoursesPage() {
 
         // Try API for all authenticated users to ensure persistence
 
-        const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
 
           method: 'POST',
 
@@ -1186,7 +1186,7 @@ function CoursesPage() {
 
         const deletePromises = idsToRemove.map(id => 
 
-          fetch(`http://127.0.0.1:8000/api/courses/${id}/`, {
+          fetch(`http://${window.location.hostname}:8000/api/courses/${id}/`, {
 
             method: 'DELETE',
 
@@ -1416,7 +1416,7 @@ function CoursesPage() {
           progress: courseToSync.progress
         };
 
-        const endpoint = isUnsyncedCourse ? 'http://127.0.0.1:8000/api/courses/' : `http://127.0.0.1:8000/api/courses/${courseToSync.id}/`;
+        const endpoint = isUnsyncedCourse ? `http://${window.location.hostname}:8000/api/courses/` : `http://${window.location.hostname}:8000/api/courses/${courseToSync.id}/`;
         const methodType = isUnsyncedCourse ? 'POST' : 'PUT';
 
         const response = await fetch(endpoint, {

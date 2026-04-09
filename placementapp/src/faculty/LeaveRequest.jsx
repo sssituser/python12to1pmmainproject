@@ -37,7 +37,7 @@ function Leaves() {
       console.log("Fetching leave requests for user:", { userName, userEmail, userStudentId, userPhone });
 
       // Fetch ALL leave requests first
-      const res = await fetch("http://127.0.0.1:8000/api/leave-requests/", {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, {
         headers: { 
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
@@ -98,9 +98,9 @@ function Leaves() {
         return;
       }
 
-      console.log("Making approve request to:", `http://127.0.0.1:8000/api/leave-requests/${leaveId}/approve/`);
+      console.log("Making approve request to:", `http://${window.location.hostname}:8000/api/leave-requests/${leaveId}/approve/`);
       
-      const res = await fetch(`http://127.0.0.1:8000/api/leave-requests/${leaveId}/approve/`, {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/${leaveId}/approve/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -160,10 +160,10 @@ function Leaves() {
         return;
       }
 
-      console.log("Making reject request to:", `http://127.0.0.1:8000/api/leave-requests/${leaveId}/reject/`);
+      console.log("Making reject request to:", `http://${window.location.hostname}:8000/api/leave-requests/${leaveId}/reject/`);
       console.log("Approved by:", JSON.parse(localStorage.getItem("user") || "{}").username || "Faculty");
       
-      const res = await fetch(`http://127.0.0.1:8000/api/leave-requests/${leaveId}/reject/`, {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/${leaveId}/reject/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

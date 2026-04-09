@@ -103,7 +103,7 @@ function AdminPanel() {
         throw new Error("No refresh token available");
       }
 
-      const response = await fetch("http://127.0.0.1:8000/api/jwt/refresh/", {
+      const response = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +157,9 @@ function AdminPanel() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/all-users/");
+      const hostname = window.location.hostname;
+      const response = await makeAuthenticatedRequest(`http://${hostname}:8000/api/all-users/`);
+      
       if (response && response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -349,7 +351,7 @@ function AdminPanel() {
     }
     
     try {
-      const response = await makeAuthenticatedRequest("http://127.0.0.1:8000/api/create-faculty/", {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/create-faculty/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -384,7 +386,7 @@ function AdminPanel() {
     }
     
     try {
-      const response = await makeAuthenticatedRequest(`http://127.0.0.1:8000/api/delete-faculty/${facultyId}/`, {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/delete-faculty/${facultyId}/`, {
         method: "DELETE"
       });
 
@@ -402,7 +404,7 @@ function AdminPanel() {
 
   const toggleFacultyStatus = async (facultyId, currentStatus) => {
     try {
-      const response = await makeAuthenticatedRequest(`http://127.0.0.1:8000/api/toggle-faculty-status/${facultyId}/`, {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/toggle-faculty-status/${facultyId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -424,7 +426,7 @@ function AdminPanel() {
 
   const toggleStudentStatus = async (studentId, currentStatus) => {
     try {
-      const response = await makeAuthenticatedRequest(`http://127.0.0.1:8000/api/toggle-student-status/${studentId}/`, {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/toggle-student-status/${studentId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

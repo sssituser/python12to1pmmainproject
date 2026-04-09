@@ -30,7 +30,7 @@ function AllJobs() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,13 +61,13 @@ function AllJobs() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
+        const jobsRes = await fetch(`http://${window.location.hostname}:8000/api/jobs/`);
         const jobs = await jobsRes.json();
         let appliedIds = [];
 
         if (token) {
           try {
-            const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+            const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (appliedRes.ok) {

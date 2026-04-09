@@ -13,7 +13,7 @@ function ExamReportDetail() {
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/exam-report-detail/${id}/`);
+        const res = await axios.get(`http://${window.location.hostname}:8000/api/exam-report-detail/${id}/`);
         if (res.data && res.data.success) {
           const d = res.data.data;
           // Flatten: merge attempt fields with questions/answers/percentage/passed

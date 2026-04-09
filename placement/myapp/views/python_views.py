@@ -3,44 +3,25 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from ..models import AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
-from ..serializers import LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, UserSerializer
-from ..email_utils import send_exam_confirmation_email
-from datetime import datetime, timedelta
 from django.utils import timezone
-import json
 from django.db.models import Q
-from ..models import LeaveRequest, PythonQuestion, Choice, ExamAttempt, CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, User, Job, StudentProfile, Course, AppliedJob
-
+from datetime import datetime, timedelta
+import json
 import requests
 import base64
 import os
 
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-
-from ..models import (
-    AppliedJob,
-    CodeSnippet,
-    CodeTemplate,
-    ExamAttempt,
-    ExecutionSession,
-    Job,
-    LeaveRequest,
-    PythonQuestion,
-    User,
+from myapp.models import (
+    AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, 
+    CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, 
+    User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 )
-from ..serializers import (
-    CodeSnippetSerializer,
-    CodeTemplateSerializer,
-    ExamAttemptSerializer,
-    LeaveRequestSerializer,
-    PythonQuestionSerializer,
-    UserSerializer,
+from myapp.serializers import (
+    LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, 
+    CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, 
+    UserSerializer
 )
+from myapp.email_utils import send_exam_confirmation_email
 
 # ==================== USER COMBINED RESULTS API ====================
 
@@ -79,14 +60,14 @@ def user_combined_results_api(request):
     for attempt in exam_attempts:
         exam_results.append({
             'id': attempt.id,
-            'examTitle': attempt.question.title if attempt.question else 'Unknown Exam',
+            'examTitle': attempt.exam_title or 'Unknown Exam',
             'score': attempt.score or 0,
-            'totalQuestions': attempt.question.choices.count() if attempt.question else 1,
-            'examDate': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
+            'totalQuestions': attempt.total_questions or 1,
+            'examDate': attempt.exam_date.strftime('%Y-%m-%d %H:%M:%S') if attempt.exam_date else '',
             'startTime': attempt.start_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.start_time else '',
             'endTime': attempt.end_time.strftime('%Y-%m-%d %H:%M:%S') if attempt.end_time else '',
-            'status': 'Pass' if (attempt.score and attempt.score >= 50) else 'Fail',
-            'randomId': f"exam_{attempt.id}_{attempt.start_time.timestamp()}" if attempt.start_time else f"exam_{attempt.id}",
+            'status': attempt.status,
+            'randomId': attempt.random_id or f"exam_{attempt.id}",
             'user': {
                 'username': target_user.username,
                 'id': target_user.id
@@ -1289,18 +1270,25 @@ def exam_settings_api(request):
         # Get existing category data to merge into
         existing_category = existing_data.get(storage_key, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
 
+        # 🏗️ SAFE TYPE CONVERSION SYSTEM
+        def safe_int(val, default):
+            try:
+                if val is None or str(val).strip() == "": return default
+                return int(val)
+            except: return default
+
         # Only overwrite fields if explicitly sent
         if new_max is not None:
-            existing_category['maxQuestions'] = int(new_max)
+            existing_category['maxQuestions'] = safe_int(new_max, 50)
         
         if new_rule is not None:
             existing_category['passingRule'] = str(new_rule)
             
         if new_val is not None:
-            existing_category['passingValue'] = int(new_val)
+            existing_category['passingValue'] = safe_int(new_val, 50)
             
         if new_duration is not None:
-            existing_category['duration'] = int(new_duration)
+            existing_category['duration'] = safe_int(new_duration, 45)
 
         # Only overwrite questions if a non-None list was sent
         if new_questions is not None:
@@ -1520,10 +1508,7 @@ def run_code_api(request):
             "error": f"Unhandled Server Error: {str(e)}"
         }, status=500)
 
-from rest_framework.decorators import  permission_classes
-from rest_framework.permissions import IsAuthenticated
-
-from ..models import User, Job, AppliedJob
+# Dashboard stats removed redundant imports to prevent IDE warnings
 
 
 
@@ -1666,7 +1651,7 @@ def admin_create_credentials_api(request):
                 defaults={'level': 'Beginner', 'duration': 'Self-paced', 'topics': [], 'progress': 0, 'locked': False}
             )
         
-        from ..models import StudentProfile
+        from myapp.models import StudentProfile
         StudentProfile.objects.create(
             user=user,
             course=course_obj,

@@ -111,7 +111,7 @@ function ViewReports() {
       setLoading(true);
       setError(null);
       
-      axios.get(`http://127.0.0.1:8000/api/report/${id}/`)
+      axios.get(`http://${window.location.hostname}:8000/api/report/${id}/`)
         .then(res => {
           setSelected(res.data);
           setLoading(false);

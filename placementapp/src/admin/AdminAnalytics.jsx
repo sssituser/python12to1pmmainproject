@@ -32,7 +32,7 @@ const AdminAnalytics = () => {
           
           // Fetch all users for detailed stats
           try {
-            const response = await fetch("http://127.0.0.1:8000/api/all-users/", {
+            const response = await fetch(`http://${window.location.hostname}:8000/api/all-users/`, {
               headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"

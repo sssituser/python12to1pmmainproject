@@ -54,7 +54,7 @@ function ExamManager() {
       
       try {
         // 🏗️ Step 1: Fetch from Backend (Source of Truth)
-        const response = await axios.get('http://127.0.0.1:8000/api/courses/', {
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/`, {
           headers: {
             'Authorization': `Bearer ${cleanToken}`
           }
@@ -168,7 +168,7 @@ function ExamManager() {
     marks: 2, // default marks
   });
 
-  const BASE_URL = "http://127.0.0.1:8000/api/admin/exam-settings/";
+  const BASE_URL = `http://${window.location.hostname}:8000/api/admin/exam-settings/`;
 
   // Fetch existing settings when category changes
   useEffect(() => {
@@ -304,7 +304,7 @@ function ExamManager() {
          marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
       };
 
-      const res = await axios.post("http://127.0.0.1:8000/api/automated-exam-config/", payload, config);
+      const res = await axios.post(`http://${window.location.hostname}:8000/api/automated-exam-config/`, payload, config);
       
       if (res.data && res.data.status === "success") {
         setAutoGenSuccess(true);
@@ -359,7 +359,7 @@ function ExamManager() {
                 question_count: parseInt(isDaily ? examQuestionCount : maxQuestions) || 25,
                 marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
             };
-            await axios.post("http://127.0.0.1:8000/api/automated-exam-config/", payload, config);
+            await axios.post(`http://${window.location.hostname}:8000/api/automated-exam-config/`, payload, config);
         }
       }
       
