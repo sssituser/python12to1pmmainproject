@@ -66,30 +66,17 @@ function AllJobs() {
         let appliedJobs = [];
 
         if (token) {
-<<<<<<< HEAD
-          const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (appliedRes.ok) {
-            const data = await appliedRes.json();
-            appliedJobs = Array.isArray(data) ? data : data.results || [];
-=======
           try {
             const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
               headers: { Authorization: `Bearer ${token}` },
             });
+
             if (appliedRes.ok) {
-              const appliedJobs = await appliedRes.json();
-              if (Array.isArray(appliedJobs)) {
-                appliedIds = appliedJobs.map((a) =>
-                  typeof a.job === "object" ? a.job.id : a.job
-                );
-              }
+              const data = await appliedRes.json();
+              appliedJobs = Array.isArray(data) ? data : data.results || [];
             }
           } catch (err) {
             console.log("Applied jobs error:", err);
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
           }
         }
 
@@ -174,9 +161,17 @@ function AllJobs() {
               >
                 {/* Status Badge */}
                 <div className="absolute top-6 right-6">
-                  {job.status === "Applied" ? (
+                  {job.status === "Selected" ? (
                     <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-emerald-100">
-                      <FaCheckCircle size={12} /> APPLIED
+                      <FaCheckCircle size={12} /> SELECTED
+                    </span>
+                  ) : job.status === "Rejected" ? (
+                    <span className="flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-rose-100">
+                      <FaInfoCircle size={12} /> REJECTED
+                    </span>
+                  ) : job.status === "Under Process" || job.status === "Applied" ? (
+                    <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-blue-100">
+                      <FaInfoCircle size={12} /> APPLIED
                     </span>
                   ) : job.status === "Closed" ? (
                     <span className="flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200">

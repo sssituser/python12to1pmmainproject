@@ -38,11 +38,12 @@ def import_sync_data():
                 Course.objects.update_or_create(
                     title__iexact=unique_title.strip(), 
                     defaults={
-                        'description': c_data.get('description', ''),
-                        'is_active': c_data.get('is_active', True),
+                        'level': c_data.get('level', 'Beginner'),
+                        'duration': c_data.get('duration', '0'),
                         'modules': c_data.get('modules', []),
-                        'image_url': c_data.get('image_url', ''),
-                        'banner_url': c_data.get('banner_url', ''),
+                        'topics': c_data.get('topics', []),
+                        'locked': c_data.get('locked', False),
+                        'progress': c_data.get('progress', 0),
                     }
                 )
         

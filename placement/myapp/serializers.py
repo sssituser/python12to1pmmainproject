@@ -361,6 +361,8 @@ class StudentTopicProgressSerializer(serializers.ModelSerializer):
         fields = ['id', 'topic', 'is_completed', 'completed_at']
 
 
+class CourseStudentSerializer(serializers.ModelSerializer):
+    """Detailed serializer for students"""
     modules = serializers.SerializerMethodField()
     topics = serializers.SerializerMethodField()
 
@@ -375,6 +377,8 @@ class StudentTopicProgressSerializer(serializers.ModelSerializer):
         return obj.topics if isinstance(obj.topics, list) else []
 
 
+class CourseFacultySerializer(serializers.ModelSerializer):
+    """Detailed serializer for faculty"""
     modules = serializers.SerializerMethodField()
     topics = serializers.SerializerMethodField()
 
@@ -398,12 +402,16 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_modules(self, value):
         """Ensure modules is always a list"""
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Modules must be a list")
+        if value is None:
+            return []
+        if not isinstance(value, (list, dict)):
+            raise serializers.ValidationError("Modules must be a list or dict")
         return value
 
     def validate_topics(self, value):
         """Ensure topics is always a list"""
+        if value is None:
+            return []
         if not isinstance(value, list):
             raise serializers.ValidationError("Topics must be a list")
         return value

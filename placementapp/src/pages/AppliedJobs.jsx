@@ -7,63 +7,50 @@ function AppliedJobs() {
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("access");
-useEffect(() => {
-  if (!token) {
-    setLoading(false);
-    return;
-  }
-
-<<<<<<< HEAD
-  const fetchJobs = () => {
-    fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-=======
   useEffect(() => {
     if (!token) {
       setLoading(false);
       return;
     }
 
-    fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        if (res.status === 401) {
-          localStorage.removeItem("access");
-          return [];
-        }
-        return res.ok ? await res.json() : [];
+    const fetchJobs = () => {
+      fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setJobs(data);
-        } else if (data?.results) {
-          setJobs(data.results);
-        } else {
+        .then(async (res) => {
+          if (res.status === 401) {
+            localStorage.removeItem("access");
+            return [];
+          }
+          return res.ok ? await res.json() : [];
+        })
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setJobs(data);
+          } else if (data?.results) {
+            setJobs(data.results);
+          } else {
+            setJobs([]);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.log("Fetch error:", err);
           setJobs([]);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log("Fetch error:", err);
-        setJobs([]);
-        setLoading(false);
-      });
-  };
+          setLoading(false);
+        });
+    };
 
-  // 👉 First load
-  fetchJobs();
-
-  // 👉 Auto refresh every 5 seconds
-  const interval = setInterval(() => {
+    // First load
     fetchJobs();
-  }, 5000);
 
-  return () => clearInterval(interval);
+    // Auto refresh every 5 seconds
+    const interval = setInterval(fetchJobs, 5000);
 
-}, [token]);
+    return () => clearInterval(interval);
+  }, [token]);
 
   const filteredJobs = jobs.filter((j) => {
     const title = j.job_details?.job_title?.toLowerCase() || "";
@@ -165,10 +152,10 @@ useEffect(() => {
                       <td className="px-6 py-6 text-center">
                         <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-300 shadow-sm
                           ${j.status === 'accepted'
-                            ? 'bg-success text-white'
+                            ? 'bg-emerald-500 text-white'
                             : j.status === 'rejected'
-                            ? 'bg-danger text-white'
-                            : 'bg-warning text-dark'}
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-amber-500 text-white'}
                         `}>
                           {j.status === 'accepted' ? <FaCheckCircle /> : <FaInfoCircle />}
                           {j.status === 'accepted'
