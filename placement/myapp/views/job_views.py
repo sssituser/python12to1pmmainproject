@@ -17,8 +17,7 @@ class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
 
     permission_classes = [AllowAny]
-    authentication_classes = []   # ✅ disables JWT for this API
-
+    authentication_classes = []   
     def get_serializer_context(self):
         return {"request": self.request}
 
@@ -76,7 +75,6 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    # ✅ MOVE HERE (INSIDE CLASS)
     def update(self, request, *args, **kwargs):
         application = self.get_object()
         action = request.data.get('action')
@@ -85,6 +83,8 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
             application.status = "accepted"
         elif action == "reject":
             application.status = "rejected"
+        elif action == "pending":   
+             application.status = "pending"
         else:
             return Response({"error": "Invalid action"}, status=400)
 

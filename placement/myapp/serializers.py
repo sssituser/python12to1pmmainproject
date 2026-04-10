@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import (
+from myapp.models import (
     User,
     LeaveRequest,
     Playground,
@@ -166,7 +166,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return obj.course.title if obj.course else ""
 
     def get_enrolled_courses(self, obj):
-        from .models import CourseEnrollment
+        from myapp.models import CourseEnrollment
         enrollments = CourseEnrollment.objects.filter(user=obj.user).select_related('course')
         titles = list(set([e.course.title for e in enrollments if e.course]))
         # Fallback to profile.course if enrollments are empty
@@ -201,7 +201,6 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 # JOBS
 # ===============================
 from datetime import date
-from datetime import date
 
 class JobSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
@@ -232,7 +231,7 @@ class JobSerializer(serializers.ModelSerializer):
             return "Closed"
 
         return "Open"
-from .models import AppliedJob
+from myapp.models import AppliedJob
 
 class AppliedJobSerializer(serializers.ModelSerializer):
 
@@ -362,19 +361,37 @@ class StudentTopicProgressSerializer(serializers.ModelSerializer):
 
 
 class CourseStudentSerializer(serializers.ModelSerializer):
+    """Detailed serializer for students"""
     """Serializer for student view - includes progress and locked status"""
+    modules = serializers.SerializerMethodField()
+    topics = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics', 'modules', 'custom_videos', 'created_at']
 
+    def get_modules(self, obj):
+        return obj.modules if isinstance(obj.modules, list) else []
+
+    def get_topics(self, obj):
+        return obj.topics if isinstance(obj.topics, list) else []
+
 
 class CourseFacultySerializer(serializers.ModelSerializer):
+    """Detailed serializer for faculty"""
     """Serializer for faculty view - without progress tracking"""
+    modules = serializers.SerializerMethodField()
+    topics = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = ['id', 'title', 'level', 'duration', 'topics', 'modules', 'custom_videos', 'created_at']
+
+    def get_modules(self, obj):
+        return obj.modules if isinstance(obj.modules, list) else []
+
+    def get_topics(self, obj):
+        return obj.topics if isinstance(obj.topics, list) else []
 
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
@@ -386,12 +403,16 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_modules(self, value):
         """Ensure modules is always a list"""
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Modules must be a list")
+        if value is None:
+            return []
+        if not isinstance(value, (list, dict)):
+            raise serializers.ValidationError("Modules must be a list or dict")
         return value
 
     def validate_topics(self, value):
         """Ensure topics is always a list"""
+        if value is None:
+            return []
         if not isinstance(value, list):
             raise serializers.ValidationError("Topics must be a list")
         return value

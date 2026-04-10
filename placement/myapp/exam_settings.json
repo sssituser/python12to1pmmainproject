@@ -7,11 +7,11 @@
         "duration": 45
     },
     "Python Full Stack_Weekly": {
-        "maxQuestions": 2,
+        "maxQuestions": 25,
         "questions": [],
         "passingRule": "correct_answers",
-        "passingValue": 2,
-        "duration": 1
+        "passingValue": 12,
+        "duration": 75
     },
     ".net Full Stack_Weekly": {
         "maxQuestions": 50,
@@ -47,5 +47,12 @@
         "passingRule": "correct_answers",
         "passingValue": 1,
         "duration": 1
+    },
+    "Python Full Stack_Daily": {
+        "maxQuestions": 25,
+        "questions": [],
+        "passingRule": "percentage",
+        "passingValue": 34,
+        "duration": 80
     }
 }
