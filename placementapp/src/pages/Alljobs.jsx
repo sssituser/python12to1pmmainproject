@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaEye, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaCode, FaCheckCircle, FaLock, FaBuilding } from "react-icons/fa";
+import { FaEye, FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaCode, FaCheckCircle, FaLock, FaBuilding,FaInfoCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 function AllJobs() {
@@ -56,41 +56,32 @@ function AllJobs() {
     }
   }
 
-  useEffect(() => {
+useEffect(() => {
   const token = localStorage.getItem("access");
 
-<<<<<<< HEAD
   async function fetchData() {
     setIsLoading(true);
+
     try {
-      const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
+      
+      const jobsRes = await fetch(`http://${window.location.hostname}:8000/api/jobs/`);
       const jobs = await jobsRes.json();
 
       let appliedJobs = [];
 
       if (token) {
-        const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        try {
+          const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        if (appliedRes.ok) {
-          const data = await appliedRes.json();
-          appliedJobs = Array.isArray(data) ? data : data.results || [];
-=======
-        if (token) {
-          try {
-            const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (appliedRes.ok) {
-              const data = await appliedRes.json();
-              appliedJobs = Array.isArray(data) ? data : data.results || [];
-            }
-          } catch (err) {
-            console.log("Applied jobs error:", err);
+          if (appliedRes.ok) {
+            const data = await appliedRes.json();
+            appliedJobs = Array.isArray(data) ? data : data.results || [];
           }
->>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
+
+        } catch (err) {
+          console.log("Applied jobs error:", err);
         }
       }
 

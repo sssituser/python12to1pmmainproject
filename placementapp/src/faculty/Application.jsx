@@ -123,7 +123,6 @@ function Applications() {
     }
   };
 
-<<<<<<< HEAD
 const handleAccept = async (applicationId) => {
   try {
     const url = `http://127.0.0.1:8000/api/faculty-applications/${applicationId}/`;
@@ -179,47 +178,9 @@ const handlePending = async (applicationId) => {
     console.error("Error resetting status:", error);
   }
 };
-=======
-  const handleAccept = async (applicationId) => {
-    try {
-      const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
-      const res = await makeAuthenticatedRequest(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'accept' })
-      });
 
-      if (res.ok) {
-        fetchApps();
-      } else {
-        const data = await res.json();
-        console.error("Accept failed:", data);
-      }
-    } catch (error) {
-      console.error("Error accepting application:", error);
-    }
-  };
+  
 
-  const handleReject = async (applicationId) => {
-    try {
-      const url = `http://${window.location.hostname}:8000/api/faculty-applications/${applicationId}/`;
-      const res = await makeAuthenticatedRequest(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject' })
-      });
-
-      if (res.ok) {
-        fetchApps();
-      } else {
-        const data = await res.json();
-        console.error("Reject failed:", data);
-      }
-    } catch (error) {
-      console.error("Error rejecting application:", error);
-    }
-  };
->>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
 
   const token = localStorage.getItem("access");
 

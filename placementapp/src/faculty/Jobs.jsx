@@ -55,9 +55,7 @@ function Jobs() {
     fetchJobs();
   }, []);
 
-//   function handleChange(e) {
-//     setForm({ ...form, [e.target.name]: e.target.value });
-//   }
+
     function handleChange(e) {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -104,7 +102,7 @@ fetch(url, {
     "Accept": "application/json",
     Authorization: `Bearer ${token}`
   },
-  body: JSON.stringify(payload)   // ✅ FIXED
+  body: JSON.stringify(payload)   
 })
     .then(async (res) => {
       const data = await res.json();
@@ -256,7 +254,6 @@ fetch(url, {
                 onChange={handleChange} />
             </div>
 
-            {/* ✅ FIXED */}
             <div className="col-md-12 mb-2">
               <textarea name="description" placeholder="Description"
                 className="form-control"
@@ -264,7 +261,6 @@ fetch(url, {
                 onChange={handleChange} />
             </div>
 
-            {/* ✅ FIXED */}
             <div className="col-md-12 mb-2">
               <textarea name="responsibilities" placeholder="Responsibilities"
                 className="form-control"
@@ -380,7 +376,6 @@ fetch(url, {
                     <button
                       className="btn btn-warning btn-sm px-3"
                       onClick={() => {
-                        // Populate form with ALL job fields to prevent data loss
                         setForm({
                           id: j.id,
                           job_title: j.job_title || "",
