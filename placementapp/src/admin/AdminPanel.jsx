@@ -196,7 +196,7 @@ function AdminPanel() {
   const deleteUser = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     try {
-      const response = await makeAuthenticatedRequest(`http://127.0.0.1:8000/api/delete-user/${userId}/`, {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/delete-user/${userId}/`, {
         method: "DELETE"
       });
       if (response && response.ok) {
@@ -214,8 +214,8 @@ function AdminPanel() {
   const toggleUserStatus = async (user) => {
     const role = user.role === 'admin' ? 'faculty' : (user.role || 'student');
     const endpoint = role === 'faculty' 
-      ? `http://127.0.0.1:8000/api/toggle-faculty-status/${user.id}/`
-      : `http://127.0.0.1:8000/api/toggle-student-status/${user.id}/`;
+      ? `http://${window.location.hostname}:8000/api/toggle-faculty-status/${user.id}/`
+      : `http://${window.location.hostname}:8000/api/toggle-student-status/${user.id}/`;
 
     try {
       const response = await makeAuthenticatedRequest(endpoint, {
@@ -254,8 +254,8 @@ function AdminPanel() {
 
     const role = editUser.role || 'student';
     const endpoint = role === 'faculty' 
-      ? `http://127.0.0.1:8000/api/update-faculty/${editUser.id}/`
-      : `http://127.0.0.1:8000/api/update-student/${editUser.id}/`;
+      ? `http://${window.location.hostname}:8000/api/update-faculty/${editUser.id}/`
+      : `http://${window.location.hostname}:8000/api/update-student/${editUser.id}/`;
 
     try {
       const response = await makeAuthenticatedRequest(endpoint, {

@@ -1,0 +1,343 @@
+{
+    "courses": [
+        {
+            "id": 1,
+            "title": "Advanced Machine Learning",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Advanced Machine Learning"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:46:22.154132+00:00"
+        },
+        {
+            "id": 2,
+            "title": "Data Science and Analytics",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Data Science and Analytics"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:55:23.021916+00:00"
+        },
+        {
+            "id": 3,
+            "title": "Artificial Intelligence and Deep Learning",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Artificial Intelligence and Deep Learning"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:59:22.111857+00:00"
+        },
+        {
+            "id": 5,
+            "title": "Python Full Stack",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Python HOME",
+                "Python Intro",
+                "Python Get Started",
+                "Python Syntax",
+                "Python Output",
+                "Python Comments",
+                "Python Variables",
+                "Python Data Types",
+                "Python Numbers",
+                "Python Casting",
+                "Python Strings",
+                "Python Booleans",
+                "Python Operators",
+                "Python Lists",
+                "Python Tuples",
+                "Python Sets",
+                "Python Dictionaries",
+                "Python If...Else",
+                "Python Match",
+                "Python While Loops",
+                "Python For Loops",
+                "Python Functions",
+                "Python Range",
+                "Python Arrays",
+                "Python Iterators",
+                "Python Modules",
+                "Python Dates",
+                "Python Math",
+                "Python JSON",
+                "Python RegEx",
+                "Python PIP",
+                "Python Try...Except",
+                "Python String Formatting",
+                "Python None",
+                "Python User Input",
+                "Python VirtualEnv",
+                "Python OOP",
+                "Python Classes/Objects",
+                "Python __init__ Method",
+                "Python self Parameter",
+                "Python Class Properties",
+                "Python Class Methods",
+                "Python Inheritance",
+                "Python Polymorphism",
+                "Python Encapsulation",
+                "Python Inner Classes",
+                "Python File Handling",
+                "Python Read Files",
+                "Python Write/Create Files",
+                "Python Delete Files",
+                "NumPy Tutorial",
+                "Pandas Tutorial",
+                "SciPy Tutorial",
+                "Django Tutorial",
+                "Matplotlib Intro",
+                "Matplotlib Get Started",
+                "Matplotlib Pyplot",
+                "Matplotlib Plotting",
+                "Matplotlib Markers",
+                "Matplotlib Line",
+                "Matplotlib Labels",
+                "Matplotlib Grid",
+                "Matplotlib Subplot",
+                "Matplotlib Scatter",
+                "Matplotlib Bars",
+                "Matplotlib Histograms",
+                "Matplotlib Pie Charts",
+                "Getting Started",
+                "Mean Median Mode",
+                "Standard Deviation",
+                "Percentile",
+                "Data Distribution",
+                "Normal Data Distribution",
+                "Scatter Plot",
+                "Linear Regression",
+                "Polynomial Regression",
+                "Multiple Regression",
+                "Scale",
+                "Train/Test",
+                "Decision Tree",
+                "Confusion Matrix",
+                "Hierarchical Clustering",
+                "Logistic Regression",
+                "Grid Search",
+                "Categorical Data",
+                "K-means",
+                "Bootstrap Aggregation",
+                "Cross Validation",
+                "AUC - ROC Curve",
+                "K-nearest neighbors",
+                "Python DSA",
+                "Lists and Arrays",
+                "Stacks",
+                "Queues",
+                "Linked Lists",
+                "Hash Tables",
+                "Trees",
+                "Binary Trees",
+                "Binary Search Trees",
+                "AVL Trees",
+                "Graphs",
+                "Linear Search",
+                "Binary Search",
+                "Bubble Sort",
+                "Selection Sort",
+                "Insertion Sort",
+                "Quick Sort",
+                "Counting Sort",
+                "Radix Sort",
+                "Merge Sort",
+                "MySQL Get Started",
+                "MySQL Create Database",
+                "MySQL Create Table",
+                "MySQL Insert",
+                "MySQL Select",
+                "MySQL Where",
+                "MySQL Order By",
+                "MySQL Delete",
+                "MySQL Drop Table",
+                "MySQL Update",
+                "MySQL Limit",
+                "MySQL Join",
+                "MongoDB Get Started",
+                "MongoDB Create DB",
+                "MongoDB Collection",
+                "MongoDB Insert",
+                "MongoDB Find",
+                "MongoDB Query",
+                "MongoDB Sort",
+                "MongoDB Delete",
+                "MongoDB Drop Collection",
+                "MongoDB Update",
+                "MongoDB Limit",
+                "Python Overview",
+                "Python Built-in Functions",
+                "Python String Methods",
+                "Python List Methods",
+                "Python Dictionary Methods",
+                "Python Tuple Methods",
+                "Python Set Methods",
+                "Python File Methods",
+                "Python Keywords",
+                "Python Exceptions",
+                "Python Glossary",
+                "Built-in Modules",
+                "Random Module",
+                "Requests Module",
+                "Statistics Module",
+                "Math Module",
+                "cMath Module",
+                "Remove List Duplicates",
+                "Reverse a String",
+                "Add Two Numbers",
+                "Python Examples",
+                "Python Compiler",
+                "Python Exercises",
+                "Python Quiz",
+                "Python Challenges",
+                "Python Server",
+                "Python Syllabus",
+                "Python Study Plan",
+                "Python Interview Q&A",
+                "Python Bootcamp",
+                "Python Certificate",
+                "Python Training"
+            ],
+            "modules": [
+                {
+                    "title": "Python",
+                    "topics": [
+                        {
+                            "title": "POLYMORPHISM",
+                            "video": "https://youtu.be/UPT4Q_sTOpY?si=NVtYN6IChoBB8Zf3"
+                        },
+                        {
+                            "title": "INHERITANCE",
+                            "video": "https://youtu.be/4SO3sScshvA?si=zYNXoMv2VYhr3NLJ"
+                        },
+                        {
+                            "title": "FILE HANDLING ",
+                            "video": "https://youtu.be/Sx1Hjr67xO0?si=TBhMFTRNyeKlRNE5"
+                        },
+                        {
+                            "title": "PACKAGES ",
+                            "video": "https://youtu.be/bcDMDlH3Vu8?si=9WUDfPXEv1t8ZhJ3"
+                        }
+                    ]
+                },
+                {
+                    "title": "HTML",
+                    "topics": []
+                },
+                {
+                    "title": "CSS",
+                    "topics": []
+                },
+                {
+                    "title": "JAVASCRIPT",
+                    "topics": []
+                },
+                {
+                    "title": "BOOTSTRAP",
+                    "topics": []
+                },
+                {
+                    "title": "REACT",
+                    "topics": []
+                },
+                {
+                    "title": "DJANGO",
+                    "topics": []
+                },
+                {
+                    "title": "RESTFRAMEWORK",
+                    "topics": []
+                }
+            ],
+            "custom_videos": {},
+            "created_at": "2026-04-04 20:36:22.243427+00:00"
+        },
+        {
+            "id": 6,
+            "title": "java full stack",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to java full stack"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-05 04:14:27.089981+00:00"
+        },
+        {
+            "id": 7,
+            "title": ".net Full stack",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to .net Full stack"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-05 06:18:21.014809+00:00"
+        },
+        {
+            "id": 8,
+            "title": "UI FULL STACK",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to UI FULL STACK"
+            ],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-04-09 10:26:21.471797+00:00"
+        }
+    ],
+<<<<<<< HEAD
+    "configs": []
+=======
+    "configs": [
+        {
+            "id": 1,
+            "exam_name": "Daily Assessment",
+            "course_name": "PYTHON FULL STACK",
+            "subjects": [
+                "Python",
+                "HTML",
+                "CSS",
+                "JAVASCRIPT",
+                "BOOTSTRAP",
+                "REACT",
+                "DJANGO",
+                "RESTFRAMEWORK"
+            ],
+            "duration": 240,
+            "passing_strategy": "percentage",
+            "requirement": 50,
+            "question_count": 100,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-09 16:16:55.052401+00:00"
+        }
+    ]
+>>>>>>> 41802f24a103f242e2df23cae23643fa039c150f
+}

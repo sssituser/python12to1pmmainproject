@@ -109,7 +109,7 @@ DATABASES = {
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
 PLATFORM_NAME = 'SSSIT Placement Portal'
-PLATFORM_URL = 'http://localhost:5173'
+PLATFORM_URL = 'http://localhost:5174'
 
 
 

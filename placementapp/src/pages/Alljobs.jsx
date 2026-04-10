@@ -59,6 +59,7 @@ function AllJobs() {
   useEffect(() => {
   const token = localStorage.getItem("access");
 
+<<<<<<< HEAD
   async function fetchData() {
     setIsLoading(true);
     try {
@@ -75,6 +76,21 @@ function AllJobs() {
         if (appliedRes.ok) {
           const data = await appliedRes.json();
           appliedJobs = Array.isArray(data) ? data : data.results || [];
+=======
+        if (token) {
+          try {
+            const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (appliedRes.ok) {
+              const data = await appliedRes.json();
+              appliedJobs = Array.isArray(data) ? data : data.results || [];
+            }
+          } catch (err) {
+            console.log("Applied jobs error:", err);
+          }
+>>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
         }
       }
 
@@ -162,9 +178,17 @@ function AllJobs() {
               >
                 {/* Status Badge */}
                 <div className="absolute top-6 right-6">
-                  {job.status === "Applied" ? (
+                  {job.status === "Selected" ? (
                     <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-emerald-100">
-                      <FaCheckCircle size={12} /> APPLIED
+                      <FaCheckCircle size={12} /> SELECTED
+                    </span>
+                  ) : job.status === "Rejected" ? (
+                    <span className="flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-rose-100">
+                      <FaInfoCircle size={12} /> REJECTED
+                    </span>
+                  ) : job.status === "Under Process" || job.status === "Applied" ? (
+                    <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-blue-100">
+                      <FaInfoCircle size={12} /> APPLIED
                     </span>
                   ) : job.status === "Closed" ? (
                     <span className="flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200">

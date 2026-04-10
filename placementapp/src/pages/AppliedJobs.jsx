@@ -7,6 +7,7 @@ function AppliedJobs() {
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("access");
+<<<<<<< HEAD
 useEffect(() => {
   if (!token) {
     setLoading(false);
@@ -25,33 +26,60 @@ useEffect(() => {
           return [];
         }
         return res.ok ? await res.json() : [];
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setJobs(data);
-        } else if (data?.results) {
-          setJobs(data.results);
-        } else {
-          setJobs([]);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log("Fetch error:", err);
-        setJobs([]);
-        setLoading(false);
-      });
-  };
+=======
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
+    const fetchJobs = () => {
+      fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+>>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
+      })
+        .then(async (res) => {
+          if (res.status === 401) {
+            localStorage.removeItem("access");
+            return [];
+          }
+          return res.ok ? await res.json() : [];
+        })
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setJobs(data);
+          } else if (data?.results) {
+            setJobs(data.results);
+          } else {
+            setJobs([]);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.log("Fetch error:", err);
+          setJobs([]);
+          setLoading(false);
+        });
+    };
+
+<<<<<<< HEAD
   // First call
   fetchJobs();
 
   // Auto refresh
   const interval = setInterval(fetchJobs, 5000);
+=======
+    // First load
+    fetchJobs();
+>>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
 
-  return () => clearInterval(interval);
+    // Auto refresh every 5 seconds
+    const interval = setInterval(fetchJobs, 5000);
 
-}, [token]);
+    return () => clearInterval(interval);
+  }, [token]);
 
   const filteredJobs = jobs.filter((j) => {
     const title = j.job_details?.job_title?.toLowerCase() || "";
@@ -129,6 +157,7 @@ useEffect(() => {
                     </td>
                   </tr>
                 ) : (
+<<<<<<< HEAD
                   filteredJobs.map((j, index) => {
   console.log(j); // ✅ HERE
 
@@ -165,6 +194,47 @@ useEffect(() => {
     </tr>
   );
 })
+=======
+                  filteredJobs.map((j, index) => (
+                    <tr key={j.id} className="group hover:bg-slate-50/80 transition-colors duration-200">
+                      <td className="px-8 py-6 text-center font-bold text-slate-400 font-mono text-sm leading-none">
+                        {(index + 1).toString().padStart(2, '0')}
+                      </td>
+                      <td className="px-6 py-6">
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-slate-900 font-extrabold text-base group-hover:text-blue-600 transition-colors leading-tight">
+                            {j.job_details?.job_title || "N/A"}
+                          </span>
+                          <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px] uppercase tracking-wider">
+                            <FaBuilding className="text-slate-300" /> {j.job_details?.company || "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-6 text-center">
+                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">
+                          <FaCalendarAlt size={12} className="text-slate-400" />
+                          {j.applied_date ? new Date(j.applied_date).toLocaleDateString('en-GB') : "N/A"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-6 text-center">
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-300 shadow-sm
+                          ${j.status === 'accepted'
+                            ? 'bg-emerald-500 text-white'
+                            : j.status === 'rejected'
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-amber-500 text-white'}
+                        `}>
+                          {j.status === 'accepted' ? <FaCheckCircle /> : <FaInfoCircle />}
+                          {j.status === 'accepted'
+                                        ? '🎉 Selected'
+                                        : j.status === 'rejected'
+                                        ? '❌ Rejected'
+                                        : '⏳ Under Process'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+>>>>>>> 75e70337d76e8b010ba179f737c8a5c409d6e792
                 )}
               </tbody>
             </table>

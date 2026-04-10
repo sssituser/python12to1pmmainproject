@@ -15,10 +15,12 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    # 🚀 1000% Reliable Network Sync: Default to 0.0.0.0:8000 for LAN usage
-    if len(sys.argv) == 2 and sys.argv[1] == 'runserver':
-        sys.argv.append('0.0.0.0:8000')
-    
+    # 🛡️ 1,000,000% LINK ENFORCER: Fulfilling Requirement for Absolute Consistency
+    if 'runserver' in sys.argv:
+        # If no address is specified, force 127.0.0.1:8000
+        if len(sys.argv) == 2:
+            sys.argv.append('127.0.0.1:8000')
+            
     execute_from_command_line(sys.argv)
 
 

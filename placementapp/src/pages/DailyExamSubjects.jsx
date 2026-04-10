@@ -147,6 +147,19 @@ function DailyExamSubjects() {
         const data = profileRes.data || {};
         const courses = data.enrolled_courses || (data.course_title ? [data.course_title] : []);
         setEnrolledCourses(courses);
+
+        // 🛡️ 1000% STALE DATA PURGE: Ensure course in session matches actual registration
+        const currentSessionCourse = sessionStorage.getItem("active_assessment_course");
+        
+        if (courses.length === 1) {
+           const actualCourse = courses[0];
+           // If session is empty OR doesn't match the new registration, force update
+           if (!currentSessionCourse || currentSessionCourse.toUpperCase() !== actualCourse.toUpperCase()) {
+              setActiveCourse(actualCourse);
+              sessionStorage.setItem("active_assessment_course", actualCourse);
+              console.log(`🚀 Registration Sync: Updated to ${actualCourse}`);
+           }
+        }
         
         const cData = courseRes.data || [];
         setAllCourseData(cData);
@@ -155,9 +168,6 @@ function DailyExamSubjects() {
         // 🛡️ 1000% LANDING PAGE INTEGRITY: 
         // We no longer auto-select a course on refresh. Users must choose their track 
         // at the Assessment Center to ensure they are writing the correct exam.
-        if (configRes && configRes.data && configRes.data.status === "success") {
-           setAutomatedConfig(configRes.data);
-        }
       } catch (err) {
         if (err.response?.status === 401) {
            
