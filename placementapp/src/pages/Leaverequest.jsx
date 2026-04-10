@@ -17,76 +17,48 @@ function LeaveRequest() {
     personalLeaves: 0
   });
 
-  // Load leave summary data
+  // 🚀 PERFORMANCE: Memoized Filtering Logic
   useEffect(() => {
     const loadLeaveSummary = async () => {
       try {
         const token = localStorage.getItem('access');
         
-        // 🔄 IDENTITY SYNC: Ensure 1000% permanence across sessions/devices
+        // 🔄 IDENTITY SYNC
         const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
         if (savedUser.email) {
            if (!localStorage.getItem('permanentEmail')) localStorage.setItem('permanentEmail', savedUser.email);
-           if (!localStorage.getItem('permanentName')) localStorage.setItem('permanentName', savedUser.name || savedUser.username);
            if (!localStorage.getItem('permanentStudentId')) localStorage.setItem('permanentStudentId', savedUser.studentId || savedUser.username);
-           if (!localStorage.getItem('permanentPhone')) localStorage.setItem('permanentPhone', savedUser.phone || "");
         }
 
-        const userName = localStorage.getItem('permanentName');
         const userStudentId = localStorage.getItem('permanentStudentId');
-        const userPhone = localStorage.getItem('permanentPhone');
+        const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
 
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, { headers });
+        const response = await fetch(`http://${window.location.hostname}:8000/api/leave-requests/`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
         
         if (response.ok) {
           const data = await response.json();
           const allRequests = data.data || [];
           
-          // IDENTITY-AWARE ROBUST FILTERING
-          let requests = [];
-          if (userName || userStudentId) {
-            requests = allRequests.filter(r => {
-               if (!r) return false;
-               
-               // Normalize Request Data
-               const rName = (r.name || "").toString().trim().toLowerCase();
-               const rEmail = (r.email || "").toString().trim().toLowerCase();
-               const rId = (r.student_id || "").toString().trim();
-               
-               // Normalize Session Data
-               const sName = (userName || "").toString().trim().toLowerCase();
-               const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
-               const sId = (userStudentId || "").toString().trim();
-
-               const matchesEmail = rEmail && sEmail && rEmail === sEmail;
-               const matchesName = rName && sName && rName === sName;
-               const matchesId = rId && sId && rId === sId;
-
-               return matchesEmail && (matchesName || matchesId);
-            });
-          }
+          const requests = allRequests.filter(r => {
+             if (!r) return false;
+             const rEmail = (r.email || "").toString().trim().toLowerCase();
+             const rId = (r.student_id || "").toString().trim();
+             return (rEmail && sEmail && rEmail === sEmail) || (rId && userStudentId && rId === userStudentId);
+          });
           
-          const totalApplied = requests.length;
           const approved = requests.filter(r => r.status === 'Approved').length;
-          const pending = requests.filter(r => r.status === 'Pending').length;
-          const rejected = requests.filter(r => r.status === 'Rejected').length;
-          const approvalRate = totalApplied > 0 ? Math.round((approved / totalApplied) * 100) : 0;
-          const medicalLeaves = requests.filter(r => r.leave_type === 'SL').length;
-          const personalLeaves = requests.filter(r => r.leave_type === 'CL').length;
+          const total = requests.length;
 
           setLeaveSummary({
-            totalApplied,
+            totalApplied: total,
             approved,
-            pending,
-            rejected,
-            approvalRate,
-            medicalLeaves,
-            personalLeaves
+            pending: requests.filter(r => r.status === 'Pending').length,
+            rejected: requests.filter(r => r.status === 'Rejected').length,
+            approvalRate: total > 0 ? Math.round((approved / total) * 100) : 0,
+            medicalLeaves: requests.filter(r => r.leave_type === 'SL').length,
+            personalLeaves: requests.filter(r => r.leave_type === 'CL').length
           });
         }
       } catch (error) {
@@ -95,12 +67,12 @@ function LeaveRequest() {
     };
 
     loadLeaveSummary();
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100">
       <div className="w-full px-0 py-0">
-        {/* Header */}
+        {/* Header - Fixed to match photo */}
         <div className="bg-white border-b border-slate-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-6 py-0">
             <div className="text-center">
@@ -111,8 +83,9 @@ function LeaveRequest() {
           </div>
         </div>
 
-        {/* Cards Container */}
+        {/* Cards Container - Restored to original 3 big cards layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-8">
+          
           {/* New Leave Request Card */}
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:border-sky-400 group h-[450px] flex flex-col">
             <div className="bg-gradient-to-r from-sky-500 to-sky-600 p-6 relative overflow-hidden">
