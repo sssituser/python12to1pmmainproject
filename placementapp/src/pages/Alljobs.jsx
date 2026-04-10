@@ -97,7 +97,7 @@ useEffect(() => {
               ? "Selected"
               : app.status === "rejected"
               ? "Rejected"
-              : "Under Process"
+              : "Applied" // Restore "Applied" status
             : j.status,
         };
       });
@@ -168,29 +168,6 @@ useEffect(() => {
                 className="group bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 flex flex-col justify-between overflow-hidden relative"
               >
                 {/* Status Badge */}
-                <div className="absolute top-6 right-6">
-                  {job.status === "Selected" ? (
-                    <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-emerald-100">
-                      <FaCheckCircle size={12} /> SELECTED
-                    </span>
-                  ) : job.status === "Rejected" ? (
-                    <span className="flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-rose-100">
-                      <FaInfoCircle size={12} /> REJECTED
-                    </span>
-                  ) : job.status === "Under Process" || job.status === "Applied" ? (
-                    <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-blue-100">
-                      <FaInfoCircle size={12} /> APPLIED
-                    </span>
-                  ) : job.status === "Closed" ? (
-                    <span className="flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[11px] font-bold px-3 py-1.5 rounded-full border border-slate-200">
-                      <FaLock size={12} /> CLOSED
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1.5 rounded-full border border-blue-100">
-                      OPEN
-                    </span>
-                  )}
-                </div>
 
                 <div className="space-y-5">
                   <div className="flex items-start gap-4">
@@ -202,6 +179,30 @@ useEffect(() => {
                         {job.job_title}
                       </h3>
                       <p className="text-slate-500 text-sm font-semibold">{job.company}</p>
+                      
+                      <div className="mt-2.5">
+                        {job.status === "Selected" ? (
+                          <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-100">
+                            <FaCheckCircle size={10} /> SELECTED
+                          </span>
+                        ) : job.status === "Rejected" ? (
+                          <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-rose-100">
+                            <FaInfoCircle size={10} /> REJECTED
+                          </span>
+                        ) : job.status === "Closed" ? (
+                          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-200">
+                            <FaLock size={10} /> CLOSED
+                          </span>
+                        ) : job.status === "Applied" ? (
+                          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100">
+                            <FaInfoCircle size={10} /> APPLIED
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100">
+                            OPEN
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -260,7 +261,7 @@ useEffect(() => {
                     onClick={() => job.status !== 'Closed' && job.status !== 'Applied' && applyJob(job.id, job.external_application_link)}
                     disabled={job.status === 'Closed' || job.status === 'Applied'}
                     className={`flex-1 py-3 rounded-2xl font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-sm
-                      ${job.status === 'Closed' || job.status === 'Applied' 
+                      ${job.status === 'Closed' || job.status === 'Applied'
                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
                         : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30'}`}
                   >

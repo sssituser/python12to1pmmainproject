@@ -83,14 +83,7 @@ function DetailedResults() {
   }, [index, location.state]);
 
   const handleBack = () => {
-    const titleFromState = location.state?.examTitle || "";
-    if (titleFromState.includes('Weekly')) {
-      navigate("/dashboard/weekly-exams");
-    } else if (titleFromState.includes('Monthly')) {
-      navigate("/dashboard/monthly-exams");
-    } else {
-      navigate("/dashboard/playground-results");
-    }
+    navigate("/dashboard/playground-results");
   };
 
   // --- Pure Data Sanitation Sweep (No State Mutation) ---
@@ -341,21 +334,6 @@ function DetailedResults() {
                 <p className="text-gray-400 text-sm font-medium">Student Name</p>
                 <p className="text-lg font-bold text-gray-900 leading-tight">
                   {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
-                </p>
-              </div> 
-              <div className="space-y-1">
-                <p className="text-gray-400 text-sm font-medium">Student ID</p>
-                <p className="text-lg font-bold text-gray-900 leading-tight">
-                  {(() => {
-                    const uname = (result.user?.username || result.username || "").toLowerCase();
-                    const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || "{}");
-                    const u = JSON.parse(localStorage.getItem("user") || "{}");
-                    const pool = [p.studentId, p.student_id, u.studentId, u.student_id, result.random_id, result.studentId, result.randomId];
-                    for (const id of pool) {
-                      if (id && String(id).toLowerCase() !== uname) return id;
-                    }
-                    return "9740";
-                  })()}
                 </p>
               </div> 
               <div className="space-y-1">

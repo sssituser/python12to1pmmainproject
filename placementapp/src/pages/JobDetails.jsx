@@ -60,6 +60,9 @@ function JobDetails() {
         }
       } else {
         setApplied(true);
+        if (job.external_application_link) {
+          window.open(job.external_application_link, '_blank');
+        }
       }
     } catch (err) {
       console.error("Apply error:", err);

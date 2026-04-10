@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChartLine, faChartSimple, faTerminal } from "@fortawesome/free-solid-svg-icons";
 
 function Playground() {
 
@@ -112,7 +114,9 @@ function Playground() {
                 <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Daily Exam
                 </h3>
-                <span className="text-lg bg-blue-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
+                 <span className="text-lg bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl text-blue-600">
+                  <FontAwesomeIcon icon={faTerminal} />
+                </span>
               </div>
 
               <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
@@ -139,7 +143,9 @@ function Playground() {
                 <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Weekly Exam
                 </h3>
-                <span className="text-lg bg-emerald-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
+                 <span className="text-lg bg-emerald-50 w-10 h-10 flex items-center justify-center rounded-xl text-emerald-600">
+                  <FontAwesomeIcon icon={faChartSimple} />
+                </span>
               </div>
 
               <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
@@ -166,7 +172,9 @@ function Playground() {
                 <h3 className="text-base font-bold text-slate-800 tracking-tight">
                   Monthly Exam
                 </h3>
-                <span className="text-lg bg-indigo-50 w-8 h-8 flex items-center justify-center rounded-lg">📊</span>
+                 <span className="text-lg bg-indigo-50 w-10 h-10 flex items-center justify-center rounded-xl text-indigo-600">
+                  <FontAwesomeIcon icon={faChartSimple} />
+                </span>
               </div>
 
               <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">

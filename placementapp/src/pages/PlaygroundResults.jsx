@@ -33,6 +33,29 @@ function PlaygroundResults() {
     return t;
   };
 
+  // --- ADDED FOR REPORTS CONSISTENCY ---
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=weekly`);
+        const json = await response.json();
+        if (json.success) {
+          setExams(json.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching reports:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, []);
+  // -------------------------------------
+
   useEffect(() => {
     const ensureParsed = (obj) => {
       if (!obj) return obj;
@@ -337,7 +360,7 @@ function PlaygroundResults() {
 
   const hasResults = allResults.length > 0;
 
-  if (!hasResults) {
+  if (!hasResults && !loading && exams.length === 0) {
     return (
       <div className="p-8 text-center pt-20">
         <div className="text-6xl mb-4 animate-bounce">📝</div>
@@ -395,115 +418,79 @@ function PlaygroundResults() {
                   <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Reports</th>
                 </tr>
               </thead>
-
               <tbody className="divide-y divide-gray-50">
                 {(() => {
                   const counts = { weekly: 0, monthly: 0 };
-                  // Sort by date ascending to get correct order for numbering
-                  const sortedForNumbering = [...allResults].sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
+                  
+                  // Merge 'exams' (synced data) into 'allResults' for the table view
+                  const combined = [...allResults];
+                  exams.forEach(ex => {
+                    const isDuplicate = combined.some(r => r.id === ex.id || (r.examDate === ex.date && r.title === ex.title));
+                    if (!isDuplicate) combined.push({
+                      ...ex,
+                      examDate: ex.date,
+                      examTitle: ex.title,
+                      score: ex.score,
+                      marks_obtained: ex.marks_obtained,
+                      total_marks: ex.total_marks
+                    });
+                  });
+
+                  const sortedForNumbering = [...combined].sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
                   const nameMap = new Map();
                   
                   sortedForNumbering.forEach(res => {
                     const title = (res.examTitle || res.exam_title || res.title || "").toLowerCase();
                     if (title.includes("weekly")) {
                       counts.weekly++;
-                      nameMap.set(res.id || res.start_time || res.examDate, `Weekly Exam ${counts.weekly}`);
+                      nameMap.set(res.id || res.start_time || res.examDate || res.date, `Weekly Exam ${counts.weekly}`);
                     } else if (title.includes("monthly")) {
                       counts.monthly++;
-                      nameMap.set(res.id || res.start_time || res.examDate, `Monthly Exam ${counts.monthly}`);
+                      nameMap.set(res.id || res.start_time || res.examDate || res.date, `Monthly Exam ${counts.monthly}`);
                     }
                   });
 
-                  return allResults.map((result, index) => {
-                    const isDaily = (result.examType || "").toLowerCase() === "daily" || (result.exam_title || "").toLowerCase().includes("daily") || (result.title || "").toLowerCase().includes("daily");
+                  return combined.sort((a,b) => new Date(b.examDate) - new Date(a.examDate)).map((result, index) => {
                     const totalQuestions = result.totalQuestions || result.total_questions || result.questions?.length || 25;
-                    
-                    // 🛡️ Data Integrity Check: Priority to backend synced weighted marks
                     const scoreValue = result.marks_obtained ?? result.score ?? 0;
                     const totalMarks = result.total_marks ?? result.totalMarks ?? (totalQuestions * (result.marks_per_question || 2));
-
                     const percentage = totalMarks > 0 ? (scoreValue / totalMarks) * 100 : 0;
-
-                    
-                    const uniqueId = result.id || result.start_time || result.examDate;
+                    const uniqueId = result.id || result.start_time || result.examDate || result.date;
                     const displayTitle = nameMap.get(uniqueId) || formatExamTitle(result.examTitle || result.exam_title || result.title);
                     
                     return (
                     <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-6 py-5 text-sm font-bold text-gray-400">{index + 1}</td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-bold text-gray-800 block">
-                          {result.user?.firstName || result.user?.username || "Guest User"}
-                        </span>
-                        <span className="text-[10px] font-bold text-indigo-400 capitalize tracking-wider mt-1 block">
-                          ID: {(() => {
-                            const uname = (result.user?.username || result.username || "").toLowerCase();
-                            const profileKey = `sssit-profile-${uname}`;
-                            const p = JSON.parse(localStorage.getItem(profileKey) || "{}");
-                            const u = JSON.parse(localStorage.getItem("user") || "{}");
-                            const pool = [p.studentId, p.student_id, u.studentId, u.student_id, result.random_id, result.randomId];
-                            for (const id of pool) {
-                              if (id && String(id).toLowerCase() !== uname) return id;
-                            }
-                            return "N/A";
-                          })()}
-                        </span>
+                        <span className="text-sm font-bold text-gray-800 block">{result.user?.firstName || result.user?.username || "Guest User"}</span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-sm font-bold text-gray-800 block capitalize tracking-normal">
-                          {displayTitle}
-                        </span>
-                        <span className="text-[10px] font-bold text-indigo-500 capitalize tracking-wide mt-1 block">
-                          {result.examType || "General"}
-                        </span>
+                        <span className="text-sm font-bold text-gray-800 block capitalize tracking-normal">{displayTitle}</span>
                       </td>
                       <td className="px-6 py-5 text-center text-sm font-medium text-gray-500">
-                        {new Date(result.examDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {new Date(result.examDate || result.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </td>
                       <td className="px-6 py-5 text-center">
                         <div className="inline-flex flex-col items-center">
-                          <span className={`text-sm font-bold ${percentage >= 40 ? 'text-green-600' : 'text-red-500'}`}>
-                            {scoreValue}/{totalMarks}
-                          </span>
-                          <div className="w-16 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
-                            <div 
-                              className={`h-full ${percentage >= 40 ? 'bg-green-500' : 'bg-red-500'}`} 
-                              style={{ width: `${Math.min(percentage, 100)}%` }}
-                            ></div>
-                          </div>
+                          <span className={`text-sm font-bold ${percentage >= 40 ? 'text-green-600' : 'text-red-500'}`}>{scoreValue}/{totalMarks}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">
                         <div className="flex justify-center gap-3">
-                          <button
-                            onClick={() => handleViewDetails(result, index)}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                            title="View Detailed Analysis"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDownload(result)}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                            title="Download PDF"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
+                          <button onClick={() => handleViewDetails(result, index)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Detailed Analysis">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
                         </div>
                       </td>
                     </tr>
-                  );
+                   );
                   });
                 })()}
               </tbody>
             </table>
           </div>
         </div>
+      )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
+import { Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -278,7 +279,11 @@ function DailyExamReports() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl p-12 text-center shadow-inner border border-dashed border-gray-200 mt-8">
-            <div className="text-5xl mb-4">📊</div>
+            <div className="flex justify-center mb-6">
+               <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                  <Activity size={40} />
+               </div>
+            </div>
             <h3 className="text-xl font-bold text-gray-800">No practice reports yet.</h3>
             <p className="text-gray-500 mt-2 max-w-sm mx-auto">
               Ready to sharp your skills? Take a Daily Exam from the playground and your results will appear here!

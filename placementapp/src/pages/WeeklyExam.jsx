@@ -5,12 +5,15 @@ import {
   faArrowRight,
   faCircle,
   faCheck,
+  faCode,
+  faTerminal,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as faceapi from "@vladmandic/face-api";
 import Editor from "@monaco-editor/react";
+import CodeCompiler from "../components/CodeCompiler";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];
@@ -162,6 +165,8 @@ const WeeklyExam = () => {
   const [executionResult, setExecutionResult] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [showConsole, setShowConsole] = useState(false);
+  const [scratchpadCode, setScratchpadCode] = useState("");
+  const [showCompiler, setShowCompiler] = useState(false);
 
   // Fetch 50 randomized questions from backend pool
   useEffect(() => {
@@ -276,7 +281,8 @@ const WeeklyExam = () => {
         timeLeft,
         currentQuestion,
         examStarted,
-        examSubmitted
+        examSubmitted,
+        scratchpadCode
       };
       sessionStorage.setItem('weeklyExamState', JSON.stringify(stateToSave));
     }
@@ -1360,6 +1366,35 @@ useEffect(() => {
                               </div>
                             </label>
                           ))}
+                        </div>
+                      )}
+
+                      {currentQ.type !== 'code' && (
+                        <div className="mt-8 pt-8 border-t border-gray-50">
+                          <button 
+                            onClick={() => setShowCompiler(!showCompiler)}
+                            className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                              showCompiler 
+                              ? 'bg-slate-900 text-white shadow-xl' 
+                              : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-lg flex items-center justify-center ${showCompiler ? 'bg-indigo-500' : 'bg-indigo-600 text-white'}`}>
+                              <FontAwesomeIcon icon={faTerminal} className="text-[10px]" />
+                            </div>
+                            {showCompiler ? 'Hide compiler' : 'Open compiler'}
+                          </button>
+
+                          {showCompiler && (
+                            <div className="mt-6 animate-in slide-in-from-top-4 duration-300">
+                              <CodeCompiler 
+                                language={studentCourse.toLowerCase().includes('java') ? 'java' : studentCourse.toLowerCase().includes('python') ? 'python' : 'javascript'}
+                                initialCode={scratchpadCode}
+                                onCodeChange={(newCode) => setScratchpadCode(newCode)}
+                                title="Exam Scratchpad"
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </>

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, BarChart, TrendingUp, Trophy } from "lucide-react";
+import { Calendar, BarChart, TrendingUp, Trophy, Activity, PieChart } from "lucide-react";
 
 function ExamReports() {
   const navigate = useNavigate();
@@ -9,14 +9,14 @@ function ExamReports() {
     {
       title: "Daily Exam",
       path: "/dashboard/daily-exams",
-      icon: <Calendar className="w-6 h-6 text-blue-600" />,
-      color: "blue",
+      icon: <Activity className="w-6 h-6 text-indigo-600" />,
+      color: "indigo",
       isComingSoon: false,
     },
     {
       title: "Weekly Exam",
       path: "/dashboard/weekly-exams",
-      icon: <TrendingUp className="w-6 h-6 text-emerald-600" />,
+      icon: <BarChart className="w-6 h-6 text-emerald-600" />,
       color: "emerald",
       isComingSoon: false,
     },

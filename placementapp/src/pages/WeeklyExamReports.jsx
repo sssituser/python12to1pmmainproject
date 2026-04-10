@@ -1,4 +1,5 @@
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import { TrendingUp } from "lucide-react";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -297,7 +298,11 @@ function WeeklyExamReports() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl p-12 text-center shadow-inner border border-dashed border-gray-200 mt-8">
-            <div className="text-5xl mb-4">📊</div>
+            <div className="flex justify-center mb-6">
+               <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
+                  <TrendingUp size={40} />
+               </div>
+            </div>
             <h3 className="text-xl font-bold text-gray-800">No weekly reports found.</h3>
             <p className="text-gray-500 mt-2 max-w-sm mx-auto">
               Finish your weekly assessment to see your detailed breakdown here!

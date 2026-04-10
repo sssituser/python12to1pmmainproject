@@ -7,8 +7,29 @@
         "duration": 45
     },
     "Python Full Stack_Weekly": {
-        "maxQuestions": 25,
-        "questions": [],
+        "maxQuestions": 1,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "asdfsghjkll;kljkhjghfgf",
+                "options": [
+                    "hgjhkjlk;l';'l;'l;kljk",
+                    "hjhgfdsfghjkl;",
+                    "fdgfhjkl;",
+                    ";lkjhgfds"
+                ],
+                "answer": "hgjhkjlk;l';'l;'l;kljk",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775841300088
+            }
+        ],
         "passingRule": "correct_answers",
         "passingValue": 12,
         "duration": 75
@@ -49,10 +70,38 @@
         "duration": 1
     },
     "Python Full Stack_Daily": {
-        "maxQuestions": 25,
+        "maxQuestions": 1,
         "questions": [],
         "passingRule": "percentage",
-        "passingValue": 34,
+        "passingValue": 50,
         "duration": 80
+    },
+    "Python Full Stack_Monthly": {
+        "maxQuestions": 2,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "dfegrhdtjfkjlk;llkjtr",
+                "options": [
+                    "wretrytuyil;k",
+                    "fgdfhgjk",
+                    "hgfsdgfhgjhk",
+                    "dgsfhgjhklhjhj"
+                ],
+                "answer": "dgsfhgjhklhjhj",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 2,
+                "id": 1775841413778
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     }
 }
