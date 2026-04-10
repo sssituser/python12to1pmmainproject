@@ -423,6 +423,20 @@ const DailyExam = () => {
 
     localStorage.setItem("examResult", JSON.stringify(result));
     
+    // 🛡️ PERMANENT PERSISTENCE: Save to server database
+    const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+    if (token) {
+      try {
+        console.log("🚀 Saving daily exam report to server...");
+        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log("✅ Report saved successfully");
+      } catch (err) {
+        console.error("❌ Failed to persist to server", err);
+      }
+    }
+    
     // Maintain history in allExamResults
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
     allResults.unshift(result);

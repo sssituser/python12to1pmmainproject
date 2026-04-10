@@ -237,6 +237,19 @@ const MonthlyExam = () => {
     };
     
     localStorage.setItem("examResult", JSON.stringify(result));
+    
+    // 🛡️ SERVER-SIDE PERSISTENCE
+    const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+    if (token) {
+      try {
+        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Persist failed", err);
+      }
+    }
+
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
     allResults.unshift(result);
     localStorage.setItem("allExamResults", JSON.stringify(allResults));

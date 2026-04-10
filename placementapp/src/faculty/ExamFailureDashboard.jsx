@@ -16,14 +16,14 @@ function ExamFailureDashboard() {
   const [detailedData, setDetailedData] = useState(null);
   const [fetchingDetails, setFetchingDetails] = useState(false);
 
-  const COURSES = [
+  const [availableCourses, setAvailableCourses] = useState([
     "Python Full Stack",
     "Java Full Stack",
     ".net Full Stack",
     "Mern Full Stack",
     "Data Science and Agentic AI",
     "UI Full Stack"
-  ];
+  ]);
 
   useEffect(() => {
     fetchReports();
@@ -47,13 +47,20 @@ function ExamFailureDashboard() {
       }
 
       // Use the faculty-appropriate endpoint for exam results
-      const response = await axios.get(`http://${window.location.hostname}:8000/api/all-exam-results/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const [response, courseRes] = await Promise.all([
+         axios.get('/api/all-exam-results/', { headers: { Authorization: `Bearer ${token}` } }),
+         axios.get('/api/courses/', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
       
       console.log("✅ API response status:", response.status);
       console.log("📊 Raw API response:", response.data);
       const json = response.data;
+      
+      // Update dynamic course list
+      if (courseRes.data && Array.isArray(courseRes.data)) {
+        const liveCourseTitles = courseRes.data.map(c => c.title);
+        setAvailableCourses(prev => [...new Set([...prev, ...liveCourseTitles])]);
+      }
       
       let examList = [];
       if (json.success && json.data) {
@@ -65,35 +72,18 @@ function ExamFailureDashboard() {
         if (arrayKey) examList = json[arrayKey];
       }
       
-      console.log("📊 Final examList size:", examList.length);
-      
-      // If no data from API, create sample data for demonstration
+      // 🚀 MULTI-SOURCE SYNC: Try combined results if primary reports are empty
       if (examList.length === 0) {
-        console.log("📝 Creating sample exam failure data for demonstration");
-        examList = [
-          {
-            id: 1,
-            exam_title: "Python Programming Test",
-            student_name: "John Doe",
-            score: 25,
-            total_questions: 50,
-            percentage: 50,
-            status: "failed",
-            exam_date: new Date().toISOString(),
-            failure_reason: "Low Score"
-          },
-          {
-            id: 2,
-            exam_title: "React Components Quiz",
-            student_name: "Jane Smith",
-            score: 15,
-            total_questions: 30,
-            percentage: 50,
-            status: "cheated",
-            exam_date: new Date(Date.now() - 86400000).toISOString(),
-            failure_reason: "Cheating Detected"
-          }
-        ];
+        console.log("⚠️ Primary endpoint empty, trying combined results source...");
+        try {
+          const res2 = await axios.get('/api/user-combined-results/', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const json2 = res2.data;
+          examList = json2.data || json2.results || (Array.isArray(json2) ? json2 : []);
+        } catch (e2) {
+          console.log("Combined results source empty or unauthorized");
+        }
       }
       
       setReports(examList);
@@ -102,7 +92,6 @@ function ExamFailureDashboard() {
         setSelectedReport(examList[0]);
       } else {
         setSelectedReport(null);
-        // No exam reports available
       }
       
     } catch (err) {
@@ -270,28 +259,52 @@ function ExamFailureDashboard() {
     
     return reports.map((item) => {
       // Handle missing or invalid data gracefully
-      const score = Number(item.score) || 0;
-      const totalMarks = Number(item.totalMarks) || Number(item.total_marks) || 1;
+      // 🛡️ INTELLIGENT DATA EXTRACTION (Priority: Nested user object > Flat fields)
+      const username = item.user?.username || item.user?.student_name || item.studentName || item.student_name || item.fullName || item.full_name || item.username || "Unknown Student";
+      const eTitle = item.examTitle || item.exam_title || item.title || item.exam_name || "Assessment session";
+      
+      const score = Number(item.score || item.marks_obtained || 0);
+      const totalMarks = Number(item.totalMarks || item.total_marks || (item.total_questions * (item.marks_per_question || 2)) || item.total_questions || 40);
       const percentage = item.percentage !== undefined 
         ? Number(item.percentage) 
         : totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
       
+      let statusStr = (item.status || "").toLowerCase();
+      if (item.passed === false) statusStr = "fail";
+      if (percentage < 40 && !statusStr) statusStr = "fail";
+      
+      // Standardize status strings
+      let normalizedStatus = statusStr;
+      if (statusStr.includes("fail")) normalizedStatus = "fail";
+      if (statusStr.includes("cheat") || statusStr.includes("suspicious") || statusStr.includes("proctor")) normalizedStatus = "cheated";
+      
       return {
         ...item,
-        id: item.id || Math.random().toString(36).substr(2, 9),
+        id: item.id || item.random_id || Math.random().toString(36).substr(2, 9),
         percentage,
-        normalizedStatus: (item.status || "").toLowerCase(),
-        examDate: item.examDate || item.created_at || new Date().toISOString(),
-        user: item.user || { 
-          username: item.studentName || item.username || "Unknown",
-          course: item.course || "" 
+        normalizedStatus,
+        examDate: item.examDate || item.exam_date || item.date || item.created_at || new Date().toISOString(),
+        user: { 
+          username: username,
+          email: item.user?.email || item.email || "N/A",
+          course: item.user?.course || item.course || "General" 
         },
-        examTitle: item.examTitle || item.exam_name || item.title || "Unknown Exam",
+        examTitle: eTitle,
         score,
-        totalMarks,
+        totalMarks: totalMarks,
       };
     });
   }, [reports]);
+
+  // Extract unique courses from reports dynamically
+  useEffect(() => {
+    if (processedReports.length > 0) {
+      const uniqueFromReports = processedReports
+        .map(r => r.user?.course)
+        .filter(c => !!c);
+      setAvailableCourses(prev => [...new Set([...prev, ...uniqueFromReports])]);
+    }
+  }, [processedReports]);
 
   const periodReports = useMemo(() => {
     if (processedReports.length === 0) {
@@ -374,10 +387,7 @@ function ExamFailureDashboard() {
     let filtered = [];
     
     if (activeFilter === "cheated") {
-      filtered = periodReports.filter((item) => 
-        item.normalizedStatus.includes("cheat") || 
-        item.normalizedStatus.includes("suspicious")
-      );
+      filtered = periodReports.filter((item) => item.normalizedStatus === "cheated");
       console.log("🔍 Filtered for cheated:", filtered.length, "items");
     } else if (activeFilter === "low-score") {
       filtered = periodReports.filter((item) => {
@@ -578,7 +588,7 @@ function ExamFailureDashboard() {
                 onChange={(e) => setActiveCourse(e.target.value)}
               >
                 <option value="all">All Course Tracks</option>
-                {COURSES.map(course => (
+                {availableCourses.sort().map(course => (
                   <option key={course} value={course}>{course}</option>
                 ))}
               </select>
