@@ -13,18 +13,8 @@ useEffect(() => {
     return;
   }
 
-<<<<<<< HEAD
   const fetchJobs = () => {
     fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-=======
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -53,13 +43,11 @@ useEffect(() => {
       });
   };
 
-  // 👉 First load
+  // First call
   fetchJobs();
 
-  // 👉 Auto refresh every 5 seconds
-  const interval = setInterval(() => {
-    fetchJobs();
-  }, 5000);
+  // Auto refresh
+  const interval = setInterval(fetchJobs, 5000);
 
   return () => clearInterval(interval);
 
@@ -141,45 +129,42 @@ useEffect(() => {
                     </td>
                   </tr>
                 ) : (
-                  filteredJobs.map((j, index) => (
-                    <tr key={j.id} className="group hover:bg-slate-50/80 transition-colors duration-200">
-                      <td className="px-8 py-6 text-center font-bold text-slate-400 font-mono text-sm leading-none">
-                        {(index + 1).toString().padStart(2, '0')}
-                      </td>
-                      <td className="px-6 py-6">
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-slate-900 font-extrabold text-base group-hover:text-blue-600 transition-colors leading-tight">
-                            {j.job_details?.job_title || "N/A"}
-                          </span>
-                          <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px] uppercase tracking-wider">
-                            <FaBuilding className="text-slate-300" /> {j.job_details?.company || "N/A"}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">
-                          <FaCalendarAlt size={12} className="text-slate-400" />
-                          {j.applied_date ? new Date(j.applied_date).toLocaleDateString('en-GB') : "N/A"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-300 shadow-sm
-                          ${j.status === 'accepted'
-                            ? 'bg-success text-white'
-                            : j.status === 'rejected'
-                            ? 'bg-danger text-white'
-                            : 'bg-warning text-dark'}
-                        `}>
-                          {j.status === 'accepted' ? <FaCheckCircle /> : <FaInfoCircle />}
-                          {j.status === 'accepted'
-                                        ? '🎉 Selected'
-                                        : j.status === 'rejected'
-                                        ? '❌ Rejected'
-                                        : '⏳ Under Process'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  filteredJobs.map((j, index) => {
+  console.log(j); // ✅ HERE
+
+  return (
+    <tr key={j.id} className="group hover:bg-slate-50/80 transition-colors duration-200">
+      <td className="px-8 py-6 text-center font-bold text-slate-400 font-mono text-sm leading-none">
+        {(index + 1).toString().padStart(2, '0')}
+      </td>
+
+      <td className="px-6 py-6">
+        {j.job_details?.job_title || "N/A"}
+      </td>
+
+      <td className="px-6 py-6 text-center">
+        {j.applied_date ? new Date(j.applied_date).toLocaleString('en-IN') 
+    : "N/A"}
+      </td>
+
+      <td className="px-6 py-6 text-center">
+  <span className={`px-3 py-1 text-xs font-bold rounded-full
+    ${j.status === "accepted"
+      ? "bg-green-100 text-green-700"
+      : j.status === "rejected"
+      ? "bg-red-100 text-red-700"
+      : "bg-yellow-100 text-yellow-700"}
+  `}>
+    {j.status === "accepted"
+      ? "Selected"
+      : j.status === "rejected"
+      ? "Rejected"
+      : "Reviewing"}
+  </span>
+</td>
+    </tr>
+  );
+})
                 )}
               </tbody>
             </table>

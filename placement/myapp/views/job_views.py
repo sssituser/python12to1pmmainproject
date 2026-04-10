@@ -85,6 +85,8 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
             application.status = "accepted"
         elif action == "reject":
             application.status = "rejected"
+        elif action == "pending":   
+             application.status = "pending"
         else:
             return Response({"error": "Invalid action"}, status=400)
 

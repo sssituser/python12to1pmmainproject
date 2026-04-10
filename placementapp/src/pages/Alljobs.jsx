@@ -30,7 +30,7 @@ function AllJobs() {
     }
 
     try {
-      const res = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
+      const res = await fetch(`http://127.0.0.1:8000/api/applied-jobs/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,45 +57,30 @@ function AllJobs() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("access");
-    async function fetchData() {
-      setIsLoading(true);
-      try {
-        const jobsRes = await fetch(`http://${window.location.hostname}:8000/api/jobs/`);
-        const jobs = await jobsRes.json();
-        let appliedJobs = [];
+  const token = localStorage.getItem("access");
 
-        if (token) {
-<<<<<<< HEAD
-          const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+  async function fetchData() {
+    setIsLoading(true);
+    try {
+      const jobsRes = await fetch("http://127.0.0.1:8000/api/jobs/");
+      const jobs = await jobsRes.json();
 
-          if (appliedRes.ok) {
-            const data = await appliedRes.json();
-            appliedJobs = Array.isArray(data) ? data : data.results || [];
-=======
-          try {
-            const appliedRes = await fetch(`http://${window.location.hostname}:8000/api/applied-jobs/`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (appliedRes.ok) {
-              const appliedJobs = await appliedRes.json();
-              if (Array.isArray(appliedJobs)) {
-                appliedIds = appliedJobs.map((a) =>
-                  typeof a.job === "object" ? a.job.id : a.job
-                );
-              }
-            }
-          } catch (err) {
-            console.log("Applied jobs error:", err);
->>>>>>> a9416182ccc27470fcf51c5d4b37c7426a2f8f1d
-          }
+      let appliedJobs = [];
+
+      if (token) {
+        const appliedRes = await fetch("http://127.0.0.1:8000/api/applied-jobs/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (appliedRes.ok) {
+          const data = await appliedRes.json();
+          appliedJobs = Array.isArray(data) ? data : data.results || [];
         }
+      }
 
       const updated = jobs.map((j) => {
-        const app = appliedJobs.find((a) =>
-          (typeof a.job === "object" ? a.job.id : a.job) === j.id
+        const app = appliedJobs.find(
+          (a) => (typeof a.job === "object" ? a.job.id : a.job) === j.id
         );
 
         return {
@@ -109,15 +94,18 @@ function AllJobs() {
             : j.status,
         };
       });
-        setJobsData(updated);
-      } catch (err) {
-        console.log("Jobs fetch error:", err);
-      } finally {
-        setIsLoading(false);
-      }
+
+      setJobsData(updated);
+
+    } catch (err) {
+      console.log("Jobs fetch error:", err);
+    } finally {
+      setIsLoading(false);
     }
-    fetchData();
-  }, []);
+  }
+
+  fetchData();
+}, []);
 
   const filteredJobs = jobsData.filter((job) =>
     job.company?.toLowerCase().includes(search.toLowerCase()) ||
