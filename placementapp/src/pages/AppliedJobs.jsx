@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaSearch, FaFileAlt, FaCheckCircle, FaBuilding, FaCalendarAlt, FaInfoCircle } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaCheckCircle, FaBuilding, FaCalendarAlt, FaClock } from "react-icons/fa";
 
 function AppliedJobs() {
   const [jobs, setJobs] = useState([]);
