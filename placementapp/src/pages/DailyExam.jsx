@@ -98,13 +98,42 @@ const DailyExam = () => {
     if (webcamStatus === "active" || webcamStatus === "loading") return;
     try {
       setWebcamStatus("loading");
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 640 }, height: { ideal: 480 } } 
+      });
+      
       setWebcamActive(true);
       setWebcamStatus("active");
       globalStreamsToClean.push(stream);
-    } catch (e) { setWebcamStatus("error"); }
+
+      // Detect if user turns off camera via OS/hardware
+      stream.getVideoTracks().forEach(track => {
+        track.onended = () => {
+          if (!examSubmittedRef.current) {
+            setWebcamActive(false);
+            setWebcamStatus("error");
+            triggerWarning("Webcam disconnected or disabled.");
+          }
+        };
+      });
+
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch (e) { 
+      console.error("Webcam Error:", e);
+      setWebcamStatus("error"); 
+      setWebcamActive(false);
+    }
   };
+
+  // Sync webcam stream to video element whenever it mounts/remounts
+  useEffect(() => {
+    if (videoRef.current && globalStreamsToClean.length > 0) {
+      const liveStream = globalStreamsToClean[globalStreamsToClean.length - 1];
+      if (videoRef.current.srcObject !== liveStream) {
+        videoRef.current.srcObject = liveStream;
+      }
+    }
+  }, [examStarted, webcamActive, webcamStatus]);
 
   const stopWebcam = () => {
     globalStreamsToClean.forEach(s => s.getTracks().forEach(t => t.stop()));
@@ -237,8 +266,16 @@ const DailyExam = () => {
           if (r > rMax) rMax = r; if (r < rMin) rMin = r;
         }
         brightness = brightness / 256;
-        const isDark = brightness < 45;
-        const isFlat = (rMax - rMin < 45);
+        
+        // Critical: If the video is black (not just dark, but potentially not rendering at all)
+        const isDark = brightness < 20; 
+        const isFlat = (rMax - rMin < 20);
+
+        // Track track state
+        const isTrackActive = globalStreamsToClean[0]?.getVideoTracks().every(t => t.enabled && t.readyState === 'live');
+        if (!isTrackActive && webcamActive) {
+           triggerWarning("Webcam feed lost or inactive");
+        }
 
         const checkViolations = (faces) => {
           const noFace = !faces || faces.length === 0;
@@ -305,7 +342,7 @@ const DailyExam = () => {
 
     startSecurityMonitoring();
     return () => cleanup();
-  }, [examStarted, examSubmitted]);
+  }, [examStarted, examSubmitted, webcamActive]);
 
   // State Persistence
   useEffect(() => {
@@ -317,7 +354,33 @@ const DailyExam = () => {
       };
       localStorage.setItem('dailyExamState', JSON.stringify(state));
     }
-  }, [examStarted, questions, answers, timeLeft, currentQuestion, warningCount, compilerCode]);
+  }, [examStarted, questions, answers, timeLeft, currentQuestion, warningCount, compilerCode, subjectKey, examDuration, marksPerQuestion, passingRule, passingValue]);
+
+  // 🔐 SECURITY: Block Back, Forward, and Refresh
+  useEffect(() => {
+    if (examStarted && !examSubmitted) {
+      // 1. Block BACK/FORWARD navigation
+      const blockNavigation = () => {
+        window.history.pushState(null, "", window.location.href);
+      };
+      
+      window.history.pushState(null, "", window.location.href);
+      window.addEventListener("popstate", blockNavigation);
+
+      // 2. Block REFRESH / CLOSE
+      const blockRefresh = (e) => {
+        e.preventDefault();
+        e.returnValue = "Warning: Your exam progress will be lost if you refresh or close this tab.";
+        return e.returnValue;
+      };
+      window.addEventListener("beforeunload", blockRefresh);
+
+      return () => {
+        window.removeEventListener("popstate", blockNavigation);
+        window.removeEventListener("beforeunload", blockRefresh);
+      };
+    }
+  }, [examStarted, examSubmitted]);
 
   const handleSubmitExam = async (reason = "Manual") => {
     if (examSubmittedRef.current) return;
@@ -343,6 +406,11 @@ const DailyExam = () => {
 
     const result = {
       examTitle: `${subjectName} Exam`,
+      examType: 'daily',
+      user: {
+        username: storedUser.username || "",
+        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || storedUser.username || "Student"
+      },
       score,
       totalQuestions: questions.length,
       correctAnswers: Math.round(score / marksPerQuestion),
@@ -354,6 +422,17 @@ const DailyExam = () => {
     };
 
     localStorage.setItem("examResult", JSON.stringify(result));
+    
+    // Maintain history in allExamResults
+    const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+    allResults.unshift(result);
+    localStorage.setItem("allExamResults", JSON.stringify(allResults));
+
+    // Trigger automatic update event for other components
+    window.dispatchEvent(new CustomEvent('examDataUpdated', { 
+      detail: { examType: 'daily', result: result } 
+    }));
+
     navigate("/dashboard/playground-results", { replace: true });
   };
 
@@ -401,9 +480,6 @@ const DailyExam = () => {
                   playsInline 
                   muted 
                   className="w-full h-full object-cover" 
-                  onLoadedMetadata={(e) => {
-                    if (globalStreamsToClean[0]) e.target.srcObject = globalStreamsToClean[0];
-                  }}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-white text-[10px] font-black uppercase tracking-widest">Activating Secure Feed...</div>
@@ -413,11 +489,25 @@ const DailyExam = () => {
                  <span className="text-[8px] font-black text-white uppercase tracking-widest">Preview</span>
               </div>
            </div>
+           
            <h2 className="text-3xl font-black mb-2 uppercase">{subjectName}</h2>
            <p className="text-gray-500 font-bold mb-8 uppercase text-[10px] tracking-widest">
               {isLoadingQuestions ? "Fetching Configuration..." : `${questions.length} Questions • ${examDuration} Minutes`}
            </p>
-           <button onClick={handleStartExam} disabled={isLoadingQuestions || !webcamActive} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95">Start Assessment</button>
+
+           {webcamStatus === "error" && (
+             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold uppercase tracking-wider leading-relaxed">
+               Camera Access Error: Ensure your webcam is connected and allowed in browser settings.
+             </div>
+           )}
+
+           <button 
+            onClick={handleStartExam} 
+            disabled={isLoadingQuestions || !webcamActive || webcamStatus === "error"} 
+            className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100"
+           >
+             {webcamStatus === "error" ? "Webcam Required" : "Start Assessment"}
+           </button>
         </div>
       </div>
     );
@@ -435,9 +525,6 @@ const DailyExam = () => {
             muted 
             style={{ transform: 'scaleX(-1)' }} 
             className="w-40 h-28 object-cover bg-gray-900" 
-            onLoadedMetadata={(e) => {
-              if (globalStreamsToClean[0]) e.target.srcObject = globalStreamsToClean[0];
-            }}
           />
           <div className="absolute top-2 right-2">
             <div className={`w-2 h-2 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]`}></div>

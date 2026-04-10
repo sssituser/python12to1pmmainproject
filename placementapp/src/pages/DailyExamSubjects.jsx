@@ -107,7 +107,20 @@ const subjects = [
   { name: "Data Handling", key: "data_handling", icon: faDatabase, textStyle: "text-cyan-700", bgStyle: "bg-cyan-50", hoverBorder: "hover:border-cyan-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(14,116,144,0.2)]" },
 ];
 
-// Course-specific subject mappings (lowercase keys)
+// 🗺️ INTELLIGENT COURSE MAPPING: Define standard subjects for known course tracks
+const courseToSubjects = {
+  "pythonfullstack": ["Python", "Django", "React", "JavaScript", "HTML", "CSS", "Oracle", "UI", "Node JS"],
+  "javafullstack": ["Java", "Spring", "Hibernate", "React", "JavaScript", "HTML", "CSS", "Oracle"],
+  "dotnetfullstack": [".NET Core", ".NET MVC", "C#", "React", "JavaScript", "HTML", "CSS", "Oracle"],
+  "uidevelopment": ["UI", "HTML", "CSS", "JavaScript", "React", "Bootstrap"],
+  "datascience": ["Python for Data Science", "Numpy", "Pandas", "Data Visualization", "Machine Learning", "AI Concepts"],
+  "powerbi": ["Data Modeling", "Dashboards", "Reports", "Power Query", "DAX"],
+  "dca": ["Computer Fundamentals", "MS Office", "Database Basics", "Programming Basics"],
+  "pgdca": ["Computer Fundamentals", "MS Office", "Database Basics", "Programming Basics"],
+  "doa": ["MS Word", "Excel", "PowerPoint", "Data Handling"],
+  "devops": ["Git & Github", "CI/CD", "Docker", "Kubernetes", "Cloud Basics", "EC2 & S3"],
+  "softwaretesting": ["Selenium", "QA Processes", "API Testing", "Database Basics"],
+};
 
 function DailyExamSubjects() {
   const navigate = useNavigate();
@@ -243,13 +256,14 @@ function DailyExamSubjects() {
     const facultyModuleList = (activeObj && activeObj.modules && activeObj.modules.length > 0) ? activeObj.modules : [];
     const facultyExamSubjects = (automatedConfig && Array.isArray(automatedConfig.subjects)) ? automatedConfig.subjects : [];
 
-    // 2. Identify the definitive subject list (Priority: Automated Config > Course Modules)
-    let rawSubjectNames = [];
-    if (facultyExamSubjects.length > 0) {
-       rawSubjectNames = facultyExamSubjects;
-    } else {
-       rawSubjectNames = facultyModuleList.map(m => (m.title || m.name || m));
-    }
+    // 2. Identify the definitive subject list (Strategy: Merge Faculty Setup + Intelligent Fallback)
+    const fallback = courseToSubjects[activeCourseClean] || [];
+    const facultySetup = facultyExamSubjects.length > 0 
+      ? facultyExamSubjects 
+      : facultyModuleList.map(m => (m.title || m.name || m));
+    
+    // 🔥 DYNAMIC MERGE: Ensure all subjects from curriculum appear, even if faculty setup is incomplete
+    const rawSubjectNames = [...new Set([...facultySetup, ...fallback])];
 
     // 3. Map to UI Objects with Rich Metadata
     const finalSubjects = rawSubjectNames.filter(name => !!name).map(name => {

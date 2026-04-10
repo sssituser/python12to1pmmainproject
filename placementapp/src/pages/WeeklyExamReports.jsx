@@ -1,12 +1,11 @@
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import { TrendingUp } from "lucide-react";
 import "react-circular-progressbar/dist/styles.css";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, BarChart3, Clock, TrendingUp, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function WeeklyExamReports() {
-
   const [exams, setExams] = useState([]);
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(false);
@@ -19,251 +18,197 @@ function WeeklyExamReports() {
         const parsedUser = JSON.parse(userStr);
         return parsedUser?.username?.toLowerCase() || null;
       }
-    } catch (e) {
-      console.error("User parse error:", e);
-    }
+    } catch (e) {}
     return null;
   };
 
   const cacheKey = `weekly-exam-reports-${getCurrentUsername() || "guest"}`;
 
-  // FETCH DATA FROM BACKEND - Weekly exams only
   const fetchReports = async (showLoading = false) => {
     try {
       if (showLoading) setLoading(true);
       const token = localStorage.getItem("access");
       const currentUsername = getCurrentUsername();
       
-      const config = {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      };
-
-      // Use unified endpoint with weekly filter
+      const config = { headers: token ? { Authorization: `Bearer ${token}` } : {} };
       const url = `/api/all-exam-results/?exam_type=weekly${currentUsername ? `&username=${currentUsername}` : ''}`;
-      const res = await axios.get(url, config);
-
+      
       let backendList = [];
-      if (res.data && Array.isArray(res.data.data)) {
-        backendList = res.data.data;
-      } else if (Array.isArray(res.data)) {
-        backendList = res.data;
-      }
-      
-      let localList = [];
       try {
-         localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-      } catch(e) {}
+        const res = await axios.get(url, config);
+        backendList = res.data?.data || res.data || [];
+        if (!Array.isArray(backendList) && backendList.results) backendList = backendList.results;
+      } catch (e) { console.error("Weekly backend fetch failed", e); }
       
-      let examList = [...localList, ...backendList];
+      const localList = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      const examList = [...localList.filter(e => (e.examType || e.exam_type || '').toLowerCase() === 'weekly'), ...backendList];
 
-      // 🛡️ DEDUPLICATE: Merge local unsynced exams with backend exams based on exact ID
       const seenKeys = new Map();
-      
       examList.forEach(exam => {
          const type = (exam.examType || exam.exam_type || "").toLowerCase();
          const title = (exam.examTitle || exam.title || exam.exam_title || "").toLowerCase();
+         if (type !== 'weekly' && !title.includes('weekly')) return;
+         if (title.includes('monthly')) return;
          
-         const isWeekly = type === 'weekly' || title.includes('weekly');
-         const isExcluded = title.includes('monthly');
+         const timestamp = exam.examDate || exam.date || exam.start_time || '0';
+         const cleanTimestamp = new Date(timestamp).getTime();
+         const minuteBucket = Math.floor(cleanTimestamp / 60000);
+         const displayTitle = (exam.examTitle || exam.exam_title || "Weekly Exam").toLowerCase();
          
-         // User isolation filter (allow if exam has no user attached just in case, but prefer exact username match)
-         const examUsername = exam.user?.username || exam.username || "";
-         const currentUsername = getCurrentUsername() || "";
-         const isOwnExam = !examUsername || examUsername.toLowerCase() === "unknown" || !currentUsername || examUsername.toLowerCase() === currentUsername;
+         const fingerprint = `${minuteBucket}_${displayTitle}`;
          
-         if (!isWeekly || isExcluded || !isOwnExam) return;
-
-         // 🛡️ TRULY UNIQUE ATTEMPT DEDUPLICATION: Ensure every attempt shows up.
-         // Use the database ID (if synced) OR a composite key of random_id + timestamp.
-         const uniqueKey = exam.id 
-           ? `db_${exam.id}` 
-           : `local_${(exam.random_id || exam.randomId || 'guest')}_${(exam.examDate || '0')}_${(exam.start_time || '0')}`;
-         
-         if (!seenKeys.has(uniqueKey)) {
-           seenKeys.set(uniqueKey, exam);
+         if (seenKeys.has(fingerprint)) {
+            const existing = seenKeys.get(fingerprint);
+            const incomingTotal = exam.totalMarks || exam.total_marks || 0;
+            const existingTotal = existing.totalMarks || existing.total_marks || 0;
+            if ((exam.id && !existing.id) || (incomingTotal > existingTotal)) {
+               seenKeys.set(fingerprint, exam);
+            }
+         } else {
+            seenKeys.set(fingerprint, exam);
          }
       });
 
-      const uniqueExams = Array.from(seenKeys.values());
-
-      // 🛡️ SORT (Most Recent First)
-      uniqueExams.sort((a, b) => {
-        const dateA = new Date(a.examDate || 0);
-        const dateB = new Date(b.examDate || 0);
-        if (dateB - dateA !== 0) return dateB - dateA;
-        return (b.id || 0) - (a.id || 0);
-      });
-
-      setExams(uniqueExams);
-      localStorage.setItem(cacheKey, JSON.stringify(uniqueExams));
-
+      const sorted = Array.from(seenKeys.values()).sort((a, b) => new Date(b.examDate || 0) - new Date(a.examDate || 0));
+      setExams(sorted);
+      localStorage.setItem(cacheKey, JSON.stringify(sorted));
     } catch (err) {
-      console.error("Failed to fetch weekly exam reports:", err);
-      // keep existing cache on screen
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Load cached weekly reports first
-    let hasCache = false;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setExams(parsed);
-          hasCache = true;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to read cached weekly reports:", e);
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+       try {
+         const parsed = JSON.parse(cached);
+         if (Array.isArray(parsed)) setExams(parsed);
+       } catch (e) {}
     }
-    fetchReports(!hasCache);
+    fetchReports(!cached);
+
+    const handleUpdate = () => fetchReports(false);
+    window.addEventListener('examDataUpdated', handleUpdate);
+    return () => window.removeEventListener('examDataUpdated', handleUpdate);
   }, []);
 
-  // ANIMATION AFTER DATA LOAD
   useEffect(() => {
-    if (!Array.isArray(exams) || exams.length === 0) return;
-
-    exams.forEach((exam, index) => {
-      const total = exam.totalMarks || 40;
-      const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-
-      let value = 0;
-      const interval = setInterval(() => {
-        value += 2;
-        if (value >= percentage) {
-          value = percentage;
-          clearInterval(interval);
-        }
-        setProgress((prev) => ({
-          ...prev,
-          [exam.id || index]: value,
-        }));
-      }, 20);
-    });
-
+    const timer = setTimeout(() => {
+      const finalProgress = {};
+      exams.forEach((exam, index) => {
+        const score = exam.marks_obtained ?? exam.score ?? 0;
+        const total = (exam.total_marks ?? exam.totalMarks ?? ((exam.totalQuestions || 20) * 2)) || 40;
+        const percentage = total > 0 ? (score / total) * 100 : 0;
+        finalProgress[exam.id || index || exam.examDate] = percentage;
+      });
+      setProgress(finalProgress);
+    }, 100);
+    return () => clearTimeout(timer);
   }, [exams]);
-  
-  // 🔄 BACKGROUND AUTO-SYNC for unsynced reports
-  useEffect(() => {
-    const syncRemaining = async () => {
-      try {
-        const local = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-        const unsynced = local.filter(exam => exam.synced === false);
-        
-        if (unsynced.length === 0) return;
-        
-        console.log(`Auto-syncing ${unsynced.length} pending weekly reports...`);
-        
-        for (const report of unsynced) {
-          try {
-            const res = await axios.post("/api/save-exam-report/", report);
-            if (res.data.success) {
-               report.synced = true;
-            }
-          } catch (e) {
-            console.error("Failed to background sync a report:", e);
-          }
-        }
-        
-        localStorage.setItem("allExamResults", JSON.stringify(local));
-      } catch (e) {}
-    };
-    
-    // Tiny delay to not compete with initial load
-    const timeout = setTimeout(syncRemaining, 1500);
-    return () => clearTimeout(timeout);
-  }, []);
 
-  //  COLOR LOGIC
   const getColor = (percentage) => {
-    if (percentage >= 80) return "#198754";
-    if (percentage >= 60) return "#ffc107";
-    return "#dc3545";
+    if (percentage >= 80) return "#10b981";
+    if (percentage >= 60) return "#f59e0b";
+    return "#ef4444";
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-6">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        
-        {/* BACK BUTTON */}
         <button
           onClick={() => navigate("/dashboard/exam-reports")}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-6 group"
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-emerald-600 transition-all mb-8 group bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100"
         >
-          <span className="group-hover:-translate-x-1 transition-transform">←</span> 
-          Back to Reports Overview
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
+          Back to Reports
         </button>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Weekly Exam Reports
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
+              Weekly <span className="text-emerald-600">Performance</span>
             </h1>
-            <p className="text-gray-500 mt-1">Track your weekly performance and assessments</p>
+            <p className="text-slate-500 font-medium">Track your progress across weekly assessments.</p>
           </div>
-          
-          <div className="bg-green-600 text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-green-100 flex items-center gap-2 self-start md:self-center">
-            <span className="opacity-80">Completed:</span>
-            <span>{exams.length}</span>
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+               <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Weekly</p>
+               <p className="text-xl font-black text-slate-900">{exams.length}</p>
+            </div>
           </div>
         </div>
 
         {loading && exams.length === 0 ? (
-           <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Loading reports...</p>
-           </div>
+          <div className="flex flex-col items-center justify-center py-32 gap-6">
+            <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin shadow-lg"></div>
+            <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em] animate-pulse">Loading reports...</p>
+          </div>
         ) : exams.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {exams.map((exam, index) => {
-              const total = exam.totalMarks || 40;
-              const percentage = total > 0 ? (exam.score / total) * 100 : 0;
-              const value = progress[exam.id || index] || 0;
+              const scoreValue = exam.marks_obtained ?? exam.score ?? 0;
+              const total = (exam.total_marks ?? exam.totalMarks ?? ((exam.totalQuestions || 20) * 2)) || 40;
+              const percentage = total > 0 ? (scoreValue / total) * 100 : 0;
+              const value = progress[exam.id || index || exam.examDate] || 0;
               const color = getColor(percentage);
 
               return (
                 <div 
-                  key={exam.id || index} 
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  key={exam.id || index || exam.examDate} 
+                  className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-100 p-8 flex flex-col items-center group hover:scale-[1.03] transition-all duration-500 relative overflow-hidden"
                 >
-                  <div className="w-full mb-4 text-center">
-                    <h3 className="text-lg font-bold text-gray-800 truncate px-2" title={`Weekly Exam ${exams.length - index}`}>
-                       {`Weekly Exam ${exams.length - index}`}
+                  <div className={`absolute top-0 left-0 w-full h-1.5 ${percentage >= 80 ? 'bg-emerald-500' : percentage >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}></div>
+                  
+                  <div className="w-full mb-8 text-center">
+                    <h3 className="text-xl font-black text-slate-900 truncate mb-1 uppercase tracking-tight">
+                       {`Exam #${exams.length - index}`}
                     </h3>
-                    <p className="text-xs text-green-600 font-bold tracking-wider uppercase mt-1">
-                       Weekly Exam
-                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                       <User className="w-3 h-3 text-slate-300" />
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                          {exam.user?.username || exam.username || "Student"} | {exam.random_id || exam.id || "LOCAL"}
+                       </span>
+                    </div>
                   </div>
 
-                  <div className="w-24 h-24 mb-6 transform hover:scale-110 transition-transform duration-500">
+                  <div className="w-28 h-28 mb-8 relative">
                     <CircularProgressbar
                       value={value}
                       text={`${Math.round(value)}%`}
                       styles={buildStyles({
                         pathColor: color,
                         textColor: color,
-                        trailColor: "#f1f5f9",
+                        trailColor: "#F1F5F9",
                         textSize: "24px",
-                        pathTransitionDuration: 0.5,
+                        pathTransitionDuration: 1.5,
+                        strokeLinecap: 'round'
                       })}
                     />
                   </div>
 
-                  <div className="w-full space-y-3 mb-6">
-                    <div className="flex justify-between items-center text-sm border-b border-gray-50 pb-2">
-                       <span className="text-gray-500">Marks</span>
-                       <span className="font-bold text-gray-800">{exam.score} / {total}</span>
+                  <div className="w-full grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100/50">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Marks</p>
+                       <p className="text-sm font-black text-slate-700">{scoreValue}<span className="text-slate-300 mx-1">/</span>{total}</p>
                     </div>
-                    <div className="flex justify-between items-center text-xs">
-                       <span className="text-gray-400">Recorded</span>
-                       <span className="text-gray-600 font-medium">
-                        {exam.examDate ? new Date(exam.examDate).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "N/A"}
-                       </span>
+                    <div className="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100/50">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Result</p>
+                       <p className={`text-[10px] font-black uppercase ${percentage >= 40 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {percentage >= 40 ? 'Pass ✓' : 'Fail ✗'}
+                       </p>
                     </div>
+                  </div>
+
+                  <div className="w-full flex items-center gap-3 text-slate-400 mb-8 border-t border-slate-50 pt-6 text-center justify-center">
+                     <Clock className="w-4 h-4" />
+                     <span className="text-xs font-bold whitespace-nowrap">
+                        {exam.examDate ? new Date(exam.examDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Local Result"}
+                     </span>
                   </div>
 
                   <button
@@ -274,44 +219,35 @@ function WeeklyExamReports() {
                                 state: { examNumber: exams.length - index, examType: 'Weekly' } 
                             });
                         } else {
-                            // Local unsynced exam fallback
-                            const localStr = localStorage.getItem("allExamResults");
-                            let targetIdx = 0;
-                            if (localStr) {
-                                const allLocal = JSON.parse(localStr);
-                                const foundIdx = allLocal.findIndex(e => (e.random_id && e.random_id === exam.random_id) || (e.randomId && e.randomId === exam.randomId));
-                                if (foundIdx !== -1) targetIdx = foundIdx;
-                            }
                             localStorage.setItem("selectedExamResult", JSON.stringify(exam));
-                            navigate(`/dashboard/playground/detailed-results/${targetIdx}`, { 
-                                state: { examTitle: `Weekly Exam ${exams.length - index}` } 
+                            navigate(`/dashboard/playground/detailed-results/${exam.examDate || index}`, { 
+                                state: { resultData: exam } 
                             });
                         }
                     }}
-                    className="w-full py-3 bg-gray-50 text-green-600 rounded-xl font-bold text-sm hover:bg-green-600 hover:text-white transition-all duration-300 shadow-sm flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 group/btn"
                   >
-                    View Report 
+                    <BarChart3 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                    View Analysis 
                   </button>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-inner border border-dashed border-gray-200 mt-8">
-            <div className="flex justify-center mb-6">
-               <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
-                  <TrendingUp size={40} />
-               </div>
+          <div className="bg-white rounded-[3rem] p-16 text-center shadow-xl shadow-slate-200/50 border border-slate-100 mt-8 flex flex-col items-center">
+            <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-8">
+               <TrendingUp size={48} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800">No weekly reports found.</h3>
-            <p className="text-gray-500 mt-2 max-w-sm mx-auto">
-              Finish your weekly assessment to see your detailed breakdown here!
+            <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">No Weekly Reports</h3>
+            <p className="text-slate-400 font-medium max-w-md mx-auto leading-relaxed mb-10">
+              Your weekly performance breakdown will be meticulously generated once you complete your assessment.
             </p>
             <button 
               onClick={() => navigate("/dashboard/playground")}
-              className="mt-6 px-6 py-2 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
+              className="px-10 py-4 bg-emerald-600 text-white rounded-full font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100"
             >
-              Playground
+              Start Exam
             </button>
           </div>
         )}

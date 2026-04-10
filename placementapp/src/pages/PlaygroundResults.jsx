@@ -1,499 +1,325 @@
-import React, { useState, useEffect } from "react";
+import {
+  faBolt,
+  faCalendarCheck,
+  faCheckCircle,
+  faClock,
+  faHistory,
+  faMedal,
+  faSearch,
+  faTimesCircle,
+  faTrophy,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from 'jspdf';
 
-function PlaygroundResults() {
-
-  const navigate = useNavigate();
-  const [currentResult, setCurrentResult] = useState(null);
-  const [allResults, setAllResults] = useState([]);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const getPassingScore = (title) => {
-    const t = (title || "").toLowerCase();
-    if (t.includes("ui")) return 45;
-    if (t.includes("python") || t.includes("java") || t.includes("oracle") || t.includes("django")) return 20;
-    if (t.includes("weekly") || t.includes("monthly")) return 35;
-    return 20;
-  };
-
-  const formatExamTitle = (title = "") => {
-    let t = title || "Exam";
-    // Standardize: Remove "Daily " prefix if it exists
-    t = t.replace(/^Daily\s+/i, "");
-    
-    // Auto-numbering for Weekly/Monthly if they aren't already numbered
-    if ((t.toLowerCase().includes("weekly") || t.toLowerCase().includes("monthly")) && !/\d/.test(t)) {
-       // We can use the date/id to give it a psuedo-index if we were mapping over it, 
-       // but for a formatter, we just ensure it's clean and "Exam" is present.
-       if (!t.toLowerCase().includes("exam")) t += " Exam";
-    }
-    return t;
-  };
-
-  // --- ADDED FOR REPORTS CONSISTENCY ---
-  const [exams, setExams] = useState([]);
+const PlaygroundResults = () => {
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const navigate = useNavigate();
+
+  const userStr = localStorage.getItem("user");
+  const user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
+  const targetUsername = user.username || "Unknown";
+
+  const fetchResults = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch Combined Backend Results
+      const combinedRes = await axios.get(
+        `http://${window.location.hostname}:8000/api/user-combined-results/?username=${targetUsername}`
+      );
+      const backendResults = Array.isArray(combinedRes.data) ? combinedRes.data : combinedRes.data.results || [];
+
+      // 2. Fetch Weekly Specific results (some might be stored separately)
+      const weeklyRes = await axios.get(
+        `http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=weekly&username=${targetUsername}`
+      );
+      const weeklyResults = Array.isArray(weeklyRes.data) ? weeklyRes.data : weeklyRes.data.results || [];
+
+      // 3. Get Local Results
+      const localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      const latestExam = JSON.parse(localStorage.getItem("examResult") || "null");
+      
+      const allLocal = [...localResults];
+      if (latestExam) {
+        const alreadyExists = allLocal.some(r => r.examDate === latestExam.examDate);
+        if (!alreadyExists) allLocal.unshift(latestExam);
+      }
+
+      // 4. Transform and Deduplicate
+      const transformBackend = (item) => ({
+        id: item.id,
+        examTitle: item.exam_title || "Programming Assessment",
+        examType: (item.exam_type || "daily").toLowerCase(),
+        score: item.score || item.marks_obtained || 0,
+        totalQuestions: item.total_questions || 0,
+        correctAnswers: item.correct_answers || 0,
+        totalMarks: item.total_marks || 100,
+        passed: item.passed ?? (item.status === 'Pass' || item.status === 'completed' || item.status === 'Completed'),
+        examDate: item.created_at || item.start_time || new Date().toISOString(),
+        status: item.status || "Completed",
+        isBackend: true
+      });
+
+      const transformLocal = (item) => ({
+        ...item,
+        examType: (item.examType || "daily").toLowerCase(),
+        isBackend: false
+      });
+
+      const merged = [
+        ...allLocal.map(transformLocal),
+        ...backendResults.map(transformBackend),
+        ...weeklyResults.map(transformBackend)
+      ];
+
+      // Deduplicate by Date (assuming ISO strings are unique per attempt)
+      const unique = merged.reduce((acc, current) => {
+        const key = current.examDate?.substring(0, 19); // YYYY-MM-DDTHH:MM:SS
+        if (key && !acc[key]) acc[key] = current;
+        else if (!key) {
+           const randKey = Math.random().toString(36);
+           acc[randKey] = current;
+        }
+        return acc;
+      }, {});
+
+      const sorted = Object.values(unique).sort(
+        (a, b) => new Date(b.examDate) - new Date(a.examDate)
+      );
+
+      setResults(sorted);
+    } catch (error) {
+      console.error("Error fetching results:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=weekly`);
-        const json = await response.json();
-        if (json.success) {
-          setExams(json.data || []);
-        }
-      } catch (err) {
-        console.error("Error fetching reports:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReports();
-  }, []);
-  // -------------------------------------
-
-  useEffect(() => {
-    const ensureParsed = (obj) => {
-      if (!obj) return obj;
-      if (typeof obj.questions === 'string') {
-        try { obj.questions = JSON.parse(obj.questions); } catch (e) {}
-      }
-      if (typeof obj.answers === 'string') {
-        try { obj.answers = JSON.parse(obj.answers); } catch (e) {}
-      }
-      return obj;
-    };
-
-    const fetchResults = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      let localResults = [];
-      try {
-        localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]").map(ensureParsed);
-      } catch (e) {}
-      
-      const userStr = localStorage.getItem("user");
-      const username = localStorage.getItem("username");
-      
-      let currentUser = null;
-      try {
-        currentUser = userStr ? JSON.parse(userStr) : null;
-      } catch (e) {}
-
-      const targetUsername = username || currentUser?.username;
-
-      if (!targetUsername) {
-        const uniqueResults = removeDuplicateResults(localResults);
-        setAllResults(uniqueResults);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/user-combined-results/?username=${targetUsername}`);
-        const json = await response.json();
-
-        if (json.success) {
-          let backendResults = (json.data || []).map(ensureParsed);
-          
-          const uniqueLocalResults = removeDuplicateResults(localResults);
-          
-          // 🛡️ SHOW ALL ATTEMPTS: Ensure every attempt is shown.
-          // Deduplication only filters by exact database ID to avoid double-counting.
-          const seen = new Set();
-          const finalResults = [];
-          
-          [...uniqueLocalResults, ...backendResults].forEach(res => {
-            // 🛡️ TRULY UNIQUE KEY: Ensure every attempt shows up.
-            // Combine DB ID (if synced) or a mix of random_id + date + timestamp for local ones.
-            const uniqueKey = res.id 
-                ? `db_${res.id}` 
-                : `local_${(res.random_id || res.user?.randomId || 'guest')}_${(res.examDate || '0')}_${(res.start_time || '0')}`;
-            
-            if (!seen.has(uniqueKey)) {
-              seen.add(uniqueKey);
-              finalResults.push(res);
-            }
-          });
-          
-          setAllResults(finalResults);
-        } else {
-          setError(json.error || "Failed to fetch results");
-          setAllResults([]);
-        }
-      } catch (err) {
-        console.error("Error fetching results:", err);
-        setError("Network error. Please check if the server is running.");
-        setAllResults([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchResults();
 
-    const examFailure = localStorage.getItem("examFailure");
-    if (examFailure) {
-      const failedResult = ensureParsed(JSON.parse(examFailure));
-      setAllResults(prev => {
-        const uniqueResults = removeDuplicateResults([failedResult, ...prev]);
-        return uniqueResults;
-      });
-      localStorage.removeItem("examFailure");
-    }
-
-    const handleExamDataUpdate = (event) => {
-      console.log("🔄 PlaygroundResults - Auto-updating data for:", event.detail.examType);
+    const handleUpdate = () => {
+      console.log("🔄 Results auto-update triggered");
       fetchResults();
     };
 
-    window.addEventListener('examDataUpdated', handleExamDataUpdate);
+    window.addEventListener('examDataUpdated', handleUpdate);
+    return () => window.removeEventListener('examDataUpdated', handleUpdate);
+  }, [targetUsername]);
 
-    return () => {
-      window.removeEventListener('examDataUpdated', handleExamDataUpdate);
-    };
-  }, []);
-
-  // Helper function to remove duplicate results based on unique identifiers
-  const removeDuplicateResults = (results) => {
-    const seen = new Set();
-    const unique = [];
+  const stats = useMemo(() => {
+    const total = results.length;
+    const passedCount = results.filter(r => r.passed).length;
+    const totalScore = results.reduce((acc, r) => acc + (r.score || 0), 0);
+    const avgScore = total > 0 ? (totalScore / total).toFixed(1) : 0;
     
-    for (const result of results) {
-      // 🛡️ TRULY UNIQUE PER-ATTEMPT KEY
-      const key = result.id 
-        ? `db_${result.id}` 
-        : `local_${(result.random_id || result.randomId || 'guest')}_${(result.examDate || '0')}_${(result.start_time || '0')}`;
-      
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(result);
-      }
-    }
-    
-    return unique;
-  };
+    return { total, passedCount, avgScore };
+  }, [results]);
 
-  // TAKE NEW EXAM
-  const handleTakeNewExam = () => {
-    localStorage.removeItem("examResult");
-    navigate("/dashboard/playground");
-  };
-
-  // BACK TO DASHBOARD
-  const handleDashboard = () => {
-    navigate("/dashboard/playground");
-  };
-
-  const handleViewDetails = (result, index) => {
-    localStorage.setItem("selectedExamResult", JSON.stringify(result));
-    const uniqueId = result.id || result.random_id || result.examDate || result.start_time || index;
-    navigate(`/dashboard/playground/detailed-results/${uniqueId}`, { 
-        state: { 
-          examTitle: result.examTitle || result.exam_title || result.title || "Exam",
-          resultData: result 
-        } 
+  const filteredResults = useMemo(() => {
+    return results.filter(r => {
+      const matchesSearch = (r.examTitle || "").toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === "all" || r.examType === filterType;
+      return matchesSearch && matchesType;
     });
-  };
+  }, [results, searchTerm, filterType]);
 
-  // DOWNLOAD RESULT
-  const handleDownload = (result) => {
-
-    if (!result) {
-      console.error("No result available");
-      return;
-    }
-
-    const totalQ = result.totalQuestions || result.total_questions || result.questions?.length || 20;
-
-    // 🛡️ Data Integrity Check: Priority to backend synced weighted marks
-    const finalMarks = result.marks_obtained ?? result.score ?? 0;
-    const finalTotal = result.total_marks ?? result.totalMarks ?? (totalQ * (result.marks_per_question || 2));
-
-    
-    const currentPassThreshold = getPassingScore(result.examTitle || result.exam_title || result.title || "");
-    const passed = finalMarks >= currentPassThreshold;
-    const criteriaText = result.passed !== undefined ? "Faculty Rule Applied" : `${currentPassThreshold} marks`;
-    const examDate = new Date(result.examDate || Date.now()).toLocaleString();
-
-    const username = (result.user?.username || result.username || localStorage.getItem("username") || "guest").toLowerCase();
-    const profileKey = `sssit-profile-${username}`;
-    const storedProfile = (() => {
-      try { 
-        const p = localStorage.getItem(profileKey);
-        if (p) return JSON.parse(p);
-        return JSON.parse(localStorage.getItem("user") || "{}"); 
-      } catch { return {}; }
-    })();
-
-    const studentName = (storedProfile.name || result.user?.firstName || username || "Student");
-
-    const doc = new jsPDF();
-    
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Exam Results Report', 105, 20, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Student Information:', 20, 40);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Name: ${studentName.toUpperCase()}`, 20, 50);
-
-    const email = storedProfile.email || result.user?.email || result.email || localStorage.getItem("email") || "N/A";
-    
-    // 🆔 Robust Student ID Retrieval
-    let studentId = "N/A";
-    const possibleIds = [storedProfile.studentId, storedProfile.student_id, storedProfile.randomId, result.studentId, result.student_id, result.random_id, result.user?.randomId];
-    for (const id of possibleIds) {
-      if (id && String(id).trim() !== "" && String(id).toLowerCase() !== username.toLowerCase()) {
-        studentId = String(id); break;
-      }
-    }
-    if (studentId === "N/A" || studentId.toLowerCase() === username.toLowerCase()) {
-       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-       if (userObj.studentId && String(userObj.studentId).toLowerCase() !== username.toLowerCase()) studentId = userObj.studentId;
-    }
-
-    doc.text(`Email: ${email}`, 20, 60);
-    doc.text(`ID: ${studentId}`, 20, 70);
-    
-    // 📊 Header 2: EXAM SUMMARY
-    doc.setFont('helvetica', 'bold');
-    doc.text('Performance Summary:', 20, 85);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Exam: ${formatExamTitle(result.examTitle || result.exam_title || result.title)}`, 20, 95);
-    doc.text(`Date: ${examDate}`, 20, 105);
-    doc.text(`Score: ${finalMarks} / ${finalTotal}`, 20, 115);
-    doc.text(`Status: ${passed ? 'PASS' : 'FAIL'} (Req: ${criteriaText})`, 20, 125);
-    
-    // 📝 Header 3: QUESTION PAPER
-    let y = 145;
-    const pageHeight = doc.internal.pageSize.height;
-    const checkPage = (heightNeeded) => {
-      if (y + heightNeeded > pageHeight - 20) { doc.addPage(); y = 20; return true; }
-      return false;
-    };
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Examination Question Paper:', 20, y);
-    y += 10;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-
-    const questions = result.questions || [];
-    const answers = result.answers || [];
-
-    questions.forEach((q, idx) => {
-      checkPage(30); // Base padding for a new question
-      doc.setFont('helvetica', 'bold');
-      const qText = `Q${idx + 1}: ${q.question || "No question text"}`;
-      const splitQ = doc.splitTextToSize(qText, 170);
-      doc.text(splitQ, 20, y);
-      y += (splitQ.length * 5) + 2;
-
-      doc.setFont('helvetica', 'normal');
-      const options = q.options || [];
-      options.forEach((opt, oIdx) => {
-        checkPage(5);
-        const optChar = String.fromCharCode(65 + oIdx);
-        doc.text(`   ${optChar}. ${opt}`, 20, y);
-        y += 5;
+  const formatDate = (dateStr) => {
+    try {
+      if (!dateStr) return "N/A";
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
       });
-
-      const userAnsIdx = answers[idx];
-      const userAnsText = (userAnsIdx !== null && options[userAnsIdx]) ? options[userAnsIdx] : "Not Answered";
-      checkPage(5);
-      doc.setFont('helvetica', 'italic');
-      doc.setTextColor(100, 100, 100);
-      doc.text(`   Your Answer: ${userAnsText}`, 20, y);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-      y += 8;
-    });
-
-    // 🔑 Header 4: ANSWER KEY
-    doc.addPage();
-    y = 20;
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Final Answer Key:', 105, y, { align: 'center' });
-    y += 15;
-    
-    doc.setFontSize(10);
-    const keyCols = 5;
-    const colWidth = 35;
-    
-    questions.forEach((q, idx) => {
-      const col = idx % keyCols;
-      const row = Math.floor(idx / keyCols);
-      const rowY = y + (row * 10);
-      
-      if (rowY > pageHeight - 20) {
-        doc.addPage();
-        y = 20;
-      }
-      
-      let correctIdx = q.correct;
-      if (correctIdx === undefined) correctIdx = q.correct_answer;
-      
-      const correctChar = (correctIdx !== undefined && correctIdx !== null) ? String.fromCharCode(65 + correctIdx) : "?";
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Q${idx + 1}:`, 20 + (col * colWidth), rowY);
-      doc.setFont('helvetica', 'normal');
-      doc.text(` [${correctChar}]`, 32 + (col * colWidth), rowY);
-    });
-
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Report safely generated on ${new Date().toLocaleString()}`, 105, pageHeight - 10, { align: 'center' });
-    
-    doc.save(`exam-results-${studentName.replace(/\s+/g, '_')}.pdf`);
+    } catch (e) { return dateStr || "N/A"; }
   };
-
-  const hasResults = allResults.length > 0;
-
-  if (!hasResults && !loading && exams.length === 0) {
-    return (
-      <div className="p-8 text-center pt-20">
-        <div className="text-6xl mb-4 animate-bounce">📝</div>
-        <h2 className="text-2xl font-bold mb-3 text-gray-800">No Exam Results Found</h2>
-        <p className="mb-6 text-gray-500 max-w-md mx-auto">
-          We couldn't find any synced or local exam results for this account.
-          Take your first assessment in the playground to begin your history!
-        </p>
-        <button
-          onClick={handleTakeNewExam}
-          className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all hover:-translate-y-1"
-        >
-          Take Your First Exam
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div className="bg-white min-h-screen w-full px-4 py-8 overflow-x-hidden">
-      <div className="max-w-[98%] mx-auto">
-        
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Exam History</h1>
-            <p className="text-gray-500 mt-1 font-medium">Review and manage all your assessment attempts</p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+              Performance <span className="text-blue-600">Analytics</span>
+            </h1>
+            <p className="text-slate-500 font-medium text-sm">
+              Detailed history of your programming assessments and exams.
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate("/dashboard/playground")}
+            className="inline-flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
+          >
+            <FontAwesomeIcon icon={faBolt} />
+            Back to Playground
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+            <FontAwesomeIcon icon={faHistory} className="text-xl" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Exams</p>
+            <h3 className="text-2xl font-black text-slate-900">{stats.total}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+            <FontAwesomeIcon icon={faTrophy} className="text-xl" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Exams Passed</p>
+            <h3 className="text-2xl font-black text-slate-900">{stats.passedCount}</h3>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-5">
+          <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+            <FontAwesomeIcon icon={faMedal} className="text-xl" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg Score</p>
+            <h3 className="text-2xl font-black text-slate-900">{stats.avgScore}</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="max-w-7xl mx-auto bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+        {/* Filters and Search */}
+        <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center bg-white">
+          <div className="relative w-full md:w-96">
+            <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+            <input 
+              type="text" 
+              placeholder="Search exam history..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900"
+            />
           </div>
           
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleDashboard}
-              className="px-6 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={handleTakeNewExam}
-              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
-            >
-              New Exam
-            </button>
+          <div className="flex bg-slate-50 p-1.5 rounded-2xl w-full md:w-auto">
+            {['all', 'daily', 'weekly', 'monthly'].map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  filterType === type 
+                  ? 'bg-white text-blue-600 shadow-md ring-1 ring-slate-100' 
+                  : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        {/* Results Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+             <div className="p-20 text-center">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Aggregating Results...</p>
+             </div>
+          ) : filteredResults.length > 0 ? (
+            <table className="w-full">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">S.NO.</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Student</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Assessment</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Date</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Score</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Reports</th>
+                <tr className="bg-slate-50/50">
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam Details</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempted On</th>
+                  <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {(() => {
-                  const counts = { weekly: 0, monthly: 0 };
-                  
-                  // Merge 'exams' (synced data) into 'allResults' for the table view
-                  const combined = [...allResults];
-                  exams.forEach(ex => {
-                    const isDuplicate = combined.some(r => r.id === ex.id || (r.examDate === ex.date && r.title === ex.title));
-                    if (!isDuplicate) combined.push({
-                      ...ex,
-                      examDate: ex.date,
-                      examTitle: ex.title,
-                      score: ex.score,
-                      marks_obtained: ex.marks_obtained,
-                      total_marks: ex.total_marks
-                    });
-                  });
-
-                  const sortedForNumbering = [...combined].sort((a, b) => new Date(a.examDate) - new Date(b.examDate));
-                  const nameMap = new Map();
-                  
-                  sortedForNumbering.forEach(res => {
-                    const title = (res.examTitle || res.exam_title || res.title || "").toLowerCase();
-                    if (title.includes("weekly")) {
-                      counts.weekly++;
-                      nameMap.set(res.id || res.start_time || res.examDate || res.date, `Weekly Exam ${counts.weekly}`);
-                    } else if (title.includes("monthly")) {
-                      counts.monthly++;
-                      nameMap.set(res.id || res.start_time || res.examDate || res.date, `Monthly Exam ${counts.monthly}`);
-                    }
-                  });
-
-                  return combined.sort((a,b) => new Date(b.examDate) - new Date(a.examDate)).map((result, index) => {
-                    const totalQuestions = result.totalQuestions || result.total_questions || result.questions?.length || 25;
-                    const scoreValue = result.marks_obtained ?? result.score ?? 0;
-                    const totalMarks = result.total_marks ?? result.totalMarks ?? (totalQuestions * (result.marks_per_question || 2));
-                    const percentage = totalMarks > 0 ? (scoreValue / totalMarks) * 100 : 0;
-                    const uniqueId = result.id || result.start_time || result.examDate || result.date;
-                    const displayTitle = nameMap.get(uniqueId) || formatExamTitle(result.examTitle || result.exam_title || result.title);
-                    
-                    return (
-                    <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="px-6 py-5 text-sm font-bold text-gray-400">{index + 1}</td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm font-bold text-gray-800 block">{result.user?.firstName || result.user?.username || "Guest User"}</span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm font-bold text-gray-800 block capitalize tracking-normal">{displayTitle}</span>
-                      </td>
-                      <td className="px-6 py-5 text-center text-sm font-medium text-gray-500">
-                        {new Date(result.examDate || result.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <div className="inline-flex flex-col items-center">
-                          <span className={`text-sm font-bold ${percentage >= 40 ? 'text-green-600' : 'text-red-500'}`}>{scoreValue}/{totalMarks}</span>
+              <tbody className="divide-y divide-slate-50">
+                {filteredResults.map((result, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
+                          result.examType === 'monthly' ? 'bg-purple-50 text-purple-600' :
+                          result.examType === 'weekly' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'
+                        }`}>
+                          {result.examType?.charAt(0).toUpperCase()}
                         </div>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <div className="flex justify-center gap-3">
-                          <button onClick={() => handleViewDetails(result, index)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Detailed Analysis">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                          </button>
+                        <div>
+                          <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase text-sm tracking-tight">{result.examTitle}</p>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            {result.examType} Assessment
+                          </span>
                         </div>
-                      </td>
-                    </tr>
-                   );
-                  });
-                })()}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                           <span className="text-base font-black text-slate-900">{result.score}</span>
+                           {result.totalMarks && <span className="text-xs text-slate-400 font-bold">/ {result.totalMarks}</span>}
+                        </div>
+                        <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                           <div 
+                            className={`h-full rounded-full ${result.passed ? 'bg-emerald-500' : 'bg-rose-500'}`} 
+                            style={{ width: `${(result.score / (result.totalMarks || 100)) * 100}%` }}
+                           ></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2 text-slate-600 font-medium text-xs">
+                        <FontAwesomeIcon icon={faCalendarCheck} className="text-slate-300" />
+                        {formatDate(result.examDate)}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        result.passed 
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                        : 'bg-rose-50 text-rose-600 border border-rose-100'
+                      }`}>
+                        <FontAwesomeIcon icon={result.passed ? faCheckCircle : faTimesCircle} />
+                        {result.passed ? 'Passed' : 'Failed'}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <button 
+                        onClick={() => navigate(`/dashboard/playground/detailed-results/${idx}`, { state: { result } })}
+                        className="p-2.5 bg-slate-50 hover:bg-white hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-slate-100 text-slate-400 group"
+                      >
+                         <FontAwesomeIcon icon={faBolt} className="group-hover:scale-110 transition-transform" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
-          </div>
+          ) : (
+            <div className="p-20 text-center">
+              <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center text-slate-200 mx-auto mb-6">
+                <FontAwesomeIcon icon={faHistory} className="text-4xl" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">No History Found</h3>
+              <p className="text-slate-400 font-medium max-w-sm mx-auto text-sm leading-relaxed">
+                You haven't completed any assessments yet. Start your first exam in the playground to see results here.
+              </p>
+            </div>
+          )}
         </div>
-      )}
       </div>
     </div>
   );
-}
+};
 
 export default PlaygroundResults;

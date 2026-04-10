@@ -83,7 +83,12 @@ function DetailedResults() {
   }, [index, location.state]);
 
   const handleBack = () => {
-    navigate("/dashboard/playground-results");
+    // Navigate back to where the user came from (e.g. Daily Reports, Weekly Reports, etc.)
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate("/dashboard/playground-results");
+    }
   };
 
   // --- Pure Data Sanitation Sweep (No State Mutation) ---
@@ -136,13 +141,20 @@ function DetailedResults() {
 
     const studentId = (() => {
       const uname = (result.user?.username || result.username || "").toLowerCase();
-      const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || "{}");
+      const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || localStorage.getItem("sssit-profile") || "{}");
       const u = storedUser;
       const pool = [p.studentId, p.student_id, u.studentId, u.student_id, result.random_id, result.randomId, result.studentId];
       for (const id of pool) {
         if (id && String(id).toLowerCase() !== uname) return id;
       }
-      return "9740"; // Safe fallback for this user
+      return "9740"; // Safe fallback
+    })();
+
+    const studentNameFromProfile = (() => {
+       const uname = (result.user?.username || result.username || "").toLowerCase();
+       const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || localStorage.getItem("sssit-profile") || "{}");
+       const u = storedUser;
+       return p.fullName || p.name || p.firstName || u.fullName || u.name || u.firstName || result.user?.firstName || result.user?.username || "Student";
     })();
 
     const email = (() => {
@@ -174,7 +186,7 @@ function DetailedResults() {
     y += 10;
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Student Name: ${studentName}`, 20, y);
+    doc.text(`Student Name: ${studentNameFromProfile.toUpperCase()}`, 20, y);
     doc.text(`Student ID: ${studentId}`, 130, y);
     y += 8;
     doc.text(`Email: ${email}`, 20, y);
@@ -278,7 +290,7 @@ function DetailedResults() {
     doc.setTextColor(150, 150, 150);
     doc.text(`Report safely generated on ${new Date().toLocaleString()}`, 105, pageHeight - 10, { align: 'center' });
     
-    doc.save(`Assessment_Report_${studentName.replace(/\s+/g, '_')}_${studentId}.pdf`);
+    doc.save(`Assessment_Report_${studentNameFromProfile.replace(/\s+/g, '_')}_${studentId}.pdf`);
   };
 
   if (!result) {
@@ -333,7 +345,13 @@ function DetailedResults() {
               <div className="space-y-1">
                 <p className="text-gray-400 text-sm font-medium">Student Name</p>
                 <p className="text-lg font-bold text-gray-900 leading-tight">
-                  {(result.user?.firstName || result.user?.username || "Guest Student").toUpperCase()}
+                  {(() => {
+                    const uname = (result.user?.username || result.username || "").toLowerCase();
+                    const p = JSON.parse(localStorage.getItem(`sssit-profile-${uname}`) || localStorage.getItem("sssit-profile") || "{}");
+                    const u = JSON.parse(localStorage.getItem("user") || "{}");
+                    const name = p.fullName || p.name || p.firstName || u.fullName || u.name || u.firstName || result.user?.firstName || result.user?.username || "Student";
+                    return name.toUpperCase();
+                  })()}
                 </p>
               </div> 
               <div className="space-y-1">
