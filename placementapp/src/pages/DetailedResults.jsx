@@ -44,19 +44,23 @@ function DetailedResults() {
       return obj;
     };
 
-    // 1. Try to get the specific selected result first
-    const selected = localStorage.getItem("selectedExamResult");
-    if (selected) {
-      const parsedResult = ensureParsed(JSON.parse(selected));
-      console.log("🔍 DetailedResults - Loaded from selectedExamResult:", parsedResult);
-      setResult(parsedResult);
+    // 1. Highly Reliable: Router state from click event
+    const locationState = location.state;
+    if (locationState?.result) {
+      const stateData = ensureParsed(locationState.result);
+      console.log("🔍 DetailedResults - Loading from Route State:", stateData);
+      setResult(stateData);
+      // Evict potentially stale localStorage cache to force fresh state on next load
+      localStorage.removeItem("selectedExamResult");
       return;
     }
 
-    // 2. Fallback to state-based data
-    const locationState = location.state;
-    if (locationState?.resultData) {
-      setResult(ensureParsed(locationState.resultData));
+    // 2. Fallback: Check for a single cached result
+    const selected = localStorage.getItem("selectedExamResult");
+    if (selected) {
+      const parsedResult = ensureParsed(JSON.parse(selected));
+      console.log("🔍 DetailedResults - Loading from Local Cache:", parsedResult);
+      setResult(parsedResult);
       return;
     }
 
@@ -126,8 +130,33 @@ function DetailedResults() {
 
   const passingScoreText = result && result.passed !== undefined ? "Faculty Rule Applied" : `${passingScore} marks`;
 
-  const calculatedCorrect = result?.correctAnswers ?? result?.correct_answers ?? 0;
-  const calculatedIncorrect = result?.incorrectAnswers ?? result?.incorrect_answers ?? 0;
+  // 🛡️ RE-VALIDATION ENGINE: Dynamically re-calculate metrics from raw question/answer arrays
+  const { calculatedCorrect, calculatedIncorrect, calculatedSkipped } = (function() {
+    let c = 0, i = 0, s = 0;
+    parsedQuestions.forEach((q, idx) => {
+      const userAnswerIndex = parsedAnswers[idx];
+      const correctAnswerIndex = q.correct ?? q.correct_answer ?? 0;
+      
+      if (userAnswerIndex === null || userAnswerIndex === undefined || userAnswerIndex === -1) {
+        s++;
+      } else if (userAnswerIndex === correctAnswerIndex) {
+        c++;
+      } else {
+        i++;
+      }
+    });
+    
+    // Fallback to result summary if arrays are missing
+    if (parsedQuestions.length === 0) {
+      return {
+        calculatedCorrect: result?.correctAnswers ?? result?.correct_answers ?? 0,
+        calculatedIncorrect: result?.incorrectAnswers ?? result?.incorrect_answers ?? 0,
+        calculatedSkipped: Math.max(0, (result?.totalQuestions || 25) - ((result?.correctAnswers ?? 0) + (result?.incorrectAnswers ?? 0)))
+      };
+    }
+    
+    return { calculatedCorrect: c, calculatedIncorrect: i, calculatedSkipped: s };
+  })();
 
   const handleDownload = () => {
     if (!result) {
@@ -404,9 +433,7 @@ function DetailedResults() {
              <div className="absolute top-0 right-0 w-16 h-16 bg-gray-50 rounded-bl-[2rem] -mr-4 -mt-4 group-hover:scale-110 transition-transform"></div>
             <p className="text-gray-500 font-black text-xs uppercase tracking-widest mb-2">Skipped</p>
             <p className="text-5xl font-black text-gray-900 mb-1">
-               {Array.isArray(parsedAnswers) 
-                  ? parsedAnswers.filter(a => a === null || a === undefined).length 
-                  : Math.max(0, totalQuestions - Object.keys(result.answers || {}).length)}
+               {calculatedSkipped}
             </p>
             <p className="text-sm font-bold text-gray-400 italic">Not Analyzed</p>
           </div>

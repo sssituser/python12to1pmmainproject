@@ -704,18 +704,9 @@ def save_exam_report_api(request):
     except StudentProfile.DoesNotExist:
         pass
 
-    # 🏗️ 1000% AUTOMATIC REVERT TO LIFETIME PATTERN (2000% ROBUST)
-    try:
-        if student_course:
-            # Enforce 1000% case-insensitive and whitespace-stripped match for permanent deletion
-            clean_name = str(student_course).strip().upper()
-            AutomatedExamConfig.objects.filter(course_name__iexact=clean_name).delete()
-    except Exception:
-        pass
-
     return Response({
         'success': True,
-        'message': 'Exam report saved successfully (Transient overrides purged)',
+        'message': 'Exam report saved successfully',
         'saved_username': user.username,
         'course': student_course,
         'data': ExamAttemptSerializer(attempt).data

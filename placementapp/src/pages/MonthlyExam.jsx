@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as faceapi from "@vladmandic/face-api";
 import Editor from "@monaco-editor/react";
+import axios from "axios";
 import CodeCompiler from "../components/CodeCompiler";
 
 // Indestructible global array to catch all streams outside React DOM scope
@@ -29,6 +30,19 @@ const MonthlyExam = () => {
   const [warningCount, setWarningCount] = useState(0);
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [markedForReview, setMarkedForReview] = useState([]);
+  const [visitedQuestions, setVisitedQuestions] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(4500); 
+  const [examDuration, setExamDuration] = useState(75); 
+  const [examStarted, setExamStarted] = useState(false);
+  const [examSubmitted, setExamSubmitted] = useState(false);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [webcamStatus, setWebcamStatus] = useState('idle'); 
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [studentCourse, setStudentCourse] = useState("");
+  const [questions, setQuestions] = useState([]);
 
   const triggerWarning = (reason) => {
     if (examSubmittedRef.current) return;
@@ -93,20 +107,6 @@ const MonthlyExam = () => {
     setWebcamActive(false);
   };
 
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [markedForReview, setMarkedForReview] = useState([]);
-  const [visitedQuestions, setVisitedQuestions] = useState([]);
-
-  const [timeLeft, setTimeLeft] = useState(4500); 
-  const [examDuration, setExamDuration] = useState(75); 
-  const [examStarted, setExamStarted] = useState(false);
-  const [examSubmitted, setExamSubmitted] = useState(false);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [webcamStatus, setWebcamStatus] = useState('idle'); 
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
-  const [studentCourse, setStudentCourse] = useState("");
-  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
     if (localStorage.getItem("examResult")) {
@@ -223,17 +223,31 @@ const MonthlyExam = () => {
     stopWebcam();
     try { if (document.fullscreenElement) await document.exitFullscreen(); } catch (e) {}
 
+    const totalPossibleMarks = questions.reduce((acc, q) => acc + (q.marks || 2), 0);
     const score = answers.reduce((acc, ans, idx) => acc + (ans === questions[idx]?.correct ? (questions[idx]?.marks || 2) : 0), 0);
+    
+    // Get professional name and ID from profile
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const profile = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const studentName = profile.fullName || profile.name || storedUser.fullName || storedUser.firstName || "Student";
+    const studentId = profile.studentId || profile.student_id || storedUser.student_id || "";
+
     const result = { 
       examTitle: `${studentCourse || 'Monthly'} Assessment`, 
       user: {
-        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || "Student"
+        username: storedUser.username || "",
+        firstName: studentName,
+        randomId: studentId
       },
       score, 
+      total_marks: totalPossibleMarks,
       totalQuestions: questions.length, 
+      correctAnswers: answers.filter((ans, idx) => ans === questions[idx]?.correct).length,
       examType: 'monthly',
       examDate: new Date().toISOString(), 
-      passed: true 
+      passed: totalPossibleMarks > 0 ? (score / totalPossibleMarks) * 100 >= 35 : false,
+      questions,
+      answers
     };
     
     localStorage.setItem("examResult", JSON.stringify(result));
@@ -242,11 +256,12 @@ const MonthlyExam = () => {
     const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
     if (token) {
       try {
+        console.log("Saving monthly assessment report...");
         await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } catch (err) {
-        console.error("Persist failed", err);
+        console.error("Monthly persist failed", err);
       }
     }
 

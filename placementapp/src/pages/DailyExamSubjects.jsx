@@ -262,8 +262,18 @@ function DailyExamSubjects() {
       ? facultyExamSubjects 
       : facultyModuleList.map(m => (m.title || m.name || m));
     
-    // 🔥 DYNAMIC MERGE: Ensure all subjects from curriculum appear, even if faculty setup is incomplete
-    const rawSubjectNames = [...new Set([...facultySetup, ...fallback])];
+    // 🔥 DYNAMIC MERGE: Intelligent Deduplication (Case & Space Insensitive)
+    const combined = [...facultySetup, ...fallback];
+    const uniqueMap = new Map();
+    combined.forEach(name => {
+      const clean = String(name || "").trim();
+      const key = clean.toUpperCase();
+      if (clean && !uniqueMap.has(key)) {
+        uniqueMap.set(key, clean);
+      }
+    });
+
+    const rawSubjectNames = Array.from(uniqueMap.values());
 
     // 3. Map to UI Objects with Rich Metadata
     const finalSubjects = rawSubjectNames.filter(name => !!name).map(name => {

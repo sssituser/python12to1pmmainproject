@@ -52,16 +52,17 @@ const PlaygroundResults = () => {
 
       // 4. Transform and Deduplicate
       const transformBackend = (item) => ({
-        id: item.id,
-        examTitle: item.exam_title || "Programming Assessment",
-        examType: (item.exam_type || "daily").toLowerCase(),
-        score: item.score || item.marks_obtained || 0,
-        totalQuestions: item.total_questions || 0,
-        correctAnswers: item.correct_answers || 0,
-        totalMarks: item.total_marks || 100,
+        ...item,
+        examTitle: item.examTitle || item.exam_title || "Programming Assessment",
+        examType: (item.examType || item.exam_type || "daily").toLowerCase(),
+        score: item.score ?? item.marks_obtained ?? 0,
+        totalQuestions: item.totalQuestions ?? item.total_questions ?? 0,
+        correctAnswers: item.correctAnswers ?? item.correct_answers ?? 0,
+        totalMarks: item.totalMarks ?? item.total_marks ?? 100,
         passed: item.passed ?? (item.status === 'Pass' || item.status === 'completed' || item.status === 'Completed'),
-        examDate: item.created_at || item.start_time || new Date().toISOString(),
-        status: item.status || "Completed",
+        examDate: item.examDate || item.created_at || item.start_time || new Date().toISOString(),
+        questions: item.questions || [],
+        answers: item.answers || [],
         isBackend: true
       });
 

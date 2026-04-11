@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as faceapi from "@vladmandic/face-api";
 import Editor from "@monaco-editor/react";
+import axios from "axios";
 import CodeCompiler from "../components/CodeCompiler";
 
 // Indestructible global array to catch all streams outside React DOM scope
@@ -27,6 +28,15 @@ const WeeklyExam = () => {
   const violationStartTimeRef = useRef(null);
   const cleanTimeoutRef = useRef(null);
   const lastWarningTimeRef = useRef(0);
+  const [timeLeft, setTimeLeft] = useState(2700); 
+  const [examDuration, setExamDuration] = useState(45); 
+  const [examStarted, setExamStarted] = useState(false);
+  const [examSubmitted, setExamSubmitted] = useState(false);
+  const examSubmittedRef = useRef(false);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [webcamStatus, setWebcamStatus] = useState('idle'); 
+  const [faceCount, setFaceCount] = useState(1);
+  const [examFailed, setExamFailed] = useState(false);
   const [warningCount, setWarningCount] = useState(0);
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -148,15 +158,6 @@ const WeeklyExam = () => {
   const [markedForReview, setMarkedForReview] = useState([]);
   const [visitedQuestions, setVisitedQuestions] = useState([]);
 
-  const [timeLeft, setTimeLeft] = useState(2700); 
-  const [examDuration, setExamDuration] = useState(45); 
-  const [examStarted, setExamStarted] = useState(false);
-  const [examSubmitted, setExamSubmitted] = useState(false);
-  const examSubmittedRef = useRef(false);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [webcamStatus, setWebcamStatus] = useState('idle'); 
-  const [faceCount, setFaceCount] = useState(1);
-  const [examFailed, setExamFailed] = useState(false);
 
   const [studentCourse, setStudentCourse] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -421,30 +422,45 @@ const WeeklyExam = () => {
       if (document.fullscreenElement) await document.exitFullscreen();
     } catch (err) {}
 
+    const totalPossibleMarks = questions.reduce((acc, q) => acc + (q.marks || 2), 0);
     const score = answers.reduce((acc, ans, idx) => acc + (ans === questions[idx]?.correct ? (questions[idx]?.marks || 2) : 0), 0);
+    
+    // Get professional name and ID from profile
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const profile = JSON.parse(localStorage.getItem("sssit-profile") || "{}");
+    const studentName = profile.fullName || profile.name || storedUser.fullName || storedUser.firstName || "Student";
+    const studentId = profile.studentId || profile.student_id || storedUser.student_id || "";
+
     const result = { 
       examTitle: `${studentCourse || 'Weekly'} Assessment`, 
       user: {
-        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || "Student"
+        username: storedUser.username || "",
+        firstName: studentName,
+        randomId: studentId
       },
       score, 
+      total_marks: totalPossibleMarks,
       totalQuestions: questions.length, 
+      correctAnswers: answers.filter((ans, idx) => ans === questions[idx]?.correct).length,
       examType: 'weekly',
       examDate: new Date().toISOString(), 
-      passed: true 
+      passed: totalPossibleMarks > 0 ? (score / totalPossibleMarks) * 100 >= 35 : false,
+      questions,
+      answers
     };
     
     localStorage.setItem("examResult", JSON.stringify(result));
 
-    // 🛡️ SERVER-SIDE PERSISTENCE
+    // 🛡️ SERVER-SIDE PERSISTENCE (Single source of truth)
     const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
     if (token) {
       try {
+        console.log("Saving weekly assessment report...");
         await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } catch (err) {
-        console.error("Persist failed", err);
+        console.error("Critical: Backend persistence failed for weekly report.", err);
       }
     }
 

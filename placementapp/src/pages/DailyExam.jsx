@@ -409,9 +409,11 @@ const DailyExam = () => {
       examType: 'daily',
       user: {
         username: storedUser.username || "",
-        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || storedUser.username || "Student"
+        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || storedUser.username || "Student",
+        randomId: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).studentId || storedUser.student_id || ""
       },
       score,
+      total_marks: questions.length * marksPerQuestion,
       totalQuestions: questions.length,
       correctAnswers: Math.round(score / marksPerQuestion),
       passed: (score / (questions.length * marksPerQuestion)) * 100 >= passingValue,

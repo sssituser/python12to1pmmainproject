@@ -7,31 +7,611 @@
         "duration": 45
     },
     "Python Full Stack_Weekly": {
-        "maxQuestions": 1,
+        "maxQuestions": 25,
         "questions": [
             {
-                "type": "mcq",
-                "question": "asdfsghjkll;kljkhjghfgf",
+                "id": "dyn_Python_Full_Stack_15_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
                 "options": [
-                    "hgjhkjlk;l';'l;'l;kljk",
-                    "hjhgfdsfghjkl;",
-                    "fdgfhjkl;",
-                    ";lkjhgfds"
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
                 ],
-                "answer": "hgjhkjlk;l';'l;'l;kljk",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
-                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
                 "marks": 2,
-                "id": 1775841300088
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_14_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_8_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_6_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_18_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_24_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_9_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_12_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_5_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_4_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_7_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_17_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_3_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_25_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_13_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_19_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_21_1775909100951",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_10_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_20_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_2_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_1_1775909100950",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To speed up execution",
+                    "To manage database migrations",
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_16_1775909100951",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A function that modifies the behavior of another function",
+                    "A database relationship",
+                    "A UI styling element",
+                    "A type of class inheritance"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_11_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_23_1775909100951",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By compressing the entire database",
+                    "By changing the data types automatically",
+                    "By encrypting sensitive fields",
+                    "By reducing the number of data pages the engine must read"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_22_1775909100951",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Executing tasks strictly one after another",
+                    "Encrypting data for security",
+                    "Deleting old log files automatically"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "isDynamic": true
+            },
+            {
+                "id": "dyn_Python_Full_Stack_1_1775912134532",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces",
+                    "To speed up execution",
+                    "To manage database migrations"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_2_1775912134532",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Deleting old log files automatically",
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Encrypting data for security",
+                    "Executing tasks strictly one after another"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_3_1775912134532",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By changing the data types automatically",
+                    "By compressing the entire database",
+                    "By reducing the number of data pages the engine must read",
+                    "By encrypting sensitive fields"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_4_1775912134532",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A UI styling element",
+                    "A type of class inheritance",
+                    "A database relationship",
+                    "A function that modifies the behavior of another function"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_5_1775912134532",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces",
+                    "To speed up execution",
+                    "To manage database migrations"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_6_1775912134532",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Deleting old log files automatically",
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Encrypting data for security",
+                    "Executing tasks strictly one after another"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_7_1775912134532",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By changing the data types automatically",
+                    "By compressing the entire database",
+                    "By reducing the number of data pages the engine must read",
+                    "By encrypting sensitive fields"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_8_1775912134532",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A UI styling element",
+                    "A type of class inheritance",
+                    "A database relationship",
+                    "A function that modifies the behavior of another function"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_9_1775912134532",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces",
+                    "To speed up execution",
+                    "To manage database migrations"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_10_1775912134532",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Deleting old log files automatically",
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Encrypting data for security",
+                    "Executing tasks strictly one after another"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_11_1775912134532",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By changing the data types automatically",
+                    "By compressing the entire database",
+                    "By reducing the number of data pages the engine must read",
+                    "By encrypting sensitive fields"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_12_1775912134532",
+                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
+                "options": [
+                    "A UI styling element",
+                    "A type of class inheritance",
+                    "A database relationship",
+                    "A function that modifies the behavior of another function"
+                ],
+                "answer": "A function that modifies the behavior of another function",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_13_1775912134532",
+                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
+                "options": [
+                    "To isolate project-specific dependencies",
+                    "To design user interfaces",
+                    "To speed up execution",
+                    "To manage database migrations"
+                ],
+                "answer": "To isolate project-specific dependencies",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_14_1775912134532",
+                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
+                "options": [
+                    "Deleting old log files automatically",
+                    "Executing multiple tasks concurrently without blocking the main thread",
+                    "Encrypting data for security",
+                    "Executing tasks strictly one after another"
+                ],
+                "answer": "Executing multiple tasks concurrently without blocking the main thread",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
+            },
+            {
+                "id": "dyn_Python_Full_Stack_15_1775912134532",
+                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
+                "options": [
+                    "By changing the data types automatically",
+                    "By compressing the entire database",
+                    "By reducing the number of data pages the engine must read",
+                    "By encrypting sensitive fields"
+                ],
+                "answer": "By reducing the number of data pages the engine must read",
+                "subject": "Python Full Stack",
+                "category": "Weekly",
+                "marks": 2,
+                "type": "mcq"
             }
         ],
         "passingRule": "correct_answers",
-        "passingValue": 12,
+        "passingValue": 13,
         "duration": 75
     },
     ".net Full Stack_Weekly": {
@@ -70,11 +650,11 @@
         "duration": 1
     },
     "Python Full Stack_Daily": {
-        "maxQuestions": 1,
+        "maxQuestions": 25,
         "questions": [],
-        "passingRule": "percentage",
-        "passingValue": 50,
-        "duration": 80
+        "passingRule": "correct_answers",
+        "passingValue": 13,
+        "duration": 75
     },
     "Python Full Stack_Monthly": {
         "maxQuestions": 2,
