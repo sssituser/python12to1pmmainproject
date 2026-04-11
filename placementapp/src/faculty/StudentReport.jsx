@@ -68,7 +68,7 @@ function StudentReport() {
             {/* OFFICIAL LOGO HEADER - ONLY IN PRINT */}
             <div className="only-show-print text-center mb-6">
                 <div className="flex items-center justify-center gap-4 mb-2">
-                    <img src=`http://${window.location.hostname}:8000/static/images/logo.png" alt="SSSIT" className="h-16" />
+                    <img src={`http://${window.location.hostname}:8000/static/images/logo.png`} alt="SSSIT" className="h-16" />
                     <div className="text-left border-l-2 border-gray-800 pl-4">
                         <h1 className="text-3xl font-black text-gray-900 m-0">SSSIT</h1>
                         <p className="text-gray-600 font-bold m-0 italic">Computer Education & ISO Certified</p>
