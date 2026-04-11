@@ -246,6 +246,8 @@ const DailyExam = () => {
       if (!videoRef.current) return;
       const video = videoRef.current;
 
+      const prevFrameRef = { data: null };
+
       faceDetectionIntervalRef.current = setInterval(() => {
         if (!video.videoWidth || !video.videoHeight) return;
         
@@ -257,25 +259,33 @@ const DailyExam = () => {
         const tData = ctx.getImageData(0, 0, 16, 16).data;
         
         let brightness = 0;
-        let rTotal = 0, gTotal = 0, bTotal = 0;
         let rMax = 0, rMin = 255;
+        let topVariance = 0, botVariance = 0;
+        let motionDelta = 0;
+
         for (let i = 0; i < tData.length; i += 4) {
           const r = tData[i], g = tData[i+1], b = tData[i+2];
-          rTotal += r; gTotal += g; bTotal += b;
-          brightness += (0.299 * r + 0.587 * g + 0.114 * b);
+          const luma = (0.299 * r + 0.587 * g + 0.114 * b);
+          brightness += luma;
           if (r > rMax) rMax = r; if (r < rMin) rMin = r;
+          
+          if (prevFrameRef.data) {
+            motionDelta += Math.abs(luma - prevFrameRef.data[i/4]);
+          }
+
+          if (i < tData.length / 2) topVariance += luma;
+          else botVariance += luma;
         }
         brightness = brightness / 256;
         
-        // Critical: If the video is black (not just dark, but potentially not rendering at all)
         const isDark = brightness < 20; 
         const isFlat = (rMax - rMin < 20);
+        const isStatic = prevFrameRef.data && (motionDelta < 30);
+        const topAvg = topVariance / 128;
+        const botAvg = botVariance / 128;
+        const misalignment = Math.abs(topAvg - botAvg) > 60;
 
-        // Track track state
-        const isTrackActive = globalStreamsToClean[0]?.getVideoTracks().every(t => t.enabled && t.readyState === 'live');
-        if (!isTrackActive && webcamActive) {
-           triggerWarning("Webcam feed lost or inactive");
-        }
+        prevFrameRef.data = Array.from(tData).filter((_, i) => i % 4 === 0);
 
         const checkViolations = (faces) => {
           const noFace = !faces || faces.length === 0;
@@ -286,21 +296,24 @@ const DailyExam = () => {
             const f = faces[0].boundingBox;
             const centerX = f.x + f.width / 2;
             const centerY = f.y + f.height / 2;
-            // Native pixels detection using video resolution
             if (centerX < video.videoWidth * 0.15 || centerX > video.videoWidth * 0.85 ||
                 centerY < video.videoHeight * 0.15 || centerY > video.videoHeight * 0.85) {
               faceNotCentered = true;
             }
           }
 
-          const isCameraCovered = isDark || isFlat;
-          if (isCameraCovered || isMultipleFaces || noFace || faceNotCentered) {
+          const proctoringAIFailed = !window.FaceDetector;
+          const userHiding = proctoringAIFailed && misalignment;
+
+          if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered || userHiding || (isStatic && proctoringAIFailed)) {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 3000) {
+            } else if (Date.now() - violationStartTimeRef.current >= 4000) {
               if (isMultipleFaces) triggerWarning("Multiple persons detected");
-              else if (isCameraCovered) triggerWarning("Camera covered or blocked");
-              else if (noFace) triggerWarning("Face not detected");
+              else if (isDark || isFlat) triggerWarning("Camera covered or blocked");
+              else if (userHiding) triggerWarning("Improper camera angle - User hiding");
+              else if (isStatic) triggerWarning("Static background detected - Please move");
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not detected"); 
               else if (faceNotCentered) triggerWarning("Face moved off-center");
               violationStartTimeRef.current = null;
             }
@@ -313,7 +326,7 @@ const DailyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
-          checkViolations([{ boundingBox: { x: video.videoWidth/2, y: video.videoHeight/2, width: 10, height: 10 } }]);
+          checkViolations([]); 
         }
       }, 1000);
 
@@ -405,12 +418,13 @@ const DailyExam = () => {
     });
 
     const result = {
-      examTitle: `${subjectName} Exam`,
+      examTitle: `${studentCourse || "General"} | ${subjectName} Assessment`,
       examType: 'daily',
+      course: studentCourse || "General",
       user: {
         username: storedUser.username || "",
-        firstName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || storedUser.username || "Student",
-        randomId: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).studentId || storedUser.student_id || ""
+        studentId: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).studentId || storedUser.studentId || storedUser.username || "",
+        fullName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || "Student"
       },
       score,
       total_marks: questions.length * marksPerQuestion,

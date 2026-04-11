@@ -4,7 +4,18 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 function Dashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("sidebarOpen");
+    return saved !== null ? JSON.parse(saved) : false; // Default to false like faculty
+  });
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev;
+      localStorage.setItem("sidebarOpen", JSON.stringify(next));
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
@@ -15,7 +26,7 @@ function Dashboard() {
       <div className="flex flex-col flex-1 relative">
 
         {/* ✅ NAVBAR */}
-        <Navbar toggleSidebar={() => setSidebarOpen(prev => !prev)} />
+        <Navbar toggleSidebar={handleToggleSidebar} />
 
         {/* ✅ MAIN CONTENT */}
         <div className="p-6 flex-1 overflow-y-auto relative z-10">

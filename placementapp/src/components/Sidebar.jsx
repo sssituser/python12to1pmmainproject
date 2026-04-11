@@ -16,13 +16,41 @@ import {
 
 function Sidebar({ sidebarOpen }) {
   const [hoverOpen, setHoverOpen] = useState(false);
-  const [jobsOpen, setJobsOpen] = useState(false);
-  const [playOpen, setPlayOpen] = useState(false);
+  const [jobsOpen, setJobsOpen] = useState(() => {
+    return localStorage.getItem("jobsOpen") === "true";
+  });
+  const [playOpen, setPlayOpen] = useState(() => {
+    return localStorage.getItem("playOpen") === "true";
+  });
+
+  const toggleJobs = () => {
+    setJobsOpen(prev => {
+      const next = !prev;
+      localStorage.setItem("jobsOpen", next);
+      return next;
+    });
+  };
+
+  const togglePlay = () => {
+    setPlayOpen(prev => {
+      const next = !prev;
+      localStorage.setItem("playOpen", next);
+      return next;
+    });
+  };
 
   // Consider it open if either manually toggled OR hovered
   const open = sidebarOpen || hoverOpen;
 
   const navigate = useNavigate();
+
+  // Get user data from localStorage
+  let currentUser = null;
+  try {
+    currentUser = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    currentUser = null;
+  }
 
   const logout = () => {
     localStorage.removeItem("access");
@@ -31,17 +59,34 @@ function Sidebar({ sidebarOpen }) {
     navigate("/");
   };
 
+  const getDisplayName = () => {
+    if (!currentUser) return "Student";
+    if (currentUser.first_name || currentUser.last_name) {
+      return `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
+    }
+    return currentUser.username || "Student";
+  };
+
+  const getDisplayEmail = () => {
+    if (!currentUser) return "student@university.edu";
+    return currentUser.email || `${currentUser.username || 'student'}@university.edu`;
+  };
+
+  const getInitials = () => {
+    if (!currentUser) return "S";
+    if (currentUser.first_name && currentUser.last_name) {
+      return currentUser.first_name[0] + currentUser.last_name[0];
+    }
+    return currentUser.username?.[0]?.toUpperCase() || "S";
+  };
+
   const linkClass =
     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium no-underline transition";
 
   return (
     <div
       onMouseEnter={() => setHoverOpen(true)}
-      onMouseLeave={() => {
-        setHoverOpen(false);
-        setJobsOpen(false);
-        setPlayOpen(false);
-      }}
+      onMouseLeave={() => setHoverOpen(false)}
       className={`bg-slate-900 text-gray-300 min-h-screen flex flex-col justify-between
       transition-all duration-300 ${open ? "w-64" : "w-20"}`}
     >
@@ -73,7 +118,7 @@ function Sidebar({ sidebarOpen }) {
           {/* JOBS */}
           <div>
             <button
-              onClick={() => setJobsOpen(!jobsOpen)}
+              onClick={toggleJobs}
               className={`${linkClass} w-full justify-between hover:bg-slate-800`}
             >
               <span className="flex items-center gap-3">
@@ -127,13 +172,7 @@ function Sidebar({ sidebarOpen }) {
             {open && "Course"}
           </NavLink>
 
-
-
-
-
           {/* REPORTS */}
-
-
           <NavLink
             to="/dashboard/exam-reports"
             className={({ isActive }) =>
@@ -166,7 +205,7 @@ function Sidebar({ sidebarOpen }) {
           {/* PLAYGROUND */}
           <div>
             <button
-              onClick={() => setPlayOpen(!playOpen)}
+              onClick={togglePlay}
               className={`${linkClass} w-full justify-between hover:bg-slate-800`}
             >
               <span className="flex items-center gap-3">

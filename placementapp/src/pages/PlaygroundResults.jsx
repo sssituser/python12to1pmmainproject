@@ -28,74 +28,70 @@ const PlaygroundResults = () => {
   const fetchResults = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Combined Backend Results
-      const combinedRes = await axios.get(
-        `http://${window.location.hostname}:8000/api/user-combined-results/?username=${targetUsername}`
-      );
-      const backendResults = Array.isArray(combinedRes.data) ? combinedRes.data : combinedRes.data.results || [];
+      const currentUsername = targetUsername.toLowerCase();
+      const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+      const config = { headers: token ? { Authorization: `Bearer ${token}` } : {} };
 
-      // 2. Fetch Weekly Specific results (some might be stored separately)
-      const weeklyRes = await axios.get(
-        `http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=weekly&username=${targetUsername}`
-      );
-      const weeklyResults = Array.isArray(weeklyRes.data) ? weeklyRes.data : weeklyRes.data.results || [];
+      // 1. Fetch Backend Data
+      const [dailyRes, weeklyRes, monthlyRes] = await Promise.allSettled([
+        axios.get(`http://${window.location.hostname}:8000/api/user-combined-results/?username=${currentUsername}`, config),
+        axios.get(`http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=weekly&username=${currentUsername}`, config),
+        axios.get(`http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=monthly&username=${currentUsername}`, config)
+      ]);
 
-      // 3. Get Local Results
-      const localResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");
-      const latestExam = JSON.parse(localStorage.getItem("examResult") || "null");
-      
-      const allLocal = [...localResults];
-      if (latestExam) {
-        const alreadyExists = allLocal.some(r => r.examDate === latestExam.examDate);
-        if (!alreadyExists) allLocal.unshift(latestExam);
-      }
+      const extractData = (res) => {
+        if (res.status === 'rejected') return [];
+        const d = res.value.data;
+        let list = d?.data || d || [];
+        if (!Array.isArray(list) && list.results) list = list.results;
+        return Array.isArray(list) ? list : [];
+      };
 
-      // 4. Transform and Deduplicate
-      const transformBackend = (item) => ({
+      const backendDaily = extractData(dailyRes);
+      const backendWeekly = extractData(weeklyRes);
+      const backendMonthly = extractData(monthlyRes);
+
+      // 2. Filter Local Results
+      const allLocalData = JSON.parse(localStorage.getItem("allExamResults") || "[]");
+      const currentLocal = allLocalData.filter(r => {
+        const u = (r.user?.username || r.username || "").toLowerCase();
+        return u === currentUsername || u === "";
+      });
+
+      // 3. Transform and Merge
+      const transform = (item, typeDefault) => ({
         ...item,
-        examTitle: item.examTitle || item.exam_title || "Programming Assessment",
-        examType: (item.examType || item.exam_type || "daily").toLowerCase(),
+        examTitle: item.examTitle || item.exam_title || item.title || "Assessment",
+        examType: (item.examType || item.exam_type || typeDefault).toLowerCase(),
         score: item.score ?? item.marks_obtained ?? 0,
         totalQuestions: item.totalQuestions ?? item.total_questions ?? 0,
         correctAnswers: item.correctAnswers ?? item.correct_answers ?? 0,
-        totalMarks: item.totalMarks ?? item.total_marks ?? 100,
-        passed: item.passed ?? (item.status === 'Pass' || item.status === 'completed' || item.status === 'Completed'),
-        examDate: item.examDate || item.created_at || item.start_time || new Date().toISOString(),
-        questions: item.questions || [],
-        answers: item.answers || [],
-        isBackend: true
-      });
-
-      const transformLocal = (item) => ({
-        ...item,
-        examType: (item.examType || "daily").toLowerCase(),
-        isBackend: false
+        totalMarks: item.totalMarks ?? item.total_marks ?? (item.totalQuestions ? item.totalQuestions * 10 : 100),
+        passed: item.passed ?? (item.status === 'Pass' || item.status === 'completed' || (item.score / (item.totalMarks || 100) >= 0.35)),
+        examDate: item.examDate || item.created_at || item.start_time || item.date || new Date().toISOString()
       });
 
       const merged = [
-        ...allLocal.map(transformLocal),
-        ...backendResults.map(transformBackend),
-        ...weeklyResults.map(transformBackend)
+        ...currentLocal.map(i => transform(i, "daily")),
+        ...backendDaily.map(i => transform(i, "daily")),
+        ...backendWeekly.map(i => transform(i, "weekly")),
+        ...backendMonthly.map(i => transform(i, "monthly"))
       ];
 
-      // Deduplicate by Date (assuming ISO strings are unique per attempt)
-      const unique = merged.reduce((acc, current) => {
-        const key = current.examDate?.substring(0, 19); // YYYY-MM-DDTHH:MM:SS
-        if (key && !acc[key]) acc[key] = current;
-        else if (!key) {
-           const randKey = Math.random().toString(36);
-           acc[randKey] = current;
-        }
-        return acc;
-      }, {});
+      const seen = new Set();
+      const unique = merged.filter(item => {
+        const title = (item.examTitle || "").toLowerCase();
+        
+        const date = new Date(item.examDate).toISOString().substring(0, 16); // Minute precision
+        const key = `${date}_${title}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-      const sorted = Object.values(unique).sort(
-        (a, b) => new Date(b.examDate) - new Date(a.examDate)
-      );
-
-      setResults(sorted);
+      setResults(unique.sort((a, b) => new Date(b.examDate) - new Date(a.examDate)));
     } catch (error) {
-      console.error("Error fetching results:", error);
+      console.error("Aggregation Error:", error);
     } finally {
       setLoading(false);
     }

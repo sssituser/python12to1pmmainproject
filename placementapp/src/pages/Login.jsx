@@ -211,10 +211,7 @@ function Login() {
       localStorage.setItem("access", res.data.access);
       localStorage.setItem("refresh", res.data.refresh || "");
 
-      // 🛡️ CLEAR OLD CACHED EXAM DATA (ensures fresh session)
-      localStorage.removeItem("allExamResults");
-      localStorage.removeItem("recentExam");
-      localStorage.removeItem("examFailure");
+      // 🛡️ SYNC DATA (ensures fresh session state)
       const normalizedRole = (res.data.user?.role || "student").toString().trim().toLowerCase();
       // 🛡️ PERMANENT LEAVE IDENTITY SYNC (ensures 1000% history permanence)
       const userData = res.data.user || {};

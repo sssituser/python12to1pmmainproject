@@ -31,7 +31,7 @@ function MonthlyExamReports() {
       const currentUsername = getCurrentUsername();
       
       const config = { headers: token ? { Authorization: `Bearer ${token}` } : {} };
-      const url = `/api/all-exam-results/?exam_type=monthly${currentUsername ? `&username=${currentUsername}` : ''}`;
+      const url = `http://${window.location.hostname}:8000/api/all-exam-results/?exam_type=monthly&username=${currentUsername}`;
       
       let backendList = [];
       try {
@@ -165,14 +165,8 @@ function MonthlyExamReports() {
                   
                   <div className="w-full mb-8 text-center">
                     <h3 className="text-xl font-black text-slate-900 truncate mb-1 uppercase tracking-tight">
-                       {`Assessment ${exams.length - index}`}
+                       {exam.examTitle || exam.exam_title || `Monthly Assessment #${exams.length - index}`}
                     </h3>
-                    <div className="flex items-center justify-center gap-2">
-                       <User className="w-3 h-3 text-slate-300" />
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                          {exam.user?.username || exam.username || "Student"} | {exam.random_id || exam.id || "LOCAL"}
-                       </span>
-                    </div>
                   </div>
 
                   <div className="w-28 h-28 mb-8 relative">

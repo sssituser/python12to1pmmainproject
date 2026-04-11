@@ -181,6 +181,8 @@ const MonthlyExam = () => {
       if (!videoRef.current) return;
       const video = videoRef.current;
 
+      const prevFrameRef = { data: null };
+
       faceDetectionIntervalRef.current = setInterval(() => {
         if (!video.videoWidth || !video.videoHeight) return;
         
@@ -193,14 +195,32 @@ const MonthlyExam = () => {
         
         let brightness = 0;
         let rMax = 0, rMin = 255;
+        let topVariance = 0, botVariance = 0;
+        let motionDelta = 0;
+
         for (let i = 0; i < tData.length; i += 4) {
           const r = tData[i], g = tData[i+1], b = tData[i+2];
-          brightness += (0.299 * r + 0.587 * g + 0.114 * b);
+          const luma = (0.299 * r + 0.587 * g + 0.114 * b);
+          brightness += luma;
           if (r > rMax) rMax = r; if (r < rMin) rMin = r;
+          
+          if (prevFrameRef.data) {
+            motionDelta += Math.abs(luma - prevFrameRef.data[i/4]);
+          }
+
+          if (i < tData.length / 2) topVariance += luma;
+          else botVariance += luma;
         }
+
         brightness = brightness / 256;
         const isDark = brightness < 20; 
         const isFlat = (rMax - rMin < 20);
+        const isStatic = prevFrameRef.data && (motionDelta < 30);
+        const topAvg = topVariance / 128;
+        const botAvg = botVariance / 128;
+        const misalignment = Math.abs(topAvg - botAvg) > 60;
+
+        prevFrameRef.data = Array.from(tData).filter((_, i) => i % 4 === 0);
 
         const checkViolations = (faces) => {
           const noFace = !faces || faces.length === 0;
@@ -217,13 +237,18 @@ const MonthlyExam = () => {
             }
           }
 
-          if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered) {
+          const proctoringAIFailed = !window.FaceDetector;
+          const userHiding = proctoringAIFailed && misalignment;
+
+          if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered || userHiding || (isStatic && proctoringAIFailed)) {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 3000) {
+            } else if (Date.now() - violationStartTimeRef.current >= 4000) {
               if (isMultipleFaces) triggerWarning("Multiple persons detected");
               else if (isDark || isFlat) triggerWarning("Camera covered or blocked");
-              else if (noFace) triggerWarning("Face not detected");
+              else if (userHiding) triggerWarning("Improper camera angle - User hiding");
+              else if (isStatic) triggerWarning("Static background detected - Please move");
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not detected"); 
               else if (faceNotCentered) triggerWarning("Face moved off-center");
               violationStartTimeRef.current = null;
             }
@@ -236,14 +261,32 @@ const MonthlyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
-          checkViolations([{ boundingBox: { x: video.videoWidth/2, y: video.videoHeight/2, width: 10, height: 10 } }]);
+          checkViolations([]); 
         }
       }, 1000);
 
-      const handleVisibilityChange = () => { if (document.hidden) triggerWarning("Tab switching detected"); };
-      const handleBlur = () => { if (!document.hidden) triggerWarning("Window focus lost"); };
-      const handleFullscreenChange = () => { if (!document.fullscreenElement && examStarted) triggerWarning("Full screen exited"); };
-      const preventAction = (e) => { e.preventDefault(); triggerWarning("Restricted interaction"); };
+      const handleVisibilityChange = () => { 
+        if (document.hidden) {
+          console.warn("Security: Tab switch detected!");
+          triggerWarning("Tab switching detected");
+        }
+      };
+      const handleBlur = () => { 
+        if (!document.hidden) {
+          console.warn("Security: Focus lost detected!");
+          triggerWarning("Window focus lost"); 
+        }
+      };
+      const handleFullscreenChange = () => { 
+        if (!document.fullscreenElement && examStarted) {
+          console.warn("Security: Fullscreen exit detected!");
+          triggerWarning("Full screen exited"); 
+        }
+      };
+      const preventAction = (e) => { 
+        e.preventDefault(); 
+        triggerWarning("Restricted interaction (Copy/Paste/Right-click)"); 
+      };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
       window.addEventListener("blur", handleBlur);
@@ -265,7 +308,17 @@ const MonthlyExam = () => {
 
     startSecurityMonitoring();
     return () => cleanup();
-  }, [examStarted, examSubmitted]);
+  }, [examStarted, examSubmitted, webcamActive]);
+
+  const handleCloseWarningModal = async () => {
+    setShowWarningModal(false);
+    if (!document.fullscreenElement) {
+      try {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) await docEl.requestFullscreen();
+      } catch (e) {}
+    }
+  };
 
   // Block Back/Refresh
   useEffect(() => {
@@ -275,7 +328,7 @@ const MonthlyExam = () => {
       window.addEventListener("popstate", blockNavigation);
       const blockRefresh = (e) => {
         e.preventDefault();
-        e.returnValue = "Progress will be lost.";
+        e.returnValue = "Warning: Your exam progress will be lost if you refresh or close this tab.";
         return e.returnValue;
       };
       window.addEventListener("beforeunload", blockRefresh);
@@ -301,10 +354,11 @@ const MonthlyExam = () => {
     const result = {
       examTitle: `${studentCourse || 'Monthly'} Assessment`,
       examType: 'monthly',
+      course: studentCourse || "",
       user: {
         username: storedUser.username || "",
-        firstName: profile.fullName || storedUser.fullName || storedUser.firstName || "Student",
-        randomId: profile.studentId || storedUser.student_id || ""
+        studentId: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).studentId || storedUser.studentId || storedUser.username || "",
+        fullName: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || "Student"
       },
       score,
       total_marks: totalPossibleMarks,
@@ -574,7 +628,7 @@ const MonthlyExam = () => {
               <p className="text-gray-500 font-medium mb-8 leading-relaxed italic">
                 Reason: <span className="text-amber-600 font-bold">{warningMessage}</span>
               </p>
-              <button onClick={() => setShowWarningModal(false)} className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-xl shadow-amber-100 active:scale-95">Resume Session</button>
+              <button onClick={handleCloseWarningModal} className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-xl shadow-amber-100 active:scale-95">Resume Session</button>
            </div>
         </div>
       )}

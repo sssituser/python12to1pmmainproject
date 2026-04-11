@@ -10,6 +10,7 @@ const CodeCompiler = ({
   onCodeChange = null,
   isReadOnly = false
 }) => {
+  const [selectedLang, setSelectedLang] = useState(language);
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState("");
   const [error, setError] = useState(null);
@@ -17,6 +18,14 @@ const CodeCompiler = ({
   const [theme, setTheme] = useState("vs-dark");
   const [activeTab, setActiveTab] = useState("terminal");
   const [customInput, setCustomInput] = useState("");
+
+  const supportedLanguages = [
+    { label: "Python 3", value: "python" },
+    { label: "Java", value: "java" },
+    { label: "Node.js", value: "javascript" },
+    { label: "C++ (GCC)", value: "cpp" },
+    { label: "SQL", value: "sql" }
+  ];
 
   const normalizeLanguage = (lang) => {
     const l = (lang || "").toLowerCase();
@@ -28,7 +37,7 @@ const CodeCompiler = ({
     if (l.includes("css") || l.includes("bootstrap")) return "css";
     if (l.includes("sql") || l.includes("oracle") || l.includes("database")) return "sql";
     if (l.includes("dotnet") || l.includes("sharp")) return "csharp";
-    return "python"; // default
+    return "python"; 
   };
 
   useEffect(() => {
@@ -36,6 +45,10 @@ const CodeCompiler = ({
       setCode(initialCode);
     }
   }, [initialCode]);
+
+  useEffect(() => {
+      setSelectedLang(language);
+  }, [language]);
 
   const handleRunCode = async () => {
     if (!code.trim()) return;
@@ -48,7 +61,7 @@ const CodeCompiler = ({
     try {
       const res = await axios.post("/api/run-code/", {
         code,
-        language: language.toLowerCase(),
+        language: selectedLang.toLowerCase(),
         stdin: customInput,
       });
 
@@ -91,6 +104,16 @@ const CodeCompiler = ({
 
         <div className="flex gap-2">
           <select 
+            value={selectedLang} 
+            onChange={(e) => setSelectedLang(e.target.value)}
+            className="text-[10px] font-bold bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+          >
+            {supportedLanguages.map(l => (
+              <option key={l.value} value={l.value}>{l.label}</option>
+            ))}
+          </select>
+
+          <select 
             value={theme} 
             onChange={(e) => setTheme(e.target.value)}
             className="text-[10px] font-bold bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -114,7 +137,7 @@ const CodeCompiler = ({
         <div className="flex-1 relative border-r border-gray-100">
           <Editor
             height="100%"
-            language={normalizeLanguage(language)}
+            language={normalizeLanguage(selectedLang)}
             value={code}
             theme={theme}
             onChange={handleChange}
