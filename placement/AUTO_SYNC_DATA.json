@@ -1,7 +1,49 @@
 {
     "courses": [
         {
+            "id": 1,
+            "title": "Advanced Machine Learning",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Advanced Machine Learning"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:46:22.154132+00:00"
+        },
+        {
             "id": 2,
+            "title": "Data Science and Analytics",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Data Science and Analytics"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:55:23.021916+00:00"
+        },
+        {
+            "id": 3,
+            "title": "Artificial Intelligence and Deep Learning",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Artificial Intelligence and Deep Learning"
+            ],
+            "modules": null,
+            "custom_videos": {},
+            "created_at": "2026-04-03 21:59:22.111857+00:00"
+        },
+        {
+            "id": 5,
             "title": "Python Full Stack",
             "level": "Beginner",
             "duration": "Self-paced",
@@ -226,11 +268,11 @@
                 }
             ],
             "custom_videos": {},
-            "created_at": "2026-04-05 10:04:38.754151+00:00"
+            "created_at": "2026-04-04 20:36:22.243427+00:00"
         },
         {
-            "id": 3,
-            "title": "Java Full Stack",
+            "id": 6,
+            "title": "java full stack",
             "level": "Beginner",
             "duration": "Self-paced",
             "progress": 0,
@@ -240,11 +282,11 @@
             ],
             "modules": null,
             "custom_videos": {},
-            "created_at": "2026-04-05 13:02:50.968660+00:00"
+            "created_at": "2026-04-05 04:14:27.089981+00:00"
         },
         {
-            "id": 4,
-            "title": ".net Full Stack",
+            "id": 7,
+            "title": ".net Full stack",
             "level": "Beginner",
             "duration": "Self-paced",
             "progress": 0,
@@ -259,35 +301,11 @@
                 }
             ],
             "custom_videos": {},
-            "created_at": "2026-04-05 13:02:50.983077+00:00"
+            "created_at": "2026-04-05 06:18:21.014809+00:00"
         },
         {
-            "id": 5,
-            "title": "Mern Full Stack",
-            "level": "Beginner",
-            "duration": "6 Months",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 13:02:50.995149+00:00"
-        },
-        {
-            "id": 6,
-            "title": "Data Science and Agentic AI",
-            "level": "Beginner",
-            "duration": "6 Months",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 13:02:51.005696+00:00"
-        },
-        {
-            "id": 7,
-            "title": "UI Full Stack",
+            "id": 8,
+            "title": "UI FULL STACK",
             "level": "Beginner",
             "duration": "Self-paced",
             "progress": 0,
@@ -297,107 +315,55 @@
             ],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-05 13:02:51.017563+00:00"
-        },
-        {
-            "id": 8,
-            "title": "",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to Advanced Machine Learning"
-            ],
-            "modules": null,
-            "custom_videos": {},
-            "created_at": "2026-04-10 16:52:29.175863+00:00"
+            "created_at": "2026-04-09 10:26:21.471797+00:00"
         },
         {
             "id": 9,
             "title": "",
             "level": "Beginner",
-            "duration": "Self-paced",
+            "duration": "6 Months",
             "progress": 0,
             "locked": false,
-            "topics": [
-                "Introduction to Data Science and Analytics"
-            ],
-            "modules": null,
+            "topics": [],
+            "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-10 16:52:29.294394+00:00"
+            "created_at": "2026-04-12 06:50:03.942777+00:00"
         },
         {
             "id": 10,
             "title": "",
             "level": "Beginner",
-            "duration": "Self-paced",
+            "duration": "6 Months",
             "progress": 0,
             "locked": false,
-            "topics": [
-                "Introduction to Artificial Intelligence and Deep Learning"
-            ],
-            "modules": null,
+            "topics": [],
+            "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-10 16:52:29.328321+00:00"
-        },
-        {
-            "id": 11,
-            "title": "",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to Advanced Machine Learning"
-            ],
-            "modules": null,
-            "custom_videos": {},
-            "created_at": "2026-04-11 13:55:27.189685+00:00"
-        },
-        {
-            "id": 12,
-            "title": "",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to Data Science and Analytics"
-            ],
-            "modules": null,
-            "custom_videos": {},
-            "created_at": "2026-04-11 13:55:27.216437+00:00"
-        },
-        {
-            "id": 13,
-            "title": "",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to Artificial Intelligence and Deep Learning"
-            ],
-            "modules": null,
-            "custom_videos": {},
-            "created_at": "2026-04-11 13:55:27.241285+00:00"
+            "created_at": "2026-04-12 06:50:03.964683+00:00"
         }
     ],
     "configs": [
         {
             "id": 1,
-            "exam_name": "Daily Assessment",
-            "course_name": "",
+            "exam_name": "Weekly Assessment",
+            "course_name": "PYTHON FULL STACK",
             "subjects": [
-                "Python"
+                "Python",
+                "HTML",
+                "CSS",
+                "JAVASCRIPT",
+                "BOOTSTRAP",
+                "REACT",
+                "DJANGO",
+                "RESTFRAMEWORK",
+                "PYTHON FULL STACK"
             ],
-            "duration": 80,
-            "passing_strategy": "percentage",
-            "requirement": 34,
+            "duration": 75,
+            "passing_strategy": "correct_answers",
+            "requirement": 13,
             "question_count": 25,
             "marks_per_question": 2,
-            "updated_at": "2026-04-10 16:52:29.494091+00:00"
+            "updated_at": "2026-04-12 06:50:05.073021+00:00"
         }
     ]
 }
