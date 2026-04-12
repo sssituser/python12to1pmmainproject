@@ -210,8 +210,27 @@ const DailyExam = () => {
         }
 
         if (Array.isArray(pool) && pool.length > 0) {
-          const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, qLim);
-          setQuestions(shuffled.map((q, i) => ({ ...q, id: i + 1, marks: weight, options: q.options || [], correct: q.correct ?? 0 })));
+          const shuffleArray = (array) => {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+          };
+
+          const shuffled = shuffleArray(pool).slice(0, qLim);
+          setQuestions(shuffled.map((q, i) => {
+            const opts = q.options || [];
+            const shuffledOptions = shuffleArray(opts);
+            return {
+              ...q,
+              id: i + 1,
+              marks: weight,
+              options: shuffledOptions,
+              correct: shuffledOptions.indexOf(q.answer) !== -1 ? shuffledOptions.indexOf(q.answer) : (q.correct ?? 0)
+            };
+          }));
         } else {
           setQuestions(Array.from({ length: qLim }, (_, i) => ({
             id: i + 1,

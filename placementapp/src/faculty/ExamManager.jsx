@@ -13,6 +13,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { industryCourses, defaultCourses } from "../components/CourseData.jsx";
+import { getQuestionBank } from "./QuestionBank.js";
 
 
 function ExamManager() {
@@ -59,11 +60,7 @@ function ExamManager() {
       
       try {
         // 🏗️ Step 1: Fetch from Backend (Source of Truth)
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/courses/`, {
-          headers: {
-            'Authorization': `Bearer ${cleanToken}`
-          }
-        });
+        const response = await authenticatedRequest('get', `http://${window.location.hostname}:8000/api/courses/`);
         
         let apiCourses = [];
         if (response.data) {
@@ -87,12 +84,16 @@ function ExamManager() {
         const mergedCourseObjects = [...localCustom, ...apiCourses, ...defaultCourses];
         
         // 🏗️ Step 3: Extract Titles for Dropdown (Unique & Clean)
-        const allTitles = new Set([
-          ...mergedCourseObjects.map(c => (typeof c === 'string' ? c : (c.title || "")))
-        ]);
+        const titleMap = new Map();
+        mergedCourseObjects.forEach(c => {
+          const title = (typeof c === 'string' ? c : (c.title || "")).trim();
+          if (title) {
+            const key = title.toUpperCase();
+            if (!titleMap.has(key)) titleMap.set(key, title);
+          }
+        });
         
-        const sortedTitles = Array.from(allTitles)
-          .filter(t => t && t.trim() !== "")
+        const sortedTitles = Array.from(titleMap.values())
           .sort((a, b) => a.localeCompare(b));
 
         setCourses(sortedTitles);
@@ -106,12 +107,16 @@ function ExamManager() {
         const facultyData = rawFaculty ? JSON.parse(rawFaculty) : [];
         
         const combinedFallback = [...facultyData, ...defaultCourses];
-        const allTitles = new Set([
-          ...combinedFallback.map(c => (typeof c === 'string' ? c : (c.title || c)))
-        ]);
+        const titleMap = new Map();
+        combinedFallback.forEach(c => {
+          const title = (typeof c === 'string' ? c : (c.title || c)).toString().trim();
+          if (title) {
+            const key = title.toUpperCase();
+            if (!titleMap.has(key)) titleMap.set(key, title);
+          }
+        });
         
-        const sortedTitles = Array.from(allTitles)
-          .filter(t => t && t.trim() !== "")
+        const sortedTitles = Array.from(titleMap.values())
           .sort((a, b) => a.localeCompare(b));
 
         setCourses(sortedTitles);
@@ -171,6 +176,54 @@ function ExamManager() {
   // 🏗️ TRACK PREVIOUS COURSE FOR STABLE RESETS
   const [lastSyncedCourse, setLastSyncedCourse] = useState("");
 
+  // 🛡️ AUTHENTICATION HELPER
+  const getAuthHeader = () => {
+    const rawToken = localStorage.getItem("access");
+    if (!rawToken) return {};
+    const cleanToken = rawToken.replace(/^"|"$/g, "").trim();
+    return { 
+      headers: { 
+        Authorization: `Bearer ${cleanToken}`,
+        "Content-Type": "application/json"
+      } 
+    };
+  };
+
+  // 🛡️ AUTHENTICATION & RETRY HELPER
+  const authenticatedRequest = async (method, url, data = null, params = null) => {
+    const makeRequest = async () => {
+      const config = getAuthHeader();
+      if (method.toLowerCase() === 'get') return axios.get(url, { ...config, params });
+      return axios.post(url, data, config);
+    };
+
+    try {
+      return await makeRequest();
+    } catch (err) {
+      if (err.response?.status === 401) {
+        console.log("🔒 Token expired in ExamManager, attempting refresh...");
+        try {
+          const refreshToken = localStorage.getItem("refresh");
+          if (!refreshToken) throw new Error("No refresh token");
+
+          const refreshRes = await axios.post(`http://${window.location.hostname}:8000/api/jwt/refresh/`, { 
+            refresh: refreshToken 
+          });
+
+          if (refreshRes.data && refreshRes.data.access) {
+            localStorage.setItem("access", refreshRes.data.access);
+            console.log("🔓 Token refreshed, retrying original request...");
+            return await makeRequest();
+          }
+        } catch (refreshErr) {
+          console.error("❌ Refresh failed:", refreshErr);
+          // Optional: redirect to login if session is totally dead
+        }
+      }
+      throw err;
+    }
+  };
+
   // 🏗️ MASTER SYNC ENGINE
   useEffect(() => {
     // Determine the desired state based on existing flags
@@ -221,7 +274,7 @@ function ExamManager() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get(`${BASE_URL}?category=${category}&course=${selectedCourse}`);
+        const res = await authenticatedRequest('get', BASE_URL, null, { category, course: selectedCourse });
         if (res.data && res.data.success && res.data.data) {
           const { maxQuestions: savedMax, questions: savedQuestions, passingRule: rule, passingValue: val, duration: savedDuration } = res.data.data;
           setMaxQuestions(savedMax || 50);
@@ -296,7 +349,7 @@ function ExamManager() {
         marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
       };
       
-      await axios.post(`http://${window.location.hostname}:8000/api/automated-exam-config/`, configPayload);
+      await authenticatedRequest('post', `http://${window.location.hostname}:8000/api/automated-exam-config/`, configPayload);
 
       // 🏗️ Step 2: Save Assessment Rules (General Dashboard Rules)
       const settingsPayload = {
@@ -309,7 +362,7 @@ function ExamManager() {
         marks_per_question: configPayload.marks_per_question
       };
       
-      await axios.post(BASE_URL, settingsPayload);
+      await authenticatedRequest('post', BASE_URL, settingsPayload);
 
       // 🏗️ Step 3: Map Previewed Questions to the Assessment (Persistent Sync)
       if (selectedPreviewQuestions.length > 0) {
@@ -341,7 +394,14 @@ function ExamManager() {
   const handleAutoGenerate = async () => {
     const isDaily = category === "Daily";
     const targetCourse = isDaily ? examCourseName : selectedCourse;
-    const count = parseInt(isDaily ? examQuestionCount : maxQuestions) || 12;
+
+    if (targetCourse === "all" || targetCourse === "ALL") {
+      toast.info("Please select a specific course or use 'Global Generation' mode.");
+      return;
+    }
+    
+    // Respect the UI input for count, defaulting to 80 for high-stakes if empty
+    const count = parseInt(isDaily ? examQuestionCount : maxQuestions) || (category === "Weekly" || category === "Monthly" ? 80 : 12);
     
     let targetSubjects = [];
     if (isDaily) {
@@ -350,7 +410,12 @@ function ExamManager() {
       targetSubjects = (selectedCourse === "all") ? getAllSubjects() : getSubjectsForCourse(selectedCourse);
     }
 
-    if (targetSubjects.length === 0) {
+    if (targetSubjects.length === 0 && !isDaily) {
+       // For Weekly/Monthly we can proceed with course name if subjects are missing
+       targetSubjects = [targetCourse];
+    }
+    
+    if (targetSubjects.length === 0 && isDaily) {
       toast.warn("Please select subjects to generate preview!", { position: "top-center" });
       return;
     }
@@ -359,111 +424,31 @@ function ExamManager() {
     setPreviewMode(false);
     
     try {
-      const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+      // 🚀 SYSTEM AUTO-ADD: Use the rich QuestionBank generator with subject awareness
+      const generatedQuestions = getQuestionBank(targetCourse, count, category, targetSubjects);
       
-      let allQs = [];
-      try {
-        const res = await axios.get(`http://${window.location.hostname}:8000/api/questions/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        allQs = Array.isArray(res.data) ? res.data : (res.data.data || res.data.results || []);
-      } catch (e) {
-        console.warn("Primary question bank failed, trying playground fallback...");
-        try {
-          const res = await axios.get(`http://${window.location.hostname}:8000/api/playground-questions/`, {
-             headers: { Authorization: `Bearer ${token}` }
-          });
-          allQs = Array.isArray(res.data) ? res.data : (res.data.data || res.data.results || []);
-        } catch (e2) {
-          console.error("All backend question sources failed.");
-          allQs = [
-            { id: 9991, question: `Sample ${targetCourse} Question 1`, options: ["A", "B", "C", "D"], answer: "A", subject: targetCourse, category: category },
-            { id: 9992, question: `Sample ${targetCourse} Question 2`, options: ["A", "B", "C", "D"], answer: "B", subject: targetCourse, category: category }
-          ];
-        }
-      }
-
-      const filtered = allQs.filter(q => {
-        if (!q) return false;
-        const sub = String(q.subject || q.category || q.topic || "").toUpperCase().trim();
-        const qText = String(q.question || "").toUpperCase();
-        
-        return targetSubjects.some(s => {
-          const sUpper = String(s).toUpperCase().trim();
-          return sub.includes(sUpper) || sUpper.includes(sub) || qText.includes(sUpper);
-        }) || sub.includes(String(targetCourse).toUpperCase());
+      // Shuffle them further to ensure randomness for every click
+      const shuffled = [...generatedQuestions].sort(() => 0.5 - Math.random());
+      
+      // Update state
+      setSelectedPreviewQuestions(shuffled);
+      setPreviewMode(true);
+      
+      toast.success(`SYSTEM AUTO-ADD: ${shuffled.length} unique questions generated for ${targetCourse} [${category}].`, { 
+        icon: "🔮",
+        position: "top-right"
       });
 
-      let finalSelection = filtered;
-      if (finalSelection.length < count / 2) {
-        const trackKeywords = String(targetCourse || "Python").toUpperCase()
-          .split(/[\s-]+/)
-          .filter(w => w.length > 2 && !["AND", "THE", "OFF", "FULL", "STACK"].includes(w));
-          
-        const fallbackQs = allQs.filter(q => {
-          if (!q) return false;
-          const sub = String(q.subject || q.category || q.topic || "").toUpperCase();
-          const qText = String(q.question || "").toUpperCase();
-          return trackKeywords.some(kw => sub.includes(kw) || qText.includes(kw));
-        });
-        
-        const seenIds = new Set(finalSelection.map(q => q.id));
-        fallbackQs.forEach(q => {
-          if (!seenIds.has(q.id)) {
-            finalSelection.push(q);
-            seenIds.add(q.id);
-          }
-        });
-      }
+      // Persist them 
+      setQuestions(shuffled);
+      // saveQuestionsToBackend(shuffled, category); // Optional: developer can decide if they want to save immediately or wait for confirm
 
-      if (finalSelection.length === 0) {
-        console.warn(`No questions in DB for ${targetCourse}. Generating dynamic high-quality questions...`);
-        
-        const technicalSeeds = [
-          { q: `What is the primary purpose of a 'virtual environment' in ${targetCourse} development?`, a: "To isolate project-specific dependencies", opts: ["To speed up execution", "To isolate project-specific dependencies", "To design user interfaces", "To manage database migrations"] },
-          { q: `Which of the following best describes 'asynchronous programming' in modern ${targetCourse} architectures?`, a: "Executing multiple tasks concurrently without blocking the main thread", opts: ["Executing tasks strictly one after another", "Encrypting data for security", "Executing multiple tasks concurrently without blocking the main thread", "Deleting old log files automatically"] },
-          { q: `How does indexing improve performance in large-scale ${targetCourse} database integrations?`, a: "By reducing the number of data pages the engine must read", opts: ["By compressing the entire database", "By encrypting sensitive fields", "By reducing the number of data pages the engine must read", "By changing the data types automatically"] },
-          { q: `In the context of ${targetCourse}, what is a 'Decorator'?`, a: "A function that modifies the behavior of another function", opts: ["A UI styling element", "A function that modifies the behavior of another function", "A database relationship", "A type of class inheritance"] }
-        ];
-
-        const dynamicQs = [];
-        for (let i = 1; i <= count; i++) {
-          const seed = technicalSeeds[(i-1) % technicalSeeds.length];
-          dynamicQs.push({
-            id: `dyn_${targetCourse.replace(/\s+/g, '_')}_${i}_${Date.now()}`,
-            question: seed.q,
-            options: seed.opts.sort(() => Math.random() - 0.5),
-            answer: seed.a,
-            subject: targetCourse,
-            category: category,
-            marks: isDaily ? parseInt(examMarksPerQuestion) : 2,
-            type: "mcq"
-          });
-        }
-        finalSelection = dynamicQs;
-        
-        // 🚀 PERSIST IMMEDIATELY (Fulfills "add dynamically" requirement)
-        const updatedQuestions = [...questions, ...dynamicQs];
-        setQuestions(updatedQuestions);
-        saveQuestionsToBackend(updatedQuestions, category);
-
-        toast.success(`SYSTEM AUTO-ADD: ${count} questions generated & added to ${targetCourse} bank.`, { icon: "🔮" });
-      }
-
-      const shuffled = [...finalSelection].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, count);
-
-      setSelectedPreviewQuestions(selected);
-      setPreviewMode(true);
-      setIsAutoGenerating(false);
-      
       setTimeout(() => {
         document.getElementById('exam-preview-section')?.scrollIntoView({ behavior: 'smooth' });
       }, 150);
 
     } catch (err) {
       console.error("Internal process failure:", err);
-      setIsAutoGenerating(false);
       toast.error("Process error: Check console for details.");
     } finally {
       setIsAutoGenerating(false);
@@ -475,13 +460,8 @@ function ExamManager() {
     
     setIsAutoGenerating(true);
     try {
-      const token = localStorage.getItem("access");
-      const config = {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-      };
+      const config = getAuthHeader();
+      if (!config.headers) throw new Error("Authentication missing. Please re-login.");
 
       const isDaily = category === "Daily";
 
@@ -501,7 +481,11 @@ function ExamManager() {
                 question_count: parseInt(isDaily ? examQuestionCount : maxQuestions) || 25,
                 marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
             };
-            await axios.post(`http://${window.location.hostname}:8000/api/automated-exam-config/`, payload, config);
+            await authenticatedRequest('post', `http://${window.location.hostname}:8000/api/automated-exam-config/`, payload);
+            
+            // 🚀 NEW: Bulk add 80 questions to database for this course
+            const bulkQuestions = getQuestionBank(title, 80, category, subs);
+            await saveQuestionsToBackend(bulkQuestions, category, title);
         }
       }
       
@@ -521,29 +505,20 @@ function ExamManager() {
   };
 
 
-  // Save questions list to backend
-  const saveQuestionsToBackend = async (questionsToSave, categoryToSave) => {
+  const saveQuestionsToBackend = async (questionsToSave, categoryToSave, optionalCourse = null) => {
     setIsQuestionsSaving(true);
     try {
       const isDaily = categoryToSave === "Daily";
-      const targetCourse = isDaily ? examCourseName : selectedCourse;
+      const targetCourse = optionalCourse || (isDaily ? examCourseName : selectedCourse);
       
-      // Determine the subject context for the manual question bank
-      let targetSubject = "";
-      if (isDaily) {
-        // If multiple subjects active, use the first one as primary context
-        targetSubject = examSubjects.length > 0 ? examSubjects[0] : "";
-      } else {
-        targetSubject = "Full Track"; // Manual entries for weekly/monthly go to general course bank
-      }
-
       const payload = {
         category: categoryToSave,
         course: targetCourse,
-        subject: targetSubject,
+        subject: "Full Track",
         questions: questionsToSave
       };
-      const res = await axios.post(BASE_URL, payload);
+
+      const res = await authenticatedRequest('post', BASE_URL, payload);
       if (res.data && res.data.success) {
         console.log("✅ Questions synced to " + categoryToSave);
       } else {

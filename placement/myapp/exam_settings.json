@@ -8,608 +8,7 @@
     },
     "Python Full Stack_Weekly": {
         "maxQuestions": 25,
-        "questions": [
-            {
-                "id": "dyn_Python_Full_Stack_15_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_14_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_8_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_6_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_18_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_24_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_9_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_12_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_5_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_4_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_7_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_17_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_3_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_25_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_13_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_19_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_21_1775909100951",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_10_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_20_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_2_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_1_1775909100950",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To speed up execution",
-                    "To manage database migrations",
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_16_1775909100951",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A function that modifies the behavior of another function",
-                    "A database relationship",
-                    "A UI styling element",
-                    "A type of class inheritance"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_11_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_23_1775909100951",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By compressing the entire database",
-                    "By changing the data types automatically",
-                    "By encrypting sensitive fields",
-                    "By reducing the number of data pages the engine must read"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_22_1775909100951",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Executing tasks strictly one after another",
-                    "Encrypting data for security",
-                    "Deleting old log files automatically"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "isDynamic": true
-            },
-            {
-                "id": "dyn_Python_Full_Stack_1_1775912134532",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces",
-                    "To speed up execution",
-                    "To manage database migrations"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_2_1775912134532",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Deleting old log files automatically",
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Encrypting data for security",
-                    "Executing tasks strictly one after another"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_3_1775912134532",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By changing the data types automatically",
-                    "By compressing the entire database",
-                    "By reducing the number of data pages the engine must read",
-                    "By encrypting sensitive fields"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_4_1775912134532",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A UI styling element",
-                    "A type of class inheritance",
-                    "A database relationship",
-                    "A function that modifies the behavior of another function"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_5_1775912134532",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces",
-                    "To speed up execution",
-                    "To manage database migrations"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_6_1775912134532",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Deleting old log files automatically",
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Encrypting data for security",
-                    "Executing tasks strictly one after another"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_7_1775912134532",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By changing the data types automatically",
-                    "By compressing the entire database",
-                    "By reducing the number of data pages the engine must read",
-                    "By encrypting sensitive fields"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_8_1775912134532",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A UI styling element",
-                    "A type of class inheritance",
-                    "A database relationship",
-                    "A function that modifies the behavior of another function"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_9_1775912134532",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces",
-                    "To speed up execution",
-                    "To manage database migrations"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_10_1775912134532",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Deleting old log files automatically",
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Encrypting data for security",
-                    "Executing tasks strictly one after another"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_11_1775912134532",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By changing the data types automatically",
-                    "By compressing the entire database",
-                    "By reducing the number of data pages the engine must read",
-                    "By encrypting sensitive fields"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_12_1775912134532",
-                "question": "In the context of Python Full Stack, what is a 'Decorator'?",
-                "options": [
-                    "A UI styling element",
-                    "A type of class inheritance",
-                    "A database relationship",
-                    "A function that modifies the behavior of another function"
-                ],
-                "answer": "A function that modifies the behavior of another function",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_13_1775912134532",
-                "question": "What is the primary purpose of a 'virtual environment' in Python Full Stack development?",
-                "options": [
-                    "To isolate project-specific dependencies",
-                    "To design user interfaces",
-                    "To speed up execution",
-                    "To manage database migrations"
-                ],
-                "answer": "To isolate project-specific dependencies",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_14_1775912134532",
-                "question": "Which of the following best describes 'asynchronous programming' in modern Python Full Stack architectures?",
-                "options": [
-                    "Deleting old log files automatically",
-                    "Executing multiple tasks concurrently without blocking the main thread",
-                    "Encrypting data for security",
-                    "Executing tasks strictly one after another"
-                ],
-                "answer": "Executing multiple tasks concurrently without blocking the main thread",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            },
-            {
-                "id": "dyn_Python_Full_Stack_15_1775912134532",
-                "question": "How does indexing improve performance in large-scale Python Full Stack database integrations?",
-                "options": [
-                    "By changing the data types automatically",
-                    "By compressing the entire database",
-                    "By reducing the number of data pages the engine must read",
-                    "By encrypting sensitive fields"
-                ],
-                "answer": "By reducing the number of data pages the engine must read",
-                "subject": "Python Full Stack",
-                "category": "Weekly",
-                "marks": 2,
-                "type": "mcq"
-            }
-        ],
+        "questions": [],
         "passingRule": "correct_answers",
         "passingValue": 13,
         "duration": 75
@@ -683,5 +82,721 @@
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45
+    },
+    "java full stack_Weekly": {
+        "maxQuestions": 25,
+        "questions": [
+            {
+                "question": "[Knowledge Check] Which design pattern is fundamental to java full stack? (In Enterprise Context)",
+                "options": [
+                    "Singleton",
+                    "Strategy",
+                    "Prototype",
+                    "Proxy"
+                ],
+                "answer": "Proxy",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ext_1_tlyc7_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How does java full stack handle concurrent requests in java full stack?",
+                "options": [
+                    "Non-blocking event loop",
+                    "Master-worker pattern",
+                    "Thread pooling",
+                    "Blocking IO"
+                ],
+                "answer": "Thread pooling",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_oat7dmb9d_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which design pattern is fundamental to JAVA FULL STACK?",
+                "options": [
+                    "Prototype",
+                    "Proxy",
+                    "Singleton",
+                    "Strategy"
+                ],
+                "answer": "Proxy",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_wfpm5s0r2_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which error is most likely when java full stack fails? (In Enterprise Context)",
+                "options": [
+                    "StackOverflowError",
+                    "NullPointerException",
+                    "BeanCreationException",
+                    "NoClassDefFoundError"
+                ],
+                "answer": "BeanCreationException",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ext_5_nwix6_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the memory footprint of JAVA FULL STACK in a standard JVM? (In Corporate Context)",
+                "options": [
+                    "Metaspace intensive",
+                    "Constant overhead",
+                    "Heap bound",
+                    "Stack bound"
+                ],
+                "answer": "Heap bound",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_8_m4dyi_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How do you optimize JAVA FULL STACK for high traffic? (In Enterprise Context)",
+                "options": [
+                    "Load Balancing",
+                    "Caching",
+                    "Code Refactoring",
+                    "Vertical Scaling"
+                ],
+                "answer": "Caching",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_9_etzu3_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which error is most likely when JAVA FULL STACK fails? (In Corporate Context)",
+                "options": [
+                    "NoClassDefFoundError",
+                    "BeanCreationException",
+                    "StackOverflowError",
+                    "NullPointerException"
+                ],
+                "answer": "BeanCreationException",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_4_nixq3_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which design pattern is fundamental to JAVA FULL STACK? (In Corporate Context)",
+                "options": [
+                    "Prototype",
+                    "Proxy",
+                    "Singleton",
+                    "Strategy"
+                ],
+                "answer": "Proxy",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_6_e0fi4_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which error is most likely when JAVA FULL STACK fails?",
+                "options": [
+                    "NoClassDefFoundError",
+                    "BeanCreationException",
+                    "StackOverflowError",
+                    "NullPointerException"
+                ],
+                "answer": "BeanCreationException",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_6crtt94c1_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] In the context of java full stack, why is JAVA FULL STACK considered essential?",
+                "options": [
+                    "Community Support",
+                    "Ease of Testing",
+                    "Efficiency",
+                    "Type Stability"
+                ],
+                "answer": "Efficiency",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_co3k3zhta_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How do you optimize JAVA FULL STACK for high traffic?",
+                "options": [
+                    "Load Balancing",
+                    "Caching",
+                    "Code Refactoring",
+                    "Vertical Scaling"
+                ],
+                "answer": "Caching",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_7nxt6fxqx_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How do you optimize java full stack for high traffic?",
+                "options": [
+                    "Load Balancing",
+                    "Caching",
+                    "Vertical Scaling",
+                    "Code Refactoring"
+                ],
+                "answer": "Caching",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_4kmospw0x_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] In the context of java full stack, why is JAVA FULL STACK considered essential? (In Corporate Context)",
+                "options": [
+                    "Community Support",
+                    "Ease of Testing",
+                    "Efficiency",
+                    "Type Stability"
+                ],
+                "answer": "Efficiency",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_0_r5xc1_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How does java full stack handle concurrent requests in java full stack? (In Enterprise Context)",
+                "options": [
+                    "Non-blocking event loop",
+                    "Master-worker pattern",
+                    "Thread pooling",
+                    "Blocking IO"
+                ],
+                "answer": "Thread pooling",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ext_7_xfh00_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which error is most likely when java full stack fails?",
+                "options": [
+                    "StackOverflowError",
+                    "NullPointerException",
+                    "BeanCreationException",
+                    "NoClassDefFoundError"
+                ],
+                "answer": "BeanCreationException",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ig8mh1qi0_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the standard configuration for java full stack?",
+                "options": [
+                    "Hardcoded in Main",
+                    "XML mapping",
+                    "Annotation based",
+                    "Environment variables"
+                ],
+                "answer": "Annotation based",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_np4nn0t5m_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How does JAVA FULL STACK handle concurrent requests in java full stack? (In Corporate Context)",
+                "options": [
+                    "Thread pooling",
+                    "Non-blocking event loop",
+                    "Master-worker pattern",
+                    "Blocking IO"
+                ],
+                "answer": "Thread pooling",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_ext_2_gc9cz_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the standard configuration for JAVA FULL STACK?",
+                "options": [
+                    "XML mapping",
+                    "Hardcoded in Main",
+                    "Annotation based",
+                    "Environment variables"
+                ],
+                "answer": "Annotation based",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_nxo5fezo6_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the memory footprint of JAVA FULL STACK in a standard JVM?",
+                "options": [
+                    "Metaspace intensive",
+                    "Constant overhead",
+                    "Heap bound",
+                    "Stack bound"
+                ],
+                "answer": "Heap bound",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_wta78b8m8_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the memory footprint of java full stack in a standard JVM?",
+                "options": [
+                    "Heap bound",
+                    "Metaspace intensive",
+                    "Constant overhead",
+                    "Stack bound"
+                ],
+                "answer": "Heap bound",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_aeqe42oav_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] What is the memory footprint of java full stack in a standard JVM? (In Enterprise Context)",
+                "options": [
+                    "Heap bound",
+                    "Metaspace intensive",
+                    "Constant overhead",
+                    "Stack bound"
+                ],
+                "answer": "Heap bound",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ext_3_nvt0h_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] In the context of java full stack, why is java full stack considered essential? (In Corporate Context)",
+                "options": [
+                    "Ease of Testing",
+                    "Community Support",
+                    "Efficiency",
+                    "Type Stability"
+                ],
+                "answer": "Efficiency",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_ext_10_t8b46_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] In the context of java full stack, why is java full stack considered essential?",
+                "options": [
+                    "Ease of Testing",
+                    "Community Support",
+                    "Efficiency",
+                    "Type Stability"
+                ],
+                "answer": "Efficiency",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_kdmiubfw9_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] Which design pattern is fundamental to java full stack?",
+                "options": [
+                    "Singleton",
+                    "Strategy",
+                    "Prototype",
+                    "Proxy"
+                ],
+                "answer": "Proxy",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "java full stack",
+                "id": "auto_y8z8yx5ak_1775979712672"
+            },
+            {
+                "question": "[Knowledge Check] How does JAVA FULL STACK handle concurrent requests in java full stack?",
+                "options": [
+                    "Thread pooling",
+                    "Non-blocking event loop",
+                    "Master-worker pattern",
+                    "Blocking IO"
+                ],
+                "answer": "Thread pooling",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "JAVA FULL STACK",
+                "id": "auto_anpfcguh0_1775979712672"
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 13,
+        "duration": 75
+    },
+    "ORACLE DATABASE_Weekly": {
+        "maxQuestions": 25,
+        "questions": [
+            {
+                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "options": [
+                    "Validation Sets",
+                    "Training Loss",
+                    "Manual Review",
+                    "Deployment Feedback"
+                ],
+                "answer": "Validation Sets",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_13_upmzi_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "options": [
+                    "Data Quality",
+                    "Algorithmic Complexity",
+                    "Processing Power",
+                    "All of the above"
+                ],
+                "answer": "All of the above",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_10_azw6o_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success?",
+                "options": [
+                    "Linear Algebra",
+                    "Graph Theory",
+                    "Probability",
+                    "Calculus"
+                ],
+                "answer": "Linear Algebra",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_q51h2a4wh_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "options": [
+                    "Linear Algebra",
+                    "Graph Theory",
+                    "Probability",
+                    "Calculus"
+                ],
+                "answer": "Linear Algebra",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_0_etbvp_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE?",
+                "options": [
+                    "Validation Sets",
+                    "Training Loss",
+                    "Manual Review",
+                    "Deployment Feedback"
+                ],
+                "answer": "Validation Sets",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_b9jmtawpw_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "options": [
+                    "Exporting Results",
+                    "Client Meeting",
+                    "Algorithm Selection",
+                    "Data Cleaning"
+                ],
+                "answer": "Data Cleaning",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_17_gt8oz_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "options": [
+                    "Linear Algebra",
+                    "Graph Theory",
+                    "Probability",
+                    "Calculus"
+                ],
+                "answer": "Linear Algebra",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_18_ted2a_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "options": [
+                    "Python/R",
+                    "Excel",
+                    "Power BI",
+                    "Depends on Scale"
+                ],
+                "answer": "Depends on Scale",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_8_o5pje_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "options": [
+                    "Exporting Results",
+                    "Client Meeting",
+                    "Algorithm Selection",
+                    "Data Cleaning"
+                ],
+                "answer": "Data Cleaning",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_5_9je0s_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "options": [
+                    "Python/R",
+                    "Excel",
+                    "Power BI",
+                    "Depends on Scale"
+                ],
+                "answer": "Depends on Scale",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_2_d592u_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "options": [
+                    "Linear Algebra",
+                    "Graph Theory",
+                    "Probability",
+                    "Calculus"
+                ],
+                "answer": "Linear Algebra",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_6_zlurr_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step?",
+                "options": [
+                    "Exporting Results",
+                    "Client Meeting",
+                    "Algorithm Selection",
+                    "Data Cleaning"
+                ],
+                "answer": "Data Cleaning",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_t94xt5bzp_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "options": [
+                    "Validation Sets",
+                    "Training Loss",
+                    "Manual Review",
+                    "Deployment Feedback"
+                ],
+                "answer": "Validation Sets",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_7_s45ua_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE?",
+                "options": [
+                    "Python/R",
+                    "Excel",
+                    "Power BI",
+                    "Depends on Scale"
+                ],
+                "answer": "Depends on Scale",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_viay4eur9_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "options": [
+                    "Validation Sets",
+                    "Training Loss",
+                    "Manual Review",
+                    "Deployment Feedback"
+                ],
+                "answer": "Validation Sets",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_1_8v0e8_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "options": [
+                    "User Interface",
+                    "Networking",
+                    "Data Storage",
+                    "Pattern Recognition"
+                ],
+                "answer": "Pattern Recognition",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_15_fydjo_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "options": [
+                    "User Interface",
+                    "Networking",
+                    "Data Storage",
+                    "Pattern Recognition"
+                ],
+                "answer": "Pattern Recognition",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_9_n46i9_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "options": [
+                    "Exporting Results",
+                    "Client Meeting",
+                    "Algorithm Selection",
+                    "Data Cleaning"
+                ],
+                "answer": "Data Cleaning",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_11_xo0pa_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "options": [
+                    "User Interface",
+                    "Networking",
+                    "Data Storage",
+                    "Pattern Recognition"
+                ],
+                "answer": "Pattern Recognition",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_3_zweep_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "options": [
+                    "Data Quality",
+                    "Algorithmic Complexity",
+                    "Processing Power",
+                    "All of the above"
+                ],
+                "answer": "All of the above",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_4_5uril_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for:",
+                "options": [
+                    "User Interface",
+                    "Networking",
+                    "Data Storage",
+                    "Pattern Recognition"
+                ],
+                "answer": "Pattern Recognition",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_pxlgb8t1f_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "options": [
+                    "Data Quality",
+                    "Algorithmic Complexity",
+                    "Processing Power",
+                    "All of the above"
+                ],
+                "answer": "All of the above",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_16_cpjq5_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "options": [
+                    "Python/R",
+                    "Excel",
+                    "Power BI",
+                    "Depends on Scale"
+                ],
+                "answer": "Depends on Scale",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_14_rnw3x_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation?",
+                "options": [
+                    "Data Quality",
+                    "Algorithmic Complexity",
+                    "Processing Power",
+                    "All of the above"
+                ],
+                "answer": "All of the above",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_jo4agub7c_1775989572251"
+            },
+            {
+                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "options": [
+                    "Linear Algebra",
+                    "Graph Theory",
+                    "Probability",
+                    "Calculus"
+                ],
+                "answer": "Linear Algebra",
+                "type": "mcq",
+                "marks": 2,
+                "subject": "ORACLE DATABASE",
+                "id": "auto_ext_12_4w5x7_1775989572251"
+            }
+        ],
+        "passingRule": "correct_answers",
+        "passingValue": 13,
+        "duration": 75
     }
 }

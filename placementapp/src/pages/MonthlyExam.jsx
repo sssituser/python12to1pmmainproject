@@ -132,7 +132,7 @@ const MonthlyExam = () => {
             return shuffled;
           };
 
-          const maxQ = data.data.maxQuestions || 50;
+          const maxQ = data.data.maxQuestions || 80;
           const displayLimit = Math.min(data.data.questions.length, maxQ);
           const allShuffled = shuffleArray(data.data.questions);
           const monthlyQuestions = allShuffled.slice(0, displayLimit);
@@ -141,14 +141,18 @@ const MonthlyExam = () => {
           setExamDuration(dur);
           setTimeLeft(dur * 60);
 
-          const mappedQuestions = monthlyQuestions.map((q, idx) => ({
-            ...q,
-            id: idx + 1,
-            marks: parseInt(q.marks) || 10,
-            question: q.question,
-            options: q.options || [],
-            correct: q.options ? (q.options.indexOf(q.answer) !== -1 ? q.options.indexOf(q.answer) : 0) : 0
-          }));
+          const mappedQuestions = monthlyQuestions.map((q, idx) => {
+            const opts = q.options || [];
+            const shuffledOptions = shuffleArray(opts);
+            return {
+              ...q,
+              id: idx + 1,
+              marks: parseInt(q.marks) || 10,
+              question: q.question,
+              options: shuffledOptions,
+              correct: shuffledOptions.indexOf(q.answer) !== -1 ? shuffledOptions.indexOf(q.answer) : 0
+            };
+          });
           setQuestions(mappedQuestions);
           setAnswers(new Array(mappedQuestions.length).fill(null));
         }

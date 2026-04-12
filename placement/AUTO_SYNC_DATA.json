@@ -364,6 +364,35 @@
             "question_count": 25,
             "marks_per_question": 2,
             "updated_at": "2026-04-12 06:50:05.073021+00:00"
+        },
+        {
+            "id": 2,
+            "exam_name": "Weekly Assessment",
+            "course_name": "JAVA FULL STACK",
+            "subjects": [
+                "java full stack",
+                "JAVA FULL STACK"
+            ],
+            "duration": 75,
+            "passing_strategy": "correct_answers",
+            "requirement": 13,
+            "question_count": 25,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-12 07:42:30.261355+00:00"
+        },
+        {
+            "id": 3,
+            "exam_name": "Weekly Assessment",
+            "course_name": "ORACLE DATABASE",
+            "subjects": [
+                "ORACLE DATABASE"
+            ],
+            "duration": 75,
+            "passing_strategy": "correct_answers",
+            "requirement": 13,
+            "question_count": 25,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-12 10:26:53.369505+00:00"
         }
     ]
 }

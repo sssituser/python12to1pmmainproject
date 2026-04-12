@@ -275,7 +275,7 @@ function Register() {
                         </div>
                       ) : courses.length > 0 ? (
                         courses.map((c) => {
-                          const courseTitle = (c.title || c).toUpperCase();
+                          const courseTitle = (typeof c === 'string' ? c : (c.title || String(c))).toUpperCase();
                           const isSelected = formData.course.includes(courseTitle);
                           return (
                             <label 
