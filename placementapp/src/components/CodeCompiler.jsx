@@ -8,7 +8,8 @@ const CodeCompiler = ({
   language = "python", 
   title = "Solution Editor",
   onCodeChange = null,
-  isReadOnly = false
+  isReadOnly = false,
+  showLanguageSelect = true
 }) => {
   const [selectedLang, setSelectedLang] = useState(language);
   const [code, setCode] = useState(initialCode);
@@ -22,9 +23,7 @@ const CodeCompiler = ({
   const supportedLanguages = [
     { label: "Python 3", value: "python" },
     { label: "Java", value: "java" },
-    { label: "Node.js", value: "javascript" },
-    { label: "C++ (GCC)", value: "cpp" },
-    { label: "SQL", value: "sql" }
+    { label: "Node.js", value: "javascript" }
   ];
 
   const normalizeLanguage = (lang) => {
@@ -98,20 +97,21 @@ const CodeCompiler = ({
           </div>
           <div>
             <h4 className="text-sm font-bold text-gray-800">{title}</h4>
-            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{language}</p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <select 
-            value={selectedLang} 
-            onChange={(e) => setSelectedLang(e.target.value)}
-            className="text-[10px] font-bold bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          >
-            {supportedLanguages.map(l => (
-              <option key={l.value} value={l.value}>{l.label}</option>
-            ))}
-          </select>
+          {showLanguageSelect && (
+            <select 
+              value={selectedLang} 
+              onChange={(e) => setSelectedLang(e.target.value)}
+              className="text-[10px] font-bold bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              {supportedLanguages.map(l => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+          )}
 
           <select 
             value={theme} 
