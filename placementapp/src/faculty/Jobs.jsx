@@ -2,8 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   FaBriefcase, FaBuilding, FaMapMarkerAlt, FaPlus, FaTrash, FaEdit, FaEye, 
-  FaChartPie, FaCalendarAlt, FaSearch, FaHistory, FaCheckCircle, FaTimesCircle
+  FaChartPie, FaCalendarAlt, FaSearch, FaHistory, FaCheckCircle, FaTimesCircle,
+  FaFileExcel, FaGoogleDrive
 } from "react-icons/fa";
+import * as XLSX from 'xlsx';
+import { googleDriveService } from "../services/googleDriveService";
+import { toast } from "react-toastify";
 
 function Jobs() {
   const navigate = useNavigate();
@@ -24,7 +28,8 @@ function Jobs() {
     description: "",
     responsibilities: "",
     external_application_link: "",
-    deadline: ""
+    deadline: "",
+    passout: ""
   });
 
   const fetchJobs = async () => {
@@ -77,7 +82,8 @@ function Jobs() {
         setForm({
           job_title: "", company: "", location: "", job_type: "", 
           experience: "", salary: "", primary_skills: "", eligibility: "",
-          description: "", responsibilities: "", external_application_link: "", deadline: ""
+          description: "", responsibilities: "", external_application_link: "", deadline: "",
+          passout: ""
         });
         fetchJobs();
       }
@@ -97,6 +103,63 @@ function Jobs() {
       if (res.ok) fetchJobs();
     } catch (err) {
       console.error("Delete failed", err);
+    }
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = filteredJobs.map((j, i) => ({
+      "S.No": i + 1,
+      "Job Title": j.job_title,
+      "Company": j.company,
+      "Location": j.location,
+      "Job Type": j.job_type,
+      "Experience": j.experience,
+      "Salary": j.salary,
+      "Primary Skills": j.primary_skills,
+      "Eligibility": j.eligibility,
+      "Passout Year": j.passout,
+      "Deadline": j.deadline ? new Date(j.deadline).toLocaleDateString() : "Indefinite",
+      "Status": j.deadline && new Date(j.deadline) < new Date() ? "Expired" : "Active"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Jobs");
+    XLSX.writeFile(workbook, `Jobs_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const uploadToDrive = async () => {
+    try {
+      const dataToExport = filteredJobs.map((j, i) => ({
+        "S.No": i + 1,
+        "Job Title": j.job_title,
+        "Company": j.company,
+        "Location": j.location,
+        "Job Type": j.job_type,
+        "Experience": j.experience,
+        "Salary": j.salary,
+        "Primary Skills": j.primary_skills,
+        "Eligibility": j.eligibility,
+        "Passout Year": j.passout,
+        "Deadline": j.deadline ? new Date(j.deadline).toLocaleDateString() : "Indefinite",
+        "Status": j.deadline && new Date(j.deadline) < new Date() ? "Expired" : "Active"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Jobs");
+      
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      const fileName = `Jobs_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      const toastId = toast.loading("Uploading to Google Drive...");
+      await googleDriveService.uploadFile(blob, fileName);
+      toast.update(toastId, { render: "Successfully uploaded to Google Drive!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (error) {
+      console.error("Drive upload failed", error);
+      toast.error("Failed to upload to Google Drive. Ensure you are logged in and have granted permissions.");
     }
   };
 
@@ -125,12 +188,27 @@ function Jobs() {
               onClick={() => { setShowForm(!showForm); if(!showForm) setForm({ 
                 job_title: "", company: "", location: "", job_type: "", 
                 experience: "", salary: "", primary_skills: "", eligibility: "",
-                description: "", responsibilities: "", external_application_link: "", deadline: ""
+                description: "", responsibilities: "", external_application_link: "", deadline: "",
+                passout: ""
               }); }}
               className="bg-white text-blue-600 px-6 py-2.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2"
             >
               {showForm ? <><FaTimesCircle /> Cancel</> : <><FaPlus /> Post New Job</>}
             </button>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={exportToExcel}
+                className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
+              >
+                <FaFileExcel size={14} /> Export Excel
+              </button>
+              <button
+                onClick={uploadToDrive}
+                className="bg-amber-500 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-amber-600 transition-all flex items-center gap-2"
+              >
+                <FaGoogleDrive size={14} /> Upload to Drive
+              </button>
+            </div>
           </div>
           <FaBriefcase className="absolute right-[-20px] bottom-[-20px] text-white/10 rotate-12" size={160} />
         </div>
@@ -168,6 +246,7 @@ function Jobs() {
               { name: 'salary', label: 'Comp. Package', type: 'select', options: ['3\u20134 LPA', '4\u20136 LPA', '6\u201310 LPA', '10+ LPA'] },
               { name: 'primary_skills', label: 'Core Competencies', placeholder: 'React, Django, Python' },
               { name: 'eligibility', label: 'Min. Qualifications', placeholder: 'B.Tech CS / IT' },
+              { name: 'passout', label: 'Passout Batch', type: 'select', options: ['2023', '2024', '2025', '2026', 'All Batches'] },
               { name: 'deadline', label: 'Submission Close Date', type: 'date' },
             ].map((field, i) => (
               <div key={i} className="space-y-2">
@@ -260,7 +339,7 @@ function Jobs() {
                              <FaBriefcase size={8} /> {j.company}
                            </span>
                            <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                             <FaMapMarkerAlt size={10} /> {j.location}
+                             <FaMapMarkerAlt size={10} /> {j.location} • {j.passout || 'Any'} Batch
                            </span>
                         </div>
                       </div>
@@ -304,7 +383,8 @@ function Jobs() {
                           primary_skills: j.primary_skills || "", eligibility: j.eligibility || "",
                           description: j.description || "", responsibilities: j.responsibilities || "",
                           external_application_link: j.external_application_link || "",
-                          deadline: j.deadline || ""
+                          deadline: j.deadline || "",
+                          passout: j.passout || ""
                         });
                         setShowForm(true);
                         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -350,8 +430,8 @@ function Jobs() {
                     <p className="font-bold text-gray-800 flex items-center gap-2"><FaMapMarkerAlt className="text-blue-500" /> {selectedJob.location}</p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Compensation</label>
-                    <p className="font-bold text-gray-800">{selectedJob.salary}</p>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Passout Batch</label>
+                    <p className="font-bold text-gray-800">{selectedJob.passout || 'Any Batch'}</p>
                   </div>
                </div>
             </div>

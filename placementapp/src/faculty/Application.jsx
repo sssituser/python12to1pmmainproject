@@ -1,6 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaCheckCircle, FaTimesCircle, FaClock, FaUndo, FaUserGraduate, FaBriefcase, FaEnvelope } from "react-icons/fa";
+import { FaSearch, FaCheckCircle, FaTimesCircle, FaClock, FaUndo, FaUserGraduate, FaBriefcase, FaEnvelope, FaFileExcel, FaGoogleDrive } from "react-icons/fa";
+import * as XLSX from 'xlsx';
+import { googleDriveService } from "../services/googleDriveService";
+import { toast } from "react-toastify";
 
 function Applications() {
   const [apps, setApps] = useState([]);
@@ -90,6 +93,53 @@ function Applications() {
     }
   };
 
+  const exportToExcel = () => {
+    const dataToExport = filteredApps.map((app, idx) => ({
+      "S.No": idx + 1,
+      "Student Name": app.username || app.user?.username || "Anonymous",
+      "Email": app.email || "N/A",
+      "Job Title": app.job_details?.job_title || "Unknown Role",
+      "Company": app.job_details?.company || "Confidential",
+      "Applied Date": new Date(app.applied_date).toLocaleDateString(),
+      "Status": app.status || "pending"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Applications");
+    XLSX.writeFile(workbook, `Applications_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const uploadToDrive = async () => {
+    try {
+      const dataToExport = filteredApps.map((app, idx) => ({
+        "S.No": idx + 1,
+        "Student Name": app.username || app.user?.username || "Anonymous",
+        "Email": app.email || "N/A",
+        "Job Title": app.job_details?.job_title || "Unknown Role",
+        "Company": app.job_details?.company || "Confidential",
+        "Applied Date": new Date(app.applied_date).toLocaleDateString(),
+        "Status": app.status || "pending"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Applications");
+      
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      const fileName = `Applications_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      const toastId = toast.loading("Uploading to Google Drive...");
+      await googleDriveService.uploadFile(blob, fileName);
+      toast.update(toastId, { render: "Successfully uploaded to Google Drive!", type: "success", isLoading: false, autoClose: 3000 });
+    } catch (error) {
+      console.error("Drive upload failed", error);
+      toast.error("Failed to upload to Google Drive.");
+    }
+  };
+
   const filteredApps = useMemo(() => {
     return apps.filter(app => {
       const student = (app.username || app.user?.username || "").toLowerCase();
@@ -158,7 +208,7 @@ function Applications() {
             />
           </div>
 
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
             {['all', 'pending', 'accepted', 'rejected'].map(f => (
               <button
                 key={f}
@@ -171,6 +221,21 @@ function Applications() {
                 {f}
               </button>
             ))}
+          </div>
+
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              onClick={exportToExcel}
+              className="flex-1 md:flex-none bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-emerald-700 transition-all flex items-center gap-2"
+            >
+              <FaFileExcel size={14} /> Excel
+            </button>
+            <button
+              onClick={uploadToDrive}
+              className="flex-1 md:flex-none bg-amber-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-amber-600 transition-all flex items-center gap-2"
+            >
+              <FaGoogleDrive size={14} /> Drive
+            </button>
           </div>
         </div>
 
