@@ -297,12 +297,12 @@ const DailyExam = () => {
         }
         brightness = brightness / 256;
         
-        const isDark = brightness < 20; 
-        const isFlat = (rMax - rMin < 20);
+        const isDark = brightness < 15; 
+        const isFlat = (rMax - rMin < 15);
         const isStatic = prevFrameRef.data && (motionDelta < 30);
         const topAvg = topVariance / 128;
         const botAvg = botVariance / 128;
-        const misalignment = Math.abs(topAvg - botAvg) > 60;
+        const misalignment = Math.abs(topAvg - botAvg) > 95;
 
         prevFrameRef.data = Array.from(tData).filter((_, i) => i % 4 === 0);
 
@@ -327,12 +327,13 @@ const DailyExam = () => {
           if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered || userHiding || (isStatic && proctoringAIFailed)) {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 4000) {
+            } else if (Date.now() - violationStartTimeRef.current >= 7000) {
               if (isMultipleFaces) triggerWarning("Multiple persons detected");
-              else if (isDark || isFlat) triggerWarning("Camera covered or blocked");
-              else if (userHiding) triggerWarning("Improper camera angle - User hiding");
+              else if (isDark) triggerWarning("Environment too dark - Please turn on lights");
+              else if (isFlat) triggerWarning("Camera covered or blocked");
+              else if (userHiding) triggerWarning("Face not visible - Adjust your position");
               else if (isStatic) triggerWarning("Static background detected - Please move");
-              else if (noFace && !proctoringAIFailed) triggerWarning("Face not detected"); 
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera"); 
               else if (faceNotCentered) triggerWarning("Face moved off-center");
               violationStartTimeRef.current = null;
             }
@@ -345,6 +346,7 @@ const DailyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
+          // Fallback heuristic: if it's very dark or the feed is flat, it's a violation
           checkViolations([]); 
         }
       }, 1000);
@@ -674,9 +676,10 @@ const DailyExam = () => {
                     {showCompiler && (
                       <div className="mt-6 animate-in slide-in-from-top-4 duration-300">
                         <CodeCompiler 
-                          language={subjectKey} 
+                          language={subjectKey || studentCourse} 
                           initialCode={compilerCode}
                           onCodeChange={(newCode) => setCompilerCode(newCode)}
+                          showLanguageSelect={true}
                         />
                       </div>
                     )}

@@ -220,8 +220,8 @@ const WeeklyExam = () => {
         }
 
         brightness = brightness / 256;
-        const isDark = brightness < 20; 
-        const isFlat = (rMax - rMin < 20);
+        const isDark = brightness < 15; 
+        const isFlat = (rMax - rMin < 15);
         
         // Presence Check: If motion is extremely low for many seconds, flag it
         const isStatic = prevFrameRef.data && (motionDelta < 30);
@@ -229,7 +229,7 @@ const WeeklyExam = () => {
         // Alignment Check: If bottom is significantly busier/different than top, it usually means user is "hiding" at the bottom
         const topAvg = topVariance / 128;
         const botAvg = botVariance / 128;
-        const misalignment = Math.abs(topAvg - botAvg) > 60; // High contrast difference suggests user is at the edge
+        const misalignment = Math.abs(topAvg - botAvg) > 95; // Increased threshold for better lighting tolerance
 
         // Save current frame for next motion check
         prevFrameRef.data = Array.from(tData).filter((_, i) => i % 4 === 0);
@@ -256,12 +256,13 @@ const WeeklyExam = () => {
           if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered || userHiding || (isStatic && proctoringAIFailed)) {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 4000) {
+            } else if (Date.now() - violationStartTimeRef.current >= 7000) {
               if (isMultipleFaces) triggerWarning("Multiple persons detected");
-              else if (isDark || isFlat) triggerWarning("Camera covered or blocked");
-              else if (userHiding) triggerWarning("Improper camera angle - User hiding");
+              else if (isDark) triggerWarning("Environment too dark - Please turn on lights");
+              else if (isFlat) triggerWarning("Camera covered or blocked");
+              else if (userHiding) triggerWarning("Face not visible - Adjust your position");
               else if (isStatic) triggerWarning("Static background detected - Please move");
-              else if (noFace && !proctoringAIFailed) triggerWarning("Face not detected"); 
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera"); 
               else if (faceNotCentered) triggerWarning("Face moved off-center");
               violationStartTimeRef.current = null;
             }
@@ -274,7 +275,7 @@ const WeeklyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
-          // Fallback to motion/alignment heuristics when Shape Detection API is disabled
+          // Fallback heuristic: if it's very dark or the feed is flat, it's a violation
           checkViolations([]); 
         }
       }, 1000);
@@ -559,9 +560,10 @@ const WeeklyExam = () => {
                     {showCompiler && (
                       <div className="mt-6 animate-in slide-in-from-top-4 duration-300">
                         <CodeCompiler 
-                          language="python" 
+                          language={studentCourse} 
                           initialCode={compilerCode}
                           onCodeChange={(newCode) => setCompilerCode(newCode)}
+                          showLanguageSelect={true}
                         />
                       </div>
                     )}
