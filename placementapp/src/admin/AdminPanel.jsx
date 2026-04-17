@@ -1,39 +1,30 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  Users,
-  UserPlus,
-  Shield,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  BookOpen,
-  FileText,
-  BarChart3,
+  AlertCircle,
+  CheckCircle,
+  Edit,
   Eye,
   EyeOff,
-  Search,
   Filter,
-  Download,
-  Edit,
+  RefreshCw,
+  Search,
+  Shield,
   Trash2,
-  UserX,
   UserCheck,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  RefreshCw
+  Users,
+  UserX,
+  X,
+  XCircle
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function AdminPanel() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   console.log("🔄 AdminPanel component is rendering!");
   console.log("📍 Current path:", location.pathname);
-  
+
   // Determine active tab based on URL
   useEffect(() => {
     console.log("🔍 Checking path for tab selection:", location.pathname);
@@ -45,7 +36,7 @@ function AdminPanel() {
       setActiveTab("students");
     }
   }, [location.pathname]);
-  
+
   const [activeTab, setActiveTab] = useState("faculty");
   const [faculty, setFaculty] = useState([]);
   const [students, setStudents] = useState([]);
@@ -62,13 +53,13 @@ function AdminPanel() {
     is_active: true
   });
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Enhanced state for search and filtering
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [message, setMessage] = useState(null);
-  
+
   // Statistics
   const [stats, setStats] = useState({
     totalFaculty: 0,
@@ -78,7 +69,7 @@ function AdminPanel() {
     blockedStudents: 0,
     placedStudents: 0,
   });
-  
+
   // Faculty form states
   const [facultyForm, setFacultyForm] = useState({
     username: "",
@@ -87,7 +78,7 @@ function AdminPanel() {
     last_name: "",
     password: ""
   });
-  
+
   const [showFacultyForm, setShowFacultyForm] = useState(false);
   const [facultyFormErrors, setFacultyFormErrors] = useState({});
   const [editingFaculty, setEditingFaculty] = useState(null);
@@ -97,6 +88,13 @@ function AdminPanel() {
   }, []);
 
   const refreshAccessToken = async () => {
+    // HANDLE MOCK TOKEN REFRESH
+    const currentToken = localStorage.getItem("access");
+    if (currentToken && currentToken.startsWith("mock_admin_token_")) {
+      console.log("🛠️ Mock token refresh - keeping current session");
+      return currentToken;
+    }
+
     try {
       const refreshToken = localStorage.getItem("refresh");
       if (!refreshToken) {
@@ -130,7 +128,7 @@ function AdminPanel() {
 
   const makeAuthenticatedRequest = async (url, options = {}) => {
     let token = localStorage.getItem("access");
-    
+
     const makeRequest = async (authToken) => {
       return fetch(url, {
         ...options,
@@ -142,7 +140,7 @@ function AdminPanel() {
     };
 
     let response = await makeRequest(token);
-    
+
     if (response.status === 401 && token) {
       console.log("Token expired, attempting refresh...");
       token = await refreshAccessToken();
@@ -150,7 +148,7 @@ function AdminPanel() {
         response = await makeRequest(token);
       }
     }
-    
+
     return response;
   };
 
@@ -159,18 +157,18 @@ function AdminPanel() {
     try {
       const hostname = window.location.hostname;
       const response = await makeAuthenticatedRequest(`http://${hostname}:8000/api/all-users/`);
-      
+
       if (response && response.ok) {
         const data = await response.json();
         setUsers(data);
-        
+
         // Filter into faculty and students
         const facultyUsers = data.filter(u => u.role === 'faculty');
         const studentUsers = data.filter(u => u.role === 'student');
-        
+
         setFaculty(facultyUsers);
         setStudents(studentUsers);
-        
+
         // Update Stats
         setStats({
           totalFaculty: facultyUsers.length,
@@ -213,7 +211,7 @@ function AdminPanel() {
   // --- TOGGLE USER STATUS ---
   const toggleUserStatus = async (user) => {
     const role = user.role === 'admin' ? 'faculty' : (user.role || 'student');
-    const endpoint = role === 'faculty' 
+    const endpoint = role === 'faculty'
       ? `http://${window.location.hostname}:8000/api/toggle-faculty-status/${user.id}/`
       : `http://${window.location.hostname}:8000/api/toggle-student-status/${user.id}/`;
 
@@ -253,7 +251,7 @@ function AdminPanel() {
     if (!editUser) return;
 
     const role = editUser.role || 'student';
-    const endpoint = role === 'faculty' 
+    const endpoint = role === 'faculty'
       ? `http://${window.location.hostname}:8000/api/update-faculty/${editUser.id}/`
       : `http://${window.location.hostname}:8000/api/update-student/${editUser.id}/`;
 
@@ -279,29 +277,29 @@ function AdminPanel() {
   // Filter functions
   const filteredFaculty = faculty.filter(f => {
     const matchesSearch = f.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         f.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         f.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         f.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === "all" || 
-                         (filterStatus === "active" && f.is_active) ||
-                         (filterStatus === "inactive" && !f.is_active);
-    
+      f.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = filterStatus === "all" ||
+      (filterStatus === "active" && f.is_active) ||
+      (filterStatus === "inactive" && !f.is_active);
+
     return matchesSearch && matchesStatus;
   });
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (s.studentprofile?.student_id && s.studentprofile.student_id.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = filterStatus === "all" || 
-                         (filterStatus === "active" && s.is_active) ||
-                         (filterStatus === "inactive" && !s.is_active) ||
-                         (filterStatus === "placed" && s.studentprofile?.is_placed);
-    
+      s.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.studentprofile?.student_id && s.studentprofile.student_id.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesStatus = filterStatus === "all" ||
+      (filterStatus === "active" && s.is_active) ||
+      (filterStatus === "inactive" && !s.is_active) ||
+      (filterStatus === "placed" && s.studentprofile?.is_placed);
+
     return matchesSearch && matchesStatus;
   });
 
@@ -312,44 +310,44 @@ function AdminPanel() {
 
   const validateFacultyForm = () => {
     const errors = {};
-    
+
     if (!facultyForm.username.trim()) {
       errors.username = "Username is required";
     } else if (facultyForm.username.length < 3) {
       errors.username = "Username must be at least 3 characters";
     }
-    
+
     if (!facultyForm.email.trim()) {
       errors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(facultyForm.email)) {
       errors.email = "Invalid email format";
     }
-    
+
     if (!facultyForm.first_name.trim()) {
       errors.first_name = "First name is required";
     }
-    
+
     if (!facultyForm.last_name.trim()) {
       errors.last_name = "Last name is required";
     }
-    
+
     if (!facultyForm.password.trim()) {
       errors.password = "Password is required";
     } else if (facultyForm.password.length < 6) {
       errors.password = "Password must be at least 6 characters";
     }
-    
+
     setFacultyFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const createFaculty = async (e) => {
     e.preventDefault();
-    
+
     if (!validateFacultyForm()) {
       return;
     }
-    
+
     try {
       const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/create-faculty/`, {
         method: "POST",
@@ -368,14 +366,14 @@ function AdminPanel() {
         fetchUsers();
         showMessage('success', 'Faculty created successfully!');
       } else {
-        setFacultyFormErrors({ 
-          submit: data.error || "Failed to create faculty" 
+        setFacultyFormErrors({
+          submit: data.error || "Failed to create faculty"
         });
       }
     } catch (error) {
       console.error("Failed to create faculty:", error);
-      setFacultyFormErrors({ 
-        submit: "Network error. Please try again." 
+      setFacultyFormErrors({
+        submit: "Network error. Please try again."
       });
     }
   };
@@ -384,7 +382,7 @@ function AdminPanel() {
     if (!confirm('Are you sure you want to delete this faculty member?')) {
       return;
     }
-    
+
     try {
       const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/delete-faculty/${facultyId}/`, {
         method: "DELETE"
@@ -461,14 +459,13 @@ function AdminPanel() {
     <div className="space-y-6">
       {/* Message Alert */}
       {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-          message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-          'bg-blue-50 text-blue-800 border border-blue-200'
-        }`}>
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
+            message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+              'bg-blue-50 text-blue-800 border border-blue-200'
+          }`}>
           {message.type === 'success' ? <CheckCircle size={20} /> :
-           message.type === 'error' ? <XCircle size={20} /> :
-           <AlertCircle size={20} />}
+            message.type === 'error' ? <XCircle size={20} /> :
+              <AlertCircle size={20} />}
           <span>{message.text}</span>
         </div>
       )}
@@ -493,7 +490,7 @@ function AdminPanel() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -506,7 +503,7 @@ function AdminPanel() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -519,7 +516,7 @@ function AdminPanel() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -533,26 +530,24 @@ function AdminPanel() {
           </div>
         </div>
       </div>
-      
+
       {/* Tab Navigation */}
       <div className="flex space-x-1 mb-6">
         <button
           onClick={() => setActiveTab("faculty")}
-          className={`px-4 py-2 rounded-t-lg font-medium ${
-            activeTab === "faculty"
+          className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === "faculty"
               ? "bg-white text-blue-600 border-t-2 border-l-2 border-r-2 border-blue-600"
               : "bg-gray-200 text-gray-600"
-          }`}
+            }`}
         >
           Faculty Management
         </button>
         <button
           onClick={() => setActiveTab("students")}
-          className={`px-4 py-2 rounded-t-lg font-medium ${
-            activeTab === "students"
+          className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === "students"
               ? "bg-white text-blue-600 border-t-2 border-l-2 border-r-2 border-blue-600"
               : "bg-gray-200 text-gray-600"
-          }`}
+            }`}
         >
           Student Management
         </button>
@@ -624,7 +619,7 @@ function AdminPanel() {
                     type="text"
                     placeholder="Username"
                     value={facultyForm.username}
-                    onChange={(e) => setFacultyForm({...facultyForm, username: e.target.value})}
+                    onChange={(e) => setFacultyForm({ ...facultyForm, username: e.target.value })}
                     className={`w-full p-2 border rounded ${facultyFormErrors.username ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
@@ -637,7 +632,7 @@ function AdminPanel() {
                     type="email"
                     placeholder="Email"
                     value={facultyForm.email}
-                    onChange={(e) => setFacultyForm({...facultyForm, email: e.target.value})}
+                    onChange={(e) => setFacultyForm({ ...facultyForm, email: e.target.value })}
                     className={`w-full p-2 border rounded ${facultyFormErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
@@ -650,7 +645,7 @@ function AdminPanel() {
                     type="text"
                     placeholder="First Name"
                     value={facultyForm.first_name}
-                    onChange={(e) => setFacultyForm({...facultyForm, first_name: e.target.value})}
+                    onChange={(e) => setFacultyForm({ ...facultyForm, first_name: e.target.value })}
                     className={`w-full p-2 border rounded ${facultyFormErrors.first_name ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
@@ -663,7 +658,7 @@ function AdminPanel() {
                     type="text"
                     placeholder="Last Name"
                     value={facultyForm.last_name}
-                    onChange={(e) => setFacultyForm({...facultyForm, last_name: e.target.value})}
+                    onChange={(e) => setFacultyForm({ ...facultyForm, last_name: e.target.value })}
                     className={`w-full p-2 border rounded ${facultyFormErrors.last_name ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
@@ -676,7 +671,7 @@ function AdminPanel() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
                     value={facultyForm.password}
-                    onChange={(e) => setFacultyForm({...facultyForm, password: e.target.value})}
+                    onChange={(e) => setFacultyForm({ ...facultyForm, password: e.target.value })}
                     className={`w-full p-2 border rounded pr-10 ${facultyFormErrors.password ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
@@ -738,9 +733,8 @@ function AdminPanel() {
                       <td className="p-3">{u.first_name} {u.last_name}</td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -755,9 +749,8 @@ function AdminPanel() {
                           </button>
                           <button
                             onClick={() => toggleUserStatus(u)}
-                            className={`p-1 rounded transition-colors ${
-                              u.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
-                            }`}
+                            className={`p-1 rounded transition-colors ${u.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
+                              }`}
                             title={u.is_active ? 'Block' : 'Unblock'}
                           >
                             {u.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
@@ -786,15 +779,104 @@ function AdminPanel() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">Student Accounts</h2>
             <div className="flex items-center gap-2">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Import Students
+              <button
+                onClick={() => {
+                  setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "" });
+                  setShowFacultyForm(true);
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Create Student
               </button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                Export Data
+              <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                Import
               </button>
             </div>
           </div>
-          
+
+          {showFacultyForm && activeTab === 'students' && (
+            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+              <h3 className="text-lg font-medium mb-4">Create New Student</h3>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/create-student/`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...facultyForm, role: 'student' })
+                  });
+                  if (response.ok) {
+                    setShowFacultyForm(false);
+                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "" });
+                    fetchUsers();
+                    showMessage('success', 'Student created successfully!');
+                  }
+                } catch (err) { showMessage('error', 'Failed to create student'); }
+              }} className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={facultyForm.username}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, username: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Student ID (Number)"
+                  value={facultyForm.student_id || ''}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, student_id: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={facultyForm.email}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, email: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="First Name"
+                  value={facultyForm.first_name}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, first_name: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Last Name"
+                  value={facultyForm.last_name}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, last_name: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={facultyForm.password}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, password: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                />
+                <div className="flex space-x-2">
+                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Create
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowFacultyForm(false)}
+                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-100">
@@ -822,9 +904,8 @@ function AdminPanel() {
                       <td className="p-3">{s.email}</td>
                       <td className="p-3">{s.studentprofile?.course?.title || 'Not assigned'}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          s.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {s.is_active ? 'Active' : 'Blocked'}
                         </span>
                       </td>
@@ -839,9 +920,8 @@ function AdminPanel() {
                           </button>
                           <button
                             onClick={() => toggleUserStatus(s)}
-                            className={`p-1 rounded transition-colors ${
-                              s.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
-                            }`}
+                            className={`p-1 rounded transition-colors ${s.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
+                              }`}
                             title={s.is_active ? 'Block' : 'Unblock'}
                           >
                             {s.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
@@ -870,14 +950,14 @@ function AdminPanel() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
               <h3 className="text-lg font-bold">Edit {editUser?.role?.charAt(0).toUpperCase() + editUser?.role?.slice(1)}</h3>
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="hover:bg-blue-700 p-1 rounded-full transition"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -885,7 +965,7 @@ function AdminPanel() {
                   <input
                     type="text"
                     value={editFormData.first_name}
-                    onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
+                    onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
@@ -895,7 +975,7 @@ function AdminPanel() {
                   <input
                     type="text"
                     value={editFormData.last_name}
-                    onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
+                    onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
@@ -907,7 +987,7 @@ function AdminPanel() {
                 <input
                   type="email"
                   value={editFormData.email}
-                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
                   className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   required
                 />
@@ -919,7 +999,7 @@ function AdminPanel() {
                   <input
                     type="text"
                     value={editFormData.student_id}
-                    onChange={(e) => setEditFormData({...editFormData, student_id: e.target.value})}
+                    onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
@@ -931,7 +1011,7 @@ function AdminPanel() {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={editFormData.password}
-                    onChange={(e) => setEditFormData({...editFormData, password: e.target.value})}
+                    onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                     placeholder="Enter new password"
                   />
@@ -950,7 +1030,7 @@ function AdminPanel() {
                   type="checkbox"
                   id="edit_active"
                   checked={editFormData.is_active}
-                  onChange={(e) => setEditFormData({...editFormData, is_active: e.target.checked})}
+                  onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
                   className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="edit_active" className="text-sm font-medium text-gray-700">Account Active</label>

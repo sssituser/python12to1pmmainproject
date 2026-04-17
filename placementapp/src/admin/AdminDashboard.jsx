@@ -68,6 +68,13 @@ function AdminDashboard() {
   }, []);
 
   const refreshAccessToken = async () => {
+    // HANDLE MOCK TOKEN REFRESH
+    const currentToken = localStorage.getItem("access");
+    if (currentToken && currentToken.startsWith("mock_admin_token_")) {
+      console.log("🛠️ Mock token refresh - keeping session");
+      return currentToken;
+    }
+
     try {
       const refreshToken = localStorage.getItem("refresh");
       if (!refreshToken) {
@@ -187,18 +194,14 @@ function AdminDashboard() {
             console.log("📊 Calculated stats:", newStats);
             setStats(prev => ({ ...prev, ...newStats }));
 
-            // Set recent activity with real data
-            const activityData = [
-              { type: 'success', message: `System health check completed`, time: '2 min ago' },
-              { type: 'info', message: `${studentsCount} students currently enrolled`, time: '5 min ago' },
-              { type: 'warning', message: `${usersData.filter(u => u.role === 'faculty' && !u.is_active).length} inactive faculty accounts`, time: '15 min ago' },
-              { type: 'error', message: `${blockedUsers} blocked users require attention`, time: '1 hour ago' },
-              { type: 'success', message: `${usersData.filter(u => u.role === 'student' && u.studentprofile?.is_placed).length} students successfully placed`, time: '2 hours ago' },
-              { type: 'info', message: `Faculty performance at ${facultyCount > 0 ? Math.floor((activeUsers / usersData.length) * 100) : 0}%`, time: '3 hours ago' },
-            ];
-            
-            console.log("📋 Activity data:", activityData);
-            setRecentActivity(activityData);
+            // Set recent activity from mock dynamic source
+            try {
+              const actRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/recent-activity/`);
+              if (actRes.ok) {
+                const actData = await actRes.json();
+                setRecentActivity(actData.slice().reverse().slice(0, 6)); // Last 6 actions
+              }
+            } catch (err) { console.log("Activity fetch failed"); }
             
             // Calculate dynamic system health
             const healthStatus = activeUsers > 0 ? 'healthy' : 'warning';
@@ -370,8 +373,8 @@ function AdminDashboard() {
               Total: {stats.total_users}
             </div>
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
+            <ResponsiveContainer width="99%" height="100%">
               <PieChart>
                 <Pie
                   data={userDistributionData}
@@ -402,8 +405,8 @@ function AdminDashboard() {
               Last 7 days
             </div>
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
+            <ResponsiveContainer width="99%" height="100%">
               <AreaChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
@@ -451,8 +454,8 @@ function AdminDashboard() {
             Monthly Overview
           </div>
         </div>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
+          <ResponsiveContainer width="99%" height="100%">
             <LineChart data={performanceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 

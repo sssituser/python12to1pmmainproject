@@ -32,7 +32,8 @@ const AdminAnalytics = () => {
           
           // Fetch all users for detailed stats
           try {
-            const response = await fetch(`http://${window.location.hostname}:8000/api/all-users/`, {
+            const hostname = window.location.hostname;
+            const response = await fetch(`http://${hostname}:8000/api/all-users/`, {
               headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
@@ -254,8 +255,8 @@ const AdminAnalytics = () => {
         {/* User Distribution Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">User Distribution</h3>
-          <div className="h-80 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 320, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
                   data={userDistributionData}
@@ -263,7 +264,7 @@ const AdminAnalytics = () => {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -280,8 +281,8 @@ const AdminAnalytics = () => {
         {/* User Activity Line Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">User Activity Trend</h3>
-          <div className="h-80 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 320, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={320}>
               <LineChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -298,8 +299,8 @@ const AdminAnalytics = () => {
       {/* Performance Trends */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trends</h3>
-        <div className="h-80 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 320, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />

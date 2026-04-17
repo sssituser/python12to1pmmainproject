@@ -371,23 +371,14 @@ const WorkingAdminDashboard = () => {
 
 // Protected Route Component
 const AdminProtectedRoute = ({ children }) => {
-  console.log("🔄 AdminProtectedRoute is being called!");
-  
   const token = localStorage.getItem("access");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  
-  console.log("🔐 Token:", token ? "exists" : "missing");
-  console.log("👤 User:", user);
-  console.log("🔑 Role:", user.role);
-  
-  if (!token || user.role !== "admin") {
-    console.log("❌ Authentication failed - redirecting to login");
+  const normalizedRole = user.role?.toString().toLowerCase();
+
+  if (!token || normalizedRole !== "admin") {
     return <Navigate to="/admin/login" replace />;
   }
   
-  console.log("✅ Authentication passed - rendering children");
-  console.log("👶 Children being rendered:", children);
-  console.log("👶 Children type:", typeof children);
   return children;
 };
 

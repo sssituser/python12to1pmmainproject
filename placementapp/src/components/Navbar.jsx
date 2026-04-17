@@ -64,6 +64,7 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       }
     } catch (error) {
       console.log("Token refresh failed:", error);
+      
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
       localStorage.removeItem("user");

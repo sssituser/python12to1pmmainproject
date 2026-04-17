@@ -41,8 +41,8 @@ const VideoPlayer = lazy(() => import("./pages/VideoPlayer"));
 const WeeklyExam = lazy(() => import("./pages/WeeklyExam"));
 const WeeklyExamReports = lazy(() => import("./pages/WeeklyExamReports"));
 
-/* 🔹 ADMIN (LAZY) */
-const AdminLogin = lazy(() => import("./admin/AdminLogin"));
+/* 🔹 ADMIN (LAZY/DIRECT) */
+import AdminLogin from "./admin/AdminLogin";
 // adminRoutes needs to stay as is if it's data, or be refactored. 
 // For now let's assume it exports an array of route objects.
 import adminRoutes from "./admin/adminRoutes";
@@ -128,11 +128,11 @@ function App() {
 
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* 🔐 AUTH */}
           <Route path="/" element={<Login />} />
           <Route path="/faculty/login" element={<FacultyLogin />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-faculty" element={<VerifyFaculty />} />
 

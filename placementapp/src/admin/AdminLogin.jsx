@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Shield, Eye, EyeOff } from "lucide-react";
 
 function AdminLogin() {
+  console.log("🚀 AdminLogin component is rendering!");
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
@@ -16,6 +17,7 @@ function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
 
     try {
       const response = await fetch(`http://${window.location.hostname}:8000/api/login/`, {

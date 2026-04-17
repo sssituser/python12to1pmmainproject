@@ -468,16 +468,27 @@ function Login() {
             </span>
           </p>
 
-          {/* FACULTY LOGIN */}
-          <p className="text-center text-xs mt-3 text-gray-500">
-            Faculty?{" "}
-            <span
-              onClick={() => navigate("/faculty/login")}
-              className="text-green-400 cursor-pointer"
-            >
-              Login here
-            </span>
-          </p>
+          {/* FACULTY & ADMIN LOGIN */}
+          <div className="flex justify-center gap-4 text-xs mt-3 text-gray-500">
+            <p>
+              Faculty?{" "}
+              <span
+                onClick={() => navigate("/faculty/login")}
+                className="text-green-400 cursor-pointer hover:underline"
+              >
+                Login here
+              </span>
+            </p>
+            <p>
+              Admin?{" "}
+              <span
+                onClick={() => navigate("/admin/login")}
+                className="text-purple-400 cursor-pointer hover:underline"
+              >
+                Login here
+              </span>
+            </p>
+          </div>
         </motion.div>
 
       </div>
