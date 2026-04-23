@@ -14,13 +14,17 @@ export const googleDriveService = {
 
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.install',
+          scope: 'https://www.googleapis.com/auth/drive.file',
           hint: TARGET_EMAIL, 
-          prompt: 'select_account',
+          prompt: 'consent', // Explicitly ask for consent to ensure scopes are refreshed
           callback: async (tokenResponse) => {
             if (tokenResponse.error !== undefined) {
-              console.error("OAuth Error:", tokenResponse);
-              reject(tokenResponse);
+              console.error("OAuth Error:", tokenResponse.error, tokenResponse.error_description);
+              if (tokenResponse.error === 'access_denied') {
+                reject(new Error("Access denied. Please ensure your account is added as a 'Test User' in the Google Cloud Console."));
+              } else {
+                reject(new Error(`OAuth Error: ${tokenResponse.error}`));
+              }
               return;
             }
 
