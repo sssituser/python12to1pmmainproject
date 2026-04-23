@@ -112,31 +112,53 @@ function Applications() {
 
   const uploadToDrive = async () => {
     try {
-      const dataToExport = filteredApps.map((app, idx) => ({
-        "S.No": idx + 1,
-        "Student Name": app.username || app.user?.username || "Anonymous",
-        "Email": app.email || "N/A",
-        "Job Title": app.job_details?.job_title || "Unknown Role",
-        "Company": app.job_details?.company || "Confidential",
-        "Applied Date": new Date(app.applied_date).toLocaleDateString(),
-        "Status": app.status || "pending"
-      }));
+      if (!filteredApps || filteredApps.length === 0) {
+        toast.warning("No data available to export.");
+        return;
+      }
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Applications");
+      
+      // Group applications by company
+      const companyGroups = filteredApps.reduce((acc, app) => {
+        const companyName = (app.job_details?.company || "Unspecified").trim();
+        if (!acc[companyName]) acc[companyName] = [];
+        
+        acc[companyName].push({
+          "S.No": acc[companyName].length + 1,
+          "Student Name": app.username || app.user?.username || "Anonymous",
+          "Email": app.email || "N/A",
+          "Job Title": app.job_details?.job_title || "Unknown Role",
+          "Applied Date": new Date(app.applied_date).toLocaleDateString('en-IN'),
+          "Status": app.status || "pending"
+        });
+        return acc;
+      }, {});
+
+      // Add a separate worksheet for each company
+      Object.keys(companyGroups).forEach(company => {
+        const worksheet = XLSX.utils.json_to_sheet(companyGroups[company]);
+        // Sheet names must be <= 31 chars and cannot contain special chars [ ] * ? / \
+        const safeSheetName = company.substring(0, 31).replace(/[\[\]\*?\/\\:]/g, '_');
+        XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
+      });
       
       const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
-      const fileName = `Applications_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `Placement_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
       
-      const toastId = toast.loading("Uploading to Google Drive...");
+      const toastId = toast.loading("Processing Company-wise Storage...");
       await googleDriveService.uploadFile(blob, fileName);
-      toast.update(toastId, { render: "Successfully uploaded to Google Drive!", type: "success", isLoading: false, autoClose: 3000 });
+      toast.update(toastId, { 
+        render: `Successfully stored data in ${Object.keys(companyGroups).length} Company Sheets!`, 
+        type: "success", 
+        isLoading: false, 
+        autoClose: 3000 
+      });
     } catch (error) {
       console.error("Drive upload failed", error);
-      toast.error("Failed to upload to Google Drive.");
+      toast.error(error.message || "Failed to upload to Google Drive.");
     }
   };
 
