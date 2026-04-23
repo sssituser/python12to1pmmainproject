@@ -93,57 +93,58 @@ function Applications() {
     }
   };
 
-  const exportToExcel = () => {
-    const dataToExport = filteredApps.map((app, idx) => ({
-      "S.No": idx + 1,
-      "Student Name": app.username || app.user?.username || "Anonymous",
-      "Email": app.email || "N/A",
-      "Job Title": app.job_details?.job_title || "Unknown Role",
-      "Company": app.job_details?.company || "Confidential",
-      "Applied Date": new Date(app.applied_date).toLocaleDateString(),
-      "Status": app.status || "pending"
-    }));
+  const generateCompanyWiseWorkbook = () => {
+    if (!filteredApps || filteredApps.length === 0) return null;
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Applications");
-    XLSX.writeFile(workbook, `Applications_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    // Group applications by company
+    const companyGroups = filteredApps.reduce((acc, app) => {
+      const companyName = (app.job_details?.company || "Unspecified").trim();
+      if (!acc[companyName]) acc[companyName] = [];
+      
+      acc[companyName].push({
+        "S.No": acc[companyName].length + 1,
+        "Student Name": app.username || app.user?.username || "Anonymous",
+        "Email": app.email || "N/A",
+        "Job Title": app.job_details?.job_title || "Unknown Role",
+        "Applied Date": new Date(app.applied_date).toLocaleDateString('en-IN'),
+        "Status": app.status || "pending"
+      });
+      return acc;
+    }, {});
+
+    // Add a separate worksheet for each company
+    Object.keys(companyGroups).forEach(company => {
+      const worksheet = XLSX.utils.json_to_sheet(companyGroups[company]);
+      const safeSheetName = company.substring(0, 31).replace(/[\[\]\*?\/\\:]/g, '_');
+      XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName === "" ? "General" : safeSheetName);
+    });
+
+    return { workbook, count: Object.keys(companyGroups).length };
+  };
+
+  const exportToExcel = () => {
+    const result = generateCompanyWiseWorkbook();
+    if (!result) {
+      toast.warning("No data available to download.");
+      return;
+    }
+    
+    const fileName = `Placement_Report_Full_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(result.workbook, fileName);
+    toast.success(`Excel downloaded with ${result.count} company sheets!`);
   };
 
   const uploadToDrive = async () => {
     try {
-      if (!filteredApps || filteredApps.length === 0) {
+      const result = generateCompanyWiseWorkbook();
+      if (!result) {
         toast.warning("No data available to export.");
         return;
       }
 
-      const workbook = XLSX.utils.book_new();
-      
-      // Group applications by company
-      const companyGroups = filteredApps.reduce((acc, app) => {
-        const companyName = (app.job_details?.company || "Unspecified").trim();
-        if (!acc[companyName]) acc[companyName] = [];
-        
-        acc[companyName].push({
-          "S.No": acc[companyName].length + 1,
-          "Student Name": app.username || app.user?.username || "Anonymous",
-          "Email": app.email || "N/A",
-          "Job Title": app.job_details?.job_title || "Unknown Role",
-          "Applied Date": new Date(app.applied_date).toLocaleDateString('en-IN'),
-          "Status": app.status || "pending"
-        });
-        return acc;
-      }, {});
-
-      // Add a separate worksheet for each company
-      Object.keys(companyGroups).forEach(company => {
-        const worksheet = XLSX.utils.json_to_sheet(companyGroups[company]);
-        // Sheet names must be <= 31 chars and cannot contain special chars [ ] * ? / \
-        const safeSheetName = company.substring(0, 31).replace(/[\[\]\*?\/\\:]/g, '_');
-        XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
-      });
-      
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const wbout = XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
       const fileName = `Placement_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -151,7 +152,7 @@ function Applications() {
       const toastId = toast.loading("Processing Company-wise Storage...");
       await googleDriveService.uploadFile(blob, fileName);
       toast.update(toastId, { 
-        render: `Successfully stored data in ${Object.keys(companyGroups).length} Company Sheets!`, 
+        render: `Successfully stored data in ${result.count} Company Sheets on Drive!`, 
         type: "success", 
         isLoading: false, 
         autoClose: 3000 
