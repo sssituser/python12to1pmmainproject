@@ -107,7 +107,7 @@ DATABASES = {
 # Email settings moved or defined below
 
 # Email configuration constants
-ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
+ADMIN_EMAIL = 'admin@sssit.info'
 PLATFORM_NAME = 'SSSIT Placement Portal'
 PLATFORM_URL = 'http://localhost:5174'
 
@@ -200,12 +200,12 @@ TEMPLATES = [
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'karthikreddybodapati@gmail.com')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'admin@sssit.info')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'oxda ouau iwli zefd')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'admin@sssit.info')
 LEAVE_EMAIL_ENABLED = os.environ.get('LEAVE_EMAIL_ENABLED', 'True').lower() == 'true'
 
 # Login email auto‑cleanup (env‑driven to keep it dynamic)
