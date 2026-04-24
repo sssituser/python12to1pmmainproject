@@ -175,8 +175,26 @@ def update_student_api(request, student_id):
         profile = StudentProfile.objects.filter(user=student).first()
         if profile:
             if 'student_id' in data:
-                profile.student_id = data['student_id']
-            # Add other profile fields to update as needed
+                student_id_val = data['student_id']
+                if student_id_val is not None and str(student_id_val).strip() != "":
+                    try:
+                        profile.student_id = int(student_id_val)
+                    except (ValueError, TypeError):
+                        return Response({'error': 'Student ID must be a valid number'}, status=400)
+                else:
+                    profile.student_id = None
+            
+            if 'course_id' in data:
+                course_id_val = data['course_id']
+                if course_id_val and str(course_id_val).strip() != "":
+                    from myapp.models import Course
+                    try:
+                        profile.course = Course.objects.get(id=course_id_val)
+                    except (Course.DoesNotExist, ValueError):
+                        profile.course = None
+                else:
+                    profile.course = None
+                    
             profile.save()
             
         return Response({
@@ -204,3 +222,76 @@ def toggle_faculty_status_api(request, faculty_id):
         
     except User.DoesNotExist:
         return Response({'error': 'Faculty not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_student_api(request):
+    """Create a new student user and profile"""
+    data = request.data
+    
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('first_name', '')
+    last_name = data.get('last_name', '')
+    student_id_val = data.get('student_id')
+    course_id = data.get('course_id')
+    
+    if not username or not email or not password:
+        return Response({'error': 'Username, email, and password are required'}, status=400)
+    
+    # Check if username or email already exists
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already exists'}, status=400)
+    
+    if User.objects.filter(email=email).exists():
+        return Response({'error': 'Email already exists'}, status=400)
+    
+    try:
+        # Create student user
+        student = User.objects.create(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password=make_password(password),
+            role='student',
+            is_active=True,
+            is_staff=False
+        )
+        
+        # Handle student_id (convert empty string to None)
+        processed_student_id = None
+        if student_id_val is not None and str(student_id_val).strip() != "":
+            try:
+                processed_student_id = int(student_id_val)
+            except (ValueError, TypeError):
+                student.delete()
+                return Response({'error': 'Student ID must be a valid number'}, status=400)
+        
+        # Create student profile
+        profile = StudentProfile.objects.create(
+            user=student,
+            student_id=processed_student_id
+        )
+
+        # Handle course linking
+        if course_id and str(course_id).strip() != "":
+            from myapp.models import Course
+            try:
+                course = Course.objects.get(id=course_id)
+                profile.course = course
+                profile.save()
+            except (Course.DoesNotExist, ValueError):
+                pass
+        
+        return Response({
+            'success': True,
+            'message': 'Student created successfully',
+            'student_id': student.id
+        })
+    except Exception as e:
+        # Cleanup user if profile creation fails
+        if 'student' in locals():
+            student.delete()
+        return Response({'error': str(e)}, status=500)

@@ -40,6 +40,7 @@ function AdminPanel() {
   const [activeTab, setActiveTab] = useState("faculty");
   const [faculty, setFaculty] = useState([]);
   const [students, setStudents] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -50,7 +51,9 @@ function AdminPanel() {
     first_name: '',
     last_name: '',
     password: '',
-    is_active: true
+    is_active: true,
+    student_id: '',
+    course_id: ''
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -76,7 +79,9 @@ function AdminPanel() {
     email: "",
     first_name: "",
     last_name: "",
-    password: ""
+    password: "",
+    student_id: "",
+    course_id: ""
   });
 
   const [showFacultyForm, setShowFacultyForm] = useState(false);
@@ -85,7 +90,20 @@ function AdminPanel() {
 
   useEffect(() => {
     fetchUsers();
+    fetchCourses();
   }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/courses/`);
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableCourses(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch courses:", error);
+    }
+  };
 
   const refreshAccessToken = async () => {
     // HANDLE MOCK TOKEN REFRESH
@@ -241,7 +259,8 @@ function AdminPanel() {
       last_name: user.last_name || '',
       password: '', // Keep password empty for security
       is_active: user.is_active,
-      student_id: user.studentprofile?.student_id || ''
+      student_id: user.studentprofile?.student_id || '',
+      course_id: user.studentprofile?.course?.id || ''
     });
     setIsEditModalOpen(true);
   };
@@ -805,13 +824,19 @@ function AdminPanel() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ ...facultyForm, role: 'student' })
                   });
+                  const data = await response.json();
                   if (response.ok) {
                     setShowFacultyForm(false);
-                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "" });
+                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "" });
                     fetchUsers();
                     showMessage('success', 'Student created successfully!');
+                  } else {
+                    showMessage('error', data.error || 'Failed to create student');
                   }
-                } catch (err) { showMessage('error', 'Failed to create student'); }
+                } catch (err) { 
+                  console.error("Student creation error:", err);
+                  showMessage('error', 'Network error or invalid response'); 
+                }
               }} className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
@@ -861,6 +886,17 @@ function AdminPanel() {
                   className="p-2 border rounded"
                   required
                 />
+                <select
+                  value={facultyForm.course_id || ''}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, course_id: e.target.value })}
+                  className="p-2 border rounded"
+                  required
+                >
+                  <option value="">Select Course</option>
+                  {availableCourses.map(course => (
+                    <option key={course.id} value={course.id}>{course.title}</option>
+                  ))}
+                </select>
                 <div className="flex space-x-2">
                   <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     Create
@@ -981,6 +1017,33 @@ function AdminPanel() {
                   />
                 </div>
               </div>
+
+              {editUser?.role === 'student' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Student ID</label>
+                    <input
+                      type="text"
+                      value={editFormData.student_id}
+                      onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Course</label>
+                    <select
+                      value={editFormData.course_id}
+                      onChange={(e) => setEditFormData({ ...editFormData, course_id: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">Select Course</option>
+                      {availableCourses.map(course => (
+                        <option key={course.id} value={course.id}>{course.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Email Address</label>
