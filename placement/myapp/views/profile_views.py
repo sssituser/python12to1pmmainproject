@@ -147,8 +147,26 @@ def update_profile(request):
     data.pop("skills", None)
     data.pop("projects", None)
     data.pop("education", None)
-    data.pop("name", None)
-    data.pop("email", None)
+    # Update User fields if provided
+    name = data.pop("name", None)
+    email = data.pop("email", None)
+    
+    user_updated = False
+    if name:
+        name_parts = name.strip().split(" ", 1)
+        request.user.first_name = name_parts[0]
+        request.user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+        user_updated = True
+    
+    if email:
+        if email != request.user.email and User.objects.filter(email=email).exists():
+            return Response({"error": "Email already exists"}, status=400)
+        request.user.email = email
+        user_updated = True
+    
+    if user_updated:
+        request.user.save()
+
     data.pop("profileImage", None)
     data.pop("profileImageUrl", None)
     data.pop("resumeUrl", None)

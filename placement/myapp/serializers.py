@@ -175,25 +175,26 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         return titles
 
     def update(self, instance, validated_data):
-        skills_data = validated_data.pop('skills', [])
-        projects_data = validated_data.pop('projects', [])
+        # Extract skills and projects if provided
+        skills_data = validated_data.pop('skills', None)
+        projects_data = validated_data.pop('projects', None)
 
-        # update profile fields
+        # Update profile fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        #  CLEAR OLD SKILLS
-        instance.skills.all().delete()
+        # Update skills only if provided
+        if skills_data is not None:
+            instance.skills.all().delete()
+            for skill in skills_data:
+                Skill.objects.create(profile=instance, **skill)
 
-        for skill in skills_data:
-            Skill.objects.create(profile=instance, **skill)
-
-        #  CLEAR OLD PROJECTS
-        instance.projects.all().delete()
-
-        for project in projects_data:
-            Project.objects.create(profile=instance, **project)
+        # Update projects only if provided
+        if projects_data is not None:
+            instance.projects.all().delete()
+            for project in projects_data:
+                Project.objects.create(profile=instance, **project)
 
         return instance
 
