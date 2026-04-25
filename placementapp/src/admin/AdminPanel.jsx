@@ -1,19 +1,19 @@
 import {
-  AlertCircle,
-  CheckCircle,
-  Edit,
-  Eye,
-  EyeOff,
-  Filter,
-  RefreshCw,
-  Search,
-  Shield,
-  Trash2,
-  UserCheck,
-  Users,
-  UserX,
-  X,
-  XCircle
+    AlertCircle,
+    CheckCircle,
+    Edit,
+    Eye,
+    EyeOff,
+    Filter,
+    RefreshCw,
+    Search,
+    Shield,
+    Trash2,
+    UserCheck,
+    Users,
+    UserX,
+    X,
+    XCircle
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -819,6 +819,32 @@ function AdminPanel() {
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 try {
+                  // Validate required fields
+                  if (!facultyForm.username?.trim()) {
+                    showMessage('error', 'Username is required');
+                    return;
+                  }
+                  if (!facultyForm.email?.trim()) {
+                    showMessage('error', 'Email is required');
+                    return;
+                  }
+                  if (!facultyForm.password?.trim()) {
+                    showMessage('error', 'Password is required');
+                    return;
+                  }
+                  if (!facultyForm.first_name?.trim()) {
+                    showMessage('error', 'First name is required');
+                    return;
+                  }
+                  if (!facultyForm.last_name?.trim()) {
+                    showMessage('error', 'Last name is required');
+                    return;
+                  }
+                  if (!facultyForm.course_id || facultyForm.course_id === '') {
+                    showMessage('error', 'Please select a course');
+                    return;
+                  }
+
                   const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/create-student/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -827,7 +853,7 @@ function AdminPanel() {
                   const data = await response.json();
                   if (response.ok) {
                     setShowFacultyForm(false);
-                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "" });
+                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "" });
                     fetchUsers();
                     showMessage('success', 'Student created successfully!');
                   } else {

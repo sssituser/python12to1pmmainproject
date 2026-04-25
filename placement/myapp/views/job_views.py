@@ -17,7 +17,7 @@ class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
 
     permission_classes = [AllowAny]
-    authentication_classes = []   
+    authentication_classes = []
     def get_serializer_context(self):
         return {"request": self.request}
 

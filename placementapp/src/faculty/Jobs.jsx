@@ -176,6 +176,16 @@ function Jobs() {
     expired: jobs.filter(j => j.deadline && new Date(j.deadline) < new Date()).length,
   }), [jobs]);
 
+  const passoutYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    // Generate years from 3 years ago to 4 years into the future
+    for (let i = currentYear - 3; i <= currentYear + 4; i++) {
+      years.push(i.toString());
+    }
+    return [...years, "All Batches"];
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fadeIn">
       {/* Header & Stats Banner */}
@@ -246,7 +256,7 @@ function Jobs() {
               { name: 'salary', label: 'Comp. Package', type: 'select', options: ['3\u20134 LPA', '4\u20136 LPA', '6\u201310 LPA', '10+ LPA'] },
               { name: 'primary_skills', label: 'Core Competencies', placeholder: 'React, Django, Python' },
               { name: 'eligibility', label: 'Min. Qualifications', placeholder: 'B.Tech CS / IT' },
-              { name: 'passout', label: 'Passout Batch', type: 'select', options: ['2023', '2024', '2025', '2026', 'All Batches'] },
+              { name: 'passout', label: 'Passout Batch', type: 'select', options: passoutYears },
               { name: 'deadline', label: 'Submission Close Date', type: 'date' },
             ].map((field, i) => (
               <div key={i} className="space-y-2">

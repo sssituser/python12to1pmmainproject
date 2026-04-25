@@ -238,7 +238,6 @@ function LeaveSummary() {
       const token = localStorage.getItem('access');
       if (!token) {
         console.log("No token found - user not logged in");
-        // Don't clear existing data, just keep what we have
         setLoading(false);
         return;
       }
@@ -246,11 +245,10 @@ function LeaveSummary() {
       // Get current user's credentials
       const userName = localStorage.getItem('permanentName');
       const userStudentId = localStorage.getItem('permanentStudentId');
-      const userPhone = localStorage.getItem('permanentPhone');
       
-      if (!userName || !userStudentId || !userPhone) {
-        console.log("User credentials not found - keeping existing data");
-        // Don't clear existing data, just keep what we have
+      // Removed strict userPhone requirement as it was blocking loads for users without phone numbers
+      if (!userName || !userStudentId) {
+        console.log("User credentials (Name or ID) not found - keeping existing data");
         if (!hasExistingData) {
           setLoading(false);
         }
@@ -259,63 +257,53 @@ function LeaveSummary() {
       
       // Try to load cached data first for immediate display
       const cachedData = localStorage.getItem('leaveRequestsCache');
-      const backupData = localStorage.getItem('leaveRequestsBackup');
-      const sessionData = sessionStorage.getItem('leaveRequestsSession');
       
-      // Always try to load from any available storage
-      let dataLoaded = false;
-      
-      // Try primary cache first
-      if (cachedData) {
+      if (cachedData && !hasExistingData) {
         try {
           const parsedCache = JSON.parse(cachedData);
-          console.log("Using cached data for immediate display:", parsedCache.length, "requests");
           setLeaveRequests(parsedCache);
-          dataLoaded = true;
         } catch (cacheError) {
-          console.log("Cache parsing error, trying backup");
+          console.log("Cache parsing error");
         }
       }
       
-      // Try backup cache if primary failed
-      if (backupData && !dataLoaded) {
-        try {
-          const parsedBackup = JSON.parse(backupData);
-          console.log("Using backup data for immediate display:", parsedBackup.length, "requests");
-          setLeaveRequests(parsedBackup);
-          dataLoaded = true;
-        } catch (backupError) {
-          console.log("Backup parsing error, trying session");
+      // Primary Endpoint: Student-specific requests
+      const primaryEndpoint = `http://${window.location.hostname}:8000/api/leave-requests/my-requests/`;
+      
+      try {
+        const response = await fetch(primaryEndpoint, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched my requests:", data);
+          
+          // Data is already filtered by backend
+          setLeaveRequests(data);
+          
+          // Cache the fresh data
+          localStorage.setItem('leaveRequestsCache', JSON.stringify(data));
+          localStorage.setItem('leaveRequestsCacheTime', Date.now().toString());
+          
+          // Update last update timestamp
+          setLastUpdate(new Date());
+          return; // Exit if primary succeeds
         }
+      } catch (error) {
+        console.log("Primary endpoint failed, trying fallbacks...");
       }
-      
-      // Try session storage if others failed
-      if (sessionData && !dataLoaded) {
-        try {
-          const parsedSession = JSON.parse(sessionData);
-          console.log("Using session data for immediate display:", parsedSession.length, "requests");
-          setLeaveRequests(parsedSession);
-          dataLoaded = true;
-        } catch (sessionError) {
-          console.log("Session parsing error, proceeding with API call");
-        }
-      }
-      
-      // If no cached data found, still proceed with API call
-      if (!dataLoaded) {
-        console.log("No cached data found, loading from API");
-      }
-      
-      // Try different endpoints to find the leave requests data
+
+      // Fallback: Try general endpoint if student-specific fails
       const endpoints = [
         `http://${window.location.hostname}:8000/api/leave-requests/`,
-        `http://${window.location.hostname}:8000/api/leave-requests/all/`,
-        `http://${window.location.hostname}:8000/api/leave-requests/list/`,
         `http://${window.location.hostname}:8000/api/leave/all/`,
-        `http://${window.location.hostname}:8000/api/leaves/`
       ];
 
-      let data = [];
+      let allData = [];
       let found = false;
 
       for (const endpoint of endpoints) {
@@ -329,102 +317,33 @@ function LeaveSummary() {
 
           if (response.ok) {
             const responseData = await response.json();
-            console.log(`Data from ${endpoint}:`, responseData);
-            
-            // Handle different response structures
-            if (Array.isArray(responseData)) {
-              data = responseData;
-              found = true;
-              break;
-            } else if (responseData.data && Array.isArray(responseData.data)) {
-              data = responseData.data;
-              found = true;
-              break;
-            } else if (responseData.results && Array.isArray(responseData.results)) {
-              data = responseData.results;
-              found = true;
-              break;
-            }
+            allData = Array.isArray(responseData) ? responseData : (responseData.data || responseData.results || []);
+            found = true;
+            break;
           }
         } catch (error) {
-          console.log(`Failed to fetch from ${endpoint}:`, error);
           continue;
         }
       }
-
       if (found) {
-        // Filter requests for current user only - SECURITY: Ensures students see only their own data
-        // Filter requests for current user only - IDENTITY-AWARE ROBUST FILTERING
-        const userRequests = data.filter(request => {
+        // Fallback filtering
+        const userEmail = localStorage.getItem('permanentEmail')?.toLowerCase().trim();
+        const userRequests = allData.filter(request => {
           if (!request) return false;
-
-          // Normalize Request Data
-          const rName = (request.name || "").toString().trim().toLowerCase();
           const rEmail = (request.email || "").toString().trim().toLowerCase();
           const rId = (request.student_id || "").toString().trim();
-          
-          // Normalize Session Data
-          const sName = (userName || "").toString().trim().toLowerCase();
-          const sEmail = (localStorage.getItem('permanentEmail') || "").toString().trim().toLowerCase();
-          const sId = (userStudentId || "").toString().trim();
-
-          // IDENTITY-AWARE MATCH: Link history via Email + (Name or ID)
-          const matchesEmail = rEmail && sEmail && rEmail === sEmail;
-          const matchesName = rName && sName && rName === sName;
-          const matchesId = rId && sId && rId === sId;
-
-          return matchesEmail && (matchesName || matchesId);
+          return rEmail === userEmail || rId === userStudentId;
         });
         
-        console.log(`Found ${userRequests.length} requests for user: ${userName}`);
         setLeaveRequests(userRequests);
-        
-        // Cache the filtered data for persistence
-        try {
-          // Primary cache
-          localStorage.setItem('leaveRequestsCache', JSON.stringify(userRequests));
-          localStorage.setItem('leaveRequestsCacheTime', Date.now().toString());
-          
-          // Backup cache (permanent storage)
-          localStorage.setItem('leaveRequestsBackup', JSON.stringify(userRequests));
-          localStorage.setItem('leaveRequestsBackupTime', Date.now().toString());
-          
-          // Session storage backup (survives page refresh)
-          sessionStorage.setItem('leaveRequestsSession', JSON.stringify(userRequests));
-          
-          console.log("Data cached permanently with multiple backups");
-        } catch (cacheError) {
-          console.log("Failed to cache data:", cacheError);
-        }
+        localStorage.setItem('leaveRequestsCache', JSON.stringify(userRequests));
         
         // Update last update timestamp
-        const now = new Date();
-        setLastUpdate(now);
-        
-        console.log(`📊 Statistics updated at ${now.toLocaleTimeString()}`);
-        
-        // Show browser notification for real-time updates
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('Leave Statistics Updated', {
-            body: `Found ${userRequests.length} leave requests`,
-            icon: '/favicon.ico'
-          });
-        }
-      } else {
-        // Don't clear existing data if API returns no data
-        console.log('No new data found from API, keeping existing data');
-        // Only set empty if we have no existing data
-        if (leaveRequests.length === 0) {
-          console.log('No existing data, setting empty array');
-          setLeaveRequests([]);
-        }
+        setLastUpdate(new Date());
       }
     } catch (error) {
       console.error('Error loading leave requests:', error);
-      // Don't clear existing data on error, keep what we have
-      console.log('Error occurred, keeping existing data');
     } finally {
-      // Only set loading false if we set it to true initially
       if (!hasExistingData) {
         setLoading(false);
       }
@@ -748,49 +667,27 @@ function LeaveSummary() {
                                   return (
                                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                                       <td className="px-6 py-4">
-                                        <div className="flex items-center space-x-3">
-                                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                                            <FontAwesomeIcon icon={faUser} className="text-blue-600 text-sm" />
-                                          </div>
-                                          <div>
-                                            <div className="font-semibold text-gray-900">{request.name || 'N/A'}</div>
-                                            <div className="text-xs text-gray-400 mt-1">{request.student_id || request.studentId || 'N/A'}</div>
-                                          </div>
-                                        </div>
+                                        <div className="font-semibold text-gray-900">{request.name || 'N/A'}</div>
                                       </td>
                                       <td className="px-6 py-4">
-                                        <div className="font-mono text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded">{request.student_id || request.studentId || 'N/A'}</div>
+                                        <div className="font-mono text-sm text-gray-700">{request.student_id || request.studentId || 'N/A'}</div>
                                       </td>
                                       <td className="px-6 py-4">
-                                        <div className="flex items-center space-x-2">
-                                          <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-sm" />
-                                          <span className="text-sm text-gray-700">{dateRange}</span>
-                                        </div>
+                                        <span className="text-sm text-gray-700">{dateRange}</span>
                                       </td>
                                       <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800">
-                                          {request.leaveType || request.leave_type || 'N/A'}
-                                        </span>
+                                        <span className="text-sm font-medium text-gray-900">{request.leaveType || request.leave_type || 'N/A'}</span>
                                       </td>
                                       <td className="px-6 py-4">
-                                        <p className="text-sm text-gray-600 line-clamp-2 max-w-xs" title={request.reason || 'No reason provided'}>
-                                          {request.reason || 'No reason provided'}
-                                        </p>
+                                        <div className="text-sm text-gray-600 max-w-xs truncate" title={request.reason}>{request.reason || 'No reason provided'}</div>
                                       </td>
                                       <td className="px-6 py-4 text-center">
-                                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold ${
-                                          request.status === 'Approved' || request.status === 'approved' 
-                                            ? 'bg-green-100 text-green-800 border border-green-300' 
-                                            : request.status === 'Rejected' || request.status === 'rejected'
-                                            ? 'bg-red-100 text-red-800 border border-red-300'
-                                            : 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                          (request.status || '').toLowerCase() === 'approved' ? 'bg-green-100 text-green-800' :
+                                          (request.status || '').toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
+                                          'bg-yellow-100 text-yellow-800'
                                         }`}>
-                                          {request.status === 'Approved' || request.status === 'approved' 
-                                            ? '✓ Approved' 
-                                            : request.status === 'Rejected' || request.status === 'rejected'
-                                            ? '✗ Rejected'
-                                            : '⏳ Pending'
-                                          }
+                                          {request.status || 'Pending'}
                                         </span>
                                       </td>
                                     </tr>
@@ -798,12 +695,8 @@ function LeaveSummary() {
                                 })
                               ) : (
                                 <tr>
-                                  <td colSpan="6" className="px-6 py-12 text-center">
-                                    <div className="flex flex-col items-center">
-                                      <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-300 text-4xl mb-4" />
-                                      <p className="text-gray-500 text-lg font-medium">No leave requests found</p>
-                                      <p className="text-gray-400 text-sm mt-2">Your leave history will appear here once you submit requests</p>
-                                    </div>
+                                  <td colSpan="6" className="px-6 py-10 text-center text-gray-500 italic bg-gray-50/30">
+                                    No leave records found for this user.
                                   </td>
                                 </tr>
                               )}
@@ -819,7 +712,7 @@ function LeaveSummary() {
           </div>
         </div>
       </div>
-      </div>
+    </div>
   );
 }
 

@@ -1,4 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
+import threading
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
@@ -694,6 +695,16 @@ def save_exam_report_api(request):
         answers_json=json.dumps(data.get('answers', [])),
         questions_json=json.dumps(data.get('questions', []))
     )
+
+    # Send exam report email notification
+    if user and user.email:
+        try:
+            threading.Thread(
+                target=send_exam_confirmation_email,
+                args=(user.email, attempt.exam_title, attempt.marks_obtained, attempt.total_marks)
+            ).start()
+        except Exception as e:
+            print(f"Error starting email thread: {e}")
 
     # Get student's course information for response
     student_course = None

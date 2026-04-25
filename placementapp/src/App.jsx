@@ -23,7 +23,7 @@ const DetailedResults = lazy(() => import("./pages/DetailedResults"));
 const ExamLeaderboard = lazy(() => import("./pages/ExamLeaderboard"));
 const ExamReportDetail = lazy(() => import("./pages/ExamReportDetail"));
 const ExamReports = lazy(() => import("./pages/ExamReports"));
-const JobDetails = lazy(() => import("./pages/jobDetails"));
+const JobDetails = lazy(() => import("./pages/JobDetails"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const LeaveHistory = lazy(() => import("./pages/LeaveHistory"));
 const LeaveRequest = lazy(() => import("./pages/Leaverequest"));
@@ -145,6 +145,7 @@ function App() {
           <Route path="/leave-request/history" element={<Navigate to="/dashboard/leave-request/history" replace />} />
           <Route path="/leave-request/summary" element={<Navigate to="/dashboard/leave-request/summary" replace />} />
           <Route path="/leave-summary" element={<LeaveSummary />} />
+          <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
 
           {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 

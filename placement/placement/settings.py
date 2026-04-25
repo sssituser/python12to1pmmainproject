@@ -54,7 +54,7 @@ CSRF_ALLOW_WILD_CARD = True
 AUTH_USER_MODEL = 'myapp.User'
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # Overridden below for SMTP
 # Application definition
 
 INSTALLED_APPS = [
@@ -107,9 +107,37 @@ DATABASES = {
 # Email settings moved or defined below
 
 # Email configuration constants
-ADMIN_EMAIL = 'admin@sssit.info'
+ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
 PLATFORM_NAME = 'SSSIT Placement Portal'
 PLATFORM_URL = 'http://localhost:5174'
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Configuration driven by environment or defaults
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'sssitprojectteam3@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'jhxd khzk hurl qwie')
+
+# Dynamic Host Selection Logic
+def get_email_host(user_email):
+    env_host = os.environ.get('EMAIL_HOST')
+    if env_host:
+        return env_host
+    
+    domain = user_email.split('@')[-1].lower()
+    if domain == 'gmail.com':
+        return 'smtp.gmail.com'
+    elif domain in ['outlook.com', 'hotmail.com', 'sssit.info']:
+        return 'smtp.office365.com'
+    # Default fallback
+    return 'smtp.gmail.com'
+
+EMAIL_HOST = get_email_host(EMAIL_HOST_USER)
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 
 
@@ -194,18 +222,7 @@ TEMPLATES = [
 ]
 
 
-# Email
-# Fill these values directly if you want the leave-request backend to use SMTP
-# without setting environment variables.
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'admin@sssit.info')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'oxda ouau iwli zefd')
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '30'))
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'admin@sssit.info')
+# Email settings consolidated above in dynamic selection logic
 LEAVE_EMAIL_ENABLED = os.environ.get('LEAVE_EMAIL_ENABLED', 'True').lower() == 'true'
 
 # Login email auto‑cleanup (env‑driven to keep it dynamic)

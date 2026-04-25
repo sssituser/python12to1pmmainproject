@@ -8,6 +8,8 @@ import json
 
 from myapp.models import ExamSession, ExamAnswer, PythonQuestion, Choice, WebcamSnapshot, AutomatedExamConfig
 from myapp.serializers import PythonQuestionSerializer, AutomatedExamConfigSerializer
+from myapp.email_utils import send_exam_confirmation_email
+import threading
 
 # ---------------- AUTOMATED EXAM CONFIG ----------------
 @api_view(['GET', 'POST'])
@@ -152,6 +154,16 @@ def end_exam_session(request, session_id):
     session.score = total_score
     session.total_marks = total_marks
     session.save()
+
+    # Send exam report email notification
+    if session.student_email:
+        try:
+            threading.Thread(
+                target=send_exam_confirmation_email,
+                args=(session.student_email, "Placement Portal Exam", session.score, session.total_marks)
+            ).start()
+        except Exception as e:
+            print(f"Error starting email thread: {e}")
 
     return Response({
         "score": session.score,

@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from myapp.models import StudentProfile
+from myapp.email_utils import send_account_creation_email
+import threading
 
 User = get_user_model()
 
@@ -66,6 +68,15 @@ def create_faculty_api(request):
         is_staff=False
     )
     
+    # Send email notification with password
+    try:
+        threading.Thread(
+            target=send_account_creation_email,
+            args=(data['email'], data['username'], data['password'], 'faculty')
+        ).start()
+    except Exception as e:
+        print(f"Error starting email thread: {e}")
+
     return Response({
         'success': True,
         'message': 'Faculty created successfully',
@@ -285,6 +296,15 @@ def create_student_api(request):
             except (Course.DoesNotExist, ValueError):
                 pass
         
+        # Send email notification with password
+        try:
+            threading.Thread(
+                target=send_account_creation_email,
+                args=(email, username, password, 'student')
+            ).start()
+        except Exception as e:
+            print(f"Error starting email thread: {e}")
+
         return Response({
             'success': True,
             'message': 'Student created successfully',
