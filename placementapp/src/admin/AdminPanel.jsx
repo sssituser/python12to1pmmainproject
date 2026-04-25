@@ -259,6 +259,7 @@ function AdminPanel() {
       last_name: user.last_name || '',
       password: '', // Keep password empty for security
       is_active: user.is_active,
+      username: user.username || '',
       student_id: user.studentprofile?.student_id || '',
       course_id: user.studentprofile?.course?.id || ''
     });
@@ -1044,23 +1045,47 @@ function AdminPanel() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Username / Login ID</label>
+                  <input
+                    type="text"
+                    value={editFormData.username}
+                    onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Email Address</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
               {editUser?.role === 'student' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Student ID</label>
+                    <label className="text-sm font-medium text-gray-700">Student ID (Numeric)</label>
                     <input
                       type="text"
                       value={editFormData.student_id}
                       onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g. 46732"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Course</label>
+                    <label className="text-sm font-medium text-gray-700">Enrolled Course</label>
                     <select
                       value={editFormData.course_id}
                       onChange={(e) => setEditFormData({ ...editFormData, course_id: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                       <option value="">Select Course</option>
                       {availableCourses.map(course => (
@@ -1068,29 +1093,6 @@ function AdminPanel() {
                       ))}
                     </select>
                   </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Email Address</label>
-                <input
-                  type="email"
-                  value={editFormData.email}
-                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  required
-                />
-              </div>
-
-              {editUser?.role === 'student' && (
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Student ID (Numeric)</label>
-                  <input
-                    type="text"
-                    value={editFormData.student_id}
-                    onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
                 </div>
               )}
 

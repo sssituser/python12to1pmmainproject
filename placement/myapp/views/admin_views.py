@@ -30,13 +30,17 @@ def all_users_api(request):
             'last_login': user.last_login
         }
         
-        # Add student profile if exists
-        if hasattr(user, 'studentprofile'):
+        # Fetch student profile explicitly
+        from myapp.models import StudentProfile
+        profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+        
+        if profile:
             user_data['studentprofile'] = {
-                'student_id': user.studentprofile.student_id,
+                'student_id': profile.student_id,
                 'course': {
-                    'title': user.studentprofile.course.title if user.studentprofile.course else None
-                } if user.studentprofile.course else None
+                    'title': profile.course.title if profile.course else None,
+                    'id': profile.course.id if profile.course else None
+                } if profile.course else None
             }
         
         users_data.append(user_data)
@@ -163,6 +167,11 @@ def update_student_api(request, student_id):
         data = request.data
         
         # Update user fields
+        if 'username' in data:
+            if data['username'] != student.username and User.objects.filter(username=data['username']).exists():
+                return Response({'error': 'Username already exists'}, status=400)
+            student.username = data['username']
+
         if 'email' in data:
             if data['email'] != student.email and User.objects.filter(email=data['email']).exists():
                 return Response({'error': 'Email already exists'}, status=400)
@@ -182,30 +191,38 @@ def update_student_api(request, student_id):
             
         student.save()
         
-        # Update profile fields if provided
-        profile = StudentProfile.objects.filter(user=student).first()
-        if profile:
-            if 'student_id' in data:
-                student_id_val = data['student_id']
-                if student_id_val is not None and str(student_id_val).strip() != "":
-                    try:
-                        profile.student_id = int(student_id_val)
-                    except (ValueError, TypeError):
-                        return Response({'error': 'Student ID must be a valid number'}, status=400)
-                else:
-                    profile.student_id = None
-            
-            if 'course_id' in data:
-                course_id_val = data['course_id']
-                if course_id_val and str(course_id_val).strip() != "":
-                    from myapp.models import Course
-                    try:
-                        profile.course = Course.objects.get(id=course_id_val)
-                    except (Course.DoesNotExist, ValueError):
-                        profile.course = None
-                else:
+        # Ensure profile exists
+        profile, created = StudentProfile.objects.get_or_create(user=student)
+        
+        # Update profile fields
+        profile_updated = False
+        if 'student_id' in data:
+            student_id_val = data['student_id']
+            if student_id_val is not None and str(student_id_val).strip() != "":
+                try:
+                    profile.student_id = int(student_id_val)
+                    profile_updated = True
+                except (ValueError, TypeError):
+                    return Response({'error': 'Student ID must be a valid number'}, status=400)
+            else:
+                profile.student_id = None
+                profile_updated = True
+        
+        if 'course_id' in data:
+            course_id_val = data['course_id']
+            if course_id_val and str(course_id_val).strip() != "":
+                from myapp.models import Course
+                try:
+                    profile.course = Course.objects.get(id=course_id_val)
+                    profile_updated = True
+                except (Course.DoesNotExist, ValueError):
                     profile.course = None
-                    
+                    profile_updated = True
+            else:
+                profile.course = None
+                profile_updated = True
+                
+        if profile_updated or created:
             profile.save()
             
         return Response({
