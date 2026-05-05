@@ -1,0 +1,8 @@
+Django
+djangorestframework
+django-cors-headers
+PyMySQL
+djangorestframework-simplejwt
+requests
+cryptography
+Pillow

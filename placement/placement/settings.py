@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+# Configure PyMySQL to act as mysqlclient
+import pymysql
+pymysql.install_as_MySQLdb()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -70,6 +74,8 @@ INSTALLED_APPS = [
     
 ]
 
+ALLOWED_HOSTS = ['*']
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -93,14 +99,21 @@ WSGI_APPLICATION = 'placement.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Detect if running inside Docker
+IS_DOCKER = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'placementdb',
-        'USER': 'root',
-        'PASSWORD': '2004',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME', 'placementdb'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '2004'),
+        'HOST': os.environ.get('DB_HOST', 'db' if IS_DOCKER else '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306' if IS_DOCKER else '3307'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'connect_timeout': 10,
+        }
     }
 }
 
@@ -109,7 +122,7 @@ DATABASES = {
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
 PLATFORM_NAME = 'SSSIT Placement Portal'
-PLATFORM_URL = 'http://localhost:5174'
+PLATFORM_URL = os.environ.get('PLATFORM_URL', 'http://localhost')
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

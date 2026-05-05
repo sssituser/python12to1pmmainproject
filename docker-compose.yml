@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: placementdb
+      MYSQL_ROOT_PASSWORD: 2004
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p2004"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - placement_network
+
+  backend:
+    build: ./placement
+    container_name: backend_container
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: placementdb
+      DB_USER: root
+      DB_PASSWORD: 2004
+      DB_HOST: db
+      DB_PORT: 3306
+      DOCKER_CONTAINER: "true"
+    command: sh -c "chmod +x wait-for-it.sh && ./wait-for-it.sh db 3306 -- python manage.py migrate && python create_admin_user.py && python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - placement_network
+
+  frontend:
+    build: ./placementapp
+    container_name: frontend_container
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - placement_network
+
+volumes:
+  mysql_data:
+
+networks:
+  placement_network:
+    driver: bridge

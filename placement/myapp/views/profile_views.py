@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json
 
-from ..models import StudentProfile, Skill, Project, FacultyProfile, FacultyAchievement, FacultyResearch, FacultyCourseHistory
+from ..models import User, StudentProfile, Skill, Project, FacultyProfile, FacultyAchievement, FacultyResearch, FacultyCourseHistory
 from ..serializers import StudentProfileSerializer, FacultyProfileSerializer, FacultyProfilePublicSerializer, FacultyProfileMinimalSerializer
 
 
@@ -79,14 +79,10 @@ def update_profile(request):
     user = request.user
     print(f"DEBUG: Received data: {request.data}")
     
-    name = request.data.get("name")
-    email = request.data.get("email")
-    if name:
-        user.first_name = name
-    if email:
-        user.email = email
-    if name or email:
-        user.save()
+    def ensure_string(value):
+        if isinstance(value, (list, tuple)) and len(value) > 0:
+            return value[0]
+        return value
 
     skills_data = request.data.get("skills", [])
     projects_data = request.data.get("projects", [])
@@ -148,17 +144,17 @@ def update_profile(request):
     data.pop("projects", None)
     data.pop("education", None)
     # Update User fields if provided
-    name = data.pop("name", None)
-    email = data.pop("email", None)
+    name = ensure_string(data.pop("name", None))
+    email = ensure_string(data.pop("email", None))
     
     user_updated = False
-    if name:
+    if name and isinstance(name, str):
         name_parts = name.strip().split(" ", 1)
         request.user.first_name = name_parts[0]
         request.user.last_name = name_parts[1] if len(name_parts) > 1 else ""
         user_updated = True
     
-    if email:
+    if email and isinstance(email, str):
         if email != request.user.email and User.objects.filter(email=email).exists():
             return Response({"error": "Email already exists"}, status=400)
         request.user.email = email
