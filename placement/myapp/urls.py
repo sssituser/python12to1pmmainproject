@@ -24,6 +24,7 @@ from .views.admin_views import all_users_api, create_faculty_api, create_student
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
+from .views.marks_views import get_students_and_marks, upload_exam_marks, get_course_exams
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
 router.register(r'applied-jobs', AppliedJobViewSet, basename='applied-job')
@@ -134,6 +135,11 @@ urlpatterns = [
     path('course/<int:course_id>/', get_course_details),
     path('course/<str:course_name>/topics/', get_course_topics),
     path('run-code/', run_code_api, name='run-code'),
+    
+    # Marks System URLs
+    path('faculty/exam-marks/', get_students_and_marks),
+    path('faculty/exam-marks/upload/', upload_exam_marks),
+    path('faculty/courses/<int:course_id>/exams/', get_course_exams),
     
     # Auto-deletion Monitoring URLs
     path('login-email-status/', get_login_email_status, name='login_email_status'),

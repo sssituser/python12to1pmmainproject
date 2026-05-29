@@ -60,6 +60,7 @@ const FacultyLogin = lazy(() => import("./faculty/login"));
 const Stats = lazy(() => import("./faculty/Stats"));
 const FacultyProfile = lazy(() => import("./faculty/Profile"));
 const StudentReport = lazy(() => import("./faculty/StudentReport"));
+const MarksUpload = lazy(() => import("./faculty/MarksUpload"));
 
 /* 🔹 AUTH (LAZY) */
 const VerifyFaculty = lazy(() => import("./pages/FacultyOtp"));
@@ -226,6 +227,7 @@ function App() {
             <Route path="jobs" element={<FacultyJobs />} />
             <Route path="exam" element={<ExamManager />} />
             <Route path="applications" element={<Applications />} />
+            <Route path="upload-marks" element={<MarksUpload />} />
             <Route path="student-report/:username" element={<StudentReport />} />
             <Route path="leaves" element={<Leaves />} />
             <Route path="Course" element={<FacultyCourse />} />

@@ -6,6 +6,7 @@ import {
     Briefcase,
     CalendarDays,
     ClipboardList,
+    ClipboardCheck,
     FileText,
     LayoutDashboard,
     LogOut,
@@ -55,6 +56,7 @@ function FacultyLayout() {
     { name: "Jobs", path: "/faculty/jobs", icon: <Briefcase size={18}/> },
     { name: "Applications", path: "/faculty/applications", icon: <FileText size={18}/> },
     { name: "Exams", path: "/faculty/exam", icon: <ClipboardList size={18}/> },
+    { name: "Upload Marks", path: "/faculty/upload-marks", icon: <ClipboardCheck size={18}/> },
     { name: "Exam Failures", path: "/faculty/exam-failure", icon: <AlertTriangle size={18}/> },
     { name: "Leave Requests", path: "/faculty/leaves", icon: <CalendarDays size={18}/> },
   ];

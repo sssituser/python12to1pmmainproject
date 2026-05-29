@@ -758,6 +758,63 @@ class FacultyCourseHistory(models.Model):
         db_table = 'myapp_faculty_course_history'
         ordering = ['-year', '-semester']
         unique_together = ['faculty_profile', 'course', 'semester', 'year']
+
+
+# ===============================
+# Academic Task & Portfolio System
+# ===============================
+
+class AcademicTask(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'faculty'})
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, null=True, blank=True)
+    due_date = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    file_requirement = models.CharField(max_length=100, default="PDF, ZIP, Images, Videos, Source code")
+
+    def __str__(self):
+        return self.title
+
+class TaskSubmission(models.Model):
+    task = models.ForeignKey(AcademicTask, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'student'})
+    file = models.FileField(upload_to='submissions/')
+    description = models.TextField(blank=True)
+    version = models.IntegerField(default=1)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.student.username} - {self.task.title} (v{self.version})"
+
+class SubmissionEvaluation(models.Model):
+    submission = models.OneToOneField(TaskSubmission, on_delete=models.CASCADE, related_name='evaluation')
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'faculty'})
+    grade = models.CharField(max_length=10)
+    score = models.FloatField()
+    feedback = models.TextField()
+    rubric_scores = models.JSONField(default=dict) # e.g., {"Code Quality": 8, "Documentation": 7}
+    evaluated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Evaluation for {self.submission}"
+
+class StudentPortfolio(models.Model):
+    student = models.OneToOneField(User, on_delete=models.CASCADE, related_name='portfolio')
+    bio = models.TextField(blank=True)
+    skills = models.JSONField(default=list)
+    ai_generated_summary = models.TextField(blank=True)
+    featured_projects = models.ManyToManyField(Project, blank=True)
+    is_public = models.BooleanField(default=True)
+    portfolio_url = models.SlugField(unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Portfolio of {self.student.username}"
     
 
 
