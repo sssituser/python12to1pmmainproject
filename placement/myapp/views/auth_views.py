@@ -64,13 +64,13 @@ def login(request):
             
             # 2. StudentProfile student_id Match (Integer conversion)
             if not user and identifier.isdigit():
-                profile = StudentProfile.objects.filter(student_id=int(identifier)).select_related('user').first()
+                profile = StudentProfile.objects.filter(student_id=int(identifier)).select_related('user').order_by('-user__is_active').first()
                 if profile:
                     user = profile.user
             
             # 3. StudentProfile Phone Match
             if not user:
-                profile = StudentProfile.objects.filter(phone=identifier).select_related('user').first()
+                profile = StudentProfile.objects.filter(phone=identifier).select_related('user').order_by('-user__is_active').first()
                 if profile:
                     user = profile.user
                     

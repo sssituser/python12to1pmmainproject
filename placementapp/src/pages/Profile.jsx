@@ -211,6 +211,15 @@ const addSkill = () => {
   setSkill("");
 };
 
+const updateSkillLevel = (index, value) => {
+  const updated = [...formData.skills];
+  updated[index] = {
+    ...updated[index],
+    level: Number(value)
+  };
+  setFormData({ ...formData, skills: updated });
+};
+
   const addProject = () => {
     if (!project.title.trim()) return;
     const currentProjects = Array.isArray(formData.projects) ? formData.projects : [];
@@ -264,14 +273,6 @@ const addSkill = () => {
         )
       : [];
 
-      const updateSkillLevel = (index, value) => {
-      const updated = [...formData.skills];
-      updated[index] = {
-      ...updated[index],
-      level: Number(value)
-      };
-      setFormData({ ...formData, skills: updated });
-      };
 
     const normalizedProjects = Array.isArray(formData.projects)
       ? formData.projects.map((projectItem) =>

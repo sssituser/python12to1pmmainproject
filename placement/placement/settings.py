@@ -44,13 +44,31 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 
-# 🛡️ 1000% SECURE NETWORK TRUST (LAN MODE)
+# 🛡️ 1000% SECURE NETWORK TRUST (LAN/WAN MODE)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
 ]
+
+# Dynamically add all network/LAN interface IPs to trusted origins
+import socket
+try:
+    hostname = socket.gethostname()
+    local_ips = socket.gethostbyname_ex(hostname)[2]
+    for ip in local_ips:
+        CSRF_TRUSTED_ORIGINS.append(f"http://{ip}:5173")
+        CSRF_TRUSTED_ORIGINS.append(f"http://{ip}:5174")
+except Exception:
+    pass
+
+# Trust the global VM IP
+CSRF_TRUSTED_ORIGINS.extend([
+    "http://40.192.98.128:5173",
+    "http://40.192.98.128:5174",
+])
+
 # Accept all origins for local development to avoid 403 on different laptop hostnames
 CSRF_ALLOW_WILD_CARD = True 
 
@@ -102,14 +120,21 @@ WSGI_APPLICATION = 'placement.wsgi.application'
 # Detect if running inside Docker
 IS_DOCKER = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
 
+# Local development defaults:
+# - inside Docker container: connect to service name `db` on port 3306
+# - outside Docker with a native MySQL install: connect to localhost on port 3306
+# - outside Docker with the compose MySQL container mapped to host: use DB_PORT=3307
+DB_HOST = os.environ.get('DB_HOST', 'db' if IS_DOCKER else '127.0.0.1')
+DB_PORT = os.environ.get('DB_PORT', '3306')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME', 'placementdb'),
         'USER': os.environ.get('DB_USER', 'root'),
         'PASSWORD': os.environ.get('DB_PASSWORD', '2004'),
-        'HOST': os.environ.get('DB_HOST', 'db' if IS_DOCKER else '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '3306' if IS_DOCKER else '3307'),
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'charset': 'utf8mb4',
             'connect_timeout': 10,

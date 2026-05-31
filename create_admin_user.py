@@ -38,14 +38,15 @@ def create_admin_user():
             is_superuser=True
         )
         
-        print("✅ Admin user created successfully!")
+        print("Admin user created successfully!")
         print("Username: admin")
         print("Password: admin123")
         print("Email: admin@placement.com")
         print("Role: admin")
         
     except Exception as e:
-        print(f"❌ Error creating admin user: {e}")
+        print(f"Error creating admin user: {e}")
 
 if __name__ == '__main__':
     create_admin_user()
+

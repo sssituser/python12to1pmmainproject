@@ -17,16 +17,33 @@ def get_students_and_marks(request):
         return Response({"success": False, "error": "course_id is required"}, status=400)
         
     try:
-        # Get students enrolled in this course
-        profiles = StudentProfile.objects.filter(course_id=course_id).select_related('user')
+        from myapp.models import CourseEnrollment
         
-        students_data = []
+        # Collect user IDs from both lookup paths (union, deduped)
+        seen_user_ids = set()
+        
+        # Path 1: CourseEnrollment table (most reliable)
+        enrollments = CourseEnrollment.objects.filter(course_id=course_id).select_related('user')
+        for enrollment in enrollments:
+            if enrollment.user and enrollment.user.is_active:
+                seen_user_ids.add(enrollment.user.id)
+        
+        # Path 2: StudentProfile.course FK (legacy / fallback)
+        profiles = StudentProfile.objects.filter(course_id=course_id).select_related('user')
         for profile in profiles:
-            user = profile.user
+            if profile.user and profile.user.is_active:
+                seen_user_ids.add(profile.user.id)
+        
+        if not seen_user_ids:
+            return Response({"success": True, "students": []})
+
+        students_data = []
+        for user_id in seen_user_ids:
+            user = User.objects.filter(id=user_id, role='student').first()
             if not user:
                 continue
                 
-            # Find if there is an existing attempt for this student and exam_title
+            # Find existing attempt for this student + exam_title
             attempt = ExamAttempt.objects.filter(user=user, exam_title__iexact=exam_title).first()
             
             students_data.append({
@@ -38,6 +55,9 @@ def get_students_and_marks(request):
                 "total_marks": attempt.total_marks if attempt else 100,
                 "status": attempt.status if attempt else "completed"
             })
+        
+        # Sort by student name
+        students_data.sort(key=lambda x: x['student_name'].lower())
             
         return Response({
             "success": True,
@@ -45,6 +65,7 @@ def get_students_and_marks(request):
         })
     except Exception as e:
         return Response({"success": False, "error": str(e)}, status=500)
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -100,10 +121,34 @@ def upload_exam_marks(request):
 @permission_classes([AllowAny])
 def get_course_exams(request, course_id):
     try:
-        exams = Exam.objects.filter(course_id=course_id).values('id', 'title', 'total_marks')
+        from myapp.models import CourseEnrollment
+
+        # Collect all enrolled user IDs for this course (both paths)
+        enrolled_user_ids = set()
+
+        enrollments = CourseEnrollment.objects.filter(course_id=course_id).values_list('user_id', flat=True)
+        enrolled_user_ids.update(enrollments)
+
+        profile_users = StudentProfile.objects.filter(course_id=course_id).values_list('user_id', flat=True)
+        enrolled_user_ids.update(profile_users)
+
+        # Dynamically gather distinct manual exam titles from ExamAttempt records
+        manual_exam_titles = (
+            ExamAttempt.objects
+            .filter(user_id__in=enrolled_user_ids, exam_type='manual')
+            .values_list('exam_title', flat=True)
+            .distinct()
+            .order_by('exam_title')
+        )
+
+        exams_list = [
+            {"id": idx + 1, "title": title, "total_marks": 100}
+            for idx, title in enumerate(manual_exam_titles)
+        ]
+
         return Response({
             "success": True,
-            "exams": list(exams)
+            "exams": exams_list
         })
     except Exception as e:
         return Response({"success": False, "error": str(e)}, status=500)

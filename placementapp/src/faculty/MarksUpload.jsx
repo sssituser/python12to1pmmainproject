@@ -150,8 +150,9 @@ function MarksUpload() {
 
       if (res.ok) {
         setMessage({ type: "success", text: "Marks saved and updated successfully!" });
-        // Refresh values
+        // Refresh marks display AND the exam dropdown (new exam titles appear dynamically)
         fetchStudentsAndMarks(selectedCourse, examTitle);
+        fetchCourseExams(selectedCourse);
       } else {
         setMessage({ type: "error", text: "Failed to save marks. Please check your inputs." });
       }
@@ -210,6 +211,11 @@ function MarksUpload() {
                           setSelectedExam("");
                         } else {
                           setSelectedExam(e.target.value);
+                          // Auto-populate total marks from selected exam
+                          const exam = exams.find(ex => ex.id.toString() === e.target.value);
+                          if (exam && exam.total_marks) {
+                            setDefaultTotalMarks(exam.total_marks);
+                          }
                         }
                       }}
                     >

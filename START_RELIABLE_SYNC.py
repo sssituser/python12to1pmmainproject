@@ -28,22 +28,24 @@ def cleanup_port(port=8000):
 def run():
     cleanup_port(8000)
     ip = get_ip()
-    print(f"\n🚀 1000% RELIABLE SYNC SERVER INITIALIZING...")
-    print(f"🌍 NETWORK IP DETECTED: {ip}")
-    print(f"🔗 FRIENDS SHOULD USE: http://{ip}:5173")
-    print(f"🛡️  BACKEND RUNNING ON: 0.0.0.0:8000 (PUBLICLY ACCESSIBLE)\n")
+    if 'DB_PORT' not in os.environ:
+        os.environ['DB_PORT'] = '3306'
+    print(f"\n[START] 1000% RELIABLE SYNC SERVER INITIALIZING...")
+    print(f"NETWORK IP DETECTED: {ip}")
+    print(f"FRIENDS SHOULD USE: http://{ip}:5173")
+    print(f"BACKEND RUNNING ON: 0.0.0.0:8000 (PUBLICLY ACCESSIBLE)\n")
     
     os.chdir('placement')
     try:
-        # 🧪 Step 1: Health Check & Migration
+        # Step 1: Health Check & Migration
         subprocess.run([sys.executable, "manage.py", "migrate"], check=True)
         
-        # 🏗️ Step 2: Start Networked Engine
+        # Step 2: Start Networked Engine
         subprocess.run([sys.executable, "manage.py", "runserver", "0.0.0.0:8000"])
     except KeyboardInterrupt:
-        print("\n👋 Sync Server Stopped.")
+        print("\nSync Server Stopped.")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     run()

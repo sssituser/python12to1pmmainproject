@@ -1,11 +1,10 @@
-import React, { useEffect, useState, lazy, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
+import { lazyWithRetry as lazy } from "../utils/lazyWithRetry";
 import axios from "axios";
 import { motion } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-// 🚀 LAZY LOAD HEAVY COMPONENTS
-const Globe = lazy(() => import("../components/Globe"));
 
 function Login() {
   const navigate = useNavigate();
@@ -253,95 +252,170 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-black text-white overflow-hidden">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white overflow-hidden relative font-sans">
       <Toaster />
 
-      {/* LEFT SIDE */}
-      <div className="w-1/2 hidden md:flex items-center justify-center relative">
+      {/* Decorative background glows */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-[120px] pointer-events-none" />
 
-        <div className="absolute inset-0 opacity-70 pointer-events-none">
-          <Suspense fallback={<div className="w-full h-full bg-slate-950" />}>
-            <Globe />
-          </Suspense>
-        </div>
+      {/* LEFT SIDE - Branding & Globe */}
+      <div className="w-1/2 hidden md:flex items-center justify-center relative border-r border-slate-800/30">
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
 
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative z-10 px-16"
         >
-          <h1 className="text-6xl font-bold leading-tight">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-6 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+            🎓 Student Portal
+          </div>
+          <h1 className="text-6xl font-extrabold tracking-tight leading-none">
             Placement
             <br />
-            <span className="text-green-400">Portal</span>
+            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(52,211,153,0.2)]">
+              Portal
+            </span>
           </h1>
 
-          <p className="text-gray-400 mt-4 text-lg">
-            Track your career journey 
+          <p className="text-slate-400 mt-6 text-lg max-w-md font-light leading-relaxed">
+            Empowering your career path with industry connections, practice assessments, and real-time placement tracking.
           </p>
+
+          {/* GPU-Accelerated Placement Pipeline Animation */}
+          <div className="mt-10 relative h-36 w-full max-w-md bg-slate-900/20 backdrop-blur-sm rounded-2xl border border-slate-800/40 p-5 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+            <style>{`
+              @keyframes flow-line {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(300%); }
+              }
+              .animate-flow-line {
+                animation: flow-line 2.5s infinite linear;
+              }
+            `}</style>
+            
+            <div className="relative flex justify-between items-center h-full z-10">
+              {/* Connector Line */}
+              <div className="absolute left-6 right-6 top-[35%] h-[2px] bg-slate-800 -translate-y-1/2 overflow-hidden rounded">
+                <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-flow-line" />
+              </div>
+
+              {/* Step 1: Profile */}
+              <div className="flex flex-col items-center gap-1.5 relative group">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-[0_0_12px_rgba(0,0,0,0.5)] group-hover:border-emerald-500/40 transition duration-300">
+                  <span className="text-base">📄</span>
+                  <div className="absolute -inset-1 rounded-xl bg-emerald-500/5 blur opacity-0 group-hover:opacity-100 transition duration-300" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">Resume Build</span>
+              </div>
+
+              {/* Step 2: Assessment */}
+              <div className="flex flex-col items-center gap-1.5 relative group">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-[0_0_12px_rgba(0,0,0,0.5)] group-hover:border-emerald-500/40 transition duration-300">
+                  <span className="text-base">💻</span>
+                  <div className="absolute -inset-1 rounded-xl bg-emerald-500/5 blur opacity-0 group-hover:opacity-100 transition duration-300" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">Assessment</span>
+              </div>
+
+              {/* Step 3: Interview */}
+              <div className="flex flex-col items-center gap-1.5 relative group">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-center shadow-[0_0_12px_rgba(0,0,0,0.5)] group-hover:border-emerald-500/40 transition duration-300">
+                  <span className="text-base">🤝</span>
+                  <div className="absolute -inset-1 rounded-xl bg-emerald-500/5 blur opacity-0 group-hover:opacity-100 transition duration-300" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">Interview</span>
+              </div>
+
+              {/* Step 4: Placed */}
+              <div className="flex flex-col items-center gap-1.5 relative group">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:border-emerald-400 transition duration-300">
+                  <span className="text-base animate-pulse">🎉</span>
+                  <div className="absolute -inset-1.5 rounded-xl bg-emerald-400/10 blur opacity-100 animate-pulse" />
+                </div>
+                <span className="text-[10px] text-emerald-400 font-semibold">Placed!</span>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="flex-1 flex items-center justify-center px-6">
-
+      {/* RIGHT SIDE - Login Card */}
+      <div className="flex-1 flex items-center justify-center px-6 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 60 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-sm p-8 rounded-2xl bg-slate-900 border border-slate-700"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md p-8 md:p-10 rounded-3xl bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] flex flex-col"
         >
-          <h2 className="text-2xl text-center mb-6 font-semibold">
-            Student Login
-          </h2>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-slate-400 text-sm font-light">
+              Enter your credentials to access your student account.
+            </p>
+          </div>
 
           {/* USERNAME OR STUDENT ID */}
-          <input
-            type="text"
-            name="studentId"
-            placeholder="Username or Student ID"
-            value={form.studentId}
-            onChange={handleChange}
-            className="w-full mb-4 px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
-          />
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Username or Student ID
+            </label>
+            <input
+              type="text"
+              name="studentId"
+              placeholder="e.g. 2345091"
+              value={form.studentId}
+              onChange={handleChange}
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+            />
+          </div>
 
           {mode === "login" && (
             <>
               {/* PASSWORD */}
-              <div className="relative mb-4">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
-                />
-
-                <span
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 cursor-pointer text-gray-400 hover:text-white"
-                >
-                  👁
-                </span>
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <span
+                    onClick={() => {
+                      setMode("forgot");
+                      setForgotUsername(form.studentId);
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                    className="text-xs text-slate-500 hover:text-emerald-400 cursor-pointer transition duration-150"
+                  >
+                    Forgot password?
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-3.5 text-slate-500 hover:text-white transition duration-150 text-sm"
+                  >
+                    {showPassword ? "🙈" : "👁"}
+                  </button>
+                </div>
               </div>
 
               {/* OPTIONS */}
-              <div className="flex justify-between text-sm text-gray-400 mb-6">
-                <span
-                  onClick={() => {
-                    setMode("forgot");
-                    setForgotUsername(form.studentId);
-                    setNewPassword("");
-                    setConfirmPassword("");
-                  }}
-                  className="cursor-pointer hover:text-white"
-                >
-                  Forgot password?
-                </span>
+              <div className="flex justify-end text-xs text-slate-400 mb-6">
                 <span
                   onClick={() => {
                     setMode("otp");
@@ -349,9 +423,9 @@ function Login() {
                     setOtpCode("");
                     setOtpSent(false);
                   }}
-                  className="cursor-pointer hover:text-green-400"
+                  className="cursor-pointer hover:text-emerald-400 underline decoration-slate-800 hover:decoration-emerald-400/30 transition duration-150"
                 >
-                  OTP Login
+                  Sign in with OTP
                 </span>
               </div>
             </>
@@ -360,37 +434,46 @@ function Login() {
           {mode === "forgot" && (
             <>
               <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Email Address
+                </label>
                 <input
                   type="text"
                   name="forgotUsername"
-                  placeholder="Email"
+                  placeholder="name@domain.com"
                   value={forgotUsername}
                   onChange={(e) => setForgotUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
                 />
               </div>
               <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  New Password
+                </label>
                 <input
                   type="password"
-                  placeholder="New password"
+                  placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
                 />
               </div>
               <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Confirm Password
+                </label>
                 <input
                   type="password"
-                  placeholder="Confirm password"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
                 />
               </div>
-              <div className="text-sm text-gray-400 mb-6">
+              <div className="text-xs text-slate-400 mb-6">
                 <span
                   onClick={() => setMode("login")}
-                  className="cursor-pointer text-green-400 hover:underline"
+                  className="cursor-pointer text-emerald-400 hover:underline"
                 >
                   Back to login
                 </span>
@@ -401,30 +484,36 @@ function Login() {
           {mode === "otp" && (
             <>
               <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Username or Email
+                </label>
                 <input
                   type="text"
-                  placeholder="Username or Email"
+                  placeholder="Enter email or username"
                   value={otpUsername}
                   onChange={(e) => setOtpUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
                 />
               </div>
               {otpSent && (
                 <div className="mb-4">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Enter Verification Code
+                  </label>
                   <input
                     type="text"
                     maxLength={6}
-                    placeholder="Enter OTP"
+                    placeholder="6-digit OTP"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition"
+                    className="w-full tracking-[0.5em] text-center font-bold px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
                   />
                 </div>
               )}
-              <div className="text-sm text-gray-400 mb-6">
+              <div className="text-xs text-slate-400 mb-6">
                 <span
                   onClick={() => setMode("login")}
-                  className="cursor-pointer text-green-400 hover:underline"
+                  className="cursor-pointer text-emerald-400 hover:underline"
                 >
                   Back to login
                 </span>
@@ -432,7 +521,7 @@ function Login() {
             </>
           )}
 
-          {/* BUTTON */}
+          {/* MAIN BUTTON */}
           <button
             onClick={
               mode === "login"
@@ -444,56 +533,62 @@ function Login() {
                 : handleSendOtp
             }
             disabled={loading || otpLoading}
-            className="w-full py-3 rounded-lg font-medium bg-green-500 hover:bg-green-600 transition duration-300"
+            className="w-full py-4 rounded-xl font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] text-black shadow-[0_4px_20px_-2px_rgba(16,185,129,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading || otpLoading
-              ? "Processing..."
-              : mode === "login"
-              ? "SIGN IN"
-              : mode === "forgot"
-              ? "RESET PASSWORD"
-              : otpSent
-              ? "VERIFY OTP"
-              : "SEND OTP"}
+            {loading || otpLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-black" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing...
+              </span>
+            ) : mode === "login" ? (
+              "SIGN IN"
+            ) : mode === "forgot" ? (
+              "RESET PASSWORD"
+            ) : otpSent ? (
+              "VERIFY OTP"
+            ) : (
+              "SEND OTP"
+            )}
           </button>
 
-          {/* REGISTER */}
-          <p className="text-center text-sm mt-5 text-gray-400">
-            New here?{" "}
+          {/* REGISTER LINK */}
+          <p className="text-center text-xs mt-6 text-slate-500">
+            Don't have an account?{" "}
             <span
               onClick={() => navigate("/register")}
-              className="text-green-400 cursor-pointer hover:underline"
+              className="text-emerald-400 cursor-pointer font-semibold hover:underline"
             >
-              Create account
+              Sign up here
             </span>
           </p>
 
-          {/* FACULTY & ADMIN LOGIN */}
-          <div className="flex justify-center gap-4 text-xs mt-3 text-gray-500">
-            <p>
-              Faculty?{" "}
+          {/* DIVERGING ROLES FOOTER */}
+          <div className="mt-8 pt-6 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
+            <span>Access other portals:</span>
+            <div className="flex gap-3">
               <span
                 onClick={() => navigate("/faculty/login")}
-                className="text-green-400 cursor-pointer hover:underline"
+                className="text-slate-400 hover:text-emerald-400 font-medium cursor-pointer transition"
               >
-                Login here
+                Faculty
               </span>
-            </p>
-            <p>
-              Admin?{" "}
+              <span>•</span>
               <span
                 onClick={() => navigate("/admin/login")}
-                className="text-purple-400 cursor-pointer hover:underline"
+                className="text-slate-400 hover:text-purple-400 font-medium cursor-pointer transition"
               >
-                Login here
+                Admin
               </span>
-            </p>
+            </div>
           </div>
         </motion.div>
-
       </div>
     </div>
   );
 }
 
 export default Login;
+

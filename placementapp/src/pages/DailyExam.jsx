@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CodeCompiler from "../components/CodeCompiler";
+import axios from "axios";
 
 // Indestructible global array to catch all streams outside React DOM scope
 let globalStreamsToClean = [];

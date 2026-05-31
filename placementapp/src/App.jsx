@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
+import { lazyWithRetry as lazy } from "./utils/lazyWithRetry";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

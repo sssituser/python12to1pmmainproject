@@ -5,7 +5,7 @@ from django.views.decorators.http import require_http_methods
 import json
 from datetime import datetime
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -68,14 +68,22 @@ def student_courses(request):
         return Response({"success": False, "error": str(e)}, status=500)
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def faculty_courses(request):
     """API endpoint for faculty courses - Live DB Mirror"""
     try:
         courses = Course.objects.all().order_by('id')
-        serializer = CourseFacultySerializer(courses, many=True)
+        result = []
+        for course in courses:
+            result.append({
+                "id": course.id,
+                "title": course.title.strip() if course.title and course.title.strip() else f"Course {course.id}",
+                "level": course.level,
+                "duration": course.duration,
+            })
         return Response({
             "success": True,
-            "data": serializer.data,
+            "data": result,
             "message": "Faculty courses retrieved successfully"
         })
     except Exception as e:
