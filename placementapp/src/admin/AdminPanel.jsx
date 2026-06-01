@@ -1,6 +1,7 @@
 import {
     AlertCircle,
     CheckCircle,
+    Download,
     Edit,
     Eye,
     EyeOff,
@@ -464,6 +465,43 @@ function AdminPanel() {
     }
   };
 
+  const handleDatabaseBackup = async () => {
+    try {
+      const hostname = window.location.hostname;
+      const response = await makeAuthenticatedRequest(`http://${hostname}:8000/api/admin/backup-db/`);
+      
+      if (response && response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        const disposition = response.headers.get('content-disposition');
+        let filename = `db_backup_${new Date().toISOString().split('T')[0]}.sql`;
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          const matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) { 
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+        
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showMessage('success', "Database backup downloaded successfully!");
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        showMessage('error', errData.error || "Failed to download backup");
+      }
+    } catch (error) {
+      console.error("Backup error:", error);
+      showMessage('error', "Network error or failure during backup");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -491,9 +529,18 @@ function AdminPanel() {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="text-gray-600 mt-2">Manage faculty credentials and student accounts</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-2">Manage faculty credentials and student accounts</p>
+        </div>
+        <button
+          onClick={handleDatabaseBackup}
+          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-all duration-200"
+        >
+          <Download size={18} />
+          Backup Database
+        </button>
       </div>
 
       {/* Statistics Cards */}

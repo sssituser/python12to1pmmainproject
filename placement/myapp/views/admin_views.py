@@ -332,3 +332,97 @@ def create_student_api(request):
         if 'student' in locals():
             student.delete()
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def database_backup_api(request):
+    """Generates a SQL dump of all database tables and returns it as a downloadable file"""
+    user_role = getattr(request.user, 'role', '')
+    if not (request.user.is_staff or user_role in ['admin', 'superadmin']):
+        return Response({'error': 'Unauthorized. Admin privileges required.'}, status=403)
+    
+    import io
+    import datetime
+    from django.db import connection
+    from django.http import HttpResponse
+
+    try:
+        out = io.StringIO()
+        cursor = connection.cursor()
+        
+        # Get all table names
+        table_names = connection.introspection.table_names()
+        
+        out.write("-- SSSIT Placement Portal Database Backup\n")
+        out.write(f"-- Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        out.write(f"-- Database Engine: {connection.vendor}\n\n")
+        
+        # Disable foreign key checks for clean restore
+        if connection.vendor == 'mysql':
+            out.write("SET FOREIGN_KEY_CHECKS = 0;\n\n")
+        elif connection.vendor == 'sqlite':
+            out.write("PRAGMA foreign_keys = OFF;\n\n")
+            
+        for table_name in table_names:
+            out.write(f"-- ------------------------------------------------------\n")
+            out.write(f"-- Table structure for table `{table_name}`\n")
+            out.write(f"-- ------------------------------------------------------\n")
+            out.write(f"DROP TABLE IF EXISTS `{table_name}`;\n")
+            
+            # Retrieve CREATE TABLE structure
+            if connection.vendor == 'mysql':
+                try:
+                    cursor.execute(f"SHOW CREATE TABLE `{table_name}`")
+                    create_stmt = cursor.fetchone()[1]
+                    out.write(f"{create_stmt};\n\n")
+                except Exception as e:
+                    out.write(f"-- Error retrieving structure: {str(e)}\n\n")
+            else:
+                out.write(f"-- Table structure extraction not supported for {connection.vendor}. Skipping structure.\n\n")
+            
+            # Retrieve data rows
+            cursor.execute(f"SELECT * FROM `{table_name}`")
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            
+            if rows:
+                out.write(f"-- Dumping data for table `{table_name}`\n")
+                col_str = ", ".join([f"`{c}`" for c in columns])
+                
+                for row in rows:
+                    values = []
+                    for val in row:
+                        if val is None:
+                            values.append("NULL")
+                        elif isinstance(val, (int, float)):
+                            values.append(str(val))
+                        elif isinstance(val, (datetime.datetime, datetime.date)):
+                            values.append(f"'{val}'")
+                        elif isinstance(val, bool):
+                            values.append("1" if val else "0")
+                        else:
+                            # Escape text/bytes values
+                            escaped = str(val).replace("\\", "\\\\").replace("'", "\\'")
+                            escaped = escaped.replace("\n", "\\n").replace("\r", "\\r")
+                            values.append(f"'{escaped}'")
+                    
+                    val_str = ", ".join(values)
+                    out.write(f"INSERT INTO `{table_name}` ({col_str}) VALUES ({val_str});\n")
+                out.write("\n")
+                
+        # Re-enable foreign key checks
+        if connection.vendor == 'mysql':
+            out.write("SET FOREIGN_KEY_CHECKS = 1;\n")
+        elif connection.vendor == 'sqlite':
+            out.write("PRAGMA foreign_keys = ON;\n")
+            
+        sql_content = out.getvalue()
+        
+        response = HttpResponse(sql_content, content_type='application/sql')
+        filename = f"db_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        return Response({'error': f'Failed to generate database backup: {str(e)}'}, status=500)
+
