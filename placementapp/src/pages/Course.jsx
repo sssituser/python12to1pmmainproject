@@ -73,7 +73,7 @@ function CoursesPage() {
   const [studentCourse, setStudentCourse] = useState("");
   const [isValidating, setIsValidating] = useState(true);
   
-  // Icon and course state initialization
+  // Icon and course state initialization (with deduplication)
   const [courses, setCourses] = useState(() => {
     const facultySaved = localStorage.getItem('facultyCourses');
     const genericSaved = localStorage.getItem('courses');
@@ -83,10 +83,18 @@ function CoursesPage() {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map(course => ({
+          const withIcons = parsed.map(course => ({
             ...course,
             icon: getIconForCourse(typeof course === 'string' ? course : (course.title || "Course"))
-          }));
+          })).filter(c => c.title && c.title.trim() !== '');
+          // Deduplicate by title
+          const seen = new Map();
+          return withIcons.filter(c => {
+            const key = c.title.trim().toUpperCase();
+            if (seen.has(key)) return false;
+            seen.set(key, true);
+            return true;
+          });
         }
       } catch (e) {
         console.error("Error parsing local courses:", e);
@@ -106,6 +114,13 @@ function CoursesPage() {
 
   // Sync courses with backend on mount to ensure all devices see the same curriculum
   useEffect(() => {
+    // 🧹 One-time purge of stale localStorage to force fresh deduped data
+    if (!sessionStorage.getItem('student_cache_cleared')) {
+      localStorage.removeItem('courses');
+      localStorage.removeItem('facultyCourses');
+      sessionStorage.setItem('student_cache_cleared', '1');
+    }
+
     const fetchCourses = async () => {
       const token = getStoredToken("access");
       if (!token) return;
@@ -125,11 +140,25 @@ function CoursesPage() {
         }
 
         if (courseData.length > 0) {
-          const coursesWithIcons = courseData.map(course => ({
-            ...course,
-            customVideos: course.customVideos || course.custom_videos || {},
-            icon: getIconForCourse(course.title)
-          }));
+          const mapped = courseData
+            .map(course => ({
+              ...course,
+              customVideos: course.customVideos || course.custom_videos || {},
+              icon: getIconForCourse(course.title)
+            }))
+            .filter(c => c.title && c.title.trim() !== '');
+
+          // ✅ Deduplicate by title (case-insensitive)
+          const seen = new Map();
+          const coursesWithIcons = [];
+          for (const course of mapped) {
+            const key = course.title.trim().toUpperCase();
+            if (!seen.has(key)) {
+              seen.set(key, true);
+              coursesWithIcons.push(course);
+            }
+          }
+
           setCourses(coursesWithIcons);
           localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
           localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));

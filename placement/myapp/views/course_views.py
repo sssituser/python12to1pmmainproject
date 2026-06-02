@@ -26,8 +26,22 @@ class CourseViewSet(viewsets.ModelViewSet):
     - GET: AllowAny (public access)
     - POST/PUT/DELETE: IsAuthenticated (faculty/admin only)
     """
-    queryset = Course.objects.all().order_by('id')
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        # Retrieve all courses and filter duplicates/empty titles dynamically
+        queryset = Course.objects.all().order_by('id')
+        seen_titles = set()
+        unique_ids = []
+        for course in queryset:
+            title = course.title.strip() if course.title and course.title.strip() else ""
+            if not title:
+                continue
+            title_upper = title.upper()
+            if title_upper not in seen_titles:
+                seen_titles.add(title_upper)
+                unique_ids.append(course.id)
+        return Course.objects.filter(id__in=unique_ids).order_by('id')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -58,7 +72,19 @@ def student_courses(request):
     """API endpoint for student courses - Live DB Mirror"""
     try:
         courses = Course.objects.all().order_by('id')
-        serializer = CourseStudentSerializer(courses, many=True)
+        result = []
+        seen_titles = set()
+        for course in courses:
+            title = course.title.strip() if course.title and course.title.strip() else ""
+            if not title:
+                continue
+            title_upper = title.upper()
+            if title_upper in seen_titles:
+                continue
+            seen_titles.add(title_upper)
+            result.append(course)
+            
+        serializer = CourseStudentSerializer(result, many=True)
         return Response({
             "success": True,
             "data": serializer.data,
@@ -74,10 +100,19 @@ def faculty_courses(request):
     try:
         courses = Course.objects.all().order_by('id')
         result = []
+        seen_titles = set()
         for course in courses:
+            title = course.title.strip() if course.title and course.title.strip() else ""
+            if not title:
+                continue
+            title_upper = title.upper()
+            if title_upper in seen_titles:
+                continue
+            seen_titles.add(title_upper)
+            
             result.append({
                 "id": course.id,
-                "title": course.title.strip() if course.title and course.title.strip() else f"Course {course.id}",
+                "title": title,
                 "level": course.level,
                 "duration": course.duration,
             })

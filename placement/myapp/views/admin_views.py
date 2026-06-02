@@ -426,3 +426,42 @@ def database_backup_api(request):
     except Exception as e:
         return Response({'error': f'Failed to generate database backup: {str(e)}'}, status=500)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deduplicate_courses_api(request):
+    """
+    Permanently remove duplicate Course rows from the database.
+    Keeps only the row with the lowest id for each unique (case-insensitive) title.
+    """
+    try:
+        from myapp.models import Course
+
+        all_courses = Course.objects.all().order_by('id')
+        seen_titles = {}
+        ids_to_delete = []
+
+        for course in all_courses:
+            title = (course.title or '').strip().upper()
+            if not title:
+                # Delete courses with empty/blank titles
+                ids_to_delete.append(course.id)
+            elif title in seen_titles:
+                # Duplicate — mark for deletion
+                ids_to_delete.append(course.id)
+            else:
+                seen_titles[title] = course.id
+
+        deleted_count = 0
+        if ids_to_delete:
+            deleted_count, _ = Course.objects.filter(id__in=ids_to_delete).delete()
+
+        return Response({
+            'success': True,
+            'message': f'Removed {deleted_count} duplicate/blank course entries.',
+            'deleted_count': deleted_count,
+            'remaining_count': Course.objects.count()
+        })
+    except Exception as e:
+        return Response({'error': f'Failed to deduplicate courses: {str(e)}'}, status=500)
+

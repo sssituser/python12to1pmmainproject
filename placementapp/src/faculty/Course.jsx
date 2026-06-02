@@ -203,7 +203,16 @@ function CoursesPage() {
         });
       } catch(e) {}
     }
-    return finalMerge;
+    
+    // Deduplicate by title to prevent duplicates from rendering on load
+    const uniqueMergeMap = new Map();
+    finalMerge.forEach(c => {
+      const title = (typeof c === "string" ? c : (c.title || "")).trim();
+      if (title) {
+        uniqueMergeMap.set(title.toUpperCase(), c);
+      }
+    });
+    return Array.from(uniqueMergeMap.values());
 
   });
 
@@ -276,6 +285,13 @@ function CoursesPage() {
 
   useEffect(() => {
 
+    // 🧹 One-time purge of stale localStorage to force fresh deduped data
+    if (!sessionStorage.getItem('cache_cleared')) {
+      localStorage.removeItem('courses');
+      localStorage.removeItem('facultyCourses');
+      sessionStorage.setItem('cache_cleared', '1');
+    }
+
     const fetchCoursesFromAPI = async () => {
 
       const token = localStorage.getItem('access');
@@ -343,17 +359,14 @@ function CoursesPage() {
             // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS
             const finalCurriculumRaw = [...localCustomRepos, ...rawCourses, ...standardCourseObjects];
 
-
-
             const coursesWithIcons = finalCurriculumRaw.map(item => {
               const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
-              const titleValue = apiItem.title || "";
+              const titleValue = (apiItem.title || "").trim();
               const localVersion = Array.isArray(localData) ? localData.find(lc => 
                 lc.id === apiItem.id || 
                 (lc.title && titleValue && lc.title.toUpperCase() === titleValue.toUpperCase())
               ) : null;
 
-              
               const mergedModules = (localVersion && localVersion.modules && localVersion.modules.length > (apiItem.modules?.length || 0)) 
                 ? localVersion.modules 
                 : (apiItem.modules || []);
@@ -365,13 +378,23 @@ function CoursesPage() {
                 customVideos: localVersion?.customVideos || apiItem.customVideos || apiItem.custom_videos || {},
                 icon: getIconForCourse(titleValue)
               };
-            });
+            }).filter(c => c.title && c.title.trim() !== '');
 
-            
-            setCourses(coursesWithIcons);
-            localStorage.setItem('courses', JSON.stringify(coursesWithIcons));
-            localStorage.setItem('facultyCourses', JSON.stringify(coursesWithIcons));
-            console.log(`✅ Faculty curriculum 1000% synced: ${coursesWithIcons.length} courses total.`);
+            // ✅ DEDUPLICATE BY TITLE — prevents any duplicate courses from appearing
+            const seenTitles = new Map();
+            const uniqueCoursesWithIcons = [];
+            for (const course of coursesWithIcons) {
+              const titleKey = course.title.toUpperCase();
+              if (!seenTitles.has(titleKey)) {
+                seenTitles.set(titleKey, true);
+                uniqueCoursesWithIcons.push(course);
+              }
+            }
+
+            setCourses(uniqueCoursesWithIcons);
+            localStorage.setItem('courses', JSON.stringify(uniqueCoursesWithIcons));
+            localStorage.setItem('facultyCourses', JSON.stringify(uniqueCoursesWithIcons));
+            console.log(`✅ Faculty curriculum synced (deduplicated): ${uniqueCoursesWithIcons.length} unique courses.`);
           }
 
         }
@@ -386,7 +409,29 @@ function CoursesPage() {
 
 
 
+    // ✅ Auto-deduplicate DB on first load (runs once per session)
+    const autoDeduplicateDB = async () => {
+      const token = localStorage.getItem('access');
+      if (!token) return;
+      const alreadyRun = sessionStorage.getItem('courses_deduped');
+      if (alreadyRun) return;
+      try {
+        await fetch(`http://${window.location.hostname}:8000/api/admin/deduplicate-courses/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.replace(/^"|"$/g, "")}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        sessionStorage.setItem('courses_deduped', '1');
+        console.log('✅ Auto-deduplication complete.');
+      } catch (e) {
+        // Silent — dedup is best-effort
+      }
+    };
+
     fetchCoursesFromAPI();
+    autoDeduplicateDB();
 
   }, []);
 
