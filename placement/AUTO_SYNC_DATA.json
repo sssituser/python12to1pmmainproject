@@ -1,248 +1,26 @@
 {
     "courses": [
         {
-            "id": 1,
+            "id": 7,
             "title": "PYTHON FULL STACK",
             "level": "Beginner",
             "duration": "Self-paced",
-            "progress": 20,
+            "progress": 0,
             "locked": false,
             "topics": [
-                "Introduction to PYTHON FULL STACK",
-                "Karthik"
+                "Introduction to PYTHON FULL STACK"
             ],
             "modules": [
                 {
-                    "title": "Python",
-                    "topics": [
-                        {
-                            "title": "POLYMORPHISM",
-                            "video": "https://youtu.be/UPT4Q_sTOpY?si=NVtYN6IChoBB8Zf3"
-                        },
-                        {
-                            "title": "INHERITANCE",
-                            "video": "https://youtu.be/4SO3sScshvA?si=zYNXoMv2VYhr3NLJ"
-                        },
-                        {
-                            "title": "FILE HANDLING ",
-                            "video": "https://youtu.be/Sx1Hjr67xO0?si=TBhMFTRNyeKlRNE5"
-                        },
-                        {
-                            "title": "PACKAGES ",
-                            "video": "https://youtu.be/bcDMDlH3Vu8?si=9WUDfPXEv1t8ZhJ3"
-                        },
-                        {
-                            "title": "Karthik",
-                            "video": ""
-                        }
-                    ]
-                },
-                {
-                    "title": "HTML",
-                    "topics": []
-                },
-                {
-                    "title": "CSS",
-                    "topics": []
-                },
-                {
-                    "title": "JAVASCRIPT",
-                    "topics": []
-                },
-                {
-                    "title": "BOOTSTRAP",
-                    "topics": []
-                },
-                {
-                    "title": "REACT",
-                    "topics": []
-                },
-                {
-                    "title": "DJANGO",
-                    "topics": []
-                },
-                {
-                    "title": "RESTFRAMEWORK",
+                    "title": "OOPS",
                     "topics": []
                 }
             ],
-            "custom_videos": {
-                "PACKAGES ": {
-                    "url": "https://youtu.be/bcDMDlH3Vu8?si=9WUDfPXEv1t8ZhJ3",
-                    "type": "link"
-                },
-                "INHERITANCE": {
-                    "url": "https://youtu.be/4SO3sScshvA?si=zYNXoMv2VYhr3NLJ",
-                    "type": "link"
-                },
-                "POLYMORPHISM": {
-                    "url": "https://youtu.be/UPT4Q_sTOpY?si=NVtYN6IChoBB8Zf3",
-                    "type": "link"
-                },
-                "FILE HANDLING ": {
-                    "url": "https://youtu.be/Sx1Hjr67xO0?si=TBhMFTRNyeKlRNE5",
-                    "type": "link"
-                }
-            },
-            "created_at": "2026-04-04 13:04:34.926539+00:00"
-        },
-        {
-            "id": 4,
-            "title": "Cyber Security",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-04 18:04:19.651856+00:00"
-        },
-        {
-            "id": 5,
-            "title": "Mobile Full Stack",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-04 18:22:18.047880+00:00"
-        },
-        {
-            "id": 6,
-            "title": "UI FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {
-                "Lists ": {
-                    "url": "https://youtu.be/nFH2VjXisMs?si=oNN3T0Bm83CD-TiO",
-                    "type": "link"
-                },
-                "TEXT FORMATTING TAGS": {
-                    "url": "https://youtu.be/R-oAzoBH_TU?si=KxlGyW0lA5rIhPAA",
-                    "type": "link"
-                }
-            },
-            "created_at": "2026-04-04 18:36:43.586855+00:00"
-        },
-        {
-            "id": 7,
-            "title": ".NET FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-04 18:38:19.099227+00:00"
+            "created_at": "2026-04-28 12:12:19.940754+00:00"
         },
         {
             "id": 8,
-            "title": "Cloud Computing",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-04 19:17:25.243914+00:00"
-        },
-        {
-            "id": 9,
-            "title": "Devops",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-04 19:18:48.051407+00:00"
-        },
-        {
-            "id": 10,
-            "title": "Data Science & AI",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to Data Science & AI"
-            ],
-            "modules": null,
-            "custom_videos": {},
-            "created_at": "2026-04-04 19:20:58.189399+00:00"
-        },
-        {
-            "id": 11,
-            "title": "Microsoft Technologies",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-04 19:22:08.821139+00:00"
-        },
-        {
-            "id": 12,
-            "title": "Agentic AI",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 01:50:02.699996+00:00"
-        },
-        {
-            "id": 13,
-            "title": "data analytics",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 02:19:32.658229+00:00"
-        },
-        {
-            "id": 14,
-            "title": "mongodb",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 02:25:41.161296+00:00"
-        },
-        {
-            "id": 15,
-            "title": "power bi",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-04-05 02:30:22.238000+00:00"
-        },
-        {
-            "id": 18,
             "title": "JAVA FULL STACK",
             "level": "Professional",
             "duration": "Self-paced",
@@ -251,107 +29,239 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-07 06:29:46.888369+00:00"
+            "created_at": "2026-05-31 13:59:44.793362+00:00"
+        },
+        {
+            "id": 9,
+            "title": ".NET FULL STACK",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.799759+00:00"
+        },
+        {
+            "id": 10,
+            "title": "MERN FULL STACK",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.804011+00:00"
+        },
+        {
+            "id": 11,
+            "title": "UI FULL STACK",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.808117+00:00"
+        },
+        {
+            "id": 12,
+            "title": "FULL STACK DEVELOPMENT",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.812040+00:00"
+        },
+        {
+            "id": 13,
+            "title": "DATA SCIENCE AND AGENTIC AI",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.815670+00:00"
+        },
+        {
+            "id": 14,
+            "title": "ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.820357+00:00"
+        },
+        {
+            "id": 15,
+            "title": "ADVANCED MACHINE LEARNING",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.824786+00:00"
+        },
+        {
+            "id": 16,
+            "title": "DATA SCIENCE WITH AI",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.828310+00:00"
+        },
+        {
+            "id": 17,
+            "title": "AGENTIC AI",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.832192+00:00"
+        },
+        {
+            "id": 18,
+            "title": "DATA ANALYTICS",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.836630+00:00"
+        },
+        {
+            "id": 19,
+            "title": "CLOUD COMPUTING",
+            "level": "Professional",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-05-31 13:59:44.841432+00:00"
         },
         {
             "id": 20,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "DEVOPS",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-11 12:26:44.976059+00:00"
+            "created_at": "2026-05-31 13:59:44.845442+00:00"
         },
         {
             "id": 21,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "CYBER SECURITY",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-11 12:26:45.053592+00:00"
+            "created_at": "2026-05-31 13:59:44.849113+00:00"
         },
         {
             "id": 22,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "POWER BI",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 13:15:58.551790+00:00"
+            "created_at": "2026-05-31 13:59:44.853128+00:00"
         },
         {
             "id": 23,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "MICROSOFT TECHNOLOGIES",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 13:15:58.601408+00:00"
+            "created_at": "2026-05-31 13:59:44.856729+00:00"
         },
         {
             "id": 24,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "MOBILE FULL STACK",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 13:15:58.616663+00:00"
+            "created_at": "2026-05-31 13:59:44.860447+00:00"
         },
         {
             "id": 25,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "MONGODB",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 13:15:58.631275+00:00"
+            "created_at": "2026-05-31 13:59:44.864739+00:00"
         },
         {
             "id": 26,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "DCA",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 15:08:15.203980+00:00"
+            "created_at": "2026-05-31 13:59:44.869383+00:00"
         },
         {
             "id": 27,
-            "title": "",
-            "level": "Beginner",
-            "duration": "6 Months",
+            "title": "PGDCA",
+            "level": "Professional",
+            "duration": "Self-paced",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-04-27 15:08:15.278177+00:00"
+            "created_at": "2026-05-31 13:59:44.873235+00:00"
         },
         {
             "id": 28,
-            "title": "",
+            "title": "DOA",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -359,11 +269,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.540604+00:00"
+            "created_at": "2026-05-31 13:59:44.876839+00:00"
         },
         {
             "id": 29,
-            "title": "",
+            "title": "FRONTEND",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -371,11 +281,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.559614+00:00"
+            "created_at": "2026-05-31 13:59:44.880566+00:00"
         },
         {
             "id": 30,
-            "title": "",
+            "title": "BACKEND",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -383,11 +293,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.610385+00:00"
+            "created_at": "2026-05-31 13:59:44.885421+00:00"
         },
         {
             "id": 31,
-            "title": "",
+            "title": "IOS SWIFT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -395,11 +305,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.627838+00:00"
+            "created_at": "2026-05-31 13:59:44.888919+00:00"
         },
         {
             "id": 32,
-            "title": "",
+            "title": "ANDROID DEVELOPMENT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -407,11 +317,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.646791+00:00"
+            "created_at": "2026-05-31 13:59:44.892482+00:00"
         },
         {
             "id": 33,
-            "title": "",
+            "title": "FLUTTER DEVELOPMENT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -419,11 +329,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.662502+00:00"
+            "created_at": "2026-05-31 13:59:44.896623+00:00"
         },
         {
             "id": 34,
-            "title": "",
+            "title": "JAVA DEVELOPER",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -431,11 +341,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.681952+00:00"
+            "created_at": "2026-05-31 13:59:44.900686+00:00"
         },
         {
             "id": 35,
-            "title": "",
+            "title": "PYTHON DEVELOPMENT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -443,11 +353,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.701398+00:00"
+            "created_at": "2026-05-31 13:59:44.904434+00:00"
         },
         {
             "id": 36,
-            "title": "",
+            "title": "ORACLE DATABASE",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -455,11 +365,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.720241+00:00"
+            "created_at": "2026-05-31 13:59:44.907951+00:00"
         },
         {
             "id": 37,
-            "title": "",
+            "title": "NODE JS DEVELOPMENT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -467,11 +377,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.738537+00:00"
+            "created_at": "2026-05-31 13:59:44.911754+00:00"
         },
         {
             "id": 38,
-            "title": "",
+            "title": "REACT JS DEVELOPMENT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -479,11 +389,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.754080+00:00"
+            "created_at": "2026-05-31 13:59:44.916279+00:00"
         },
         {
             "id": 39,
-            "title": "",
+            "title": "AWS SOLUTIONS ARCHITECT",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -491,11 +401,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:35.773229+00:00"
+            "created_at": "2026-05-31 13:59:44.919975+00:00"
         },
         {
             "id": 40,
-            "title": "",
+            "title": "MICROSOFT AZURE",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -503,11 +413,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.052127+00:00"
+            "created_at": "2026-05-31 13:59:44.923442+00:00"
         },
         {
             "id": 41,
-            "title": "",
+            "title": "GOOGLE CLOUD PLATFORM",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -515,11 +425,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.075874+00:00"
+            "created_at": "2026-05-31 13:59:44.927113+00:00"
         },
         {
             "id": 42,
-            "title": "",
+            "title": "SAP DEVELOPER",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -527,11 +437,11 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.100698+00:00"
+            "created_at": "2026-05-31 13:59:44.931648+00:00"
         },
         {
             "id": 43,
-            "title": "",
+            "title": "C AND DATA STRUCTURES",
             "level": "Professional",
             "duration": "Self-paced",
             "progress": 0,
@@ -539,972 +449,27 @@
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.119544+00:00"
-        },
-        {
-            "id": 44,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.137475+00:00"
-        },
-        {
-            "id": 45,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.159482+00:00"
-        },
-        {
-            "id": 46,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.183558+00:00"
-        },
-        {
-            "id": 47,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.201982+00:00"
-        },
-        {
-            "id": 48,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.224210+00:00"
-        },
-        {
-            "id": 49,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.249631+00:00"
-        },
-        {
-            "id": 50,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.268001+00:00"
-        },
-        {
-            "id": 51,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.287128+00:00"
-        },
-        {
-            "id": 52,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.307988+00:00"
-        },
-        {
-            "id": 53,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.324490+00:00"
-        },
-        {
-            "id": 54,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.343924+00:00"
-        },
-        {
-            "id": 55,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.510535+00:00"
-        },
-        {
-            "id": 56,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.546654+00:00"
-        },
-        {
-            "id": 57,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.580587+00:00"
-        },
-        {
-            "id": 58,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.611467+00:00"
-        },
-        {
-            "id": 59,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.644896+00:00"
-        },
-        {
-            "id": 60,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.679609+00:00"
-        },
-        {
-            "id": 61,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.716192+00:00"
-        },
-        {
-            "id": 62,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.757608+00:00"
-        },
-        {
-            "id": 63,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.785445+00:00"
-        },
-        {
-            "id": 64,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.807282+00:00"
-        },
-        {
-            "id": 65,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.824755+00:00"
-        },
-        {
-            "id": 66,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.840815+00:00"
-        },
-        {
-            "id": 67,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.860061+00:00"
-        },
-        {
-            "id": 68,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.879570+00:00"
-        },
-        {
-            "id": 69,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.898992+00:00"
-        },
-        {
-            "id": 70,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.918789+00:00"
-        },
-        {
-            "id": 71,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.943019+00:00"
-        },
-        {
-            "id": 72,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.973403+00:00"
-        },
-        {
-            "id": 73,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:36.996682+00:00"
-        },
-        {
-            "id": 74,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:37.019263+00:00"
-        },
-        {
-            "id": 75,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-01 08:45:37.041248+00:00"
-        },
-        {
-            "id": 76,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.097684+00:00"
-        },
-        {
-            "id": 77,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.138370+00:00"
-        },
-        {
-            "id": 78,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.190411+00:00"
-        },
-        {
-            "id": 79,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.289954+00:00"
-        },
-        {
-            "id": 80,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.309362+00:00"
-        },
-        {
-            "id": 81,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.328926+00:00"
-        },
-        {
-            "id": 82,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.352601+00:00"
-        },
-        {
-            "id": 83,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.374629+00:00"
-        },
-        {
-            "id": 84,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.394064+00:00"
-        },
-        {
-            "id": 85,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.415638+00:00"
-        },
-        {
-            "id": 86,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.436587+00:00"
-        },
-        {
-            "id": 87,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.481164+00:00"
-        },
-        {
-            "id": 88,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.839350+00:00"
-        },
-        {
-            "id": 89,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:46.972189+00:00"
-        },
-        {
-            "id": 90,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:47.098435+00:00"
-        },
-        {
-            "id": 91,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:47.204929+00:00"
-        },
-        {
-            "id": 92,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:48.946293+00:00"
-        },
-        {
-            "id": 93,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:48.970776+00:00"
-        },
-        {
-            "id": 94,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:48.992044+00:00"
-        },
-        {
-            "id": 95,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.016983+00:00"
-        },
-        {
-            "id": 96,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.039900+00:00"
-        },
-        {
-            "id": 97,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.063097+00:00"
-        },
-        {
-            "id": 98,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.083818+00:00"
-        },
-        {
-            "id": 99,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.104629+00:00"
-        },
-        {
-            "id": 100,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.126089+00:00"
-        },
-        {
-            "id": 101,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.147151+00:00"
-        },
-        {
-            "id": 102,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.168672+00:00"
-        },
-        {
-            "id": 103,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.190910+00:00"
-        },
-        {
-            "id": 104,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.213205+00:00"
-        },
-        {
-            "id": 105,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.234757+00:00"
-        },
-        {
-            "id": 106,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.269669+00:00"
-        },
-        {
-            "id": 107,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.292106+00:00"
-        },
-        {
-            "id": 108,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.315712+00:00"
-        },
-        {
-            "id": 109,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.338733+00:00"
-        },
-        {
-            "id": 110,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.366813+00:00"
-        },
-        {
-            "id": 111,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.388669+00:00"
-        },
-        {
-            "id": 112,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.412117+00:00"
-        },
-        {
-            "id": 113,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.438441+00:00"
-        },
-        {
-            "id": 114,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.490431+00:00"
-        },
-        {
-            "id": 115,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.515532+00:00"
-        },
-        {
-            "id": 116,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.544711+00:00"
-        },
-        {
-            "id": 117,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.566649+00:00"
-        },
-        {
-            "id": 118,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.609716+00:00"
-        },
-        {
-            "id": 119,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.632965+00:00"
-        },
-        {
-            "id": 120,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.655139+00:00"
-        },
-        {
-            "id": 121,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.678736+00:00"
-        },
-        {
-            "id": 122,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.701934+00:00"
-        },
-        {
-            "id": 123,
-            "title": "",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-06-02 09:11:49.731966+00:00"
+            "created_at": "2026-05-31 13:59:44.935460+00:00"
         }
     ],
     "configs": [
         {
             "id": 1,
+            "exam_name": "Weekly Assessment",
+            "course_name": "",
+            "subjects": [
+                "java full stack",
+                "JAVA FULL STACK"
+            ],
+            "duration": 75,
+            "passing_strategy": "correct_answers",
+            "requirement": 13,
+            "question_count": 25,
+            "marks_per_question": 2,
+            "updated_at": "2026-04-28 12:07:17.561929+00:00"
+        },
+        {
+            "id": 3,
             "exam_name": "Daily Assessment",
             "course_name": "PYTHON FULL STACK",
             "subjects": [
@@ -1515,83 +480,21 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-
-            "updated_at": "2026-06-02 09:11:49.753124+00:00"
-        },
-        {
-            "id": 2,
-            "exam_name": "Daily Assessment",
-            "course_name": "CYBER SECURITY",
-            "subjects": [
-                "Python",
-                "java",
-                "Javascript",
-                "C#",
-                "Oracle",
-                "PHP"
-            ],
-            "duration": 80,
-            "passing_strategy": "percentage",
-            "requirement": 50,
-            "question_count": 25,
-            "marks_per_question": 2,
-            "updated_at": "2026-06-01 11:06:31.153939+00:00"
-        },
-        {
-            "id": 3,
-            "exam_name": "Daily Assessment",
-            "course_name": "MOBILE FULL STACK",
-            "subjects": [
-                "Python",
-                "HTML",
-                "CSS",
-                "JAVASCRIPT",
-                "BOOTSTRAP",
-                "REACT",
-                "DJANGO",
-                "RESTFRAMEWORK",
-                "Oracle",
-                "Django",
-                "Mongo DB",
-                "C#",
-                "PHP",
-                "Swift",
-                "Kotlin"
-            ],
-            "duration": 80,
-            "passing_strategy": "percentage",
-            "requirement": 40,
-            "question_count": 30,
-            "marks_per_question": 1,
-            "updated_at": "2026-06-02 10:35:11.150872+00:00"
+            "updated_at": "2026-06-02 11:36:29.201722+00:00"
         },
         {
             "id": 4,
-            "exam_name": "Daily Assessment",
-            "course_name": "UI FULL STACK",
+            "exam_name": "Python Unit Test 2024",
+            "course_name": "PYTHON FULL STACK::placement::Python Unit Test 2024",
             "subjects": [
-                "Python",
-                "HTML",
-                "CSS",
-                "JAVASCRIPT",
-                "BOOTSTRAP",
-                "REACT",
-                "DJANGO",
-                "RESTFRAMEWORK",
-                "Oracle",
-                "Django",
-                "Mongo DB",
-                "C#",
-                "PHP",
-                "Swift",
-                "Kotlin"
+                "PYTHON"
             ],
-            "duration": 80,
-            "passing_strategy": "percentage",
-            "requirement": 50,
-            "question_count": 25,
+            "duration": 60,
+            "passing_strategy": "marks",
+            "requirement": 6,
+            "question_count": 5,
             "marks_per_question": 2,
-            "updated_at": "2026-06-02 10:35:11.169132+00:00"
+            "updated_at": "2026-06-02 11:36:29.222026+00:00"
         }
     ]
 }
