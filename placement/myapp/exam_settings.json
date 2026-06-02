@@ -49,11 +49,33 @@
         "duration": 1
     },
     "Python Full Stack_Daily": {
-        "maxQuestions": 25,
-        "questions": [],
-        "passingRule": "correct_answers",
-        "passingValue": 13,
-        "duration": 75
+        "maxQuestions": 30,
+        "questions": [
+            {
+                "type": "mcq",
+                "question": "Which of the following number is not divisible by 11?",
+                "options": [
+                    "53724",
+                    "53735",
+                    "53845",
+                    "53924"
+                ],
+                "answer": "53924",
+                "language": "python",
+                "testCases": [
+                    {
+                        "input": "",
+                        "output": ""
+                    }
+                ],
+                "marks": 1,
+                "subject": "Aptitude",
+                "id": 1780374020713
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 40,
+        "duration": 45
     },
     "Python Full Stack_Monthly": {
         "maxQuestions": 2,

@@ -16,6 +16,42 @@ def playground_questions_dispatcher(request, subject):
     """
     subject = subject.lower().strip()
     
+    # 🛡️ 5000% CUSTOM QUESTIONS SYNC FROM EXAM SETTINGS JSON (Aptitude, Reasoning, etc.)
+    import os
+    import json
+    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    SETTINGS_FILE = os.path.join(_BASE_DIR, 'exam_settings.json')
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                settings_data = json.load(f)
+            custom_questions = []
+            for k, val in settings_data.items():
+                if isinstance(val, dict) and 'questions' in val:
+                    for q in val['questions']:
+                        q_subject = str(q.get('subject', '')).strip().lower()
+                        if q_subject == subject:
+                            options = q.get('options', [])
+                            correct_ans = q.get('answer')
+                            correct_idx = 0
+                            if correct_ans in options:
+                                correct_idx = options.index(correct_ans)
+                            
+                            custom_questions.append({
+                                "id": q.get('id', hash(q.get('question', ''))),
+                                "question": q.get('question'),
+                                "options": options,
+                                "correct": correct_idx,
+                                "type": q.get('type', 'mcq'),
+                                "marks": q.get('marks', 2),
+                                "subject": q.get('subject')
+                            })
+            if custom_questions:
+                # Return custom manually added questions for this subject
+                return Response({"success": True, "data": custom_questions})
+        except Exception as e:
+            logger.error(f"Error loading custom questions from settings file: {e}")
+    
     # Clean subject name: replace spaces/hyphens with underscores
     key = subject.replace(' ', '_').replace('-', '_')
     

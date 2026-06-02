@@ -28,6 +28,8 @@ const subjects = [
   { name: "HTML", key: "html", icon: faFileCode, textStyle: "text-orange-500", bgStyle: "bg-orange-50", hoverBorder: "hover:border-orange-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(249,115,22,0.2)]" },
   { name: "CSS", key: "css", icon: faFileCode, textStyle: "text-blue-500", bgStyle: "bg-blue-50", hoverBorder: "hover:border-blue-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(59,130,246,0.2)]" },
   { name: "Bootstrap", key: "bootstrap", icon: faBootstrap, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-400", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
+  { name: "Aptitude", key: "aptitude", icon: faBrain, textStyle: "text-purple-600", bgStyle: "bg-purple-50", hoverBorder: "hover:border-purple-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(147,51,234,0.2)]" },
+  { name: "Reasoning", key: "reasoning", icon: faBrain, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
 
   // NEW TRENDING TECH
   { name: "Web3", key: "web3", icon: faGlobe, textStyle: "text-indigo-600", bgStyle: "bg-indigo-50", hoverBorder: "hover:border-indigo-300", hoverShadow: "hover:shadow-[0_10px_40px_rgba(79,70,229,0.2)]" },
@@ -273,6 +275,10 @@ function DailyExamSubjects() {
       }
     });
 
+    // Force "Aptitude" and "Reasoning" to always appear in the grid
+    uniqueMap.set("APTITUDE", "Aptitude");
+    uniqueMap.set("REASONING", "Reasoning");
+    
     const rawSubjectNames = Array.from(uniqueMap.values());
 
     // 3. Map to UI Objects with Rich Metadata

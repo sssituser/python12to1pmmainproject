@@ -462,6 +462,20 @@
             "question_count": 25,
             "marks_per_question": 2,
             "updated_at": "2026-04-28 12:07:17.561929+00:00"
+        },
+        {
+            "id": 3,
+            "exam_name": "Daily Assessment",
+            "course_name": "PYTHON FULL STACK",
+            "subjects": [
+                "Aptitude"
+            ],
+            "duration": 45,
+            "passing_strategy": "percentage",
+            "requirement": 40,
+            "question_count": 30,
+            "marks_per_question": 1,
+            "updated_at": "2026-06-02 04:20:42.114932+00:00"
         }
     ]
 }

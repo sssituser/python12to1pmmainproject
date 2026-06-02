@@ -158,7 +158,14 @@ function ExamManager() {
       });
     }
 
-    return Array.from(subs);
+    const subjectsList = Array.from(subs);
+    if (!subjectsList.includes("Aptitude")) {
+      subjectsList.push("Aptitude");
+    }
+    if (!subjectsList.includes("Reasoning")) {
+      subjectsList.push("Reasoning");
+    }
+    return subjectsList;
   };
 
   const getAllSubjects = () => {
@@ -266,6 +273,7 @@ function ExamManager() {
     language: "python",
     testCases: [{ input: "", output: "" }],
     marks: 2, // default marks
+    subject: "",
   });
 
   const BASE_URL = `http://${window.location.hostname}:8000/api/admin/exam-settings/`;
@@ -543,7 +551,8 @@ function ExamManager() {
       return;
     }
 
-    const newQuestionArray = [...questions, { ...form, id: Date.now() }];
+    const finalSubject = form.subject || availableSubjects[0] || "General";
+    const newQuestionArray = [...questions, { ...form, subject: finalSubject, id: Date.now() }];
     setQuestions(newQuestionArray);
     saveQuestionsToBackend(newQuestionArray, category);
 
@@ -556,6 +565,7 @@ function ExamManager() {
       marks: 2,
       language: "python",
       testCases: [{ input: "", output: "" }],
+      subject: finalSubject,
     });
   };
 
@@ -1026,8 +1036,7 @@ function ExamManager() {
         </div>
       )}
 
-
-      {/* QUESTION FORM */}
+{/* QUESTION FORM */}
       <div className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
@@ -1036,26 +1045,40 @@ function ExamManager() {
           </h2>
         </div>
         
-        <div className="flex gap-4 mb-4">
-          <div className="flex-1">
-            <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Question Prompt</label>
-            <textarea
-              placeholder="Type your question or coding problem statement here..."
-              value={form.question}
-              onChange={handleChange}
-              rows="3"
-              className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50 resize-none"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Subject / Topic</label>
+            <select
+              value={form.subject || ""}
+              onChange={(e) => setForm({...form, subject: e.target.value})}
+              className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50"
+            >
+              <option value="">-- Select Subject (Aptitude, Reasoning, etc.) --</option>
+              {availableSubjects.map((s, idx) => (
+                <option key={idx} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
-          <div style={{ width: "120px" }}>
+          <div>
              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Marks</label>
              <input
-               type="number"
-               value={form.marks}
-               onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
-               className="w-full p-3 border rounded-lg bg-gray-50/50"
+                type="number"
+                value={form.marks}
+                onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
+                className="w-full p-3 border rounded-xl bg-gray-50/50"
              />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Question Prompt</label>
+          <textarea
+            placeholder="Type your question or coding problem statement here..."
+            value={form.question}
+            onChange={handleChange}
+            rows="3"
+            className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50 resize-none"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
