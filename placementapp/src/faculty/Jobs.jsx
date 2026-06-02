@@ -210,7 +210,7 @@ function Jobs() {
                 onClick={exportToExcel}
                 className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
               >
-                <FaFileExcel size={14} /> Export Excel
+                <FaFileExcel size={14} /> Import Excel
               </button>
               <button
                 onClick={uploadToDrive}
