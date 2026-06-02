@@ -60,6 +60,8 @@ import {
 
   FaEdit,
 
+  FaFilePdf,
+
   FaCheckCircle,
 
   FaPlus,
@@ -266,6 +268,14 @@ function CoursesPage() {
   const [newTopicVidFile, setNewTopicVidFile] = useState('');
 
   const [newTopicVidLink, setNewTopicVidLink] = useState('');
+  
+  // PDF upload/link support for topics
+  const [showTopicPdfOptions, setShowTopicPdfOptions] = useState(false);
+  const [newTopicPdfOpt, setNewTopicPdfOpt] = useState('upload');
+  const [newTopicPdfFileName, setNewTopicPdfFileName] = useState('');
+  const [newTopicPdfFileData, setNewTopicPdfFileData] = useState('');
+  const [newTopicPdfLink, setNewTopicPdfLink] = useState('');
+  const [isPdfSubmitted, setIsPdfSubmitted] = useState(false);
 
 
 
@@ -1142,6 +1152,15 @@ function CoursesPage() {
             if (!updatedCourses[courseIndex].customVideos) updatedCourses[courseIndex].customVideos = {};
             if (newTopic.trim() !== editingTopicId) delete updatedCourses[courseIndex].customVideos[editingTopicId];
             updatedCourses[courseIndex].customVideos[newTopic.trim()] = { type: newTopicVidOpt, url: videoUrl };
+            // PDF update handling
+            if (!updatedCourses[courseIndex].customMaterials) updatedCourses[courseIndex].customMaterials = {};
+            if (newTopic.trim() !== editingTopicId && updatedCourses[courseIndex].customMaterials[editingTopicId]) {
+              delete updatedCourses[courseIndex].customMaterials[editingTopicId];
+            }
+            if (isPdfSubmitted) {
+              const pdfUrl = newTopicPdfOpt === 'upload' ? newTopicPdfFileData : newTopicPdfLink;
+              updatedCourses[courseIndex].customMaterials[newTopic.trim()] = { type: 'pdf', method: newTopicPdfOpt, url: pdfUrl, name: newTopicPdfFileName };
+            }
           }
         } else {
           // ADD MODE
@@ -1155,6 +1174,12 @@ function CoursesPage() {
           if (videoUrl) {
             if (!updatedCourses[courseIndex].customVideos) updatedCourses[courseIndex].customVideos = {};
             updatedCourses[courseIndex].customVideos[newTopic] = { type: newTopicVidOpt, url: videoUrl };
+          }
+          // Save PDF if submitted
+          if (isPdfSubmitted) {
+            const pdfUrl = newTopicPdfOpt === 'upload' ? newTopicPdfFileData : newTopicPdfLink;
+            if (!updatedCourses[courseIndex].customMaterials) updatedCourses[courseIndex].customMaterials = {};
+            updatedCourses[courseIndex].customMaterials[newTopic] = { type: 'pdf', method: newTopicPdfOpt, url: pdfUrl, name: newTopicPdfFileName };
           }
         }
 
@@ -1189,6 +1214,13 @@ function CoursesPage() {
     setNewTopicVidLink('');
     setIsVideoSubmitted(false);
     setEditingTopicId(null);
+    // Clear PDF states
+    setShowTopicPdfOptions(false);
+    setNewTopicPdfOpt('upload');
+    setNewTopicPdfFileName('');
+    setNewTopicPdfFileData('');
+    setNewTopicPdfLink('');
+    setIsPdfSubmitted(false);
   };
 
 
@@ -1825,18 +1857,27 @@ function CoursesPage() {
                       <div className="flex gap-3">
                         {/* Add Video Primary Button */}
                         <button
-                          onClick={() => {setShowTopicVideoOptions(!showTopicVideoOptions); setIsVideoSubmitted(false);}}
+                          onClick={() => {setShowTopicVideoOptions(!showTopicVideoOptions); setIsVideoSubmitted(false); setShowTopicPdfOptions(false);}}
                           className={`h-24 w-28 rounded-2xl border-0 flex flex-col items-center justify-center gap-1 transition-all shadow-md active:scale-95 ${showTopicVideoOptions ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                         >
                           <span className="text-2xl font-light">+</span>
                           <span className="text-[9px] font-black uppercase tracking-widest text-center leading-none">Add<br/>Video</span>
                         </button>
 
+                        {/* Add PDF Primary Button */}
+                        <button
+                          onClick={() => { setShowTopicPdfOptions(!showTopicPdfOptions); setIsPdfSubmitted(false); setShowTopicVideoOptions(false); }}
+                          className={`h-24 w-28 rounded-2xl border-0 flex flex-col items-center justify-center gap-1 transition-all shadow-md active:scale-95 ${showTopicPdfOptions ? 'bg-rose-600 text-white' : 'bg-pink-600 text-white hover:bg-pink-700'}`}
+                        >
+                          <span className="text-2xl font-light">+</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-center leading-none">Add<br/>PDF</span>
+                        </button>
+
                         {/* Confirm / Final Add Button */}
                         <button
                           onClick={addTopic}
-                          disabled={!newTopic.trim() || !isVideoSubmitted}
-                          className={`h-24 w-40 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all shadow-md active:scale-95 ${(!newTopic.trim() || !isVideoSubmitted) ? 'bg-gray-100 text-gray-300' : 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'}`}
+                          disabled={!newTopic.trim() || !(isVideoSubmitted || isPdfSubmitted)}
+                          className={`h-24 w-40 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all shadow-md active:scale-95 ${(!newTopic.trim() || !(isVideoSubmitted || isPdfSubmitted)) ? 'bg-gray-100 text-gray-300' : 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'}`}
                         >
                           <span className="text-[12px] font-black uppercase tracking-tighter">{editingTopicId ? "Change" : "Confirm"}</span>
                           <span className="text-[9px] font-bold opacity-60 uppercase">{editingTopicId ? "Update Video" : "Add Topic"}</span>
@@ -1908,6 +1949,80 @@ function CoursesPage() {
                         </div>
                       )}
 
+                      {/* PDF Entry Panel */}
+                      {showTopicPdfOptions && !isPdfSubmitted && (
+                        <div className="flex-1 w-full bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-2xl p-3 h-24 flex items-center gap-3 animate-in slide-in-from-left-4 duration-500">
+                          <div className="bg-white p-1 rounded-xl border border-gray-100 flex flex-col gap-1 shadow-sm relative z-20">
+                            <button 
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setNewTopicPdfOpt('upload'); }}
+                              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer pointer-events-auto ${newTopicPdfOpt === 'upload' ? 'bg-rose-600 text-white shadow-sm' : 'bg-transparent text-gray-400 hover:bg-gray-50'}`}
+                            >
+                              PC File
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setNewTopicPdfOpt('link'); }}
+                              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer pointer-events-auto ${newTopicPdfOpt === 'link' ? 'bg-rose-600 text-white shadow-sm' : 'bg-transparent text-gray-400 hover:bg-gray-50'}`}
+                            >
+                              Link
+                            </button>
+                          </div>
+                          
+                          <div className="flex-1 h-full">
+                            {newTopicPdfOpt === 'upload' ? (
+                              <div className="flex items-center gap-2 w-full h-full">
+                                <label className="flex-1 flex flex-col items-center justify-center h-full px-4 bg-white border-2 border-dashed border-pink-100 rounded-xl cursor-pointer hover:border-pink-300 font-bold text-gray-400 text-[10px] transition-all">
+                                  <span className="truncate max-w-[120px]">{newTopicPdfFileName || "Choose File..."}</span>
+                                  <input 
+                                    type="file" 
+                                    accept="application/pdf"
+                                    className="hidden" 
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) {
+                                        setNewTopicPdfFileName(f.name);
+                                        const reader = new FileReader();
+                                        reader.onload = function(ev) {
+                                          setNewTopicPdfFileData(ev.target.result);
+                                        };
+                                        reader.readAsDataURL(f);
+                                      }
+                                    }} 
+                                  />
+                                </label>
+                                <button 
+                                  type="button"
+                                  onClick={() => setIsPdfSubmitted(true)}
+                                  disabled={!newTopicPdfFileData}
+                                  className="h-full bg-pink-600 text-white px-4 rounded-xl text-[9px] font-black uppercase hover:bg-pink-700 disabled:bg-gray-100 disabled:text-gray-300 shadow-sm transition-all"
+                                >
+                                  Submit
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 w-full h-full">
+                                <input 
+                                  type="text" 
+                                  className="flex-1 h-full px-4 bg-white border-2 border-transparent focus:border-pink-500 rounded-xl outline-none transition-all text-[11px] font-bold shadow-sm placeholder:text-gray-300"
+                                  placeholder="Paste PDF link..."
+                                  value={newTopicPdfLink}
+                                  onChange={e => setNewTopicPdfLink(e.target.value)}
+                                />
+                                <button 
+                                  type="button"
+                                  onClick={() => setIsPdfSubmitted(true)}
+                                  disabled={!newTopicPdfLink.trim()}
+                                  className="h-full bg-pink-600 text-white px-4 rounded-xl text-[9px] font-black uppercase hover:bg-pink-700 disabled:bg-gray-100 disabled:text-gray-300 shadow-sm transition-all"
+                                >
+                                  Submit
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* 4. Success State after Video Submit */}
                       {isVideoSubmitted && (
                         <div className="flex-1 h-24 bg-green-50/50 border-2 border-green-100 rounded-2xl p-4 flex items-center gap-3 animate-in zoom-in-95 duration-500">
@@ -1923,6 +2038,26 @@ function CoursesPage() {
                                 </p>
                               </div>
                               <button onClick={() => setIsVideoSubmitted(false)} className="text-[8px] text-red-500 font-bold uppercase hover:underline">Edit</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PDF Success State after Submit */}
+                      {isPdfSubmitted && (
+                        <div className="flex-1 h-24 bg-rose-50/50 border-2 border-rose-100 rounded-2xl p-4 flex items-center gap-3 animate-in zoom-in-95 duration-500">
+                          <div className="h-10 w-10 rounded-xl bg-rose-500 text-white flex items-center justify-center text-xl shadow-md">
+                            <FaCheckCircle />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-rose-800 font-bold uppercase text-[9px] tracking-widest leading-none">PDF Ready</p>
+                                <p className="text-[9px] text-rose-600 mt-1 truncate max-w-[120px] italic opacity-70">
+                                  {newTopicPdfOpt === 'upload' ? newTopicPdfFileName : newTopicPdfLink}
+                                </p>
+                              </div>
+                              <button onClick={() => setIsPdfSubmitted(false)} className="text-[8px] text-red-500 font-bold uppercase hover:underline">Edit</button>
                             </div>
                           </div>
                         </div>
@@ -1946,44 +2081,78 @@ function CoursesPage() {
 
                             {/* Action Icons Panel */}
                             <div className="flex items-center gap-10">
-                              {/* Play Icon (Blue) */}
-                              <button 
-                                onClick={() => setPlayingTopic(topic)}
-                                className="text-blue-600 hover:scale-125 transition-all cursor-pointer"
-                              >
-                                <FaPlay className="text-xl" />
-                              </button>
-
-                              {/* Edit Icon (Purple) - Change Video */}
-                              <button 
-                                onClick={() => {
+                              {
+                                (() => {
                                   const topicTitle = typeof topic === 'string' ? topic : topic.title;
-                                  setNewTopic(topicTitle);
-                                  setEditingTopicId(topicTitle);
-                                  const cVideo = (selectedCourse.customVideos && selectedCourse.customVideos[topicTitle]);
-                                  if (cVideo) {
-                                    setNewTopicVidOpt(cVideo.type);
-                                    if (cVideo.type === 'upload') setNewTopicVidFile(cVideo.url);
-                                    else setNewTopicVidLink(cVideo.url);
-                                    setIsVideoSubmitted(true);
-                                  } else {
-                                    setIsVideoSubmitted(false);
+                                  const cPdf = (selectedCourse.customMaterials && selectedCourse.customMaterials[topicTitle]);
+                                  const hasPdf = cPdf && cPdf.type === 'pdf';
+                                  if (hasPdf) {
+                                    return (
+                                      <button
+                                        onClick={() => setPlayingTopic(topic)}
+                                        className="text-rose-600 hover:scale-125 transition-all cursor-pointer"
+                                        title="View PDF"
+                                      >
+                                        <FaFilePdf className="text-xl" />
+                                      </button>
+                                    );
                                   }
-                                  setShowTopicVideoOptions(true);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                                className="text-purple-600 hover:scale-125 transition-all cursor-pointer"
-                              >
-                                <FaEdit className="text-xl" />
-                              </button>
 
-                              {/* Trash Icon (Red) */}
-                              <button 
-                                onClick={() => removeTopic(typeof topic === 'string' ? topic : topic.title)}
-                                className="text-red-500 hover:scale-125 transition-all cursor-pointer"
-                              >
-                                <FaTrash className="text-xl" />
-                              </button>
+                                  return (
+                                    <>
+                                      {/* Play Icon (Blue) */}
+                                      <button 
+                                        onClick={() => setPlayingTopic(topic)}
+                                        className="text-blue-600 hover:scale-125 transition-all cursor-pointer"
+                                      >
+                                        <FaPlay className="text-xl" />
+                                      </button>
+
+                                      {/* Edit Icon (Purple) - Change Video */}
+                                      <button 
+                                        onClick={() => {
+                                          const topicTitleInner = typeof topic === 'string' ? topic : topic.title;
+                                          setNewTopic(topicTitleInner);
+                                          setEditingTopicId(topicTitleInner);
+                                          const cVideo = (selectedCourse.customVideos && selectedCourse.customVideos[topicTitleInner]);
+                                          if (cVideo) {
+                                            setNewTopicVidOpt(cVideo.type);
+                                            if (cVideo.type === 'upload') setNewTopicVidFile(cVideo.url);
+                                            else setNewTopicVidLink(cVideo.url);
+                                            setIsVideoSubmitted(true);
+                                          } else {
+                                            setIsVideoSubmitted(false);
+                                          }
+                                          const cPdfInner = (selectedCourse.customMaterials && selectedCourse.customMaterials[topicTitleInner]);
+                                          if (cPdfInner && cPdfInner.type === 'pdf') {
+                                            setNewTopicPdfOpt(cPdfInner.method || 'upload');
+                                            if ((cPdfInner.method || 'upload') === 'upload') {
+                                              setNewTopicPdfFileName(cPdfInner.name || 'uploaded.pdf');
+                                              setNewTopicPdfFileData(cPdfInner.url || '');
+                                            } else {
+                                              setNewTopicPdfLink(cPdfInner.url || '');
+                                            }
+                                            setIsPdfSubmitted(true);
+                                          }
+                                          setShowTopicVideoOptions(true);
+                                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className="text-purple-600 hover:scale-125 transition-all cursor-pointer"
+                                      >
+                                        <FaEdit className="text-xl" />
+                                      </button>
+
+                                      {/* Trash Icon (Red) */}
+                                      <button 
+                                        onClick={() => removeTopic(typeof topic === 'string' ? topic : topic.title)}
+                                        className="text-red-500 hover:scale-125 transition-all cursor-pointer"
+                                      >
+                                        <FaTrash className="text-xl" />
+                                      </button>
+                                    </>
+                                  );
+                                })()
+                              }
                             </div>
                           </div>
                         ))}
@@ -2038,18 +2207,31 @@ function CoursesPage() {
                         
                         <div className="bg-[#050505] rounded-[3.2rem] overflow-hidden aspect-video relative border-[6px] border-black/20">
                             {(() => {
-                                const vUrl = (playingTopic.video || (selectedCourse.customVideos && selectedCourse.customVideos[playingTopic.title]?.url));
+                                const pdfMaterial = (selectedCourse.customMaterials && selectedCourse.customMaterials[playingTopic.title]);
+                                const vUrl = (playingTopic.video || (selectedCourse.customVideos && selectedCourse.customVideos[playingTopic.title]?.url) || (pdfMaterial && pdfMaterial.url));
                                 if (!vUrl) return (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 text-zinc-800 gap-6">
                                         <div className="w-24 h-24 rounded-full border-4 border-dashed border-zinc-800 animate-spin"></div>
                                         <p className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Signal...</p>
                                     </div>
                                 );
+                                // If the material is a PDF, render an embed for view-only
+                                if (pdfMaterial && pdfMaterial.type === 'pdf') {
+                                  const pdfUrl = pdfMaterial.url;
+                                  return (
+                                    <iframe
+                                    className="w-full h-full"
+                                    src={pdfUrl}
+                                    title="PDF Viewer"
+                                    frameBorder="0"
+                                    />
+                                  );
+                                }
 
                                 const isYoutube = vUrl.includes('youtube.com') || vUrl.includes('youtu.be');
-                                const embedUrl = isYoutube 
-                                    ? vUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/').split('&')[0]
-                                    : vUrl;
+                                const embedUrl = isYoutube
+                                  ? vUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/').split('&')[0]
+                                  : vUrl;
 
                                 if (isYoutube) {
                                     return (

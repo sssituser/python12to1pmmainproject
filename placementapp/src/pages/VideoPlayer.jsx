@@ -154,7 +154,7 @@ const VideoPlayer = () => {
           const parsedV = JSON.parse(storedVideoConf);
           if (parsedV && parsedV.url) {
             if (parsedV.type === 'link') {
-              const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+              const ytRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i;
               const match = parsedV.url.match(ytRegex);
               if (match && match[1]) {
                 setVideoId(match[1]); // Leverage standardized embed layout

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Navigate, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LayoutDashboard, Users, ShieldCheck, BarChart3, Settings, UserCheck, Activity } from "lucide-react";

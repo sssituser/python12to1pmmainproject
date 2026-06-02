@@ -163,18 +163,16 @@ function Jobs() {
     }
   };
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(j => 
-      j.job_title?.toLowerCase().includes(search.toLowerCase()) ||
-      j.company?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [jobs, search]);
+  const filteredJobs = jobs.filter(j => 
+    j.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    j.company?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const stats = useMemo(() => ({
+  const stats = {
     total: jobs.length,
     active: jobs.filter(j => !j.deadline || new Date(j.deadline) >= new Date()).length,
     expired: jobs.filter(j => j.deadline && new Date(j.deadline) < new Date()).length,
-  }), [jobs]);
+  };
 
   const passoutYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
