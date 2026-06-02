@@ -118,7 +118,7 @@ function Applications() {
     // Add a separate worksheet for each company
     Object.keys(companyGroups).forEach(company => {
       const worksheet = XLSX.utils.json_to_sheet(companyGroups[company]);
-      const safeSheetName = company.substring(0, 31).replace(/[\[\]\*?\/\\:]/g, '_');
+      const safeSheetName = company.substring(0, 31).replace(/[[\]*?\\:/]/g, '_');
       XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName === "" ? "General" : safeSheetName);
     });
 

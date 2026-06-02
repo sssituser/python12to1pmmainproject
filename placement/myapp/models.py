@@ -220,8 +220,74 @@ class EmailConfiguration(models.Model):
 
 
 # ===============================
-# Python Exam
+# Multi-Subject Exam & Professional Proctoring System
 # ===============================
+
+class ExamQuestion(models.Model):
+    SUBJECT_CHOICES = [
+        ('APTITUDE', 'Quantitative Aptitude'),
+        ('REASONING', 'Logical Reasoning'),
+        ('ENGLISH', 'Verbal English'),
+        ('PYTHON', 'Python Programming'),
+        ('JAVA', 'Java Developer'),
+        ('SQL', 'SQL Database'),
+        ('REACT', 'React JS Development'),
+        ('DJANGO', 'Django Backend'),
+        ('SPRINGBOOT', 'Spring Boot'),
+        ('CLOUD', 'Cloud Computing'),
+    ]
+    
+    DIFFICULTY_CHOICES = [
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard'),
+    ]
+
+    subject = models.CharField(max_length=50, choices=SUBJECT_CHOICES, default='PYTHON')
+    topic = models.CharField(max_length=100, blank=True, help_text="e.g., Arrays, OOP, Joins, Hooks")
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='medium')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, default='mcq') # mcq, coding, text
+    marks = models.IntegerField(default=2)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.subject} - {self.difficulty}] {self.question_text[:50]}..."
+
+class ExamQuestionChoice(models.Model):
+    question = models.ForeignKey(ExamQuestion, on_delete=models.CASCADE, related_name='choices')
+    choice_text = models.CharField(max_length=500)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.choice_text
+
+
+class ExamPaper(models.Model):
+    title = models.CharField(max_length=200)
+    subject = models.CharField(max_length=50, default='PYTHON')
+    duration = models.IntegerField(default=60, help_text="Duration in minutes")
+    total_marks = models.IntegerField(default=100)
+    instructions = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    
+    # Secure rules
+    browser_lock_required = models.BooleanField(default=True)
+    webcam_proctoring_required = models.BooleanField(default=True)
+    max_violations_allowed = models.IntegerField(default=5)
+    
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class ExamPaperQuestionRelation(models.Model):
+    paper = models.ForeignKey(ExamPaper, on_delete=models.CASCADE, related_name='questions')
+    question = models.ForeignKey(ExamQuestion, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
+
 
 class PythonQuestion(models.Model):
     question_text = models.TextField()
@@ -254,6 +320,10 @@ class ExamSession(models.Model):
     webcam_enabled = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Proctoring attributes
+    browser_lock_score = models.IntegerField(default=0)
+    final_verdict = models.CharField(max_length=50, default='Safe')
+
     def __str__(self):
         return self.student_name
 
@@ -263,7 +333,7 @@ class ExamAnswer(models.Model):
     question = models.ForeignKey(PythonQuestion, on_delete=models.CASCADE)
     selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
     answer_text = models.TextField(null=True, blank=True)
-    time_taken = models.IntegerField()
+    time_taken = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -273,6 +343,27 @@ class WebcamSnapshot(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_suspicious = models.BooleanField(default=False)
     reason = models.TextField(null=True, blank=True)
+
+
+class ExamViolationLog(models.Model):
+    VIOLATION_TYPES = [
+        ('TAB_SWITCH', 'Tab Switching / Focus Loss'),
+        ('FULLSCREEN_EXIT', 'Exited Fullscreen Mode'),
+        ('FACE_MISSING', 'No Face Detected'),
+        ('MULTIPLE_FACE', 'Multiple Faces Detected'),
+        ('PHONE_DETECTED', 'Mobile Phone Detected'),
+        ('COPY_ATTEMPT', 'Copy/Paste/Right Click attempt'),
+    ]
+    
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='violations')
+    violation_type = models.CharField(max_length=30, choices=VIOLATION_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    severity_score = models.IntegerField(default=5)
+    image_snapshot = models.TextField(blank=True, null=True, help_text="Base64 or url of violation image")
+    remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.session.student_name} - {self.violation_type}"
 
 
 class ExamAttempt(models.Model):
@@ -815,6 +906,60 @@ class StudentPortfolio(models.Model):
 
     def __str__(self):
         return f"Portfolio of {self.student.username}"
+
+
+# ===============================
+# Unified Placement Exam Engine
+# ===============================
+
+class PlacementExam(models.Model):
+    EXAM_TYPE_CHOICES = [
+        ('daily', 'Daily Exam'),
+        ('weekly', 'Weekly Exam'),
+        ('monthly', 'Monthly Exam'),
+        ('placement', 'Placement Assessment'),
+        ('mock', 'Mock Interview Test'),
+        ('certification', 'Certification Test'),
+    ]
+
+    title = models.CharField(max_length=200)
+    exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES, default='daily')
+    subject = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    duration = models.IntegerField(default=60) # minutes
+    total_questions = models.IntegerField(default=30)
+    total_marks = models.IntegerField(default=30)
+    pass_marks = models.IntegerField(default=15)
+    
+    # Randomization & Security
+    randomize_questions = models.BooleanField(default=True)
+    randomize_options = models.BooleanField(default=True)
+    negative_marking = models.BooleanField(default=False)
+    negative_marks = models.FloatField(default=0.0)
+
+    # Eligibility & Scheduling
+    departments = models.JSONField(default=list, help_text="e.g. ['CSE', 'IT']")
+    years = models.JSONField(default=list, help_text="e.g. ['2nd Year', '3rd Year']")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+
+    status = models.CharField(max_length=20, default='scheduled') # scheduled, active, ended
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class PlacementExamSettings(models.Model):
+    exam = models.OneToOneField(PlacementExam, on_delete=models.CASCADE, related_name='settings')
+    webcam_required = models.BooleanField(default=True)
+    fullscreen_required = models.BooleanField(default=True)
+    tab_switch_limit = models.IntegerField(default=3)
+    face_detection = models.BooleanField(default=True)
+    multi_face_detection = models.BooleanField(default=True)
+    screenshot_interval = models.IntegerField(default=30) # seconds
+    auto_submit = models.BooleanField(default=True)
+    risk_threshold = models.IntegerField(default=50)
     
 
 

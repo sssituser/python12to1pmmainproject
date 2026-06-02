@@ -75,17 +75,47 @@ const DailyExam = () => {
     sync();
   }, [isStudent]);
 
-  const triggerWarning = (reason) => {
+  const [sessionId, setSessionId] = useState(null);
+
+  // Initialize or fetch the Django ExamSession ID on start
+  const registerExamSessionOnBackend = async () => {
+    try {
+      const res = await axios.post(`http://${window.location.hostname}:8000/api/exams/start/`, {
+        student_name: storedUser.username || "Anonymous Student",
+        student_email: storedUser.email || "student@example.com"
+      });
+      if (res.data && res.data.session_id) {
+        setSessionId(res.data.session_id);
+      }
+    } catch (e) {
+      console.error("Failed to start backend exam session:", e);
+    }
+  };
+
+  const triggerWarning = async (reason, type = "TAB_SWITCH") => {
     if (examSubmittedRef.current) return;
     const now = Date.now();
     // 3-second cooldown to prevent overlapping alerts
     if (now - lastWarningTimeRef.current < 3000) return;
     lastWarningTimeRef.current = now;
 
+    // Send violation log to the backend asynchronously
+    if (sessionId) {
+      try {
+        await axios.post(`http://${window.location.hostname}:8000/api/exams/log-violation/`, {
+          session_id: sessionId,
+          violation_type: type,
+          remarks: reason
+        });
+      } catch (err) {
+        console.error("Failed to report proctoring violation:", err);
+      }
+    }
+
     setWarningCount(prev => {
       const next = prev + 1;
-      if (next >= 4) {
-        handleSubmitExam(`Exam terminated: ${reason}`);
+      if (next >= 5) {
+        handleSubmitExam(`Exam automatically terminated due to multiple security violations: ${reason}`);
         setShowWarningModal(false);
         return next;
       }
@@ -176,6 +206,43 @@ const DailyExam = () => {
     const fetchQ = async () => {
       try {
         setIsLoadingQuestions(true);
+
+        // Check if started from a specific published exam config
+        let activeConfig = null;
+        try {
+          const stored = sessionStorage.getItem("active_exam_config");
+          if (stored) activeConfig = JSON.parse(stored);
+        } catch(e){}
+
+        if (activeConfig && activeConfig.paper_id) {
+          try {
+            const res = await fetch(`http://${window.location.hostname}:8000/api/exams/paper/${activeConfig.paper_id}/`);
+            if (res.ok) {
+              const d = await res.json();
+              if (d.questions && d.questions.length > 0) {
+                const mapped = d.questions.map((q, idx) => ({
+                  id: idx + 1,
+                  question: q.question_text,
+                  options: q.choices.map(c => c.choice_text),
+                  correct: q.correct,
+                  difficulty: q.difficulty,
+                  marks: q.marks
+                }));
+                setQuestions(mapped);
+                setExamDuration(activeConfig.duration || d.duration || 60);
+                setTimeLeft((activeConfig.duration || d.duration || 60) * 60);
+                setMarksPerQuestion(activeConfig.marks_per_question || 1);
+                setPassingValue(activeConfig.pass_marks || activeConfig.requirement || 50);
+                setIsLoadingQuestions(false);
+                sessionStorage.removeItem("active_exam_config");
+                return;
+              }
+            }
+          } catch(err) {
+            console.error("Failed to load active exam config questions:", err);
+          }
+        }
+
         const normCourse = (studentCourse || "").toUpperCase();
         
         let cnf = null;
@@ -184,9 +251,9 @@ const DailyExam = () => {
           if (r.ok) cnf = await r.json();
         } catch (e) {}
 
-        const qLim = 25;
-        const dur = 80;
-        const weight = 2;
+        const qLim = cnf?.question_count || 25;
+        const dur = cnf?.duration || 80;
+        const weight = cnf?.marks_per_question || 2;
 
         setExamDuration(dur);
         setTimeLeft(dur * 60);
@@ -194,13 +261,31 @@ const DailyExam = () => {
         setPassingRule(cnf?.passing_strategy || "percentage");
         setPassingValue(cnf?.requirement || 50);
 
-        const slug = subjectKey.replace(/\s+/g, "_");
         let pool = [];
+        
+        // 🏗️ Step 1: Attempt to load custom exam questions configured for this course
         try {
-          const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/${slug}/`);
-          const d = await res.json();
-          pool = d.data || d.questions || d || [];
-        } catch (e) {}
+          const res = await fetch(`http://${window.location.hostname}:8000/api/admin/exam-settings/?category=Daily&course=${encodeURIComponent(studentCourse)}`);
+          if (res.ok) {
+            const d = await res.json();
+            if (d.success && d.data && d.data.questions && d.data.questions.length > 0) {
+              pool = d.data.questions;
+              console.log("🎯 Loaded custom assigned daily questions from Faculty Settings!");
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to retrieve custom exam-settings, falling back:", e);
+        }
+
+        // 🏗️ Step 2: Fallback to subject-specific practice questions if no custom settings exist
+        if (!pool || pool.length === 0) {
+          const slug = subjectKey.replace(/\s+/g, "_");
+          try {
+            const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/${slug}/`);
+            const d = await res.json();
+            pool = d.data || d.questions || d || [];
+          } catch (e) {}
+        }
 
         if (!Array.isArray(pool) || pool.length === 0) {
           try {
@@ -329,13 +414,13 @@ const DailyExam = () => {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
             } else if (Date.now() - violationStartTimeRef.current >= 7000) {
-              if (isMultipleFaces) triggerWarning("Multiple persons detected");
-              else if (isDark) triggerWarning("Environment too dark - Please turn on lights");
-              else if (isFlat) triggerWarning("Camera covered or blocked");
-              else if (userHiding) triggerWarning("Face not visible - Adjust your position");
-              else if (isStatic) triggerWarning("Static background detected - Please move");
-              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera"); 
-              else if (faceNotCentered) triggerWarning("Face moved off-center");
+              if (isMultipleFaces) triggerWarning("Multiple persons detected", "MULTIPLE_FACE");
+              else if (isDark) triggerWarning("Environment too dark - Please turn on lights", "FACE_MISSING");
+              else if (isFlat) triggerWarning("Camera covered or blocked", "FACE_MISSING");
+              else if (userHiding) triggerWarning("Face not visible - Adjust your position", "FACE_MISSING");
+              else if (isStatic) triggerWarning("Static background detected - Please move", "FACE_MISSING");
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera", "FACE_MISSING"); 
+              else if (faceNotCentered) triggerWarning("Face moved off-center", "FACE_MISSING");
               violationStartTimeRef.current = null;
             }
           } else {
@@ -347,15 +432,14 @@ const DailyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
-          // Fallback heuristic: if it's very dark or the feed is flat, it's a violation
           checkViolations([]); 
         }
       }, 1000);
 
-      const handleVisibilityChange = () => { if (document.hidden) triggerWarning("Tab switching detected"); };
-      const handleBlur = () => { if (!document.hidden) triggerWarning("Window focus lost"); };
-      const handleFullscreenChange = () => { if (!document.fullscreenElement && examStarted) triggerWarning("Full screen exited"); };
-      const preventAction = (e) => { e.preventDefault(); triggerWarning("Restricted interaction (Copy/Paste/Right-click)"); };
+      const handleVisibilityChange = () => { if (document.hidden) triggerWarning("Tab switching detected", "TAB_SWITCH"); };
+      const handleBlur = () => { if (!document.hidden) triggerWarning("Window focus lost", "TAB_SWITCH"); };
+      const handleFullscreenChange = () => { if (!document.fullscreenElement && examStarted) triggerWarning("Full screen exited", "FULLSCREEN_EXIT"); };
+      const preventAction = (e) => { e.preventDefault(); triggerWarning("Restricted interaction (Copy/Paste/Right-click)", "COPY_ATTEMPT"); };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
       window.addEventListener("blur", handleBlur);
@@ -495,6 +579,7 @@ const DailyExam = () => {
       else if (docEl.webkitRequestFullscreen) await docEl.webkitRequestFullscreen();
       else if (docEl.msRequestFullscreen) await docEl.msRequestFullscreen();
     } catch (err) {}
+    await registerExamSessionOnBackend();
     setExamStarted(true);
   };
 

@@ -24,6 +24,7 @@ const DetailedResults = lazy(() => import("./pages/DetailedResults"));
 const ExamLeaderboard = lazy(() => import("./pages/ExamLeaderboard"));
 const ExamReportDetail = lazy(() => import("./pages/ExamReportDetail"));
 const ExamReports = lazy(() => import("./pages/ExamReports"));
+const ExamsList = lazy(() => import("./pages/ExamsList"));
 const JobDetails = lazy(() => import("./pages/JobDetails"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const LeaveHistory = lazy(() => import("./pages/LeaveHistory"));
@@ -189,7 +190,7 @@ function App() {
             <Route path="jobs/:id" element={<JobDetails />} />
 
             {/* Exams */}
-
+            <Route path="exams" element={<ExamsList />} />
             <Route path="exam-reports" element={<ExamReports />} />
             <Route path="daily-exams" element={<DailyExamReports />} />
             <Route path="weekly-exams" element={<WeeklyExamReports />} />
