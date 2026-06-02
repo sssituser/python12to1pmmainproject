@@ -49,16 +49,46 @@ const MonthlyExam = () => {
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  const triggerWarning = (reason) => {
+  const [sessionId, setSessionId] = useState(null);
+
+  // Initialize or fetch the Django ExamSession ID on start
+  const registerExamSessionOnBackend = async () => {
+    try {
+      const res = await axios.post(`http://${window.location.hostname}:8000/api/exams/start/`, {
+        student_name: storedUser.username || "Anonymous Student",
+        student_email: storedUser.email || "student@example.com"
+      });
+      if (res.data && res.data.session_id) {
+        setSessionId(res.data.session_id);
+      }
+    } catch (e) {
+      console.error("Failed to start backend exam session:", e);
+    }
+  };
+
+  const triggerWarning = async (reason, type = "TAB_SWITCH") => {
     if (examSubmittedRef.current) return;
     const now = Date.now();
     if (now - lastWarningTimeRef.current < 3000) return;
     lastWarningTimeRef.current = now;
 
+    // Send violation log to the backend asynchronously
+    if (sessionId) {
+      try {
+        await axios.post(`http://${window.location.hostname}:8000/api/exams/log-violation/`, {
+          session_id: sessionId,
+          violation_type: type,
+          remarks: reason
+        });
+      } catch (err) {
+        console.error("Failed to report proctoring violation:", err);
+      }
+    }
+
     setWarningCount(prev => {
       const next = prev + 1;
-      if (next >= 4) {
-        handleSubmitExam(`Exam terminated: ${reason}`);
+      if (next >= 5) {
+        handleSubmitExam(`Exam automatically terminated due to multiple security violations: ${reason}`);
         setShowWarningModal(false);
         return next;
       }
@@ -248,13 +278,13 @@ const MonthlyExam = () => {
             if (!violationStartTimeRef.current) {
               violationStartTimeRef.current = Date.now();
             } else if (Date.now() - violationStartTimeRef.current >= 7000) {
-              if (isMultipleFaces) triggerWarning("Multiple persons detected");
-              else if (isDark) triggerWarning("Environment too dark - Please turn on lights");
-              else if (isFlat) triggerWarning("Camera covered or blocked");
-              else if (userHiding) triggerWarning("Face not visible - Adjust your position");
-              else if (isStatic) triggerWarning("Static background detected - Please move");
-              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera"); 
-              else if (faceNotCentered) triggerWarning("Face moved off-center");
+              if (isMultipleFaces) triggerWarning("Multiple persons detected", "MULTIPLE_FACE");
+              else if (isDark) triggerWarning("Environment too dark - Please turn on lights", "FACE_MISSING");
+              else if (isFlat) triggerWarning("Camera covered or blocked", "FACE_MISSING");
+              else if (userHiding) triggerWarning("Face not visible - Adjust your position", "FACE_MISSING");
+              else if (isStatic) triggerWarning("Static background detected - Please move", "FACE_MISSING");
+              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera", "FACE_MISSING"); 
+              else if (faceNotCentered) triggerWarning("Face moved off-center", "FACE_MISSING");
               violationStartTimeRef.current = null;
             }
           } else {
@@ -266,7 +296,6 @@ const MonthlyExam = () => {
           const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
           faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
         } else {
-          // Fallback heuristic: if it's very dark or the feed is flat, it's a violation
           checkViolations([]); 
         }
       }, 1000);
@@ -274,24 +303,24 @@ const MonthlyExam = () => {
       const handleVisibilityChange = () => { 
         if (document.hidden) {
           console.warn("Security: Tab switch detected!");
-          triggerWarning("Tab switching detected");
+          triggerWarning("Tab switching detected", "TAB_SWITCH");
         }
       };
       const handleBlur = () => { 
         if (!document.hidden) {
           console.warn("Security: Focus lost detected!");
-          triggerWarning("Window focus lost"); 
+          triggerWarning("Window focus lost", "TAB_SWITCH"); 
         }
       };
       const handleFullscreenChange = () => { 
         if (!document.fullscreenElement && examStarted) {
           console.warn("Security: Fullscreen exit detected!");
-          triggerWarning("Full screen exited"); 
+          triggerWarning("Full screen exited", "FULLSCREEN_EXIT"); 
         }
       };
       const preventAction = (e) => { 
         e.preventDefault(); 
-        triggerWarning("Restricted interaction (Copy/Paste/Right-click)"); 
+        triggerWarning("Restricted interaction (Copy/Paste/Right-click)", "COPY_ATTEMPT"); 
       };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -400,6 +429,7 @@ const MonthlyExam = () => {
       const docEl = document.documentElement;
       if (docEl.requestFullscreen) await docEl.requestFullscreen();
     } catch (err) {}
+    await registerExamSessionOnBackend();
     setExamStarted(true);
   };
 

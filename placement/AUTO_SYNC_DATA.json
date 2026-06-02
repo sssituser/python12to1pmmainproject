@@ -475,7 +475,21 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-06-02 06:36:58.976956+00:00"
+            "updated_at": "2026-06-02 10:35:11.150872+00:00"
+        },
+        {
+            "id": 4,
+            "exam_name": "Python Unit Test 2024",
+            "course_name": "PYTHON FULL STACK::placement::Python Unit Test 2024",
+            "subjects": [
+                "PYTHON"
+            ],
+            "duration": 60,
+            "passing_strategy": "marks",
+            "requirement": 6,
+            "question_count": 5,
+            "marks_per_question": 2,
+            "updated_at": "2026-06-02 10:35:11.169132+00:00"
         }
     ]
 }

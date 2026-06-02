@@ -1,1215 +1,758 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faSave, 
-  faCheckCircle, 
-  faSpinner, 
-  faPlus, 
-  faTrash, 
-  faInfoCircle,
-  faHistory
+import {
+  faPlus, faTrash, faEdit, faEye, faSearch, faSpinner,
+  faRobot, faShieldAlt, faClock, faGraduationCap, faCamera,
+  faLock, faUsers, faCalendarAlt, faTrophy, faCheck,
+  faLayerGroup, faPaperPlane, faCheckCircle, faTimesCircle,
+  faFileExport, faUpload, faKeyboard, faBolt, faToggleOn,
+  faClipboardList, faBook, faChartBar, faExclamationTriangle,
+  faStopwatch, faGlobe, faDatabase, faTimes, faArrowRight,
+  faArrowLeft, faPercent, faFileAlt, faBrain, faCog
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { industryCourses, defaultCourses } from "../components/CourseData.jsx";
-import { getQuestionBank } from "./QuestionBank.js";
+import { industryCourses } from "../components/CourseData.jsx";
 
+const API_BASE = `http://${window.location.hostname}:8000/api`;
 
-function ExamManager() {
+const SUBJECTS = ["PYTHON","JAVA","REACT","SQL","DJANGO","SPRING BOOT","APTITUDE","REASONING","ENGLISH","C++","JAVASCRIPT","NODE JS"];
+const EXAM_TYPES = [
+  { value:"daily",label:"Daily Exam",icon:"📅" },
+  { value:"weekly",label:"Weekly Exam",icon:"📆" },
+  { value:"monthly",label:"Monthly Exam",icon:"🗓️" },
+  { value:"placement",label:"Placement Assessment",icon:"🎯" },
+  { value:"mock",label:"Mock Interview",icon:"🎭" },
+  { value:"certification",label:"Certification",icon:"🏆" },
+];
+const DEPARTMENTS = ["CSE","IT","ECE","EEE","MECH","CIVIL","MBA","MCA"];
+const YEARS = ["1st Year","2nd Year","3rd Year","4th Year","All Years"];
+const STEPS = [
+  {id:1,label:"Basic Info",icon:faBook},
+  {id:2,label:"Config",icon:faCog},
+  {id:3,label:"Questions",icon:faKeyboard},
+  {id:4,label:"Randomize",icon:faLayerGroup},
+  {id:5,label:"Proctoring",icon:faCamera},
+  {id:6,label:"Browser Lock",icon:faLock},
+  {id:7,label:"Eligibility",icon:faUsers},
+  {id:8,label:"Schedule",icon:faCalendarAlt},
+  {id:9,label:"Results",icon:faTrophy},
+  {id:10,label:"Publish",icon:faPaperPlane},
+];
+
+// ─── Small reusable components ─────────────────────────────────────────────
+const Toggle = ({ value, onChange, label, desc }) => (
+  <div onClick={() => onChange(!value)} style={{
+    display:"flex", alignItems:"center", gap:12, padding:"14px 16px",
+    borderRadius:12, cursor:"pointer", userSelect:"none",
+    background: value ? "#eef2ff" : "#f8fafc",
+    border:`1.5px solid ${value ? "#6366f1" : "#e2e8f0"}`, transition:"all 0.2s"
+  }}>
+    <div style={{
+      width:40, height:22, borderRadius:11, position:"relative",
+      background: value ? "#6366f1" : "#cbd5e1", transition:"background 0.2s", flexShrink:0
+    }}>
+      <div style={{
+        position:"absolute", top:3, left: value ? 21 : 3,
+        width:16, height:16, borderRadius:"50%", background:"#fff",
+        boxShadow:"0 1px 3px rgba(0,0,0,0.2)", transition:"left 0.2s"
+      }} />
+    </div>
+    <div>
+      <div style={{fontWeight:700, fontSize:13, color:"#1e293b"}}>{label}</div>
+      {desc && <div style={{fontSize:11, color:"#94a3b8", marginTop:2}}>{desc}</div>}
+    </div>
+  </div>
+);
+
+const NumInput = ({ label, value, onChange, min=0, max=999, unit="" }) => (
+  <div>
+    <label style={{display:"block",fontSize:10,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{label}</label>
+    <div style={{display:"flex",alignItems:"center",background:"#f1f5f9",borderRadius:10,overflow:"hidden",border:"1.5px solid #e2e8f0"}}>
+      <button onClick={() => onChange(Math.max(min, value-1))} style={{padding:"10px 14px",background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:16,fontWeight:800}}>−</button>
+      <input type="number" value={value} min={min} max={max} onChange={e => onChange(Math.max(min,Math.min(max,parseInt(e.target.value)||0)))}
+        style={{flex:1,textAlign:"center",background:"none",border:"none",outline:"none",fontWeight:800,fontSize:15,color:"#1e293b"}} />
+      {unit && <span style={{color:"#94a3b8",fontSize:11,paddingRight:8}}>{unit}</span>}
+      <button onClick={() => onChange(Math.min(max, value+1))} style={{padding:"10px 14px",background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:16,fontWeight:800}}>+</button>
+    </div>
+  </div>
+);
+
+const TagSelector = ({ options, selected, onChange }) => (
+  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+    {options.map(opt => {
+      const active = selected.includes(opt);
+      return <button key={opt} onClick={() => onChange(active ? selected.filter(s=>s!==opt) : [...selected,opt])}
+        style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",
+          background:active?"#6366f1":"#f1f5f9",color:active?"#fff":"#64748b",
+          border:`1.5px solid ${active?"#6366f1":"#e2e8f0"}`,transition:"all 0.15s"}}>{opt}</button>;
+    })}
+  </div>
+);
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+export default function ExamManager() {
+  const [showModal, setShowModal] = useState(false);
+  const [step, setStep] = useState(1);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  // Step 1
+  const [examTitle, setExamTitle] = useState("");
+  const [examType, setExamType] = useState("daily");
+  const [subject, setSubject] = useState("PYTHON");
+  const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
+  const [course, setCourse] = useState(industryCourses[0] || "PYTHON FULL STACK");
+
+  // Step 2
+  const [duration, setDuration] = useState(60);
+  const [totalQuestions, setTotalQuestions] = useState(30);
+  const [totalMarks, setTotalMarks] = useState(30);
+  const [passMarks, setPassMarks] = useState(15);
+  const [marksPerQuestion, setMarksPerQuestion] = useState(1);
+  const [negativeMarking, setNegativeMarking] = useState(false);
+  const [negativeMarks, setNegativeMarks] = useState(0.25);
+
+  // Step 3
+  const [questionSource, setQuestionSource] = useState("manual");
   const [questions, setQuestions] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState("Python Full Stack");
-  const [maxQuestions, setMaxQuestions] = useState(50);
-  const [duration, setDuration] = useState(45); // duration in minutes
-  const [passingRule, setPassingRule] = useState("percentage"); // "percentage" or "correct_answers"
-  const [passingValue, setPassingValue] = useState(50); // 50% or 15 correct
-  const [category, setCategory] = useState("Weekly");
-  const [settingsSaved, setSettingsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isQuestionsSaving, setIsQuestionsSaving] = useState(false);
-  
-  // Daily / Automated Configuration State
-  const [examName, setExamName] = useState("Daily Assessment");
-  const [examCourseName, setExamCourseName] = useState(() => {
-    return localStorage.getItem("last_exam_course") || "Python Full Stack";
-  });
-  const [examSubjects, setExamSubjects] = useState([]);
-  const [availableSubjects, setAvailableSubjects] = useState([]);
-  const [fullCourseObjects, setFullCourseObjects] = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [examDuration, setExamDuration] = useState(80);
-  const [examStrategy, setExamStrategy] = useState("percentage");
-  const [examRequirement, setExamRequirement] = useState(50);
-  const [examQuestionCount, setExamQuestionCount] = useState(25);
-  const [examMarksPerQuestion, setExamMarksPerQuestion] = useState(2);
-  const [isGlobalMode, setIsGlobalMode] = useState(() => {
-    return localStorage.getItem("last_exam_is_global") === "true";
-  });
+  const [qText, setQText] = useState("");
+  const [qOptions, setQOptions] = useState(["","","",""]);
+  const [qCorrect, setQCorrect] = useState(0);
+  const [qDifficulty, setQDifficulty] = useState("medium");
+  const [qMarks, setQMarks] = useState(1);
+  const [autoEasy, setAutoEasy] = useState(10);
+  const [autoMedium, setAutoMedium] = useState(15);
+  const [autoHard, setAutoHard] = useState(5);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [parsedQuestions, setParsedQuestions] = useState([]);
 
-  // 👁️ PREVIEW STATE
-  const [previewMode, setPreviewMode] = useState(false);
-  const [selectedPreviewQuestions, setSelectedPreviewQuestions] = useState([]);
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  // Step 4
+  const [randomizeQuestions, setRandomizeQuestions] = useState(true);
+  const [randomizeOptions, setRandomizeOptions] = useState(true);
+  const [preventBacktrack, setPreventBacktrack] = useState(false);
 
-  // 🛡️ 1000% MASTER DATABASE SYNC (Lifetime Persistence)
-  useEffect(() => {
-    const fetchMasterCurriculum = async () => {
-      const token = localStorage.getItem('access');
-      const cleanToken = token ? token.replace(/^"|"$/g, "").trim() : "";
-      
-      try {
-        // 🏗️ Step 1: Fetch from Backend (Source of Truth)
-        const response = await authenticatedRequest('get', `http://${window.location.hostname}:8000/api/courses/`);
-        
-        let apiCourses = [];
-        if (response.data) {
-          apiCourses = response.data.data || response.data.results || (Array.isArray(response.data) ? response.data : []);
-        }
+  // Step 5
+  const [webcamRequired, setWebcamRequired] = useState(true);
+  const [faceDetection, setFaceDetection] = useState(true);
+  const [multiFaceDetection, setMultiFaceDetection] = useState(true);
+  const [screenshotInterval, setScreenshotInterval] = useState(30);
 
-        // 🏗️ Step 2: Merge with Standard Industrial Courses (Fulfills dropdown requirement)
-        const localSaved = localStorage.getItem('facultyCourses') || localStorage.getItem('courses');
-        let localData = [];
-        try { if(localSaved) localData = JSON.parse(localSaved); } catch(e){}
+  // Step 6
+  const [fullscreenRequired, setFullscreenRequired] = useState(true);
+  const [tabSwitchLimit, setTabSwitchLimit] = useState(3);
+  const [disableCopyPaste, setDisableCopyPaste] = useState(true);
+  const [disableRightClick, setDisableRightClick] = useState(true);
+  const [autoSubmit, setAutoSubmit] = useState(true);
+  const [riskThreshold, setRiskThreshold] = useState(50);
 
-        const apiTitles = new Set(apiCourses.map(c => (typeof c === 'string' ? c : (c.title || "")).toUpperCase()));
-        const standardTitles = new Set(industryCourses.map(t => t.toUpperCase()));
-        
-        // Combine local custom, API, and industrial standards
-        const localCustom = Array.isArray(localData) ? localData.filter(lc => {
-           const t = (lc.title || lc || "").toString().toUpperCase();
-           return t && !apiTitles.has(t) && !standardTitles.has(t);
-        }) : [];
+  // Step 7
+  const [selectedDepts, setSelectedDepts] = useState([]);
+  const [selectedYears, setSelectedYears] = useState([]);
+  const [maxAttempts, setMaxAttempts] = useState(1);
 
-        const mergedCourseObjects = [...localCustom, ...apiCourses, ...defaultCourses];
-        
-        // 🏗️ Step 3: Extract Titles for Dropdown (Unique & Clean)
-        const titleMap = new Map();
-        mergedCourseObjects.forEach(c => {
-          const title = (typeof c === 'string' ? c : (c.title || "")).trim();
-          if (title) {
-            const key = title.toUpperCase();
-            if (!titleMap.has(key)) titleMap.set(key, title);
-          }
-        });
-        
-        const sortedTitles = Array.from(titleMap.values())
-          .sort((a, b) => a.localeCompare(b));
+  // Step 8
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [sendNotification, setSendNotification] = useState(true);
 
-        setCourses(sortedTitles);
-        setFullCourseObjects(mergedCourseObjects);
-        
-        console.log(`✅ Database Sync Success: ${mergedCourseObjects.length} courses identified (${sortedTitles.length} unique titles).`);
-      } catch (err) {
-        console.warn("API Sync Unavailable, falling back to pure local/standard:", err);
-        // Fallback to local storage + industry defaults if API is down
-        const rawFaculty = localStorage.getItem('facultyCourses') || localStorage.getItem('courses');
-        const facultyData = rawFaculty ? JSON.parse(rawFaculty) : [];
-        
-        const combinedFallback = [...facultyData, ...defaultCourses];
-        const titleMap = new Map();
-        combinedFallback.forEach(c => {
-          const title = (typeof c === 'string' ? c : (c.title || c)).toString().trim();
-          if (title) {
-            const key = title.toUpperCase();
-            if (!titleMap.has(key)) titleMap.set(key, title);
-          }
-        });
-        
-        const sortedTitles = Array.from(titleMap.values())
-          .sort((a, b) => a.localeCompare(b));
+  // Step 9
+  const [showResultImmediately, setShowResultImmediately] = useState(true);
+  const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const [certificateEnabled, setCertificateEnabled] = useState(false);
 
-        setCourses(sortedTitles);
-        setFullCourseObjects(combinedFallback);
-      }
-    };
+  useEffect(() => { fetchExams(); }, []);
 
-    fetchMasterCurriculum();
-  }, []);
-
-  const getSubjectsForCourse = (courseName) => {
-    if (!courseName) return [];
-    
-    // 🛡️ 1000% MASTER NORMALIZATION: Perfect matching for "Data Science & AI" vs "DATA SCIENCE AND AI"
-    const normalize = (s) => (s || "").toString().toUpperCase()
-        .replace(/&/g, " AND ")
-        .replace(/[^A-Z0-9]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-    const target = normalize(courseName);
-    const subs = new Set();
-
-    // 🏗️ 100,000% MASTER DATABASE MERGER (Fulfills Point 1 & 4)
-    // We collect subjects from ALL courses that are part of this title
-    if (Array.isArray(fullCourseObjects)) {
-      fullCourseObjects.forEach(c => {
-        const t = (typeof c === 'string' ? c : (c.title || ""));
-        if (normalize(t) === target) {
-          const rawSubjects = (c.subjects || c.modules || []);
-          if (rawSubjects.length > 0) {
-            const subjects = rawSubjects.map(s => (typeof s === 'string' ? s : (s.title || "")));
-            subjects.forEach(s => s && subs.add(s));
-          } else {
-            // If no modules/subjects, add the course name itself as a virtual subject
-            subs.add(t);
-          }
-        }
-      });
-    }
-
-    const subjectsList = Array.from(subs);
-    if (!subjectsList.includes("Aptitude")) {
-      subjectsList.push("Aptitude");
-    }
-    if (!subjectsList.includes("Reasoning")) {
-      subjectsList.push("Reasoning");
-    }
-    return subjectsList;
-  };
-
-  const getAllSubjects = () => {
-    const all = new Set();
-    if (Array.isArray(fullCourseObjects)) {
-      fullCourseObjects.forEach(c => {
-        getSubjectsForCourse(typeof c === 'string' ? c : (c.title || "")).forEach(s => {
-          if (s) all.add(s);
-        });
-      });
-    }
-    return Array.from(all);
-  };
-
-  // 🏗️ TRACK PREVIOUS COURSE FOR STABLE RESETS
-  const [lastSyncedCourse, setLastSyncedCourse] = useState("");
-
-  // 🛡️ AUTHENTICATION HELPER
-  const getAuthHeader = () => {
-    const rawToken = localStorage.getItem("access");
-    if (!rawToken) return {};
-    const cleanToken = rawToken.replace(/^"|"$/g, "").trim();
-    return { 
-      headers: { 
-        Authorization: `Bearer ${cleanToken}`,
-        "Content-Type": "application/json"
-      } 
-    };
-  };
-
-  // 🛡️ AUTHENTICATION & RETRY HELPER
-  const authenticatedRequest = async (method, url, data = null, params = null) => {
-    const makeRequest = async () => {
-      const config = getAuthHeader();
-      if (method.toLowerCase() === 'get') return axios.get(url, { ...config, params });
-      return axios.post(url, data, config);
-    };
-
+  const fetchExams = async () => {
+    setLoading(true);
     try {
-      return await makeRequest();
-    } catch (err) {
-      if (err.response?.status === 401) {
-        console.log("🔒 Token expired in ExamManager, attempting refresh...");
-        try {
-          const refreshToken = localStorage.getItem("refresh");
-          if (!refreshToken) throw new Error("No refresh token");
-
-          const refreshRes = await axios.post(`http://${window.location.hostname}:8000/api/jwt/refresh/`, { 
-            refresh: refreshToken 
-          });
-
-          if (refreshRes.data && refreshRes.data.access) {
-            localStorage.setItem("access", refreshRes.data.access);
-            console.log("🔓 Token refreshed, retrying original request...");
-            return await makeRequest();
-          }
-        } catch (refreshErr) {
-          console.error("❌ Refresh failed:", refreshErr);
-          // Optional: redirect to login if session is totally dead
-        }
-      }
-      throw err;
-    }
+      const res = await axios.get(`${API_BASE}/exams/list/`);
+      setExams(res.data || []);
+    } catch { setExams([]); }
+    finally { setLoading(false); }
   };
 
-  // 🏗️ MASTER SYNC ENGINE
-  useEffect(() => {
-    // Determine the desired state based on existing flags
-    const desiredGlobal = (isGlobalMode || examCourseName === "ALL");
-    
-    if (category === "Daily") {
-       if (desiredGlobal) {
-          const all = getAllSubjects();
-          setAvailableSubjects(all);
-          // Only auto-select EVERYTHING if we are truly in Global Mode
-          if (examSubjects.length !== all.length) setExamSubjects(all);
-          
-          if (!isGlobalMode) setIsGlobalMode(true);
-          if (examCourseName !== "ALL") setExamCourseName("ALL");
-          setLastSyncedCourse("ALL");
-       } else {
-          const subs = getSubjectsForCourse(examCourseName);
-          setAvailableSubjects(subs);
-          
-          // 🛡️ MANUAL SELECTION ENFORCEMENT: Clear subjects ONLY when switching to a NEW course
-          if (examCourseName !== lastSyncedCourse) {
-            setExamSubjects([]); 
-            setLastSyncedCourse(examCourseName);
-          }
-          
-          if (isGlobalMode) setIsGlobalMode(false);
-       }
-    }
-  }, [category, examCourseName, isGlobalMode, fullCourseObjects, lastSyncedCourse]); 
-
-  // Synchronous flag for UI rendering - Zero Latency
-  const isGlobalActive = (isGlobalMode || examCourseName === "ALL");
-  const massGenerationActive = isGlobalActive || (category !== "Daily" && selectedCourse === "all");
-
-  const [form, setForm] = useState({
-    type: "mcq", // "mcq" or "coding"
-    question: "",
-    options: ["", "", "", ""],
-    answer: "",
-    language: "python",
-    testCases: [{ input: "", output: "" }],
-    marks: 2, // default marks
-    subject: "",
-  });
-
-  const BASE_URL = `http://${window.location.hostname}:8000/api/admin/exam-settings/`;
-
-  // Fetch existing settings when category changes
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await authenticatedRequest('get', BASE_URL, null, { category, course: selectedCourse });
-        if (res.data && res.data.success && res.data.data) {
-          const { maxQuestions: savedMax, questions: savedQuestions, passingRule: rule, passingValue: val, duration: savedDuration } = res.data.data;
-          setMaxQuestions(savedMax || 50);
-          setQuestions(savedQuestions || []);
-          setPassingRule(rule || "percentage");
-          setPassingValue(val !== undefined ? val : 50);
-          setDuration(savedDuration || 45);
-        }
-      } catch (err) {
-        console.error("Failed to fetch settings:", err);
-      }
-    };
-    fetchSettings();
-  }, [category, selectedCourse]);
-
-  // handle input
-  const handleChange = (e) => {
-    setForm({ ...form, question: e.target.value });
+  const resetForm = () => {
+    setStep(1); setExamTitle(""); setExamType("daily"); setSubject("PYTHON");
+    setTopic(""); setDescription(""); setQuestions([]); setQText("");
+    setQOptions(["","","",""]); setQCorrect(0);
   };
 
-  // handle option change
-  const handleOptionChange = (index, value) => {
-    const newOptions = [...form.options];
-    newOptions[index] = value;
-    setForm({ ...form, options: newOptions });
+  const openModal = () => { resetForm(); setShowModal(true); };
+  const closeModal = () => setShowModal(false);
+
+  const handleAddQuestion = () => {
+    if (!qText.trim()) { toast.error("Enter question text!"); return; }
+    if (qOptions.some(o=>!o.trim())) { toast.error("Fill all 4 options!"); return; }
+    setQuestions(p => [...p, {id:Date.now(),question:qText.trim(),options:[...qOptions],correct:qCorrect,difficulty:qDifficulty,marks:qMarks,subject}]);
+    setQText(""); setQOptions(["","","",""]); setQCorrect(0);
+    toast.success("Question added!");
   };
 
-  // handle answer select
-  const handleAnswer = (opt) => {
-    setForm({ ...form, answer: opt });
-  };
-
-  // handle test case change
-  const handleTestCaseChange = (index, field, value) => {
-    const newTestCases = [...form.testCases];
-    newTestCases[index][field] = value;
-    setForm({ ...form, testCases: newTestCases });
-  };
-
-  const addTestCase = () => {
-    setForm({ ...form, testCases: [...form.testCases, { input: "", output: "" }] });
-  };
-
-  const removeTestCase = (index) => {
-    const newTestCases = form.testCases.filter((_, i) => i !== index);
-    setForm({ ...form, testCases: newTestCases });
-  };
-
-  // Save Exam Rules & Questions (The Final "CONFIRM" Action)
-  const handleConfirmSettings = async () => {
-    if (previewMode && selectedPreviewQuestions.length === 0) {
-      toast.error("No questions in preview to confirm!");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const isDaily = category === "Daily";
-      const targetCourse = isDaily ? examCourseName : selectedCourse;
-      const targetSubjects = isDaily ? examSubjects : (selectedCourse === "all" ? getAllSubjects() : getSubjectsForCourse(selectedCourse));
-
-      // 🏗️ Step 1: Save Automated Config (Backend Rules)
-      const configPayload = {
-        category: category,
-        course_name: String(targetCourse || "").trim().toUpperCase(),
-        exam_name: isDaily ? examName : `${category} Assessment`,
-        subjects: targetSubjects,
-        duration: parseInt(isDaily ? examDuration : duration, 10) || 45,
-        passing_strategy: isDaily ? examStrategy : passingRule,
-        requirement: parseInt(isDaily ? examRequirement : passingValue, 10) || 50,
-        question_count: selectedPreviewQuestions.length || parseInt(isDaily ? examQuestionCount : maxQuestions, 10) || 25,
-        marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
-      };
-      
-      await authenticatedRequest('post', `http://${window.location.hostname}:8000/api/automated-exam-config/`, configPayload);
-
-      // 🏗️ Step 2: Save Assessment Rules (General Dashboard Rules)
-      const settingsPayload = {
-        category: category,
-        course: targetCourse,
-        maxQuestions: configPayload.question_count,
-        duration: configPayload.duration,
-        passingRule: configPayload.passing_strategy,
-        passingValue: configPayload.requirement,
-        marks_per_question: configPayload.marks_per_question
-      };
-      
-      await authenticatedRequest('post', BASE_URL, settingsPayload);
-
-      // 🏗️ Step 3: Map Previewed Questions to the Assessment (Persistent Sync)
-      if (selectedPreviewQuestions.length > 0) {
-        await saveQuestionsToBackend(selectedPreviewQuestions, category);
-      }
-      
-      setSettingsSaved(true);
-      setPreviewMode(false);
-      setSelectedPreviewQuestions([]); // Clear preview after success
-      
-      toast.success(`DEPLOYED: ${category} Assessment for ${targetCourse} is now LIVE!`, { 
-        position: "top-right", 
-        theme: "colored",
-        autoClose: 5000
-      });
-      setTimeout(() => setSettingsSaved(false), 3000);
-    } catch (err) {
-      console.error("Finalization failed:", err);
-      toast.error("An error occurred during finalization.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
-  const [autoGenSuccess, setAutoGenSuccess] = useState(false);
-
-  // 🛡️ 1000% MASTER AUTOMATION ENGINE: PREVIEW & SELECTION
   const handleAutoGenerate = async () => {
-    const isDaily = category === "Daily";
-    const targetCourse = isDaily ? examCourseName : selectedCourse;
-
-    if (targetCourse === "all" || targetCourse === "ALL") {
-      toast.info("Please select a specific course or use 'Global Generation' mode.");
-      return;
-    }
-    
-    // Respect the UI input for count, defaulting to 80 for high-stakes if empty
-    const count = parseInt(isDaily ? examQuestionCount : maxQuestions) || (category === "Weekly" || category === "Monthly" ? 80 : 12);
-    
-    let targetSubjects = [];
-    if (isDaily) {
-      targetSubjects = examSubjects;
-    } else {
-      targetSubjects = (selectedCourse === "all") ? getAllSubjects() : getSubjectsForCourse(selectedCourse);
-    }
-
-    if (targetSubjects.length === 0 && !isDaily) {
-       // For Weekly/Monthly we can proceed with course name if subjects are missing
-       targetSubjects = [targetCourse];
-    }
-    
-    if (targetSubjects.length === 0 && isDaily) {
-      toast.warn("Please select subjects to generate preview!", { position: "top-center" });
-      return;
-    }
-    
-    setIsAutoGenerating(true);
-    setPreviewMode(false);
-    
+    setIsGenerating(true);
     try {
-      // 🚀 SYSTEM AUTO-ADD: Use the rich QuestionBank generator with subject awareness
-      const generatedQuestions = getQuestionBank(targetCourse, count, category, targetSubjects);
-      
-      // Shuffle them further to ensure randomness for every click
-      const shuffled = [...generatedQuestions].sort(() => 0.5 - Math.random());
-      
-      // Update state
-      setSelectedPreviewQuestions(shuffled);
-      setPreviewMode(true);
-      
-      toast.success(`SYSTEM AUTO-ADD: ${shuffled.length} unique questions generated for ${targetCourse} [${category}].`, { 
-        icon: "🔮",
-        position: "top-right"
-      });
-
-      // Persist them 
-      setQuestions(shuffled);
-      // saveQuestionsToBackend(shuffled, category); // Optional: developer can decide if they want to save immediately or wait for confirm
-
-      setTimeout(() => {
-        document.getElementById('exam-preview-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 150);
-
-    } catch (err) {
-      console.error("Internal process failure:", err);
-      toast.error("Process error: Check console for details.");
-    } finally {
-      setIsAutoGenerating(false);
-    }
-  };
-
-  const handleGlobalGenerate = async () => {
-    if (!window.confirm(`Are you sure you want to generate ${category} assessments for ALL courses?`)) return;
-    
-    setIsAutoGenerating(true);
-    try {
-      const config = getAuthHeader();
-      if (!config.headers) throw new Error("Authentication missing. Please re-login.");
-
-      const isDaily = category === "Daily";
-
-      for (const courseObj of fullCourseObjects) {
-        const title = courseObj.title || courseObj;
-        const subs = getSubjectsForCourse(title);
-        
-        if (subs.length > 0) {
-            const payload = {
-                category: category,
-                course_name: String(title).trim().toUpperCase(),
-                exam_name: isDaily ? examName : `${category} Assessment`,
-                subjects: subs,
-                duration: parseInt(isDaily ? examDuration : duration) || 45,
-                passing_strategy: isDaily ? examStrategy : passingRule,
-                requirement: parseInt(isDaily ? examRequirement : passingValue) || 50,
-                question_count: parseInt(isDaily ? examQuestionCount : maxQuestions) || 25,
-                marks_per_question: isDaily ? parseInt(examMarksPerQuestion) : 2
-            };
-            await authenticatedRequest('post', `http://${window.location.hostname}:8000/api/automated-exam-config/`, payload);
-            
-            // 🚀 NEW: Bulk add 80 questions to database for this course
-            const bulkQuestions = getQuestionBank(title, 80, category, subs);
-            await saveQuestionsToBackend(bulkQuestions, category, title);
+      const res = await axios.post(`${API_BASE}/exams/auto-generate/`, {title:examTitle||"Auto",subject,easy_count:autoEasy,medium_count:autoMedium,hard_count:autoHard,duration});
+      if (res.data.status==="success") {
+        const pr = await axios.get(`${API_BASE}/exams/paper/${res.data.paper_id}/`);
+        if (pr.data.questions) {
+          setQuestions(pr.data.questions.map(q=>({id:q.id,question:q.question_text,options:q.choices.map(c=>c.choice_text),correct:0,difficulty:q.difficulty,marks:q.marks,subject})));
+          toast.success(`✅ Auto-generated ${pr.data.questions.length} questions!`);
         }
       }
-      
-      setAutoGenSuccess(true);
-      toast.success(`All ${category} assessments generated successfully`, { 
-        position: "top-right",
-        autoClose: 3000,
-        theme: "colored" 
-      });
-      setTimeout(() => setAutoGenSuccess(false), 3000);
-    } catch (err) {
-      console.error("Failed to generate global assessments:", err);
-      toast.error("Global generation failed.");
-    } finally {
-      setIsAutoGenerating(false);
-    }
+    } catch { toast.error("Auto-generation failed. Ensure questions exist in Question Bank."); }
+    finally { setIsGenerating(false); }
   };
 
-
-  const saveQuestionsToBackend = async (questionsToSave, categoryToSave, optionalCourse = null) => {
-    setIsQuestionsSaving(true);
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    setIsUploading(true);
+    setParsedQuestions([]);
     try {
-      const isDaily = categoryToSave === "Daily";
-      const targetCourse = optionalCourse || (isDaily ? examCourseName : selectedCourse);
-      
-      const payload = {
-        category: categoryToSave,
-        course: targetCourse,
-        subject: "Full Track",
-        questions: questionsToSave
-      };
-
-      const res = await authenticatedRequest('post', BASE_URL, payload);
-      if (res.data && res.data.success) {
-        console.log("✅ Questions synced to " + categoryToSave);
+      const res = await axios.post(`${API_BASE}/exams/import-file/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data.status === "success" && res.data.questions) {
+        setParsedQuestions(res.data.questions);
+        toast.success(`Successfully parsed ${res.data.questions.length} questions!`);
       } else {
-        console.error("Failed to sync questions:", res.data.message);
+        toast.error("Failed to parse file or no questions found.");
       }
     } catch (err) {
-      console.error("Failed to save questions:", err);
+      toast.error(err.response?.data?.error || "Error uploading/parsing file.");
     } finally {
-      setIsQuestionsSaving(false);
+      setIsUploading(false);
     }
   };
 
-  // add question
-  const addQuestion = () => {
-    if (!form.question) {
-      console.error("Fill the question field!");
-      return;
-    }
-
-    if (form.type === "mcq" && !form.answer) {
-      console.error("Select the correct answer for MCQ!");
-      return;
-    }
-
-    const finalSubject = form.subject || availableSubjects[0] || "General";
-    const newQuestionArray = [...questions, { ...form, subject: finalSubject, id: Date.now() }];
-    setQuestions(newQuestionArray);
-    saveQuestionsToBackend(newQuestionArray, category);
-
-    // reset form
-    setForm({
-      type: "mcq",
-      question: "",
-      options: ["", "", "", ""],
-      answer: "",
-      marks: 2,
-      language: "python",
-      testCases: [{ input: "", output: "" }],
-      subject: finalSubject,
-    });
+  const handleConfirmImport = () => {
+    if (parsedQuestions.length === 0) return;
+    setQuestions(prev => [
+      ...prev,
+      ...parsedQuestions.map((q, idx) => ({
+        id: Date.now() + idx,
+        question: q.question,
+        options: q.options,
+        correct: q.correct,
+        difficulty: q.difficulty || "medium",
+        marks: q.marks || marksPerQuestion,
+        subject
+      }))
+    ]);
+    setParsedQuestions([]);
+    toast.success("Questions added to exam draft!");
   };
 
-  // delete question
-  const deleteQuestion = (id) => {
-    // if (!window.confirm("Are you sure you want to delete this question?")) return;
-    const updatedQuestions = questions.filter((q) => q.id !== id);
-    setQuestions(updatedQuestions);
-    saveQuestionsToBackend(updatedQuestions, category);
+  const handlePublish = async () => {
+    if (!examTitle.trim()) { toast.error("Exam title required!"); setStep(1); return; }
+    setIsPublishing(true);
+    try {
+      const token = localStorage.getItem("access")?.replace(/^"|"$/g,"");
+      await axios.post(`${API_BASE}/exams/create/`, {
+        title:examTitle, exam_type:examType, subject, topic, description, course_name:course,
+        duration, total_questions:questions.length||totalQuestions, total_marks:totalMarks,
+        pass_marks:passMarks, marks_per_question:marksPerQuestion,
+        negative_marking:negativeMarking, negative_marks:negativeMarks,
+        randomize_questions:randomizeQuestions, randomize_options:randomizeOptions, prevent_backtrack:preventBacktrack,
+        webcam_required:webcamRequired, face_detection:faceDetection, multi_face_detection:multiFaceDetection, screenshot_interval:screenshotInterval,
+        fullscreen_required:fullscreenRequired, tab_switch_limit:tabSwitchLimit, disable_copy_paste:disableCopyPaste, disable_right_click:disableRightClick,
+        auto_submit:autoSubmit, risk_threshold:riskThreshold,
+        departments:selectedDepts, years:selectedYears, max_attempts:maxAttempts,
+        start_time:startTime||null, end_time:endTime||null, send_notification:sendNotification,
+        show_result_immediately:showResultImmediately, show_correct_answers:showCorrectAnswers,
+        show_leaderboard:showLeaderboard, certificate_enabled:certificateEnabled,
+        questions
+      }, { headers: token ? {Authorization:`Bearer ${token}`} : {} });
+
+      await axios.post(`${API_BASE}/automated-exam-config/`, {
+        category:examType.charAt(0).toUpperCase()+examType.slice(1),
+        course_name:course.toUpperCase(), exam_name:examTitle, subjects:[subject],
+        duration, passing_strategy:"percentage",
+        requirement:Math.round((passMarks/totalMarks)*100),
+        question_count:questions.length||totalQuestions, marks_per_question:marksPerQuestion
+      });
+
+      toast.success("🚀 Exam published and is LIVE!");
+      closeModal();
+      fetchExams();
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to publish exam.");
+    } finally { setIsPublishing(false); }
   };
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto pb-20">
+  const filtered = exams.filter(e =>
+    e.title?.toLowerCase().includes(search.toLowerCase()) ||
+    e.subject?.toLowerCase().includes(search.toLowerCase()) ||
+    e.exam_type?.toLowerCase().includes(search.toLowerCase())
+  );
 
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-         <FontAwesomeIcon icon={faHistory} className="text-blue-600" />
-         Exam Manager
-      </h1>
+  const activeCount = exams.filter(e => e.status === "active").length;
+  const scheduledCount = exams.filter(e => e.status !== "active").length;
 
+  // ─── Styles ─────────────────────────────────────────────────────────────────
+  const inp = {
+    width:"100%", padding:"11px 14px", borderRadius:10, border:"1.5px solid #e2e8f0",
+    fontSize:13, fontWeight:600, color:"#1e293b", background:"#f8fafc",
+    outline:"none", boxSizing:"border-box"
+  };
+  const sel = { ...inp, cursor:"pointer" };
+  const ta = { ...inp, resize:"vertical", minHeight:72 };
+  const label = { display:"block", fontSize:10, fontWeight:800, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:6 };
+  const g2 = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 };
 
-      {/* EXAM RULES & SETTINGS (GLOBAL CONFIG) */}
-      <div key={`rules-config-${category}`} className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-200">
-        <h2 className="text-lg font-bold mb-4 text-gray-700 flex items-center gap-2">
-           <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />
-           Assessment Rules & Configuration
-        </h2>
-        
-        <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          
+  // ─── Step content ────────────────────────────────────────────────────────────
+  const renderStep = () => {
+    switch(step) {
+      case 1: return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div><label style={label}>Exam Title *</label><input style={inp} value={examTitle} onChange={e=>setExamTitle(e.target.value)} placeholder="e.g. Python Fundamentals – Batch 2024"/></div>
           <div>
-            <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-              Exam Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => {
-                const newCat = e.target.value;
-                setCategory(newCat);
-                // 🛡️ INTERNAL SYNC LOCK: Force Global re-alignment on category switch
-                if (newCat === "Daily" && (examCourseName === "ALL" || isGlobalMode)) {
-                   setIsGlobalMode(true);
-                   setExamCourseName("ALL");
-                }
-              }}
-              className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-            >
-              <option value="Daily">Daily Exam</option>
-              <option value="Weekly">Weekly Exam</option>
-              <option value="Monthly">Monthly Exam</option>
-            </select>
+            <label style={label}>Exam Type *</label>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+              {EXAM_TYPES.map(et=>(
+                <div key={et.value} onClick={()=>setExamType(et.value)} style={{padding:"10px 12px",borderRadius:10,cursor:"pointer",border:`1.5px solid ${examType===et.value?"#6366f1":"#e2e8f0"}`,background:examType===et.value?"#eef2ff":"#f8fafc",display:"flex",alignItems:"center",gap:8,transition:"all 0.15s"}}>
+                  <span style={{fontSize:16}}>{et.icon}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:examType===et.value?"#6366f1":"#64748b"}}>{et.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={g2}>
+            <div><label style={label}>Subject *</label><select style={sel} value={subject} onChange={e=>setSubject(e.target.value)}>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></div>
+            <div><label style={label}>Target Course</label><select style={sel} value={course} onChange={e=>setCourse(e.target.value)}>{industryCourses.map(c=><option key={c}>{c}</option>)}</select></div>
+          </div>
+          <div><label style={label}>Topic / Chapter</label><input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Functions, OOP, Modules"/></div>
+          <div><label style={label}>Instructions (Optional)</label><textarea style={ta} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Exam instructions for students..." rows={2}/></div>
+        </div>
+      );
+
+      case 2: return (
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+            <NumInput label="Duration (min)" value={duration} onChange={setDuration} min={5} max={300}/>
+            <NumInput label="Total Questions" value={totalQuestions} onChange={v=>{setTotalQuestions(v);setTotalMarks(v*marksPerQuestion);}} min={1} max={200}/>
+            <NumInput label="Marks / Question" value={marksPerQuestion} onChange={v=>{setMarksPerQuestion(v);setTotalMarks(totalQuestions*v);}} min={1} max={10}/>
+          </div>
+          <div style={g2}>
+            <NumInput label="Total Marks" value={totalMarks} onChange={setTotalMarks} min={1} max={500}/>
+            <NumInput label="Pass Marks" value={passMarks} onChange={setPassMarks} min={0} max={totalMarks}/>
+          </div>
+          <div style={{padding:"14px 16px",background:"#fef9ee",borderRadius:12,border:"1.5px solid #fde68a"}}>
+            <Toggle value={negativeMarking} onChange={setNegativeMarking} label="Enable Negative Marking" desc="Deduct marks for wrong answers"/>
+            {negativeMarking && <div style={{marginTop:12}}><NumInput label="Marks Deducted per Wrong" value={negativeMarks} onChange={setNegativeMarks} min={0.25} max={5} unit="pts"/></div>}
+          </div>
+          <div style={{padding:"12px 16px",background:"#f0f9ff",borderRadius:10,border:"1px solid #bae6fd",fontSize:13,display:"flex",justifyContent:"space-between"}}>
+            <span style={{color:"#64748b"}}>Pass Percentage:</span>
+            <strong style={{color:"#16a34a"}}>{totalMarks>0?Math.round((passMarks/totalMarks)*100):0}%</strong>
+          </div>
+        </div>
+      );
+
+      case 3: return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",gap:6,padding:4,background:"#f1f5f9",borderRadius:12}}>
+            {[{k:"manual",l:"✍️ Manual"},{k:"auto",l:"🤖 Auto Generate"},{k:"excel",l:"📁 Document Import"}].map(s=>(
+              <button key={s.k} onClick={()=>setQuestionSource(s.k)} style={{flex:1,padding:"9px",borderRadius:10,border:"none",cursor:"pointer",fontWeight:700,fontSize:12,background:questionSource===s.k?"#6366f1":"none",color:questionSource===s.k?"#fff":"#64748b",transition:"all 0.2s"}}>{s.l}</button>
+            ))}
           </div>
 
-          {category === "Daily" ? (
-            <React.Fragment key={`daily-view-${isGlobalActive}`}>
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Target Course Name
-                </label>
-                <select
-                  value={isGlobalActive ? "ALL" : examCourseName}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "ALL") {
-                      setIsGlobalMode(true);
-                      setExamCourseName("ALL");
-                      localStorage.setItem("last_exam_course", "ALL");
-                      localStorage.setItem("last_exam_is_global", "true");
-                    } else {
-                      setIsGlobalMode(false);
-                      setExamCourseName(val);
-                      localStorage.setItem("last_exam_course", val);
-                      localStorage.setItem("last_exam_is_global", "false");
-                    }
-                  }}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold text-blue-700"
-                >
-                  <option value="ALL">--- ALL COURSES (Bulk Generation) ---</option>
-                  {courses.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+          {questionSource==="manual" && (<>
+            <div style={g2}>
+              <div><label style={label}>Difficulty</label><select style={sel} value={qDifficulty} onChange={e=>setQDifficulty(e.target.value)}><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></div>
+              <NumInput label="Marks" value={qMarks} onChange={setQMarks} min={1} max={10}/>
+            </div>
+            <div><label style={label}>Question Text *</label><textarea style={ta} value={qText} onChange={e=>setQText(e.target.value)} placeholder="Enter question..." rows={2}/></div>
+            <div>
+              <label style={label}>Options & Correct Answer</label>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {qOptions.map((opt,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                    <button onClick={()=>setQCorrect(i)} style={{width:28,height:28,borderRadius:"50%",border:"none",cursor:"pointer",background:qCorrect===i?"#22c55e":"#f1f5f9",color:qCorrect===i?"#fff":"#94a3b8",fontWeight:800,fontSize:12,flexShrink:0}}>{String.fromCharCode(65+i)}</button>
+                    <input style={{...inp,margin:0}} value={opt} onChange={e=>{const o=[...qOptions];o[i]=e.target.value;setQOptions(o);}} placeholder={`Option ${String.fromCharCode(65+i)}`}/>
+                  </div>
+                ))}
               </div>
+            </div>
+            <button onClick={handleAddQuestion} style={{padding:"10px",borderRadius:10,border:"none",cursor:"pointer",background:"#1e293b",color:"#fff",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <FontAwesomeIcon icon={faPlus}/> Add Question to Draft
+            </button>
+          </>)}
 
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  SUBJECTS SCOPE
-                </label>
-                {!isGlobalActive ? (
-                  <div className="space-y-4">
-                    {/* Header with quick actions */}
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                        {examSubjects.length} of {availableSubjects.length} subjects active
-                      </span>
-                      {availableSubjects.length > 0 && (
-                        <button 
-                          onClick={() => {
-                            if (examSubjects.length === availableSubjects.length) setExamSubjects([]);
-                            else setExamSubjects([...availableSubjects]);
-                          }}
-                          className="text-[10px] font-black text-blue-600 uppercase hover:text-blue-800 transition-colors bg-blue-50 px-2 py-1 rounded-md border border-blue-100"
-                        >
-                          {examSubjects.length === availableSubjects.length ? "Deselect All" : "Select All"}
-                        </button>
-                      )}
-                    </div>
+          {questionSource==="auto" && (
+            <div style={{padding:20,background:"linear-gradient(135deg,#1e1b4b,#312e81)",borderRadius:16,color:"#fff"}}>
+              <div style={{fontWeight:800,fontSize:14,marginBottom:6}}>🤖 AI Auto-Generator</div>
+              <div style={{color:"#a5b4fc",fontSize:12,marginBottom:16}}>Pick from Question Bank by difficulty (100 questions loaded per subject!)</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:16}}>
+                {[{l:"Easy",v:autoEasy,s:setAutoEasy,c:"#22c55e"},{l:"Medium",v:autoMedium,s:setAutoMedium,c:"#f59e0b"},{l:"Hard",v:autoHard,s:setAutoHard,c:"#ef4444"}].map(d=>(
+                  <div key={d.l} style={{background:"rgba(255,255,255,0.08)",borderRadius:10,padding:12,textAlign:"center"}}>
+                    <div style={{fontSize:10,color:d.c,fontWeight:800,marginBottom:8,textTransform:"uppercase"}}>{d.l}</div>
+                    <input type="number" value={d.v} min={0} max={100} onChange={e=>d.s(parseInt(e.target.value)||0)}
+                      style={{width:"100%",padding:"8px",borderRadius:8,border:"none",background:"rgba(255,255,255,0.12)",color:"#fff",fontSize:20,fontWeight:900,textAlign:"center"}}/>
+                  </div>
+                ))}
+              </div>
+              <button onClick={handleAutoGenerate} disabled={isGenerating} style={{width:"100%",padding:12,borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                {isGenerating?<FontAwesomeIcon icon={faSpinner} spin/>:<FontAwesomeIcon icon={faRobot}/>}
+                {isGenerating?"Generating...":"Generate & Import"}
+              </button>
+            </div>
+          )}
 
-                    {/* Checkbox Grid */}
-                    <div className="min-h-[100px] max-h-[160px] overflow-y-auto p-3 bg-white rounded-xl border border-blue-100 shadow-inner grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                       {availableSubjects.length > 0 ? (
-                         availableSubjects.map((s, i) => (
-                           <button
-                             key={i}
-                             onClick={() => {
-                               if (examSubjects.includes(s)) {
-                                 setExamSubjects(examSubjects.filter(it => it !== s));
-                               } else {
-                                 setExamSubjects([...examSubjects, s]);
-                               }
-                             }}
-                             className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left group ${
-                               examSubjects.includes(s) 
-                               ? 'bg-blue-600 border-blue-700 shadow-md transform scale-[1.02]' 
-                               : 'bg-gray-50 border-gray-100 hover:border-blue-300 hover:bg-white'
-                             }`}
-                           >
-                              <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${
-                                examSubjects.includes(s) 
-                                ? 'bg-white border-white' 
-                                : 'bg-white border-gray-200 group-hover:border-blue-400'
-                              }`}>
-                                {examSubjects.includes(s) && (
-                                  <div className="w-2.5 h-2.5 bg-blue-600 rounded-sm animate-in zoom-in duration-200"></div>
-                                )}
-                              </div>
-                              <span className={`text-[11px] font-bold truncate tracking-tight ${
-                                examSubjects.includes(s) ? 'text-white' : 'text-gray-700'
-                              }`}>
-                                {s}
-                              </span>
-                           </button>
-                         ))
-                       ) : (
-                         <div className="col-span-full h-20 flex flex-col items-center justify-center text-blue-400 italic bg-blue-50/50 rounded-lg border border-dashed border-blue-200">
-                            <FontAwesomeIcon icon={faInfoCircle} className="mb-2 text-lg opacity-50" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-center px-2">please fill your subjects in faculty course page</span>
-                         </div>
-                       )}
-                    </div>
-
-                    {/* Status Message */}
-                    {examSubjects.length === 0 && availableSubjects.length > 0 && (
-                      <div className="flex items-center gap-2 text-[10px] text-amber-600 font-bold bg-amber-50 p-2 rounded-lg border border-amber-100 animate-pulse">
-                         <FontAwesomeIcon icon={faInfoCircle} />
-                         Please select at least one subject to enable generation
-                      </div>
-                    )}
+          {questionSource==="excel" && (
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{padding:24,background:"#f8fafc",borderRadius:14,border:"2.5px dashed #cbd5e1",textAlign:"center",position:"relative"}}>
+                {isUploading ? (
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                    <FontAwesomeIcon icon={faSpinner} spin style={{fontSize:32,color:"#6366f1"}}/>
+                    <div style={{fontWeight:700,fontSize:14,color:"#64748b"}}>Parsing uploaded file...</div>
                   </div>
                 ) : (
-                    <div 
-                      className="w-full h-[45px] px-4 flex items-center justify-between border border-blue-200 rounded-lg bg-blue-50/30 shadow-sm cursor-not-allowed"
-                    >
-                      <span className="text-[13px] font-extrabold text-blue-800 uppercase italic tracking-wider">
-                          all subjects
-                      </span>
-                      <div className="text-blue-500 font-bold">
-                          ✔
-                      </div>
-                    </div>
+                  <>
+                    <FontAwesomeIcon icon={faUpload} style={{fontSize:32,color:"#94a3b8",marginBottom:10}}/>
+                    <div style={{fontWeight:700,fontSize:14,color:"#64748b",marginBottom:4}}>Upload Exam Document</div>
+                    <div style={{fontSize:11,color:"#94a3b8",marginBottom:14}}>Supports PDF, Word (.docx), CSV, or Excel (.xlsx)</div>
+                    <label style={{padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:700,fontSize:13,display:"inline-flex",gap:8,alignItems:"center",margin:"0 auto"}}>
+                      <FontAwesomeIcon icon={faFileAlt}/> Choose Document
+                      <input type="file" accept=".xlsx,.xls,.csv,.docx,.pdf" style={{display:"none"}} onChange={handleFileUpload}/>
+                    </label>
+                  </>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                   Duration (Mins)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={examDuration}
-                  onChange={(e) => setExamDuration(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Passing Strategy
-                </label>
-                <select
-                  value={examStrategy}
-                  onChange={(e) => setExamStrategy(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold"
-                >
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="correct_answers">Correct Answers</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider flex justify-between items-center">
-                  Requirement
-                  <span className="text-[10px] font-bold text-gray-400 normal-case">
-                    {examStrategy === 'percentage' ? '(Min %)' : '(Min Answers)'}
-                  </span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={examRequirement}
-                    onChange={(e) => setExamRequirement(e.target.value)}
-                    className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold"
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-500 uppercase tracking-tighter bg-blue-50 px-2 py-1 rounded">
-                     {examStrategy === 'percentage' ? '%' : 'Correct'}
+              {parsedQuestions.length > 0 && (
+                <div style={{padding:14,background:"#eff6ff",borderRadius:12,border:"1px solid #bfdbfe"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div style={{fontWeight:800,fontSize:12,color:"#1e40af"}}>📁 Parsed {parsedQuestions.length} Questions</div>
+                    <button onClick={handleConfirmImport} style={{padding:"5px 12px",background:"#2563eb",color:"#fff",border:"none",borderRadius:6,fontWeight:800,fontSize:11,cursor:"pointer"}}>
+                      Confirm & Import
+                    </button>
                   </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider flex justify-between items-center">
-                  Question Number
-                  <span className="text-[10px] font-bold text-gray-400 normal-case">(Total)</span>
-                </label>
-                <input
-                  type="number"
-                  value={examQuestionCount}
-                  onChange={(e) => setExamQuestionCount(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider flex justify-between items-center">
-                  Marks per question
-                  <span className="text-[10px] font-bold text-gray-400 normal-case">(Weight)</span>
-                </label>
-                <input
-                  type="number"
-                  value={examMarksPerQuestion}
-                  onChange={(e) => setExamMarksPerQuestion(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm font-bold"
-                />
-              </div>
-            </React.Fragment>
-          ) : (
-            <React.Fragment key="weekly-view-container">
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Target Course Track
-                </label>
-                <select
-                  value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-                >
-                  <option value="all">All Courses</option>
-                  {courses.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Max Questions To Display
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={maxQuestions}
-                  onChange={(e) => setMaxQuestions(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                   Duration (Mins)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Passing Strategy
-                </label>
-                <select
-                  value={passingRule}
-                  onChange={(e) => setPassingRule(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-                >
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="correct_answers">Correct Answers</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-blue-900 mb-2 tracking-wider">
-                  Requirement
-                </label>
-                <input
-                  type="number"
-                  value={passingValue}
-                  onChange={(e) => setPassingValue(e.target.value)}
-                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
-                  placeholder=""
-                />
-              </div>
-            </React.Fragment>
-          )}
-
-        </div>
-
-        <div className="flex items-center justify-between gap-4 border-t pt-4">
-          <div></div>
-
-          <div className="flex gap-3">
-            {/* AUTO GENERATION BUTTON */}
-            <button
-              onClick={massGenerationActive ? handleGlobalGenerate : handleAutoGenerate}
-              disabled={isAutoGenerating}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 shadow-lg ${
-                autoGenSuccess 
-                ? 'bg-green-500 text-white border-green-600' 
-                : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-700 active:scale-95'
-              }`}
-            >
-              {isAutoGenerating ? (
-                <FontAwesomeIcon icon={faSpinner} spin />
-              ) : autoGenSuccess ? (
-                <FontAwesomeIcon icon={faCheckCircle} />
-              ) : (
-                <FontAwesomeIcon icon={faSave} />
-              )}
-              {autoGenSuccess ? "Generated!" : "Auto Generate"}
-            </button>
-
-            {/* 💾 SETTINGS CONFIRM BUTTON */}
-            <button
-              onClick={() => handleConfirmSettings()}
-              disabled={isSaving}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-md ${
-                settingsSaved 
-                ? "bg-green-600 hover:bg-green-700 text-white" 
-                : "bg-blue-600 hover:bg-blue-700 text-white border-blue-700 active:scale-95"
-              } ${isSaving ? "opacity-75 cursor-wait" : ""}`}
-            >
-              {isSaving ? (
-                <> <FontAwesomeIcon icon={faSpinner} spin /> Saving... </>
-              ) : settingsSaved ? (
-                <> <FontAwesomeIcon icon={faCheckCircle} /> Saved </>
-              ) : (
-                <> <FontAwesomeIcon icon={faSave} /> Confirm </>
-              )}
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-
-      {/* 👁️ GENERATED QUESTIONS PREVIEW */}
-      {previewMode && selectedPreviewQuestions.length > 0 && (
-        <div id="exam-preview-section" className="bg-white p-8 shadow-2xl rounded-[2.5rem] mb-12 border-4 border-purple-100 ring-1 ring-purple-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-                <span className="bg-purple-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-200">
-                  <FontAwesomeIcon icon={faCheckCircle} />
-                </span>
-                Generated Preview: {selectedPreviewQuestions.length} Items
-              </h2>
-              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mt-1 ml-13">Verification Required Before Final Deployment</p>
-            </div>
-            <div className="flex gap-3">
-               <button 
-                 onClick={() => setPreviewMode(false)}
-                 className="px-6 py-3 rounded-xl bg-gray-50 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all"
-               >
-                 Cancel Preview
-               </button>
-               <button 
-                 onClick={handleConfirmSettings}
-                 disabled={isSaving}
-                 className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-purple-200 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
-               >
-                 {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheckCircle} />}
-                 Confirm & Deploy Exam
-               </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6">
-            {selectedPreviewQuestions.map((q, idx) => (
-              <div key={idx} className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 hover:border-purple-200 transition-colors relative group">
-                <div className="flex items-start gap-4">
-                  <span className="shrink-0 bg-white w-8 h-8 rounded-xl border border-gray-100 flex items-center justify-center text-xs font-black text-purple-600 shadow-sm">
-                    {idx + 1}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                       <span className="text-[9px] font-black px-2 py-0.5 bg-purple-100 text-purple-700 rounded-md uppercase tracking-wider">
-                         {q.subject || q.category || "General"}
-                       </span>
-                       <span className="text-[9px] font-black px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md uppercase tracking-wider">
-                         {q.type?.toUpperCase() || "MCQ"}
-                       </span>
-                    </div>
-                    <h3 className="font-bold text-gray-800 leading-snug mb-4">{q.question}</h3>
-                    
-                    {q.type === 'coding' ? (
-                      <div className="bg-white p-4 rounded-2xl border border-gray-100">
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Test Cases:</p>
-                         <div className="grid grid-cols-2 gap-4">
-                           {q.testCases?.map((tc, tidx) => (
-                             <div key={tidx} className="text-[10px] font-mono bg-gray-50 p-2 rounded-lg">
-                               <div className="text-blue-500">In: {tc.input}</div>
-                               <div className="text-green-600">Out: {tc.output}</div>
-                             </div>
-                           ))}
-                         </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {q.options?.map((opt, oidx) => (
-                          <div key={oidx} className={`p-3 rounded-2xl text-xs font-bold border transition-all flex items-center gap-3 ${
-                            opt === q.answer || oidx === q.correct
-                            ? "bg-green-500 text-white border-green-600 shadow-md shadow-green-100"
-                            : "bg-white text-gray-500 border-gray-100"
-                          }`}>
-                            <div className={`w-5 h-5 rounded-lg border flex items-center justify-center ${opt === q.answer || oidx === q.correct ? 'bg-white/20 border-white' : 'bg-gray-50 border-gray-100'}`}>
-                               {String.fromCharCode(65 + oidx)}
+                  <div style={{maxHeight:150,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+                    {parsedQuestions.map((q,i)=>(
+                      <div key={i} style={{padding:"8px",background:"#fff",borderRadius:8,border:"1px solid #dbeafe",fontSize:11}}>
+                        <strong>Q{i+1}: {q.question}</strong>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginTop:4,color:"#64748b"}}>
+                          {q.options.map((opt,oi)=>(
+                            <div key={oi} style={{color:q.correct===oi?"#16a34a":""}}>
+                              {String.fromCharCode(65+oi)}) {opt}
                             </div>
-                            {opt}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => {
-                    setSelectedPreviewQuestions(selectedPreviewQuestions.filter((_, i) => i !== idx));
-                  }}
-                  className="absolute top-6 right-6 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-100 flex justify-end">
-             <button 
-               onClick={handleConfirmSettings}
-               disabled={isSaving}
-               className="px-12 py-4 rounded-2xl bg-black text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-gray-800 transition-all flex items-center gap-3 active:scale-95"
-             >
-               {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
-               Confirm All & Activate {category} Exam
-             </button>
-          </div>
-        </div>
-      )}
-
-{/* QUESTION FORM */}
-      <div className="bg-white p-6 shadow-lg rounded-2xl mb-8 border border-gray-100 ring-1 ring-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-700 flex items-center gap-2">
-             <FontAwesomeIcon icon={faPlus} className="text-green-500" />
-             Add MCQ Assessment Questions
-          </h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Subject / Topic</label>
-            <select
-              value={form.subject || ""}
-              onChange={(e) => setForm({...form, subject: e.target.value})}
-              className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50"
-            >
-              <option value="">-- Select Subject (Aptitude, Reasoning, etc.) --</option>
-              {availableSubjects.map((s, idx) => (
-                <option key={idx} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-             <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Marks</label>
-             <input
-                type="number"
-                value={form.marks}
-                onChange={(e) => setForm({...form, marks: parseInt(e.target.value) || 0})}
-                className="w-full p-3 border rounded-xl bg-gray-50/50"
-             />
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Question Prompt</label>
-          <textarea
-            placeholder="Type your question or coding problem statement here..."
-            value={form.question}
-            onChange={handleChange}
-            rows="3"
-            className="w-full p-3 border rounded-xl focus:outline-none focus:border-blue-500 bg-gray-50/50 resize-none"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {form.options.map((opt, i) => (
-            <div key={i}>
-              <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest pl-1 mb-1 block">Option {String.fromCharCode(65 + i)}</label>
-              <input
-                type="text"
-                placeholder={`Choice ${String.fromCharCode(65 + i)}`}
-                value={opt}
-                onChange={(e) => handleOptionChange(i, e.target.value)}
-                className="w-full p-2.5 border border-gray-100 rounded-lg focus:ring-1 focus:ring-blue-300 bg-gray-50/50"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Correct Answer Selection */}
-        <div className="mb-6 p-4 bg-blue-50/30 rounded-xl border border-dashed border-blue-200">
-          <p className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <FontAwesomeIcon icon={faCheckCircle} className="text-green-500" />
-            Correct Answer Key
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {form.options.map((opt, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => handleAnswer(opt)}
-                className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${
-                  form.answer === opt && opt !== ""
-                    ? "bg-green-600 text-white border-green-700 shadow-lg ring-2 ring-green-100"
-                    : "bg-white text-gray-400 border-gray-100 hover:border-gray-300 shadow-sm"
-                }`}
-              >
-                {String.fromCharCode(65 + i)}. {opt || `Option ${String.fromCharCode(65 + i)}`}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={addQuestion}
-          disabled={isQuestionsSaving}
-          className="bg-gray-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-black transition-all active:scale-95 shadow-lg flex items-center gap-2"
-        >
-          {isQuestionsSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPlus} />}
-          Add Question to Bank
-        </button>
-      </div>
-
-      {/* QUESTION LIST */}
-      <div className="mt-12 mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
-        <h2 className="text-2xl font-black text-gray-800 tracking-tight flex items-center gap-3">
-          Current {selectedCourse} - {category} Questions
-          {isQuestionsSaving && <FontAwesomeIcon icon={faSpinner} spin className="text-blue-500 text-sm" />}
-        </h2>
-        <span className="bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-black shadow-lg shadow-blue-100 flex items-center gap-2 uppercase tracking-tighter">
-          Total Content: {questions.length} / {maxQuestions}
-        </span>
-      </div>
-
-      <div className="space-y-6">
-        {questions.length === 0 && (
-          <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-             <FontAwesomeIcon icon={faInfoCircle} className="text-4xl text-gray-300 mb-2" />
-             <p className="text-gray-400 font-medium">No assessment questions found in the {category} category.</p>
-          </div>
-        )}
-
-        {questions.map((q, index) => (
-          <div key={q.id} className="bg-white p-6 shadow-md rounded-2xl border border-gray-50 hover:shadow-xl transition-shadow relative group">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-gray-100 text-gray-600 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black">
-                    {index + 1}
-                  </span>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest ${q.type === 'coding' ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
-                    {q.type === 'coding' ? `Coding (${q.language})` : 'MCQ'} • {q.marks || 2} Marks
-                  </span>
-                </div>
-                <h3 className="font-bold text-gray-800 text-lg mb-4 tracking-tight leading-snug whitespace-pre-wrap">
-                  {q.question}
-                </h3>
-
-                {q.type === 'coding' ? (
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Test Cases:</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      {q.testCases?.map((tc, idx) => (
-                        <div key={idx} className="text-xs font-mono bg-white p-2 rounded border border-gray-200">
-                          <div className="text-blue-500 mb-1">In: {tc.input || "Empty"}</div>
-                          <div className="text-green-600">Out: {tc.output}</div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-                    {q.options.map((opt, i) => (
-                      <div
-                        key={i}
-                        className={`p-3 rounded-xl border text-sm flex items-center gap-2 ${
-                          opt === q.answer 
-                          ? "bg-green-50 border-green-200 text-green-700 font-bold shadow-sm" 
-                          : "bg-white border-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {opt === q.answer && <FontAwesomeIcon icon={faCheckCircle} className="text-[10px]" />}
-                        <span className="opacity-60">{String.fromCharCode(65 + i)}.</span> {opt}
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
+          )}
 
-              <button
-                onClick={() => deleteQuestion(q.id)}
-                className="text-red-300 hover:text-red-500 transition-colors p-2"
-                title="Purge this item"
-              >
-                <FontAwesomeIcon icon={faTrash} />
+          {questions.length>0 && (
+            <div style={{padding:14,background:"#f0fdf4",borderRadius:12,border:"1px solid #bbf7d0"}}>
+              <div style={{fontWeight:800,fontSize:12,color:"#166534",marginBottom:8}}> ✅ {questions.length} Questions in Draft</div>
+              <div style={{maxHeight:140,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+                {questions.map((q,i)=>(
+                  <div key={q.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"#fff",borderRadius:8,border:"1px solid #dcfce7"}}>
+                    <span style={{fontSize:11,fontWeight:800,color:"#16a34a",flexShrink:0}}>{i+1}.</span>
+                    <span style={{fontSize:12,color:"#1e293b",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{q.question}</span>
+                    <button onClick={()=>setQuestions(p=>p.filter(x=>x.id!==q.id))} style={{background:"none",border:"none",cursor:"pointer",color:"#fca5a5",flexShrink:0}}><FontAwesomeIcon icon={faTrash} style={{fontSize:11}}/></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+      case 4: return (
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Toggle value={randomizeQuestions} onChange={setRandomizeQuestions} label="Shuffle Question Order" desc="Each student gets questions in a unique random order"/>
+          <Toggle value={randomizeOptions} onChange={setRandomizeOptions} label="Shuffle Answer Options" desc="A/B/C/D positions are randomized per student"/>
+          <Toggle value={preventBacktrack} onChange={setPreventBacktrack} label="Prevent Backtracking" desc="Students cannot go back to previous questions"/>
+        </div>
+      );
+
+      case 5: return (
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Toggle value={webcamRequired} onChange={setWebcamRequired} label="Require Webcam" desc="Students must enable webcam to start"/>
+          {webcamRequired && <>
+            <Toggle value={faceDetection} onChange={setFaceDetection} label="Face Detection" desc="Alert when face is not visible"/>
+            <Toggle value={multiFaceDetection} onChange={setMultiFaceDetection} label="Multiple Face Detection" desc="Flag when more than one face is detected"/>
+            <NumInput label="Screenshot Interval (seconds)" value={screenshotInterval} onChange={setScreenshotInterval} min={10} max={120}/>
+          </>}
+        </div>
+      );
+
+      case 6: return (
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Toggle value={fullscreenRequired} onChange={setFullscreenRequired} label="Force Fullscreen" desc="Exiting fullscreen logs a violation"/>
+          <Toggle value={disableCopyPaste} onChange={setDisableCopyPaste} label="Disable Copy & Paste" desc="Block Ctrl+C, Ctrl+V, clipboard access"/>
+          <Toggle value={disableRightClick} onChange={setDisableRightClick} label="Disable Right Click" desc="Prevent context menu"/>
+          <Toggle value={autoSubmit} onChange={setAutoSubmit} label="Auto-Submit on Risk Threshold" desc="Force-submit when violations exceed limit"/>
+          <div style={g2}>
+            <NumInput label="Tab Switch Limit" value={tabSwitchLimit} onChange={setTabSwitchLimit} min={0} max={10} unit="times"/>
+            {autoSubmit&&<NumInput label="Risk Threshold" value={riskThreshold} onChange={setRiskThreshold} min={10} max={100} unit="pts"/>}
+          </div>
+        </div>
+      );
+
+      case 7: return (
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <div><label style={label}>Eligible Departments <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={DEPARTMENTS} selected={selectedDepts} onChange={setSelectedDepts}/></div>
+          <div><label style={label}>Eligible Years <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={YEARS} selected={selectedYears} onChange={setSelectedYears}/></div>
+          <NumInput label="Max Attempts Allowed" value={maxAttempts} onChange={setMaxAttempts} min={1} max={5} unit="times"/>
+        </div>
+      );
+
+      case 8: return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={g2}>
+            <div><label style={label}>Start Date & Time</label><input type="datetime-local" style={inp} value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
+            <div><label style={label}>End Date & Time</label><input type="datetime-local" style={inp} value={endTime} onChange={e=>setEndTime(e.target.value)}/></div>
+          </div>
+          {startTime&&endTime&&new Date(endTime)>new Date(startTime)&&(
+            <div style={{padding:"12px 16px",background:"#f0fdf4",borderRadius:10,border:"1px solid #bbf7d0",fontSize:12,color:"#166534",fontWeight:600}}>
+              ✅ Exam window: {Math.round((new Date(endTime)-new Date(startTime))/3600000)} hours
+            </div>
+          )}
+          <Toggle value={sendNotification} onChange={setSendNotification} label="Email Notifications" desc="Notify eligible students 1 hour before exam"/>
+        </div>
+      );
+
+      case 9: return (
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          <Toggle value={showResultImmediately} onChange={setShowResultImmediately} label="Show Result Immediately" desc="Students see score right after submission"/>
+          <Toggle value={showCorrectAnswers} onChange={setShowCorrectAnswers} label="Show Correct Answers" desc="Reveal correct answers after submission"/>
+          <Toggle value={showLeaderboard} onChange={setShowLeaderboard} label="Enable Leaderboard" desc="Display ranked scores publicly"/>
+          <Toggle value={certificateEnabled} onChange={setCertificateEnabled} label="Enable Certificates" desc="Auto-generate certificates for passing students"/>
+        </div>
+      );
+
+      case 10: return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            {[
+              {title:"Exam Identity",items:[["Title",examTitle||"—"],["Type",EXAM_TYPES.find(t=>t.value===examType)?.label],["Subject",subject],["Course",course]]},
+              {title:"Configuration",items:[["Duration",`${duration} min`],["Questions",questions.length||totalQuestions],["Total Marks",totalMarks],["Pass Marks",`${passMarks} (${totalMarks>0?Math.round((passMarks/totalMarks)*100):0}%)`]]},
+              {title:"Security",items:[["Webcam",webcamRequired?"✅ On":"❌ Off"],["Face Detect",faceDetection?"✅ On":"❌ Off"],["Fullscreen",fullscreenRequired?"✅ Forced":"❌ Off"],["Tab Limit",`${tabSwitchLimit} allowed`]]},
+              {title:"Access",items:[["Depts",selectedDepts.length?selectedDepts.join(", "):"All"],["Years",selectedYears.length?selectedYears.join(", "):"All"],["Start",startTime?new Date(startTime).toLocaleString():"Manual"],["End",endTime?new Date(endTime).toLocaleString():"Manual"]]},
+            ].map(s=>(
+              <div key={s.title} style={{padding:"14px 16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>
+                <div style={{fontSize:10,fontWeight:800,color:"#6366f1",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>{s.title}</div>
+                {s.items.map(([k,v])=>(
+                  <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f1f5f9"}}>
+                    <span style={{fontSize:11,color:"#94a3b8",fontWeight:600}}>{k}</span>
+                    <span style={{fontSize:12,color:"#0f172a",fontWeight:700}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div>
+            {[{ok:!!examTitle.trim(),msg:"Exam title set"},{ok:questions.length>0,msg:`${questions.length} questions ready`},{ok:totalMarks>0,msg:"Marks configured"},{ok:!!startTime&&!!endTime,msg:"Schedule set"}]
+              .map((c,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f1f5f9"}}>
+                  <FontAwesomeIcon icon={c.ok?faCheckCircle:faTimesCircle} style={{color:c.ok?"#22c55e":"#f59e0b",fontSize:14}}/>
+                  <span style={{fontSize:12,color:c.ok?"#166534":"#92400e",fontWeight:600}}>{c.msg}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      );
+
+      default: return null;
+    }
+  };
+
+  // ─── Type badge color ───────────────────────────────────────────────────────
+  const typeBadge = (type) => {
+    const colors = {daily:"#3b82f6",weekly:"#8b5cf6",monthly:"#a855f7",placement:"#f59e0b",mock:"#ec4899",certification:"#22c55e"};
+    return colors[type] || "#64748b";
+  };
+
+  // ─── Main Render ──────────────────────────────────────────────────────────
+  return (
+    <div style={{fontFamily:"'Outfit','Inter',sans-serif",color:"#1e293b",width:"100%"}}>
+      <ToastContainer position="top-right"/>
+
+      {/* ── Header Section ───────────────────────────────────────────────── */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 180px 180px",gap:16,marginBottom:24}}>
+
+        {/* Main Banner */}
+        <div style={{background:"linear-gradient(135deg,#4338ca 0%,#6366f1 100%)",borderRadius:16,padding:"24px 28px",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",right:-20,top:-20,width:120,height:120,background:"rgba(255,255,255,0.07)",borderRadius:"50%"}}/>
+          <div style={{position:"absolute",right:40,bottom:-30,width:80,height:80,background:"rgba(255,255,255,0.05)",borderRadius:"50%"}}/>
+          <h1 style={{margin:0,fontSize:22,fontWeight:900,color:"#fff",marginBottom:6}}>Exam Manager</h1>
+          <p style={{margin:"0 0 18px",fontSize:12,color:"rgba(255,255,255,0.7)"}}>Create and manage professional assessments</p>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            <button onClick={openModal} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#fff",color:"#4338ca",fontWeight:800,fontSize:13,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
+              <FontAwesomeIcon icon={faPlus}/> CREATE EXAM
+            </button>
+            <button onClick={fetchExams} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.15)",color:"#fff",fontWeight:700,fontSize:12}}>
+              <FontAwesomeIcon icon={faDatabase}/> REFRESH
+            </button>
+          </div>
+        </div>
+
+        {/* Stat: Active */}
+        <div style={{background:"#f0fdf4",borderRadius:16,padding:"20px 24px",border:"1.5px solid #bbf7d0",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div style={{width:40,height:40,background:"#dcfce7",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <FontAwesomeIcon icon={faCheckCircle} style={{color:"#16a34a",fontSize:18}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Active Exams</div>
+            <div style={{fontSize:32,fontWeight:900,color:"#16a34a"}}>{activeCount}</div>
+          </div>
+        </div>
+
+        {/* Stat: Scheduled */}
+        <div style={{background:"#fff7ed",borderRadius:16,padding:"20px 24px",border:"1.5px solid #fed7aa",display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div style={{width:40,height:40,background:"#ffedd5",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <FontAwesomeIcon icon={faCalendarAlt} style={{color:"#ea580c",fontSize:18}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Scheduled</div>
+            <div style={{fontSize:32,fontWeight:900,color:"#ea580c"}}>{scheduledCount}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Search Bar ───────────────────────────────────────────────────── */}
+      <div style={{position:"relative",marginBottom:20,maxWidth:420}}>
+        <FontAwesomeIcon icon={faSearch} style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:13}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by title, subject, or type..."
+          style={{width:"100%",padding:"11px 14px 11px 38px",borderRadius:12,border:"1.5px solid #e2e8f0",fontSize:13,fontWeight:600,color:"#1e293b",background:"#fff",outline:"none",boxSizing:"border-box"}}/>
+      </div>
+
+      {/* ── Exam Table ───────────────────────────────────────────────────── */}
+      <div style={{background:"#fff",borderRadius:16,border:"1.5px solid #f1f5f9",overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.04)"}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead>
+            <tr style={{background:"#f8fafc"}}>
+              {["ID","EXAM DETAILS","TYPE","SUBJECT","DURATION","QUESTIONS","STATUS","ACTIONS"].map(h=>(
+                <th key={h} style={{padding:"12px 16px",textAlign:"left",fontSize:10,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.08em",borderBottom:"1.5px solid #f1f5f9"}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={8} style={{padding:48,textAlign:"center",color:"#94a3b8"}}>
+                <FontAwesomeIcon icon={faSpinner} spin style={{fontSize:24,marginBottom:8}}/><br/>Loading exams...
+              </td></tr>
+            ) : filtered.length===0 ? (
+              <tr><td colSpan={8} style={{padding:48,textAlign:"center",color:"#94a3b8"}}>
+                <FontAwesomeIcon icon={faClipboardList} style={{fontSize:32,marginBottom:10,display:"block"}}/> 
+                {search ? "No exams match your search." : "No exams published yet. Click CREATE EXAM to get started."}
+              </td></tr>
+            ) : filtered.map((exam,i)=>(
+              <tr key={exam.id} style={{borderBottom:"1px solid #f8fafc",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <td style={{padding:"14px 16px",fontSize:12,fontWeight:700,color:"#94a3b8"}}>{String(i+1).padStart(2,"0")}</td>
+                <td style={{padding:"14px 16px"}}>
+                  <div style={{fontWeight:800,fontSize:13,color:"#0f172a",marginBottom:2}}>{exam.title}</div>
+                  <div style={{fontSize:11,color:"#94a3b8"}}>{exam.course || "—"}</div>
+                </td>
+                <td style={{padding:"14px 16px"}}>
+                  <span style={{padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:`${typeBadge(exam.exam_type)}18`,color:typeBadge(exam.exam_type)}}>
+                    {EXAM_TYPES.find(t=>t.value===exam.exam_type)?.icon} {exam.exam_type}
+                  </span>
+                </td>
+                <td style={{padding:"14px 16px",fontSize:12,fontWeight:700,color:"#1e293b"}}>{exam.subject}</td>
+                <td style={{padding:"14px 16px",fontSize:12,fontWeight:700,color:"#1e293b"}}>{exam.duration} min</td>
+                <td style={{padding:"14px 16px",fontSize:12,fontWeight:700,color:"#1e293b"}}>{exam.total_questions}</td>
+                <td style={{padding:"14px 16px"}}>
+                  <span style={{padding:"4px 10px",borderRadius:20,fontSize:11,fontWeight:700,background:exam.status==="active"?"#dcfce7":"#f1f5f9",color:exam.status==="active"?"#16a34a":"#64748b"}}>
+                    {exam.status||"scheduled"}
+                  </span>
+                </td>
+                <td style={{padding:"14px 16px"}}>
+                  <div style={{display:"flex",gap:8}}>
+                    <button title="View" style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b"}}><FontAwesomeIcon icon={faEye} style={{fontSize:12}}/></button>
+                    <button title="Edit" style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#6366f1"}}><FontAwesomeIcon icon={faEdit} style={{fontSize:12}}/></button>
+                    <button title="Delete" style={{width:30,height:30,borderRadius:8,border:"1px solid #fee2e2",background:"#fef2f2",cursor:"pointer",color:"#ef4444"}}><FontAwesomeIcon icon={faTrash} style={{fontSize:12}}/></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Modal ─────────────────────────────────────────────────────────── */}
+      {showModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.6)",backdropFilter:"blur(4px)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 25px 60px rgba(0,0,0,0.3)"}}>
+
+            {/* Modal Header */}
+            <div style={{padding:"18px 24px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontSize:16,fontWeight:900,color:"#0f172a"}}>Create New Exam</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Step {step} of 10 — {STEPS[step-1].label}</div>
+              </div>
+              <button onClick={closeModal} style={{width:32,height:32,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b",fontSize:16}}>
+                <FontAwesomeIcon icon={faTimes}/>
               </button>
             </div>
+
+            {/* Step tabs */}
+            <div style={{display:"flex",overflowX:"auto",padding:"10px 24px 0",gap:4,background:"#fafafa",borderBottom:"1px solid #f1f5f9"}}>
+              {STEPS.map(s=>{
+                const done = s.id < step;
+                const active = s.id === step;
+                return (
+                  <button key={s.id} onClick={()=>setStep(s.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:"8px 8px 0 0",border:"none",cursor:"pointer",whiteSpace:"nowrap",fontSize:11,fontWeight:active?800:600,
+                    background:active?"#fff":done?"#f0fdf4":"transparent",
+                    color:active?"#6366f1":done?"#16a34a":"#94a3b8",
+                    borderBottom:active?"2px solid #6366f1":"2px solid transparent"}}>
+                    {done&&!active ? <FontAwesomeIcon icon={faCheck} style={{fontSize:9,color:"#16a34a"}}/> : <FontAwesomeIcon icon={s.icon} style={{fontSize:9}}/>}
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Progress bar */}
+            <div style={{height:3,background:"#f1f5f9"}}>
+              <div style={{height:"100%",width:`${(step/10)*100}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",transition:"width 0.3s"}}/>
+            </div>
+
+            {/* Step body */}
+            <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+              {renderStep()}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{padding:"14px 24px",borderTop:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafbff"}}>
+              <div style={{fontSize:11,color:"#94a3b8"}}>Step <strong style={{color:"#6366f1"}}>{step}</strong>/10</div>
+              <div style={{display:"flex",gap:10}}>
+                {step>1&&<button onClick={()=>setStep(s=>s-1)} style={{padding:"9px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,color:"#64748b",display:"flex",alignItems:"center",gap:6}}>
+                  <FontAwesomeIcon icon={faArrowLeft}/> Back
+                </button>}
+                {step<10 ? (
+                  <button onClick={()=>setStep(s=>s+1)} style={{padding:"9px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:800,fontSize:12,display:"flex",alignItems:"center",gap:6}}>
+                    Next <FontAwesomeIcon icon={faArrowRight}/>
+                  </button>
+                ) : (
+                  <button onClick={handlePublish} disabled={isPublishing} style={{padding:"9px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#22c55e",color:"#fff",fontWeight:800,fontSize:12,display:"flex",alignItems:"center",gap:6}}>
+                    {isPublishing?<FontAwesomeIcon icon={faSpinner} spin/>:<FontAwesomeIcon icon={faPaperPlane}/>}
+                    {isPublishing?"Publishing...":"Publish Exam"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
-      <ToastContainer />
+        </div>
+      )}
     </div>
   );
 }
-
-export default ExamManager;

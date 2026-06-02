@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Folder,
   CheckCircle,
+  ClipboardList,
 } from "lucide-react";
 
 function Sidebar({ sidebarOpen }) {
@@ -113,6 +114,21 @@ function Sidebar({ sidebarOpen }) {
           >
             <User size={18} />
             {open && "Profile"}
+          </NavLink>
+
+          {/* EXAMS HUB */}
+          <NavLink
+            to="/dashboard/exams"
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <ClipboardList size={18} />
+            {open && "Exams"}
           </NavLink>
 
           {/* JOBS */}
