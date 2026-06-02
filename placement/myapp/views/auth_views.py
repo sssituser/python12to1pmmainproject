@@ -7,9 +7,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from myapp.models import OTP, StudentProfile, Course
-from myapp.email_utils import send_login_email
+from myapp.email_utils import send_login_email, send_plain_email
 from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 
 User = get_user_model()
@@ -210,8 +209,6 @@ def login(request):
 
 
 # 🔢 SEND OTP
-from django.core.mail import send_mail
-from django.conf import settings
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -238,17 +235,11 @@ def send_otp(request):
     # 🚀 ASYNC OTP EMAIL (Prevents UI hang)
     import threading
     def send_async_otp():
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [target_email],
-                fail_silently=False,
-            )
+        sent = send_plain_email(subject, message, target_email)
+        if sent:
             print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
-        except Exception as e:
-            print(f"DEBUG: Failed to send OTP email: {e}")
+        else:
+            print(f"DEBUG: Failed to send OTP email to {target_email}")
 
     email_thread = threading.Thread(target=send_async_otp)
     email_thread.daemon = True
@@ -448,20 +439,13 @@ def register(request):
         # 🚀 ASYNC REGISTRATION EMAIL
         import threading
         def send_async_reg_email():
-            try:
-                subject = f"Verify Your Faculty Account - {settings.PLATFORM_NAME}"
-                message = f"Hello {username},\n\nThank you for registering as faculty. To activate your account, please use the following OTP:\n\nOTP: {otp}\n\nDo not share this code."
-                
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=False,
-                )
+            subject = f"Verify Your Faculty Account - {settings.PLATFORM_NAME}"
+            message = f"Hello {username},\n\nThank you for registering as faculty. To activate your account, please use the following OTP:\n\nOTP: {otp}\n\nDo not share this code."
+            sent = send_plain_email(subject, message, email)
+            if sent:
                 print(f"DEBUG: Registration OTP {otp} sent to {email}")
-            except Exception as e:
-                print(f"DEBUG: Failed to send registration email: {e}")
+            else:
+                print(f"DEBUG: Failed to send registration email to {email}")
 
         email_thread = threading.Thread(target=send_async_reg_email)
         email_thread.daemon = True

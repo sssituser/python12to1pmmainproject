@@ -56,6 +56,18 @@ def _send_rich_email(subject, to_email, html_content):
         logger.error(f"Failed to send email to {to_email}: {e}")
         return False
 
+
+def send_plain_email(subject, message, to_email):
+    """Send a plain text email through the configured SMTP backend."""
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', getattr(settings, 'EMAIL_HOST_USER', 'admin@sssit.info'))
+    msg = EmailMultiAlternatives(subject, message, from_email, [to_email])
+    try:
+        msg.send(fail_silently=False)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send plain email to {to_email}: {e}")
+        return False
+
 # ── EMAIL FUNCTIONS ───────────────────────────────────────────
 
 def send_account_creation_email(user_email, username, password, role):

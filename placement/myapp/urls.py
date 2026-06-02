@@ -25,6 +25,7 @@ from .views.course_views import CourseViewSet, student_courses, faculty_courses,
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
 from .views.marks_views import get_students_and_marks, upload_exam_marks, get_course_exams
+from .views.email_test_views import smtp_test_email
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
 router.register(r'applied-jobs', AppliedJobViewSet, basename='applied-job')
@@ -160,6 +161,7 @@ urlpatterns = [
     # Test endpoints
     path('test-faculty-profile/', lambda request: JsonResponse({'message': 'Test endpoint working'}), name='test_faculty_profile'),
     path('test-faculty-minimal/', faculty_profile_minimal_test, name='test_faculty_minimal'),
+    path('test-smtp-email/', smtp_test_email, name='test_smtp_email'),
     
     # Dashboard Stats & Student Management
     path('dashboard-stats/', dashboard_stats_api, name='dashboard_stats'),

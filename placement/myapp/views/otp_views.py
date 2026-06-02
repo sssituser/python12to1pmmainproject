@@ -1,8 +1,8 @@
-from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from myapp.models import OTP
+from myapp.email_utils import send_plain_email
 
 User = get_user_model()
 
@@ -15,12 +15,14 @@ class Send_OTP(APIView):
         otp_obj.generate_otp()
         otp_obj.save()
 
-        send_mail(
+        sent = send_plain_email(
             "Your OTP Code",
             f"Your OTP is {otp_obj.otp}",
-            "your@email.com",
-            [email],
+            email,
         )
+
+        if not sent:
+            return Response({"error": "Failed to send OTP email. Please try again."}, status=500)
 
         return Response({"message": "OTP sent"})
 
