@@ -163,18 +163,16 @@ function Jobs() {
     }
   };
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(j => 
-      j.job_title?.toLowerCase().includes(search.toLowerCase()) ||
-      j.company?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [jobs, search]);
+  const filteredJobs = jobs.filter(j => 
+    j.job_title?.toLowerCase().includes(search.toLowerCase()) ||
+    j.company?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const stats = useMemo(() => ({
+  const stats = {
     total: jobs.length,
     active: jobs.filter(j => !j.deadline || new Date(j.deadline) >= new Date()).length,
     expired: jobs.filter(j => j.deadline && new Date(j.deadline) < new Date()).length,
-  }), [jobs]);
+  };
 
   const passoutYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -210,7 +208,7 @@ function Jobs() {
                 onClick={exportToExcel}
                 className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-emerald-600 transition-all flex items-center gap-2"
               >
-                <FaFileExcel size={14} /> Export Excel
+                <FaFileExcel size={14} /> Import Excel
               </button>
               <button
                 onClick={uploadToDrive}

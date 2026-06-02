@@ -11,6 +11,7 @@ function Applications() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("");
 
   const refreshAccessToken = async () => {
     try {
@@ -165,14 +166,22 @@ function Applications() {
 
   const filteredApps = useMemo(() => {
     return apps.filter(app => {
-      const student = (app.username || app.user?.username || "").toLowerCase();
       const job = (app.job_details?.job_title || "").toLowerCase();
+      const student = (app.username || app.user?.username || "").toLowerCase();
       const status = (app.status || "pending").toLowerCase();
+      const normalizedSelectedJob = selectedJobTitle.trim().toLowerCase();
+      const matchesJob = selectedJobTitle ? job === normalizedSelectedJob : true;
       const matchesSearch = student.includes(search.toLowerCase()) || job.includes(search.toLowerCase());
       const matchesStatus = statusFilter === "all" || status === statusFilter;
-      return matchesSearch && matchesStatus;
+      return matchesJob && matchesSearch && matchesStatus;
     });
-  }, [apps, search, statusFilter]);
+  }, [apps, search, statusFilter, selectedJobTitle]);
+
+  const selectedJobCount = useMemo(() => {
+    if (!selectedJobTitle) return apps.length;
+    const normalizedSelectedJob = selectedJobTitle.trim().toLowerCase();
+    return apps.filter(app => (app.job_details?.job_title || "").trim().toLowerCase() === normalizedSelectedJob).length;
+  }, [apps, selectedJobTitle]);
 
   const stats = useMemo(() => ({
     total: apps.length,
@@ -195,9 +204,19 @@ function Applications() {
       {/* Header & Stats Bundle */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="md:col-span-1 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/20">
-          <h2 className="text-2xl font-bold mb-1">Applications</h2>
-          <p className="text-blue-100 text-sm opacity-80">Manage student choices</p>
-          <div className="mt-4 text-4xl font-black">{stats.total}</div>
+          <h2 className="text-2xl font-bold mb-1">{selectedJobTitle ? 'Applicants' : 'Applications'}</h2>
+          <p className="text-blue-100 text-sm opacity-80">
+            {selectedJobTitle ? `Total applicants for ${selectedJobTitle}` : 'Manage student choices'}
+          </p>
+          <div className="mt-4 text-4xl font-black">{selectedJobCount}</div>
+          {selectedJobTitle && (
+            <button
+              onClick={() => setSelectedJobTitle("")}
+              className="mt-4 text-xs font-bold uppercase tracking-[0.3em] bg-white/10 hover:bg-white/20 px-4 py-3 rounded-full transition-all"
+            >
+              Clear selected role
+            </button>
+          )}
         </div>
         
         {[
@@ -304,7 +323,13 @@ function Applications() {
                       </div>
                     </td>
                     <td className="py-6 px-4">
-                      <p className="font-bold text-gray-800 text-sm mb-1">{jobTitle}</p>
+                      <button
+                        onClick={() => setSelectedJobTitle(jobTitle.trim())}
+                        className="font-bold text-gray-800 text-sm mb-1 text-left hover:text-blue-600 transition-colors"
+                        title={`Show applicants for ${jobTitle}`}
+                      >
+                        {jobTitle}
+                      </button>
                       <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 inline-block px-2 py-0.5 rounded flex items-center gap-1.5">
                         <FaBriefcase size={8} /> {company}
                       </p>
