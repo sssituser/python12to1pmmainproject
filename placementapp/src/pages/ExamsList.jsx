@@ -262,19 +262,9 @@ export default function StudentExamHub() {
 
                   {/* Security icons */}
                   <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                    {exam.settings?.webcam_required && (
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#dc2626", background: "#fef2f2", padding: "3px 8px", borderRadius: 8, border: "1px solid #fecaca" }}>
-                        <FontAwesomeIcon icon={faCamera} /> Webcam
-                      </span>
-                    )}
                     {exam.settings?.fullscreen_required && (
                       <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#7c3aed", background: "#f5f3ff", padding: "3px 8px", borderRadius: 8, border: "1px solid #ddd6fe" }}>
                         <FontAwesomeIcon icon={faLock} /> Fullscreen
-                      </span>
-                    )}
-                    {exam.settings?.face_detection && (
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "3px 8px", borderRadius: 8, border: "1px solid #bfdbfe" }}>
-                        <FontAwesomeIcon icon={faShieldAlt} /> Proctored
                       </span>
                     )}
                   </div>

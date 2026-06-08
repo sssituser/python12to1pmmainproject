@@ -138,9 +138,9 @@ export default function ExamManager() {
   const [preventBacktrack, setPreventBacktrack] = useState(false);
 
   // Step 5
-  const [webcamRequired, setWebcamRequired] = useState(true);
-  const [faceDetection, setFaceDetection] = useState(true);
-  const [multiFaceDetection, setMultiFaceDetection] = useState(true);
+  const [webcamRequired, setWebcamRequired] = useState(false);
+  const [faceDetection, setFaceDetection] = useState(false);
+  const [multiFaceDetection, setMultiFaceDetection] = useState(false);
   const [screenshotInterval, setScreenshotInterval] = useState(30);
 
   // Step 6
@@ -482,13 +482,10 @@ export default function ExamManager() {
       );
 
       case 5: return (
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <Toggle value={webcamRequired} onChange={setWebcamRequired} label="Require Webcam" desc="Students must enable webcam to start"/>
-          {webcamRequired && <>
-            <Toggle value={faceDetection} onChange={setFaceDetection} label="Face Detection" desc="Alert when face is not visible"/>
-            <Toggle value={multiFaceDetection} onChange={setMultiFaceDetection} label="Multiple Face Detection" desc="Flag when more than one face is detected"/>
-            <NumInput label="Screenshot Interval (seconds)" value={screenshotInterval} onChange={setScreenshotInterval} min={10} max={120}/>
-          </>}
+        <div style={{display:"flex",flexDirection:"column",gap:12,padding:"20px",background:"#f8fafc",borderRadius:12,border:"1.5px solid #e2e8f0",textAlign:"center",alignItems:"center"}}>
+          <FontAwesomeIcon icon={faCamera} style={{fontSize:36,color:"#cbd5e1",marginBottom:12}}/>
+          <div style={{fontWeight:800,fontSize:14,color:"#64748b"}}>Webcam Proctoring Disabled</div>
+          <div style={{fontSize:12,color:"#94a3b8"}}>Webcam proctoring and face detection options are disabled.</div>
         </div>
       );
 
@@ -543,7 +540,7 @@ export default function ExamManager() {
             {[
               {title:"Exam Identity",items:[["Title",examTitle||"—"],["Type",EXAM_TYPES.find(t=>t.value===examType)?.label],["Subject",subject],["Course",course]]},
               {title:"Configuration",items:[["Duration",`${duration} min`],["Questions",questions.length||totalQuestions],["Total Marks",totalMarks],["Pass Marks",`${passMarks} (${totalMarks>0?Math.round((passMarks/totalMarks)*100):0}%)`]]},
-              {title:"Security",items:[["Webcam",webcamRequired?"✅ On":"❌ Off"],["Face Detect",faceDetection?"✅ On":"❌ Off"],["Fullscreen",fullscreenRequired?"✅ Forced":"❌ Off"],["Tab Limit",`${tabSwitchLimit} allowed`]]},
+              {title:"Security",items:[["Fullscreen",fullscreenRequired?"✅ Forced":"❌ Off"],["Tab Limit",`${tabSwitchLimit} allowed`]]},
               {title:"Access",items:[["Depts",selectedDepts.length?selectedDepts.join(", "):"All"],["Years",selectedYears.length?selectedYears.join(", "):"All"],["Start",startTime?new Date(startTime).toLocaleString():"Manual"],["End",endTime?new Date(endTime).toLocaleString():"Manual"]]},
             ].map(s=>(
               <div key={s.title} style={{padding:"14px 16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>

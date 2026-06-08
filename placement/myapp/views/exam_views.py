@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 import json
 
 from myapp.models import (
-    ExamSession, ExamAnswer, PythonQuestion, Choice, WebcamSnapshot,
+    ExamSession, ExamAnswer, PythonQuestion, Choice,
     AutomatedExamConfig, ExamQuestion, ExamQuestionChoice, ExamPaper,
     ExamPaperQuestionRelation, ExamViolationLog
 )
@@ -117,7 +117,7 @@ def create_placement_exam(request):
         'status': 'scheduled',
         'created_at': timezone.now().isoformat(),
         'settings': {
-            'webcam_required': data.get('webcam_required', True),
+            'webcam_required': data.get('webcam_required', False),
             'face_detection': data.get('face_detection', True),
             'multi_face_detection': data.get('multi_face_detection', True),
             'fullscreen_required': data.get('fullscreen_required', True),
@@ -183,7 +183,7 @@ def list_placement_exams(request):
             'end_time': None,
             'status': 'scheduled',
             'settings': {
-                'webcam_required': True,
+                'webcam_required': False,
                 'face_detection': True,
                 'fullscreen_required': True,
             }
@@ -543,35 +543,7 @@ def end_exam_session(request, session_id):
     })
 
 
-# ---------------- SAVE WEBCAM SNAPSHOT ----------------
-@api_view(['POST'])
-def save_webcam_snapshot(request):
-    data = request.data
-
-    session_id = data.get('session_id')
-    image_path = data.get('image_path')
-    is_suspicious = data.get('is_suspicious', False)
-    reason = data.get('reason', '')
-
-    if not session_id or not image_path:
-        return Response(
-            {"error": "session_id and image_path required"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    session = get_object_or_404(ExamSession, id=session_id)
-
-    snapshot = WebcamSnapshot.objects.create(
-        session=session,
-        image_path=image_path,
-        is_suspicious=is_suspicious,
-        reason=reason
-    )
-
-    return Response({
-        "message": "Snapshot saved",
-        "snapshot_id": snapshot.id
-    }, status=status.HTTP_201_CREATED)
+# Webcam snapshot save endpoint was removed as webcam proctoring is disabled.
 
 
 # ---------------- GET ALL EXAM SESSIONS ----------------

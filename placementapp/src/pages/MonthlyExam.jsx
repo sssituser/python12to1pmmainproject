@@ -99,33 +99,8 @@ const MonthlyExam = () => {
   };
 
   const startWebcam = async () => {
-    if (webcamStatus === "active" || webcamStatus === "loading") return;
-    try {
-      setWebcamStatus("loading");
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: { ideal: 640 }, height: { ideal: 480 } } 
-      });
-      
-      setWebcamActive(true);
-      setWebcamStatus("active");
-      globalStreamsToClean.push(stream);
-
-      stream.getVideoTracks().forEach(track => {
-        track.onended = () => {
-          if (!examSubmittedRef.current) {
-            setWebcamActive(false);
-            setWebcamStatus("error");
-            triggerWarning("Webcam disconnected or disabled.");
-          }
-        };
-      });
-
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch (e) { 
-      console.error("Webcam Error:", e);
-      setWebcamStatus("error"); 
-      setWebcamActive(false);
-    }
+    setWebcamActive(true);
+    setWebcamStatus("active");
   };
 
   useEffect(() => {
@@ -138,8 +113,6 @@ const MonthlyExam = () => {
   }, [examStarted, webcamActive, webcamStatus]);
 
   const stopWebcam = () => {
-    globalStreamsToClean.forEach(s => s.getTracks().forEach(t => t.stop()));
-    globalStreamsToClean = [];
     setWebcamActive(false);
   };
 
@@ -212,93 +185,45 @@ const MonthlyExam = () => {
 
     let cleanup = () => {};
     const startSecurityMonitoring = () => {
-      if (!videoRef.current) return;
-      const video = videoRef.current;
-
-      const prevFrameRef = { data: null };
-
-      faceDetectionIntervalRef.current = setInterval(() => {
-        if (!video.videoWidth || !video.videoHeight) return;
-        
-        const canvas = document.createElement("canvas");
-        canvas.width = 16;
-        canvas.height = 16;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(video, 0, 0, 16, 16);
-        const tData = ctx.getImageData(0, 0, 16, 16).data;
-        
-        let brightness = 0;
-        let rMax = 0, rMin = 255;
-        let topVariance = 0, botVariance = 0;
-        let motionDelta = 0;
-
-        for (let i = 0; i < tData.length; i += 4) {
-          const r = tData[i], g = tData[i+1], b = tData[i+2];
-          const luma = (0.299 * r + 0.587 * g + 0.114 * b);
-          brightness += luma;
-          if (r > rMax) rMax = r; if (r < rMin) rMin = r;
-          
-          if (prevFrameRef.data) {
-            motionDelta += Math.abs(luma - prevFrameRef.data[i/4]);
-          }
-
-          if (i < tData.length / 2) topVariance += luma;
-          else botVariance += luma;
+      const handleVisibilityChange = () => { 
+        if (document.hidden) {
+          console.warn("Security: Tab switch detected!");
+          triggerWarning("Tab switching detected", "TAB_SWITCH");
         }
-
-        brightness = brightness / 256;
-        const isDark = brightness < 15; 
-        const isFlat = (rMax - rMin < 15);
-        const isStatic = prevFrameRef.data && (motionDelta < 30);
-        const topAvg = topVariance / 128;
-        const botAvg = botVariance / 128;
-        const misalignment = Math.abs(topAvg - botAvg) > 95;
-
-        prevFrameRef.data = Array.from(tData).filter((_, i) => i % 4 === 0);
-
-        const checkViolations = (faces) => {
-          const noFace = !faces || faces.length === 0;
-          const isMultipleFaces = faces && faces.length > 1;
-          let faceNotCentered = false;
-          
-          if (faces && faces.length === 1) {
-            const f = faces[0].boundingBox;
-            const centerX = f.x + f.width / 2;
-            const centerY = f.y + f.height / 2;
-            if (centerX < video.videoWidth * 0.15 || centerX > video.videoWidth * 0.85 ||
-                centerY < video.videoHeight * 0.15 || centerY > video.videoHeight * 0.85) {
-              faceNotCentered = true;
-            }
-          }
-
-          const proctoringAIFailed = !window.FaceDetector;
-          const userHiding = proctoringAIFailed && misalignment;
-
-          if (isDark || isFlat || isMultipleFaces || noFace || faceNotCentered || userHiding || (isStatic && proctoringAIFailed)) {
-            if (!violationStartTimeRef.current) {
-              violationStartTimeRef.current = Date.now();
-            } else if (Date.now() - violationStartTimeRef.current >= 7000) {
-              if (isMultipleFaces) triggerWarning("Multiple persons detected", "MULTIPLE_FACE");
-              else if (isDark) triggerWarning("Environment too dark - Please turn on lights", "FACE_MISSING");
-              else if (isFlat) triggerWarning("Camera covered or blocked", "FACE_MISSING");
-              else if (userHiding) triggerWarning("Face not visible - Adjust your position", "FACE_MISSING");
-              else if (isStatic) triggerWarning("Static background detected - Please move", "FACE_MISSING");
-              else if (noFace && !proctoringAIFailed) triggerWarning("Face not visible in camera", "FACE_MISSING"); 
-              else if (faceNotCentered) triggerWarning("Face moved off-center", "FACE_MISSING");
-              violationStartTimeRef.current = null;
-            }
-          } else {
-            violationStartTimeRef.current = null;
-          }
-        };
-
-        if (window.FaceDetector) {
-          const faceDetector = new window.FaceDetector({ maxDetectedFaces: 2 });
-          faceDetector.detect(video).then(checkViolations).catch(() => checkViolations(null));
-        } else {
-          checkViolations([]); 
+      };
+      const handleBlur = () => { 
+        if (!document.hidden) {
+          console.warn("Security: Focus lost detected!");
+          triggerWarning("Window focus lost", "TAB_SWITCH"); 
         }
-      }, 1000);
+      };
+      const handleFullscreenChange = () => { 
+        if (!document.fullscreenElement && examStarted) {
+          console.warn("Security: Fullscreen exit detected!");
+          triggerWarning("Full screen exited", "FULLSCREEN_EXIT"); 
+        }
+      };
+      const preventAction = (e) => { 
+        e.preventDefault(); 
+        triggerWarning("Restricted interaction (Copy/Paste/Right-click)", "COPY_ATTEMPT"); 
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("blur", handleBlur);
+      document.addEventListener("fullscreenchange", handleFullscreenChange);
+      document.addEventListener("contextmenu", preventAction);
+      document.addEventListener("copy", preventAction);
+      document.addEventListener("paste", preventAction);
+
+      cleanup = () => {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("blur", handleBlur);
+        document.removeEventListener("fullscreenchange", handleFullscreenChange);
+        document.removeEventListener("contextmenu", preventAction);
+        document.removeEventListener("copy", preventAction);
+        document.removeEventListener("paste", preventAction);
+      };
+    };
 
       const handleVisibilityChange = () => { 
         if (document.hidden) {
@@ -343,7 +268,7 @@ const MonthlyExam = () => {
 
     startSecurityMonitoring();
     return () => cleanup();
-  }, [examStarted, examSubmitted, webcamActive]);
+  }, [examStarted, examSubmitted]);
 
   const handleCloseWarningModal = async () => {
     setShowWarningModal(false);
@@ -449,16 +374,9 @@ const MonthlyExam = () => {
           </button>
         </div>
         <div className="bg-white p-12 rounded-[3rem] shadow-2xl max-w-lg w-full">
-           <div className="w-64 h-48 mx-auto mb-8 bg-black rounded-3xl overflow-hidden shadow-inner relative group">
-              {webcamActive ? (
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-white text-[10px] font-black uppercase tracking-widest">Activating Secure Feed...</div>
-              )}
-              <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-[8px] font-black text-white uppercase tracking-widest">Preview</span>
-              </div>
+           <div className="w-64 h-48 mx-auto mb-8 bg-blue-50 rounded-3xl overflow-hidden shadow-inner relative flex flex-col items-center justify-center border border-blue-100">
+              <FontAwesomeIcon icon={faTerminal} className="text-4xl text-blue-500 mb-2" />
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Secure Exam Mode</span>
            </div>
            
            <h2 className="text-3xl font-black mb-2 uppercase">{studentCourse || 'Monthly'} Assessment</h2>
@@ -468,10 +386,10 @@ const MonthlyExam = () => {
 
            <button 
             onClick={handleStartExam} 
-            disabled={isLoadingQuestions || !webcamActive || questions.length === 0} 
+            disabled={isLoadingQuestions || questions.length === 0} 
             className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
            >
-             {webcamStatus === "error" ? "Webcam Required" : "Start Assessment"}
+             Start Assessment
            </button>
         </div>
       </div>
@@ -481,18 +399,6 @@ const MonthlyExam = () => {
   const activeQ = questions[currentQuestion];
   return (
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col gap-6 relative">
-      <div className="fixed top-6 right-6 z-[9999] bg-white rounded-[2rem] shadow-2xl p-2.5 border border-gray-50 flex flex-col items-center">
-        <div className="relative overflow-hidden rounded-[1.5rem] shadow-inner">
-          <video ref={videoRef} autoPlay playsInline muted style={{ transform: 'scaleX(-1)' }} className="w-40 h-28 object-cover bg-gray-900" />
-          <div className="absolute top-2 right-2">
-            <div className={`w-2 h-2 rounded-full ${webcamActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 py-2">
-          <div className="w-2 h-2 rounded-full bg-blue-100 flex items-center justify-center"><div className="w-1 h-1 rounded-full bg-blue-500"></div></div>
-          <span className="text-[9px] font-black tracking-widest text-blue-900/60 uppercase">Recording Live</span>
-        </div>
-      </div>
 
       <div className="max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-md px-6 py-4 rounded-[1.5rem] shadow-sm flex justify-between items-center border border-gray-100 sticky top-0 z-40">
          <div className="flex items-center gap-4">

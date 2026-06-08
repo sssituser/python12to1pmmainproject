@@ -14,7 +14,7 @@ import os
 
 from myapp.models import (
     AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, 
-    CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, WebcamSnapshot, 
+    CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, 
     User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 )
 from myapp.serializers import (
@@ -425,21 +425,6 @@ def exam_reports_api(request):
             final_status = 'Fail'
 
         suspicious_detected = False
-        if attempt.user and attempt.user.email:
-            sessions = ExamSession.objects.filter(student_email__iexact=attempt.user.email)
-            if attempt.start_time and attempt.end_time:
-                # Only check snapshots that were taken precisely during this exam attempt
-                suspicious_detected = WebcamSnapshot.objects.filter(
-                    session__in=sessions, 
-                    is_suspicious=True,
-                    timestamp__gte=attempt.start_time,
-                    timestamp__lte=attempt.end_time
-                ).exists()
-            elif attempt.start_time:
-                sessions = sessions.filter(start_time__date=attempt.start_time.date())
-                suspicious_detected = WebcamSnapshot.objects.filter(session__in=sessions, is_suspicious=True).exists()
-            if suspicious_detected:
-                final_status = 'Cheated'
 
         failure_reason = "Performance was satisfactory."
         recommendations = "Keep up the good work!"
@@ -533,46 +518,14 @@ def exam_report_detail_api(request, pk):
 @permission_classes([AllowAny])
 def exam_proctoring_logs_api(request, pk):
     """
-    GET: Get proctoring snapshots for a specific exam attempt
+    GET: Get proctoring snapshots for a specific exam attempt (Webcam snapshots disabled)
     """
-    attempt = get_object_or_404(ExamAttempt, pk=pk)
-    user = attempt.user
-    
-    snapshots_data = []
-    if user and user.email:
-        sessions = ExamSession.objects.filter(student_email__iexact=user.email)
-        
-        # Cross-reference with attempt time range
-        if attempt.start_time and attempt.end_time:
-            snapshots = WebcamSnapshot.objects.filter(
-                session__in=sessions,
-                timestamp__gte=attempt.start_time,
-                timestamp__lte=attempt.end_time
-            ).order_by('timestamp')
-        elif attempt.start_time:
-            # Fallback for old/legacy attempts: check same day
-            snapshots = WebcamSnapshot.objects.filter(
-                session__in=sessions,
-                timestamp__date=attempt.start_time.date()
-            ).order_by('timestamp')
-        else:
-            snapshots = []
-
-        for s in snapshots:
-            snapshots_data.append({
-                'id': s.id,
-                'image': s.image_path,
-                'timestamp': s.timestamp.isoformat(),
-                'is_suspicious': s.is_suspicious,
-                'reason': s.reason or "Automatic Snapshot"
-            })
-            
     return Response({
         'success': True,
-        'data': snapshots_data,
+        'data': [],
         'summary': {
-            'total': len(snapshots_data),
-            'suspicious': len([s for s in snapshots_data if s['is_suspicious']])
+            'total': 0,
+            'suspicious': 0
         }
     })
 

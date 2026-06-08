@@ -274,7 +274,7 @@ class ExamPaper(models.Model):
     
     # Secure rules
     browser_lock_required = models.BooleanField(default=True)
-    webcam_proctoring_required = models.BooleanField(default=True)
+    webcam_proctoring_required = models.BooleanField(default=False)
     max_violations_allowed = models.IntegerField(default=5)
     
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -317,7 +317,7 @@ class ExamSession(models.Model):
     status = models.CharField(max_length=20, default='started')
     score = models.IntegerField(null=True, blank=True)
     total_marks = models.IntegerField(null=True, blank=True)
-    webcam_enabled = models.BooleanField(default=True)
+    webcam_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Proctoring attributes
@@ -337,12 +337,7 @@ class ExamAnswer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-class WebcamSnapshot(models.Model):
-    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='snapshots')
-    image_path = models.CharField(max_length=500)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    is_suspicious = models.BooleanField(default=False)
-    reason = models.TextField(null=True, blank=True)
+
 
 
 class ExamViolationLog(models.Model):
@@ -952,7 +947,7 @@ class PlacementExam(models.Model):
 
 class PlacementExamSettings(models.Model):
     exam = models.OneToOneField(PlacementExam, on_delete=models.CASCADE, related_name='settings')
-    webcam_required = models.BooleanField(default=True)
+    webcam_required = models.BooleanField(default=False)
     fullscreen_required = models.BooleanField(default=True)
     tab_switch_limit = models.IntegerField(default=3)
     face_detection = models.BooleanField(default=True)
