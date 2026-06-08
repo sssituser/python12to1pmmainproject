@@ -10,14 +10,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import CodeCompiler from "../components/CodeCompiler";
 
-// Indestructible global array to catch all streams outside React DOM scope
-let globalStreamsToClean = [];
+
 
 const MonthlyExam = () => {
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const faceDetectionIntervalRef = useRef(null);
+
   const violationStartTimeRef = useRef(null);
   const lastWarningTimeRef = useRef(0);
   const examSubmittedRef = useRef(false);
@@ -32,8 +29,7 @@ const MonthlyExam = () => {
   const [answers, setAnswers] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [examDuration, setExamDuration] = useState(75);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [webcamStatus, setWebcamStatus] = useState("idle");
+
   const [compilerCode, setCompilerCode] = useState("");
   const [showCompiler, setShowCompiler] = useState(false);
 
@@ -98,23 +94,7 @@ const MonthlyExam = () => {
     });
   };
 
-  const startWebcam = async () => {
-    setWebcamActive(true);
-    setWebcamStatus("active");
-  };
 
-  useEffect(() => {
-    if (videoRef.current && globalStreamsToClean.length > 0) {
-      const liveStream = globalStreamsToClean[globalStreamsToClean.length - 1];
-      if (videoRef.current.srcObject !== liveStream) {
-        videoRef.current.srcObject = liveStream;
-      }
-    }
-  }, [examStarted, webcamActive, webcamStatus]);
-
-  const stopWebcam = () => {
-    setWebcamActive(false);
-  };
 
   // Fetch Logic
   useEffect(() => {
@@ -167,7 +147,6 @@ const MonthlyExam = () => {
     };
 
     fetchQuestions();
-    startWebcam();
   }, [studentCourse]);
 
   // Timer Hook
@@ -225,47 +204,6 @@ const MonthlyExam = () => {
       };
     };
 
-      const handleVisibilityChange = () => { 
-        if (document.hidden) {
-          console.warn("Security: Tab switch detected!");
-          triggerWarning("Tab switching detected", "TAB_SWITCH");
-        }
-      };
-      const handleBlur = () => { 
-        if (!document.hidden) {
-          console.warn("Security: Focus lost detected!");
-          triggerWarning("Window focus lost", "TAB_SWITCH"); 
-        }
-      };
-      const handleFullscreenChange = () => { 
-        if (!document.fullscreenElement && examStarted) {
-          console.warn("Security: Fullscreen exit detected!");
-          triggerWarning("Full screen exited", "FULLSCREEN_EXIT"); 
-        }
-      };
-      const preventAction = (e) => { 
-        e.preventDefault(); 
-        triggerWarning("Restricted interaction (Copy/Paste/Right-click)", "COPY_ATTEMPT"); 
-      };
-
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      window.addEventListener("blur", handleBlur);
-      document.addEventListener("fullscreenchange", handleFullscreenChange);
-      document.addEventListener("contextmenu", preventAction);
-      document.addEventListener("copy", preventAction);
-      document.addEventListener("paste", preventAction);
-
-      cleanup = () => {
-        clearInterval(faceDetectionIntervalRef.current);
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-        window.removeEventListener("blur", handleBlur);
-        document.removeEventListener("fullscreenchange", handleFullscreenChange);
-        document.removeEventListener("contextmenu", preventAction);
-        document.removeEventListener("copy", preventAction);
-        document.removeEventListener("paste", preventAction);
-      };
-    };
-
     startSecurityMonitoring();
     return () => cleanup();
   }, [examStarted, examSubmitted]);
@@ -303,7 +241,6 @@ const MonthlyExam = () => {
     if (examSubmittedRef.current) return;
     examSubmittedRef.current = true;
     setExamSubmitted(true);
-    stopWebcam();
 
     try { if (document.fullscreenElement) await document.exitFullscreen(); } catch (e) {}
 
@@ -575,7 +512,6 @@ const MonthlyExam = () => {
            </div>
         </div>
       )}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };

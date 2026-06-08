@@ -10,17 +10,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import CodeCompiler from "../components/CodeCompiler";
 import axios from "axios";
 
-// Indestructible global array to catch all streams outside React DOM scope
-let globalStreamsToClean = [];
+
 
 const DailyExam = () => {
   const { subject } = useParams();
   const subjectKey = (subject || "python").toLowerCase();
   const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1).replace(/_/g, " ") : "Assessment";
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const faceDetectionIntervalRef = useRef(null);
+
   const violationStartTimeRef = useRef(null);
   const cleanTimeoutRef = useRef(null);
   const lastWarningTimeRef = useRef(0);
@@ -37,8 +34,7 @@ const DailyExam = () => {
   const [answers, setAnswers] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [examDuration, setExamDuration] = useState(0);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [webcamStatus, setWebcamStatus] = useState("idle");
+
   const [marksPerQuestion, setMarksPerQuestion] = useState(2);
   const [compilerCode, setCompilerCode] = useState("");
   const [showCompiler, setShowCompiler] = useState(false);
@@ -125,24 +121,7 @@ const DailyExam = () => {
     });
   };
 
-  const startWebcam = async () => {
-    setWebcamActive(true);
-    setWebcamStatus("active");
-  };
 
-  // Sync webcam stream to video element whenever it mounts/remounts
-  useEffect(() => {
-    if (videoRef.current && globalStreamsToClean.length > 0) {
-      const liveStream = globalStreamsToClean[globalStreamsToClean.length - 1];
-      if (videoRef.current.srcObject !== liveStream) {
-        videoRef.current.srcObject = liveStream;
-      }
-    }
-  }, [examStarted, webcamActive, webcamStatus]);
-
-  const stopWebcam = () => {
-    setWebcamActive(false);
-  };
 
   // Fetch Logic
   useEffect(() => {
@@ -302,7 +281,6 @@ const DailyExam = () => {
       } catch (e) {} finally { setIsLoadingQuestions(false); }
     };
     fetchQ();
-    startWebcam();
   }, [courseResolved, subjectKey, studentCourse]);
 
   // Timer Hook
@@ -318,6 +296,7 @@ const DailyExam = () => {
   useEffect(() => {
     if (!examStarted || examSubmitted) return;
 
+    let cleanup = () => {};
     const startSecurityMonitoring = () => {
       const handleVisibilityChange = () => { if (document.hidden) triggerWarning("Tab switching detected", "TAB_SWITCH"); };
       const handleBlur = () => { if (!document.hidden) triggerWarning("Window focus lost", "TAB_SWITCH"); };
@@ -387,7 +366,6 @@ const DailyExam = () => {
     if (examSubmittedRef.current) return;
     examSubmittedRef.current = true;
     setExamSubmitted(true);
-    stopWebcam();
 
     try {
       if (document.fullscreenElement) {
@@ -691,7 +669,6 @@ const DailyExam = () => {
            </div>
         </div>
       )}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };

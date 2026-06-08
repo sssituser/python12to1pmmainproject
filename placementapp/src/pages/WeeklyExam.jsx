@@ -10,14 +10,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import CodeCompiler from "../components/CodeCompiler";
 
-// Indestructible global array to catch all streams outside React DOM scope
-let globalStreamsToClean = [];
+
 
 const WeeklyExam = () => {
   const navigate = useNavigate();
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const faceDetectionIntervalRef = useRef(null);
+
   const violationStartTimeRef = useRef(null);
   const lastWarningTimeRef = useRef(0);
   const examSubmittedRef = useRef(false);
@@ -32,8 +29,7 @@ const WeeklyExam = () => {
   const [answers, setAnswers] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [examDuration, setExamDuration] = useState(45);
-  const [webcamActive, setWebcamActive] = useState(false);
-  const [webcamStatus, setWebcamStatus] = useState("idle");
+
   const [compilerCode, setCompilerCode] = useState("");
   const [showCompiler, setShowCompiler] = useState(false);
 
@@ -98,23 +94,6 @@ const WeeklyExam = () => {
     });
   };
 
-  const startWebcam = async () => {
-    setWebcamActive(true);
-    setWebcamStatus("active");
-  };
-
-  useEffect(() => {
-    if (videoRef.current && globalStreamsToClean.length > 0) {
-      const liveStream = globalStreamsToClean[globalStreamsToClean.length - 1];
-      if (videoRef.current.srcObject !== liveStream) {
-        videoRef.current.srcObject = liveStream;
-      }
-    }
-  }, [examStarted, webcamActive, webcamStatus]);
-
-  const stopWebcam = () => {
-    setWebcamActive(false);
-  };
 
   // Fetch Logic
   useEffect(() => {
@@ -167,7 +146,6 @@ const WeeklyExam = () => {
     };
 
     fetchQuestions();
-    startWebcam();
   }, [studentCourse]);
 
   // Timer Hook
@@ -262,7 +240,6 @@ const WeeklyExam = () => {
     if (examSubmittedRef.current) return;
     examSubmittedRef.current = true;
     setExamSubmitted(true);
-    stopWebcam();
 
     try { if (document.fullscreenElement) await document.exitFullscreen(); } catch (e) {}
 
@@ -532,7 +509,6 @@ const WeeklyExam = () => {
            </div>
         </div>
       )}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };
