@@ -2,7 +2,8 @@ import random
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from myapp.throttles import LoginRateThrottle, OTPRateThrottle, RegisterRateThrottle
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -12,6 +13,31 @@ from django.conf import settings
 from django.utils import timezone
 
 User = get_user_model()
+
+
+# 🔍 EXHAUSTIVE USER LOOKUP HELPER
+def find_user_by_identifier(identifier):
+    if not identifier:
+        return None
+    identifier = str(identifier).strip()
+    
+    # 1. Direct User Table Match (Username/Email, case-insensitive)
+    user = User.objects.filter(Q(username__iexact=identifier) | Q(email__iexact=identifier)).first()
+    if user:
+        return user
+
+    # 2. StudentProfile student_id Match (Integer conversion)
+    if identifier.isdigit():
+        profile = StudentProfile.objects.filter(student_id=int(identifier)).select_related('user').order_by('-user__is_active').first()
+        if profile:
+            return profile.user
+
+    # 3. StudentProfile Phone Match
+    profile = StudentProfile.objects.filter(phone=identifier).select_related('user').order_by('-user__is_active').first()
+    if profile:
+        return profile.user
+
+    return None
 
 
 # 🔐 Generate JWT Tokens
@@ -37,7 +63,8 @@ def get_browser_info(request):
 
 # 🔐 LOGIN
 @api_view(['POST'])
-@permission_classes([AllowAny])   # 🔥 IMPORTANT FIX
+@permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login(request):
     username = request.data.get("username")
     studentId = request.data.get("studentId")
@@ -57,25 +84,9 @@ def login(request):
         clean_user = str(username).strip() if username else ""
         identifier = clean_sid if clean_sid else clean_user
         
-        if identifier:
-            # 1. Direct User Table Match (Username/Email)
-            user = User.objects.filter(Q(username__iexact=identifier) | Q(email__iexact=identifier)).first()
-            
-            # 2. StudentProfile student_id Match (Integer conversion)
-            if not user and identifier.isdigit():
-                profile = StudentProfile.objects.filter(student_id=int(identifier)).select_related('user').order_by('-user__is_active').first()
-                if profile:
-                    user = profile.user
-            
-            # 3. StudentProfile Phone Match
-            if not user:
-                profile = StudentProfile.objects.filter(phone=identifier).select_related('user').order_by('-user__is_active').first()
-                if profile:
-                    user = profile.user
-                    
-            # 4. Final Fallback: Check if username/email was stored in the other field
-            if not user and clean_user:
-                 user = User.objects.filter(Q(username__iexact=clean_user) | Q(email__iexact=clean_user)).first()
+        user = find_user_by_identifier(identifier)
+        if not user and clean_user:
+            user = find_user_by_identifier(clean_user)
 
         if user:
             print(f"DEBUG: Identified user {user.username} via Super Lookup")
@@ -103,7 +114,13 @@ def login(request):
         print(f"DEBUG: User found: {user.username}, Password valid: {password_valid}")
         
         if not password_valid:
-            return Response({"detail": "Invalid credentials. Please check your Student ID and Password."}, status=401)
+            if required_role == 'student':
+                return Response({"detail": "Invalid credentials. Please check your Student ID and Password."}, status=401)
+            elif required_role == 'faculty':
+                return Response({"detail": "Invalid credentials. Please check your Faculty ID/Email and Password."}, status=401)
+            else:
+                return Response({"detail": "Invalid credentials. Please check your credentials and Password."}, status=401)
+
             
         # 🛡️ Role separation check
         if required_role:
@@ -205,104 +222,273 @@ def login(request):
     else:
         print(f"DEBUG: No user found for input (username={username}, studentId={studentId})")
 
-    return Response({"detail": "Invalid credentials"}, status=401)
+    if required_role == 'student':
+        return Response({"detail": "Invalid credentials. Please check your Student ID and Password."}, status=401)
+    elif required_role == 'faculty':
+        return Response({"detail": "Invalid credentials. Please check your Faculty ID/Email and Password."}, status=401)
+    else:
+        return Response({"detail": "Invalid credentials"}, status=401)
+
 
 
 # 🔢 SEND OTP
 
+def _mask_email(email):
+    """Return a privacy-masked version: ab***@gmail.com"""
+    try:
+        local, domain = email.split('@', 1)
+        masked_local = local[:2] + '***' if len(local) > 2 else local[0] + '***'
+        return f"{masked_local}@{domain}"
+    except Exception:
+        return '***@***.***'
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([OTPRateThrottle])
 def send_otp(request):
     identifier = request.data.get("username")
     if not identifier:
         return Response({"error": "Identifier (username or email) is required"}, status=400)
 
+    identifier = str(identifier).strip()
+
     # 🔍 Find user to get their email
-    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+    user = find_user_by_identifier(identifier)
     target_email = identifier if "@" in identifier else (user.email if user else None)
 
     if not target_email:
-        return Response({"error": "Could not find a valid email for this user. Please use your email address."}, status=400)
+        return Response({"error": "No email address found for this account. Please enter your registered email address directly."}, status=400)
 
-    otp = str(random.randint(100000, 999999)) # 6 digits for mapping to OTP model if needed, or 4 as per Login.jsx expectation
-    # But Login.jsx has maxLength={6} (line 371), so 6 digits is better.
-    
-    OTP.objects.create(username=identifier, email=target_email, otp=otp)
+    if not user and '@' not in identifier:
+        return Response({"error": "User not found. Please enter your registered email or username."}, status=404)
+
+    # 🧹 Delete ALL previous OTPs for this user to prevent stale OTP confusion
+    if user:
+        OTP.objects.filter(Q(username=user.username) | Q(email=user.email)).delete()
+    else:
+        OTP.objects.filter(Q(username=identifier) | Q(email=identifier)).delete()
+
+    otp = str(random.randint(100000, 999999))  # 6-digit OTP
+    OTP.objects.create(
+        username=user.username if user else identifier,
+        email=target_email,
+        otp=otp
+    )
 
     subject = f"Your OTP for {settings.PLATFORM_NAME}"
-    message = f"Hello {user.username if user else 'User'},\n\nYour One-Time Password (OTP) for login is: {otp}\n\nThis code will expire shortly. Do not share it with anyone."
-    
-    # 🚀 ASYNC OTP EMAIL (Prevents UI hang)
-    import threading
-    def send_async_otp():
-        sent = send_plain_email(subject, message, target_email)
-        if sent:
-            print(f"DEBUG: OTP {otp} sent successfully to {target_email}")
-        else:
-            print(f"DEBUG: Failed to send OTP email to {target_email}")
+    message = (
+        f"Hello {user.username if user else 'User'},\n\n"
+        f"Your One-Time Password (OTP) for login is:\n\n"
+        f"  {otp}\n\n"
+        f"This OTP is valid for 10 minutes. Do not share it with anyone.\n\n"
+        f"If you did not request this, please ignore this email."
+    )
 
-    email_thread = threading.Thread(target=send_async_otp)
-    email_thread.daemon = True
-    email_thread.start()
+    # ✉️ Send synchronously — threading caused silent failures
+    print(f"DEBUG: Sending OTP email to {target_email}")
+    sent = send_plain_email(subject, message, target_email)
+    print(f"DEBUG: OTP email {'SENT OK' if sent else 'FAILED'} to {target_email}")
 
-    return Response({"message": "OTP sent successfully"})
+    if not sent:
+        # Delete the OTP so the user isn't stuck with a code they can't receive
+        OTP.objects.filter(
+            Q(username=user.username if user else identifier) | Q(email=target_email),
+            otp=otp
+        ).delete()
+        return Response({
+            "error": "Failed to send OTP email. Please check your email address or try again later."
+        }, status=500)
+
+    return Response({
+        "message": f"OTP sent to {_mask_email(target_email)}",
+        "email_hint": _mask_email(target_email)
+    })
 
 
 # ✅ VERIFY OTP
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([OTPRateThrottle])
 def verify_otp(request):
     identifier = request.data.get("username")
     otp = request.data.get("otp")
     role = request.data.get("role")
 
-    record = OTP.objects.filter(Q(username=identifier) | Q(email=identifier), otp=otp).last()
+    if not identifier or not otp:
+        return Response({"error": "Identifier and OTP are required"}, status=400)
 
-    if record:
-        user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
-        if not user:
-            return Response({"error": "Invalid OTP"}, status=400)
-            
-        # 🛡️ Role separation check
-        if role:
-            user_role = (user.role or "student").lower().strip()
-            req_role = role.lower().strip()
-            
-            if req_role == "student" and user_role != "student":
-                return Response({"error": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
-            
-            if req_role == "faculty" and user_role not in ["faculty", "admin"]:
-                return Response({"error": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
-        # ✅ ACTIVATE USER ON SUCCESSFUL OTP
-        if not user.is_active:
-            user.is_active = True
-            user.save(update_fields=['is_active'])
+    identifier = str(identifier).strip()
+    otp = str(otp).strip()
 
-        tokens = get_tokens(user)
-        # 🏎️ OPTIMIZED PROFILE LOOKUP
-        student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
-        course_title = student_profile.course.title if student_profile and student_profile.course else ""
-        
+    user = find_user_by_identifier(identifier)
+
+    # Find the OTP record by resolving the identifier or matching on the resolved user's credentials
+    if user:
+        record = OTP.objects.filter(
+            Q(username=user.username) | Q(email=user.email) | Q(username=identifier) | Q(email=identifier),
+            otp=otp
+        ).last()
+    else:
+        record = OTP.objects.filter(Q(username=identifier) | Q(email=identifier), otp=otp).last()
+
+    if not record:
+        return Response({"error": "Invalid OTP. Please request a new one."}, status=400)
+
+    # ⏰ OTP Expiry Check (10 minutes)
+    otp_age = timezone.now() - record.created_at
+    if otp_age.total_seconds() > 600:  # 10 minutes
+        record.delete()
+        return Response({"error": "OTP has expired. Please request a new one."}, status=400)
+
+    if not user:
+        user = User.objects.filter(Q(username__iexact=identifier) | Q(email__iexact=identifier)).first()
+    if not user:
+        return Response({"error": "User not found."}, status=400)
+
+    # 🛡️ Role separation check
+    if role:
+        user_role = (user.role or "student").lower().strip()
+        req_role = role.lower().strip()
+
+        if req_role == "student" and user_role != "student":
+            return Response({"error": "This portal is for students only. Faculty members must use the Faculty Portal."}, status=403)
+
+        if req_role == "faculty" and user_role not in ["faculty", "admin"]:
+            return Response({"error": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
+
+    # ✅ ACTIVATE USER ON SUCCESSFUL OTP
+    if not user.is_active:
+        user.is_active = True
+        user.save(update_fields=['is_active'])
+
+    # 🗑️ Delete used OTP record
+    record.delete()
+
+    tokens = get_tokens(user)
+    # 🏎️ OPTIMIZED PROFILE LOOKUP
+    student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+    course_title = student_profile.course.title if student_profile and student_profile.course else ""
+
+    return Response({
+        **tokens,
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            "name": user.first_name or user.username,
+            "role": user.role or "student",
+            "course": course_title if user.role == 'student' else "",
+            "enrolled_courses": student_profile.enrolled_courses_titles() if student_profile else ([course_title] if course_title else [])
+        },
+    })
+
+
+# 🔐 FORGOT PASSWORD WITH OTP VERIFICATION
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([OTPRateThrottle])
+def forgot_password_send_otp(request):
+    """Step 1: Send OTP to email for password reset"""
+    identifier = request.data.get("username")
+    if not identifier:
+        return Response({"error": "Username or email is required"}, status=400)
+
+    identifier = str(identifier).strip()
+    user = find_user_by_identifier(identifier)
+
+    if not user:
+        return Response({"error": "No account found with that username or email."}, status=404)
+
+    target_email = user.email
+    if not target_email:
+        return Response({"error": "No email address is registered for this account. Please contact admin."}, status=400)
+
+    # 🧹 Delete previous password-reset OTPs
+    OTP.objects.filter(Q(username=user.username) | Q(email=user.email)).delete()
+
+    otp = str(random.randint(100000, 999999))
+    OTP.objects.create(username=user.username, email=target_email, otp=otp)
+
+    subject = f"Password Reset OTP - {settings.PLATFORM_NAME}"
+    message = (
+        f"Hello {user.username},\n\n"
+        f"We received a request to reset your password.\n\n"
+        f"Your OTP is:\n\n"
+        f"  {otp}\n\n"
+        f"This OTP is valid for 10 minutes.\n"
+        f"If you didn't request this, please ignore this email."
+    )
+
+    # ✉️ Send synchronously — threading caused silent failures
+    print(f"DEBUG: Sending forgot-password OTP to {target_email}")
+    sent = send_plain_email(subject, message, target_email)
+    print(f"DEBUG: Forgot-password OTP {'SENT OK' if sent else 'FAILED'} for {user.username}")
+
+    if not sent:
+        OTP.objects.filter(username=user.username, otp=otp).delete()
         return Response({
-            **tokens,
-            "user": {
-                "username": user.username,
-                "email": user.email,
-                "name": user.first_name or user.username,
-                "role": user.role or "student",
-                "course": course_title if user.role == 'student' else "",
-                "enrolled_courses": student_profile.enrolled_courses_titles() if student_profile else ([course_title] if course_title else [])
-            },
-        })
+            "error": "Failed to send OTP email. Please check that your account email is correct, or try again later."
+        }, status=500)
 
-    return Response({"error": "Invalid OTP"}, status=400)
+    return Response({
+        "message": f"OTP sent to {_mask_email(target_email)}",
+        "email_hint": _mask_email(target_email)
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([OTPRateThrottle])
+def forgot_password_verify_otp_reset(request):
+    """Step 2: Verify OTP and reset password in one call"""
+    identifier = request.data.get("username")
+    otp = request.data.get("otp")
+    new_password = request.data.get("new_password")
+
+    if not identifier or not otp or not new_password:
+        return Response({"error": "Username, OTP, and new password are required"}, status=400)
+
+    if len(new_password) < 8:
+        return Response({"error": "Password must be at least 8 characters long"}, status=400)
+
+    identifier = str(identifier).strip()
+    otp = str(otp).strip()
+
+    user = find_user_by_identifier(identifier)
+    if not user:
+        return Response({"error": "Invalid OTP or user not found."}, status=400)
+
+    record = OTP.objects.filter(
+        Q(username=user.username) | Q(email=user.email),
+        otp=otp
+    ).last()
+
+    if not record:
+        return Response({"error": "Invalid OTP. Please request a new one."}, status=400)
+
+    # ⏰ Expiry check (10 minutes)
+    otp_age = timezone.now() - record.created_at
+    if otp_age.total_seconds() > 600:
+        record.delete()
+        return Response({"error": "OTP has expired. Please request a new one."}, status=400)
+
+    # ✅ Reset password
+    user.set_password(new_password)
+    user.is_active = True  # Ensure account is active after reset
+    user.save()
+
+    # 🗑️ Delete used OTP
+    record.delete()
+
+    print(f"DEBUG: Password reset via OTP for {user.username}")
+    return Response({"success": True, "message": "Password reset successfully. Please login with your new password."})
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def reset_password(request):
     identifier = request.data.get("username")
     password = request.data.get("password")
 
-    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
+    user = find_user_by_identifier(identifier)
 
     if user:
         user.set_password(password)
@@ -350,6 +536,7 @@ def change_password(request):
 # 📝 REGISTER
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([RegisterRateThrottle])
 def register(request):
     username = request.data.get("username", "").strip()
     studentId = request.data.get("studentId", "").strip() # 🔥 FIX: Explicitly get studentId

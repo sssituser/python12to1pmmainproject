@@ -58,14 +58,39 @@ def _send_rich_email(subject, to_email, html_content):
 
 
 def send_plain_email(subject, message, to_email):
-    """Send a plain text email through the configured SMTP backend."""
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', getattr(settings, 'EMAIL_HOST_USER', 'admin@sssit.info'))
-    msg = EmailMultiAlternatives(subject, message, from_email, [to_email])
+    """
+    Send a plain text email using a FRESH dedicated SMTP connection.
+    This is thread-safe: each call opens its own connection instead of
+    reusing the potentially closed per-request connection.
+    """
+    from django.core.mail import get_connection
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL',
+                         getattr(settings, 'EMAIL_HOST_USER', 'admin@sssit.info'))
     try:
+        # Open a brand-new connection for every call (safe across threads)
+        connection = get_connection(
+            backend=getattr(settings, 'EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend'),
+            host=getattr(settings, 'EMAIL_HOST', 'smtp.gmail.com'),
+            port=getattr(settings, 'EMAIL_PORT', 587),
+            username=getattr(settings, 'EMAIL_HOST_USER', ''),
+            password=getattr(settings, 'EMAIL_HOST_PASSWORD', ''),
+            use_tls=getattr(settings, 'EMAIL_USE_TLS', True),
+            use_ssl=getattr(settings, 'EMAIL_USE_SSL', False),
+            timeout=getattr(settings, 'EMAIL_TIMEOUT', 30),
+            fail_silently=False,
+        )
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=from_email,
+            to=[to_email],
+            connection=connection,
+        )
         msg.send(fail_silently=False)
+        logger.info(f"Email sent successfully to {to_email} | subject: {subject}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send plain email to {to_email}: {e}")
+        logger.error(f"SMTP ERROR sending to {to_email}: {type(e).__name__}: {e}")
         return False
 
 # ── EMAIL FUNCTIONS ───────────────────────────────────────────

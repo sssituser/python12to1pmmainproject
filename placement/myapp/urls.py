@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from rest_framework import routers
 
 # IMPORT VIEWS - ESSENTIAL ONLY
-from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp
+from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp, forgot_password_send_otp, forgot_password_verify_otp_reset
 from .views.profile_views import profile_view, update_profile, upload_resume, faculty_profile_view, faculty_profile_update, faculty_avatar_upload, faculty_avatar_delete, faculty_profile_public, faculty_list_minimal, faculty_stats, faculty_profile_minimal_test
 from .views.leave_views import get_all_leave_requests, create_leave_request, get_leave_request, approve_leave_request, reject_leave_request, delete_leave_request, my_leave_requests
 from .views.exam_views import get_questions, create_question, start_exam_session, submit_answer, end_exam_session, get_exam_sessions, automated_exam_config_view, log_exam_violation, create_exam_question_api, auto_generate_exam_paper, get_exam_paper_questions, create_placement_exam, list_placement_exams, import_exam_questions_file
@@ -46,6 +46,8 @@ urlpatterns = [
     path("change-password/", change_password),
     path("send_otp/", send_otp),
     path("verify_otp/", verify_otp),
+    path("forgot-password/send-otp/", forgot_password_send_otp),
+    path("forgot-password/verify-reset/", forgot_password_verify_otp_reset),
     
     
     # Profile URLs

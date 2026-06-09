@@ -1,4 +1,5 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from myapp.throttles import ExamRateThrottle, AuthenticatedUserThrottle
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
@@ -27,6 +28,7 @@ _EXAM_STORE = []   # Simple in-process store (persists for session)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def create_placement_exam(request):
     """
     Persist a complete 10-step wizard exam to the database.
@@ -153,6 +155,7 @@ def create_placement_exam(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def list_placement_exams(request):
     """
     List all published placement exams (from in-memory store + DB)
@@ -200,6 +203,7 @@ def list_placement_exams(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([ExamRateThrottle])
 def log_exam_violation(request):
     """
     Log secure assessment visibility, tab switches, and full-screen exits.
@@ -258,6 +262,7 @@ def log_exam_violation(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def create_exam_question_api(request):
     """
     Create custom questions manually inside Question Bank
@@ -295,6 +300,7 @@ def create_exam_question_api(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def auto_generate_exam_paper(request):
     """
     Dynamically select random questions matching customized rules
@@ -346,6 +352,7 @@ def auto_generate_exam_paper(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def get_exam_paper_questions(request, paper_id):
     """
     Fetch all questions and choices belonging to an Exam Paper
@@ -386,6 +393,7 @@ def get_exam_paper_questions(request, paper_id):
 # ---------------- AUTOMATED EXAM CONFIG ----------------
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def automated_exam_config_view(request):
     if request.method == 'POST':
         data = request.data
@@ -459,6 +467,7 @@ def automated_exam_config_view(request):
 
 # ---------------- START EXAM SESSION ----------------
 @api_view(['POST'])
+@throttle_classes([ExamRateThrottle])
 def start_exam_session(request):
     data = request.data
 
@@ -475,6 +484,7 @@ def start_exam_session(request):
 
 # ---------------- SUBMIT ANSWER ----------------
 @api_view(['POST'])
+@throttle_classes([ExamRateThrottle])
 def submit_answer(request, session_id=None):
     data = request.data
 
@@ -497,6 +507,7 @@ def submit_answer(request, session_id=None):
 
 # ---------------- END EXAM SESSION ----------------
 @api_view(['POST'])
+@throttle_classes([ExamRateThrottle])
 def end_exam_session(request, session_id):
     session = get_object_or_404(ExamSession, id=session_id)
 
@@ -548,6 +559,7 @@ def end_exam_session(request, session_id):
 
 # ---------------- GET ALL EXAM SESSIONS ----------------
 @api_view(['GET'])
+@throttle_classes([AuthenticatedUserThrottle])
 def get_exam_sessions(request):
 
     sessions = ExamSession.objects.all().order_by('-created_at')
@@ -574,6 +586,7 @@ def get_exam_sessions(request):
 
 # ---------------- GET ALL QUESTIONS ----------------
 @api_view(['GET'])
+@throttle_classes([AuthenticatedUserThrottle])
 def get_questions(request):
 
     questions = PythonQuestion.objects.all()
@@ -585,6 +598,7 @@ def get_questions(request):
 
 # ---------------- CREATE QUESTION ----------------
 @api_view(['POST'])
+@throttle_classes([AuthenticatedUserThrottle])
 def create_question(request):
 
     serializer = PythonQuestionSerializer(data=request.data)
@@ -599,6 +613,7 @@ def create_question(request):
    
  # ---------------- DELETE EXAM SESSION ----------------
 @api_view(['DELETE'])
+@throttle_classes([AuthenticatedUserThrottle])
 def delete_exam_session(request, pk):
 
     session = get_object_or_404(ExamSession, id=pk)
@@ -614,6 +629,7 @@ import re
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
 def import_exam_questions_file(request):
     """
     Parse CSV, Excel, DOCX, or PDF uploaded by faculty,

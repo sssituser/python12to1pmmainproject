@@ -89,7 +89,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'myapp',
     'corsheaders',
-    
+    'django_ratelimit',
 ]
 
 ALLOWED_HOSTS = ['*']
@@ -212,6 +212,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # ── Rate Limiting (Throttling) ──────────────────────────────────────
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',   # unauthenticated users
+        'rest_framework.throttling.UserRateThrottle',   # authenticated users
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/minute',   # 30 requests/min for guests (login, register)
+        'user': '200/minute',  # 200 requests/min for logged-in students/faculty
+        'login': '10/minute',  # custom scope for login endpoint
+        'exam': '60/minute',   # custom scope for exam submission endpoints
+    },
 }
 
 # JWT settings merged below
@@ -279,4 +290,21 @@ LOGIN_EMAIL_IMAP_USERNAME = os.environ.get('LOGIN_EMAIL_IMAP_USERNAME', EMAIL_HO
 LOGIN_EMAIL_IMAP_PASSWORD = os.environ.get('LOGIN_EMAIL_IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
 
 
+# ── Cache (used by rate limiting) ──────────────────────────────────────────
+# Uses local memory by default — no Redis needed for single-server deployments.
+# Switch to RedisCache if you scale to multiple EC2 instances.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'placement-ratelimit-cache',
+    }
+}
+
+# ── Rate Limit Config (django-ratelimit) ───────────────────────────────────
+RATELIMIT_ENABLE = True          # Set False in tests to disable globally
+RATELIMIT_USE_CACHE = 'default'  # Which cache backend to use
+RATELIMIT_FAIL_OPEN = False      # If cache fails, DENY requests (secure default)
+
+# Silence django-ratelimit system check errors for using LocMemCache
+SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003', 'django_ratelimit.W001']
 

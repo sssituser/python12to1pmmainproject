@@ -18,12 +18,18 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("login");
   const [forgotUsername, setForgotUsername] = useState("");
+  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotEmailHint, setForgotEmailHint] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otpUsername, setOtpUsername] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [otpEmailHint, setOtpEmailHint] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
+
+  const API = `http://${window.location.hostname}:8000/api`;
 
   // ✅ AUTO REDIRECT IF ALREADY LOGGED IN
   useEffect(() => {
@@ -55,17 +61,14 @@ function Login() {
 
     setOtpLoading(true);
     try {
-      await axios.post(
-        `http://${window.location.hostname}:8000/api/send_otp/`,
-        { username: otpUsername.trim() },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      toast.success("OTP sent. Check your email or username inbox.");
+      const res = await axios.post(`${API}/send_otp/`, { username: otpUsername.trim() });
+      const hint = res.data.email_hint || "";
+      setOtpEmailHint(hint);
+      toast.success(hint ? `OTP sent to ${hint}` : "OTP sent! Check your registered email.");
       setOtpSent(true);
     } catch (err) {
       console.error(err);
-      toast.error("Unable to send OTP. Try again.");
+      toast.error(err?.response?.data?.error || "Unable to send OTP. Try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -80,9 +83,8 @@ function Login() {
     setOtpLoading(true);
     try {
       const res = await axios.post(
-        `http://${window.location.hostname}:8000/api/verify_otp/`,
-        { username: otpUsername.trim(), otp: otpCode.trim(), role: "student" },
-        { headers: { "Content-Type": "application/json" } }
+        `${API}/verify_otp/`,
+        { username: otpUsername.trim(), otp: otpCode.trim(), role: "student" }
       );
 
       if (!res.data.access) {
@@ -130,39 +132,63 @@ function Login() {
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!forgotUsername.trim() || !newPassword.trim()) {
-      toast.error("Enter username/email and a new password");
+  // Forgot password: Step 1 – send OTP
+  const handleForgotSendOtp = async () => {
+    if (!forgotUsername.trim()) {
+      toast.error("Enter your username or email");
       return;
     }
-
-    if (newPassword !== confirmPassword) {
-      toast.error("Password and confirm password must match");
-      return;
-    }
-
     setLoading(true);
     try {
-      const res = await axios.post(
-        `http://${window.location.hostname}:8000/api/reset-password/`,
-        {
-          username: forgotUsername.trim(),
-          password: newPassword.trim(),
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const res = await axios.post(`${API}/forgot-password/send-otp/`, { username: forgotUsername.trim() });
+      const hint = res.data.email_hint || "";
+      setForgotEmailHint(hint);
+      toast.success(hint ? `OTP sent to ${hint}` : "OTP sent! Check your email.");
+      setForgotOtpSent(true);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to send OTP. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Forgot password: Step 2 – verify OTP + reset password
+  const handleResetPassword = async () => {
+    if (!forgotOtp.trim()) {
+      toast.error("Enter the OTP sent to your email");
+      return;
+    }
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      toast.error("Enter and confirm your new password");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API}/forgot-password/verify-reset/`, {
+        username: forgotUsername.trim(),
+        otp: forgotOtp.trim(),
+        new_password: newPassword.trim(),
+      });
       if (res.data.success) {
-        toast.success("Password reset successfully. Please login.");
+        toast.success("Password reset! Please login.");
         setMode("login");
         setForgotUsername("");
+        setForgotOtp("");
+        setForgotOtpSent(false);
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        throw new Error(res.data.error || "Password reset failed");
+        throw new Error(res.data.error || "Reset failed");
       }
     } catch (err) {
-      console.error(err);
       toast.error(err?.response?.data?.error || "Unable to reset password");
     } finally {
       setLoading(false);
@@ -433,46 +459,91 @@ function Login() {
 
           {mode === "forgot" && (
             <>
+              {/* Step 1: Enter identifier */}
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Email Address
+                  Username or Email
                 </label>
                 <input
                   type="text"
                   name="forgotUsername"
-                  placeholder="name@domain.com"
+                  placeholder="Enter your Student ID or email"
                   value={forgotUsername}
                   onChange={(e) => setForgotUsername(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                  disabled={forgotOtpSent}
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200 disabled:opacity-50"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
-                />
-              </div>
+
+              {/* Step 2: OTP + New Password (shown after OTP sent) */}
+              {forgotOtpSent && (
+                <>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Verification Code{" "}
+                      <span className="text-slate-500 normal-case font-normal">
+                        {forgotEmailHint ? `(sent to ${forgotEmailHint})` : "(sent to your email)"}
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={forgotOtp}
+                      onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ""))}
+                      className="w-full tracking-[0.5em] text-center font-bold px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                      autoFocus
+                    />
+                    <p className="text-xs text-slate-500 mt-1 text-center">
+                      Didn't receive it?{" "}
+                      <span
+                        onClick={() => { setForgotOtpSent(false); setForgotOtp(""); setForgotEmailHint(""); }}
+                        className="text-emerald-400 cursor-pointer hover:underline"
+                      >
+                        Resend OTP
+                      </span>
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Min. 8 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                    />
+                    {confirmPassword && newPassword !== confirmPassword && (
+                      <p className="text-xs text-red-400 mt-1">Passwords do not match</p>
+                    )}
+                  </div>
+                </>
+              )}
+
               <div className="text-xs text-slate-400 mb-6">
                 <span
-                  onClick={() => setMode("login")}
+                  onClick={() => {
+                    setMode("login");
+                    setForgotUsername("");
+                    setForgotOtp("");
+                    setForgotOtpSent(false);
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
                   className="cursor-pointer text-emerald-400 hover:underline"
                 >
                   Back to login
@@ -489,25 +560,39 @@ function Login() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter email or username"
+                  placeholder="Enter your Student ID or email"
                   value={otpUsername}
-                  onChange={(e) => setOtpUsername(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                  onChange={(e) => { setOtpUsername(e.target.value); setOtpSent(false); setOtpCode(""); }}
+                  disabled={otpSent}
+                  className="w-full px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200 disabled:opacity-50"
                 />
               </div>
               {otpSent && (
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Enter Verification Code
+                    Verification Code{" "}
+                    <span className="text-slate-500 normal-case font-normal">
+                      {otpEmailHint ? `(sent to ${otpEmailHint})` : "(sent to your email)"}
+                    </span>
                   </label>
                   <input
                     type="text"
                     maxLength={6}
-                    placeholder="6-digit OTP"
+                    placeholder="000000"
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                     className="w-full tracking-[0.5em] text-center font-bold px-4 py-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition duration-200"
+                    autoFocus
                   />
+                  <p className="text-xs text-slate-500 mt-1 text-center">
+                    Didn't receive it?{" "}
+                    <span
+                      onClick={() => { setOtpSent(false); setOtpCode(""); setOtpEmailHint(""); }}
+                      className="text-emerald-400 cursor-pointer hover:underline"
+                    >
+                      Resend OTP
+                    </span>
+                  </p>
                 </div>
               )}
               <div className="text-xs text-slate-400 mb-6">
@@ -527,7 +612,9 @@ function Login() {
               mode === "login"
                 ? handleLogin
                 : mode === "forgot"
-                ? handleResetPassword
+                ? forgotOtpSent
+                  ? handleResetPassword
+                  : handleForgotSendOtp
                 : otpSent
                 ? handleVerifyOtp
                 : handleSendOtp
@@ -546,9 +633,9 @@ function Login() {
             ) : mode === "login" ? (
               "SIGN IN"
             ) : mode === "forgot" ? (
-              "RESET PASSWORD"
+              forgotOtpSent ? "VERIFY OTP & RESET PASSWORD" : "SEND RESET OTP"
             ) : otpSent ? (
-              "VERIFY OTP"
+              "VERIFY OTP & SIGN IN"
             ) : (
               "SEND OTP"
             )}
