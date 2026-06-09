@@ -29,7 +29,7 @@ function Login() {
   const [otpEmailHint, setOtpEmailHint] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
 
-  const API = `http://${window.location.hostname}:8000/api`;
+  const API = "/api";
 
   // ✅ AUTO REDIRECT IF ALREADY LOGGED IN
   useEffect(() => {

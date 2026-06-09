@@ -35,7 +35,7 @@ function FacultyLogin() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPw, setShowNewPw] = useState(false);
 
-  const API = `http://${window.location.hostname}:8000/api`;
+  const API = "/api";
 
   useEffect(() => {
     const token = localStorage.getItem("access");
