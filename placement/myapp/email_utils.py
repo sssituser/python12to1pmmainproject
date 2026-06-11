@@ -195,3 +195,73 @@ def send_leave_request_email(user_email, username, leave_type, start_date, end_d
     """
     
     return _send_rich_email(subject, user_email, _build_html(content, "Leave Management"))
+
+
+def send_job_notification_email(user_email, username, job):
+    """
+    Sends a job opportunity notification email to a student when a new job is posted by faculty.
+    job: Job model instance
+    """
+    subject = f"🚀 New Job Opportunity: {job.job_title} at {job.company}"
+
+    platform_url = getattr(settings, 'PLATFORM_URL', 'http://localhost:5174')
+    apply_link = f"{platform_url}/dashboard/jobs"
+
+    # Build optional details rows
+    details_rows = ""
+    if job.location:
+        details_rows += f'<tr style="border-bottom:1px solid #334155;"><td style="padding:10px 0;color:#94a3b8;">📍 Location</td><td style="padding:10px 0;text-align:right;font-weight:600;">{job.location}</td></tr>'
+    if job.job_type:
+        details_rows += f'<tr style="border-bottom:1px solid #334155;"><td style="padding:10px 0;color:#94a3b8;">💼 Job Type</td><td style="padding:10px 0;text-align:right;font-weight:600;">{job.job_type}</td></tr>'
+    if job.salary:
+        details_rows += f'<tr style="border-bottom:1px solid #334155;"><td style="padding:10px 0;color:#94a3b8;">💰 Salary</td><td style="padding:10px 0;text-align:right;font-weight:600;">{job.salary}</td></tr>'
+    if job.experience:
+        details_rows += f'<tr style="border-bottom:1px solid #334155;"><td style="padding:10px 0;color:#94a3b8;">🎯 Experience</td><td style="padding:10px 0;text-align:right;font-weight:600;">{job.experience}</td></tr>'
+    if job.eligibility:
+        details_rows += f'<tr style="border-bottom:1px solid #334155;"><td style="padding:10px 0;color:#94a3b8;">✅ Eligibility</td><td style="padding:10px 0;text-align:right;font-weight:600;">{job.eligibility}</td></tr>'
+    if job.deadline:
+        details_rows += f'<tr><td style="padding:10px 0;color:#94a3b8;">⏰ Apply Before</td><td style="padding:10px 0;text-align:right;font-weight:600;color:#fbbf24;">{job.deadline}</td></tr>'
+
+    skills_section = ""
+    if job.primary_skills:
+        skills_html = "".join(
+            f'<span style="display:inline-block;background:#312e81;color:#a5b4fc;padding:4px 10px;border-radius:20px;font-size:12px;margin:3px;">{s.strip()}</span>'
+            for s in job.primary_skills.split(",") if s.strip()
+        )
+        skills_section = f"""
+        <div style="margin:20px 0;">
+            <p style="color:#94a3b8;font-size:13px;text-transform:uppercase;margin:0 0 8px;">Required Skills</p>
+            <div>{skills_html}</div>
+        </div>
+        """
+
+    external_btn = ""
+    if job.external_application_link:
+        external_btn = f'<a href="{job.external_application_link}" style="display:inline-block;padding:12px 24px;background-color:#10b981;color:white;text-decoration:none;border-radius:8px;font-weight:600;margin-top:12px;margin-left:12px;">Apply on Company Site →</a>'
+
+    content = f"""
+        <h2 style="color:#818cf8;margin-top:0;">Hi {username}, a new job has been posted!</h2>
+        <p>Your placement cell has posted a new opportunity. Don't miss your chance to apply!</p>
+
+        <div style="background:linear-gradient(135deg,#1e1b4b,#1e293b);padding:24px;border-radius:14px;margin:24px 0;border-left:4px solid #6366f1;">
+            <h3 style="margin:0 0 4px;font-size:20px;color:#e0e7ff;">{job.job_title}</h3>
+            <p style="margin:0;color:#818cf8;font-size:15px;font-weight:600;">{job.company}</p>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+            {details_rows}
+        </table>
+
+        {skills_section}
+
+        <div style="margin-top:28px;">
+            <a href="{apply_link}" style="{BUTTON_STYLE}">View &amp; Apply Now</a>
+            {external_btn}
+        </div>
+
+        <p style="color:#64748b;font-size:13px;margin-top:28px;">
+            Log in to the SSSIT Placement Portal to view the full job description and apply before the deadline.
+        </p>
+    """
+
+    return _send_rich_email(subject, user_email, _build_html(content, "New Job Opportunity 🎯"))

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaDownload, FaArrowLeft, FaGraduationCap, FaBriefcase, FaClipboardList } from "react-icons/fa";
+import { FaDownload, FaArrowLeft, FaGraduationCap, FaBriefcase, FaClipboardList, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 
 function StudentReport() {
     const { username } = useParams();
@@ -9,6 +10,37 @@ function StudentReport() {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const handleDownloadExcel = () => {
+        const workbook = XLSX.utils.book_new();
+
+        // 1. Prepare Exam Sheet
+        const examRows = exams.map((exam, idx) => ({
+            "S.No": idx + 1,
+            "Exam Title": exam.examTitle || "Exam",
+            "Exam Type": exam.examType || "N/A",
+            "Score Obtained": exam.score ?? 0,
+            "Total Marks": exam.totalMarks ?? 0,
+            "Percentage (%)": `${exam.percentage ?? 0}%`,
+            "Status": exam.status || "N/A",
+            "Exam Date": exam.examDate ? new Date(exam.examDate).toLocaleDateString() : "N/A"
+        }));
+        const examSheet = XLSX.utils.json_to_sheet(examRows);
+        XLSX.utils.book_append_sheet(workbook, examSheet, "Exam History");
+
+        // 2. Prepare Jobs Sheet
+        const jobRows = jobs.map((app, idx) => ({
+            "S.No": idx + 1,
+            "Company": app.job_details?.company || "N/A",
+            "Job Title": app.job_details?.job_title || "N/A",
+            "Status": app.status || "APPLIED",
+            "Applied Date": app.applied_date ? new Date(app.applied_date).toLocaleDateString() : "N/A"
+        }));
+        const jobSheet = XLSX.utils.json_to_sheet(jobRows);
+        XLSX.utils.book_append_sheet(workbook, jobSheet, "Job Applications");
+
+        XLSX.writeFile(workbook, `${username}_Performance_Report.xlsx`);
+    };
 
     useEffect(() => {
         fetchReportData();
@@ -87,7 +119,13 @@ function StudentReport() {
                     <FaArrowLeft /> Back to Dashboard
                 </button>
                 
-                <div className="flex justify-end w-full md:w-auto">
+                <div className="flex justify-end w-full md:w-auto gap-3">
+                    <button 
+                        onClick={handleDownloadExcel}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95 w-fit"
+                    >
+                        <FaFileExcel /> Download Report (Excel)
+                    </button>
                     <button 
                         onClick={handlePrint}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 w-fit"

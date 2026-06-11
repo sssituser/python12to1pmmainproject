@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 import {
   Bar,
   BarChart,
@@ -20,6 +21,71 @@ function Stats() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const [exportType, setExportType] = useState("all");
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const token = localStorage.getItem("access");
+      
+      let url = `http://${window.location.hostname}:8000/api/exam-reports/`;
+      if (exportType === "weekly") {
+        url = `http://${window.location.hostname}:8000/api/exam-reports/weekly/`;
+      } else if (exportType === "monthly") {
+        url = `http://${window.location.hostname}:8000/api/exam-reports/monthly/`;
+      } else if (exportType === "daily") {
+        url = `http://${window.location.hostname}:8000/api/exam-reports/daily/`;
+      }
+      
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!res.ok) throw new Error("Failed to fetch exam results");
+      
+      const json = await res.json();
+      const reports = json.data || [];
+      
+      if (reports.length === 0) {
+        alert("No exam records found for the selected category.");
+        setExporting(false);
+        return;
+      }
+      
+      // Map data to Excel sheet columns
+      const dataToExport = reports.map(r => ({
+        "Student Name": r.user?.username || "Unknown",
+        "Registration Number": r.user?.randomId || "N/A",
+        "Email": r.user?.email || "N/A",
+        "Course": r.course || "Not Assigned",
+        "Exam Title": r.examTitle || "N/A",
+        "Exam Type": r.examType || exportType,
+        "Score Obtained": r.score ?? 0,
+        "Total Marks": r.totalMarks ?? 0,
+        "Percentage (%)": `${r.percentage ?? 0}%`,
+        "Status": r.status || "N/A",
+        "Correct Answers": r.correctAnswers ?? 0,
+        "Total Questions": r.totalQuestions ?? 0,
+        "Exam Date": r.examDate ? new Date(r.examDate).toLocaleDateString() : "N/A",
+        "Time Taken (sec)": r.timeTaken ?? 0
+      }));
+      
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Exam Results");
+      
+      const fileName = `${exportType.toUpperCase()}_Exam_Results_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Error exporting exam results.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
 
   useEffect(() => {
     const token = localStorage.getItem("access");
@@ -254,6 +320,50 @@ function Stats() {
               : "0%"
           }
         />
+      </div>
+
+      {/* EXPORT SECTION */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 className="font-bold text-gray-800 text-lg mb-1">Export Exam Results</h2>
+          <p className="text-gray-500 text-sm">Download student exam results dynamically in Excel sheet format.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative">
+            <select
+              value={exportType}
+              onChange={(e) => setExportType(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+            >
+              <option value="all">All Exam Categories</option>
+              <option value="daily">Daily Exams Only</option>
+              <option value="weekly">Weekly Exams Only</option>
+              <option value="monthly">Monthly Exams Only</option>
+            </select>
+          </div>
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          >
+            {exporting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Excel Report
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* CHARTS */}

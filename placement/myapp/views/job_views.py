@@ -1,11 +1,37 @@
-from rest_framework import viewsets, response
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+import threading
+import logging
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 
 from ..models import Job, AppliedJob, User
 from ..serializers import JobSerializer, AppliedJobSerializer
+from ..email_utils import send_job_notification_email
+
+logger = logging.getLogger(__name__)
+
+
+def _notify_all_students(job):
+    """
+    Runs in a background thread: sends a job notification email to every
+    student user that has a valid email address.
+    """
+    try:
+        students = User.objects.filter(role='student', email__isnull=False).exclude(email='')
+        for student in students:
+            try:
+                send_job_notification_email(
+                    user_email=student.email,
+                    username=student.get_full_name() or student.username,
+                    job=job,
+                )
+            except Exception as e:
+                logger.error(f"Failed to send job notification to {student.email}: {e}")
+    except Exception as e:
+        logger.error(f"Error in _notify_all_students: {e}")
 
 
 # ================= PUBLIC JOB API =================
@@ -100,7 +126,8 @@ class FacultyApplicationsViewSet(viewsets.ModelViewSet):
 # ================= ADMIN JOB API =================
 class AdminJobViewSet(viewsets.ModelViewSet):
     """
-    Job management API for authenticated faculty users
+    Job management API for authenticated faculty users.
+    On job creation, all student users receive an email notification.
     """
     queryset = Job.objects.all().order_by("-created_at")
     serializer_class = JobSerializer
@@ -114,5 +141,9 @@ class AdminJobViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def perform_create(self, serializer):
-        serializer.save()
+        job = serializer.save()
+        # Send notifications in a daemon thread so the API response is immediate
+        thread = threading.Thread(target=_notify_all_students, args=(job,), daemon=True)
+        thread.start()
+        logger.info(f"Job '{job.job_title}' created. Student notification thread started.")
 

@@ -372,19 +372,22 @@ def exam_reports_api(request):
     else:
         attempts = ExamAttempt.objects.filter(exam_type=exam_type)
     
-    # Priority: If logged in, prioritize user's own data
-    if request.user and request.user.is_authenticated:
+    # Enforce user isolation
+    is_staff_or_faculty = request.user and request.user.is_authenticated and (
+        request.user.is_staff or 
+        getattr(request.user, 'role', '').lower() in ['faculty', 'admin']
+    )
+
+    if is_staff_or_faculty:
+        if username:
+            attempts = attempts.filter(user__username__iexact=username)
+    elif request.user and request.user.is_authenticated:
         # If student is logged in, they see their own data
-        if getattr(request.user, 'role', '').lower() == 'student':
-             attempts = ExamAttempt.objects.filter(user=request.user)
-        else:
-             # Even if role isn't 'student', if they took an exam under this username, show it
-             if username:
-                attempts = attempts.filter(user__username__iexact=username)
-             else:
-                attempts = attempts.filter(user=request.user)
+        attempts = attempts.filter(user=request.user)
     elif username:
         attempts = attempts.filter(user__username__iexact=username)
+    else:
+        attempts = ExamAttempt.objects.none()
     
     # Filter by student's course if user is authenticated and it's a general query
     if request.user and request.user.is_authenticated and not username:
@@ -442,19 +445,25 @@ def exam_reports_api(request):
 
         # Get student's course information
         student_course = None
+        student_id = None
         if attempt.user:
             try:
                 student_profile = StudentProfile.objects.get(user=attempt.user)
                 if student_profile.course:
                     student_course = student_profile.course.title
+                if student_profile.student_id:
+                    student_id = str(student_profile.student_id)
             except StudentProfile.DoesNotExist:
                 pass
+
+        if not student_id:
+            student_id = attempt.random_id or 'N/A'
 
         formatted_data.append({
             'id': attempt.id,
             'user': {
                 'username': attempt.user.username if attempt.user else 'Unknown',
-                'randomId': attempt.random_id or 'N/A',
+                'randomId': student_id,
                 'email': attempt.user.email if attempt.user else ''
             },
             'examTitle': attempt.exam_title,
@@ -866,13 +875,32 @@ def weekly_exam_reports_api(request):
 
     formatted_data = []
     for attempt in attempts:
+        student_course = None
+        student_id = None
+        email = ""
+        if attempt.user:
+            email = attempt.user.email or ""
+            try:
+                student_profile = StudentProfile.objects.get(user=attempt.user)
+                if student_profile.course:
+                    student_course = student_profile.course.title
+                if student_profile.student_id:
+                    student_id = str(student_profile.student_id)
+            except StudentProfile.DoesNotExist:
+                pass
+        
+        if not student_id:
+            student_id = attempt.random_id or 'N/A'
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
                 'username': attempt.user.username if attempt.user else 'Unknown',
-                'randomId': attempt.random_id or 'N/A'
+                'randomId': student_id,
+                'email': email
             },
             'examTitle': attempt.exam_title,
+            'examType': attempt.exam_type or 'weekly',
             'score': attempt.marks_obtained,
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
@@ -880,7 +908,8 @@ def weekly_exam_reports_api(request):
             'status': attempt.status,
             'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
             'timeTaken': attempt.time_taken,
-            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
+            'course': student_course
         })
 
     return Response({
@@ -925,13 +954,32 @@ def monthly_exam_reports_api(request):
 
     formatted_data = []
     for attempt in attempts:
+        student_course = None
+        student_id = None
+        email = ""
+        if attempt.user:
+            email = attempt.user.email or ""
+            try:
+                student_profile = StudentProfile.objects.get(user=attempt.user)
+                if student_profile.course:
+                    student_course = student_profile.course.title
+                if student_profile.student_id:
+                    student_id = str(student_profile.student_id)
+            except StudentProfile.DoesNotExist:
+                pass
+        
+        if not student_id:
+            student_id = attempt.random_id or 'N/A'
+
         formatted_data.append({
             'id': attempt.id,
             'user': {
                 'username': attempt.user.username if attempt.user else 'Unknown',
-                'randomId': attempt.random_id or 'N/A'
+                'randomId': student_id,
+                'email': email
             },
             'examTitle': attempt.exam_title,
+            'examType': attempt.exam_type or 'monthly',
             'score': attempt.marks_obtained,
             'totalMarks': attempt.total_marks,
             'correctAnswers': attempt.correct_answers,
@@ -939,7 +987,8 @@ def monthly_exam_reports_api(request):
             'status': attempt.status,
             'examDate': attempt.exam_date.isoformat() if attempt.exam_date else None,
             'timeTaken': attempt.time_taken,
-            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0
+            'percentage': round((attempt.marks_obtained / attempt.total_marks) * 100, 1) if attempt.total_marks > 0 else 0,
+            'course': student_course
         })
 
     return Response({

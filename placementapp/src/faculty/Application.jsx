@@ -107,6 +107,7 @@ function Applications() {
       acc[companyName].push({
         "S.No": acc[companyName].length + 1,
         "Student Name": app.username || app.user?.username || "Anonymous",
+        "Registration ID": app.student_id || "N/A",
         "Email": app.email || "N/A",
         "Job Title": app.job_details?.job_title || "Unknown Role",
         "Applied Date": new Date(app.applied_date).toLocaleDateString('en-IN'),

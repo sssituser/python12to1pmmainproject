@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 import {
     Bar,
     BarChart,
@@ -12,6 +13,45 @@ import {
 
 function Dashboard() {
   const navigate = useNavigate();
+  
+  const handleExportAllPerformance = async () => {
+    try {
+      const token = localStorage.getItem("access");
+      const res = await fetch(`http://${window.location.hostname}:8000/api/exam-reports/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to fetch reports");
+      const json = await res.json();
+      const reports = json.data || [];
+      
+      if (reports.length === 0) {
+        alert("No performance reports found.");
+        return;
+      }
+      
+      const dataToExport = reports.map(r => ({
+        "Student Name": r.user?.username || "Unknown",
+        "Registration Number": r.user?.randomId || "N/A",
+        "Email": r.user?.email || "N/A",
+        "Course": r.course || "Not Assigned",
+        "Exam Title": r.examTitle || "N/A",
+        "Exam Type": r.examType || "N/A",
+        "Score Obtained": r.score ?? 0,
+        "Total Marks": r.totalMarks ?? 0,
+        "Percentage (%)": `${r.percentage ?? 0}%`,
+        "Status": r.status || "N/A",
+        "Exam Date": r.examDate ? new Date(r.examDate).toLocaleDateString() : "N/A"
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "All Performance");
+      XLSX.writeFile(workbook, `All_Students_Performance_Report.xlsx`);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to export all performance reports.");
+    }
+  };
   const [stats, setStats] = useState({
     total_students: 2,
     total_courses: 1,
@@ -428,16 +468,16 @@ function Dashboard() {
       {/* Student Reports Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h6 className="text-lg font-semibold text-gray-800">Student Reports</h6>
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <div className="relative flex-grow max-w-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <h6 className="text-lg font-semibold text-gray-800 m-0">Student Reports</h6>
+            <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
+              <div className="relative flex-grow max-w-md w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form onSubmit={(e) => e.preventDefault()} className="m-0">
                   <input
                     type="text"
                     placeholder="Search students by name, ID, phone or course..."
@@ -448,6 +488,15 @@ function Dashboard() {
                   />
                 </form>
               </div>
+              <button
+                onClick={handleExportAllPerformance}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs uppercase tracking-widest shadow-md transition-all flex items-center gap-2 cursor-pointer w-full md:w-auto justify-center"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download All Performance
+              </button>
             </div>
           </div>
           

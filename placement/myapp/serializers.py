@@ -239,13 +239,28 @@ class AppliedJobSerializer(serializers.ModelSerializer):
     job = serializers.PrimaryKeyRelatedField(queryset=Job.objects.all())
     job_details = JobSerializer(source='job', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
+    student_id = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
 
     class Meta:
         model = AppliedJob
-        fields = '__all__'
+        fields = ['id', 'user', 'job', 'job_details', 'username', 'student_id', 'email', 'applied_date', 'status']
         extra_kwargs = {
             'user': {'read_only': True}
         }
+
+    def get_student_id(self, obj):
+        if obj.user:
+            try:
+                profile = StudentProfile.objects.get(user=obj.user)
+                if profile.student_id:
+                    return str(profile.student_id)
+            except StudentProfile.DoesNotExist:
+                pass
+        return "N/A"
+
+    def get_email(self, obj):
+        return obj.user.email if obj.user else ""
 
 
 # ===============================
