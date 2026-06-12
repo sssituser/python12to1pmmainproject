@@ -12,17 +12,17 @@ import requests
 import base64
 import os
 
-from myapp.models import (
+from ..models import (
     AutomatedExamConfig, LeaveRequest, PythonQuestion, Choice, ExamAttempt, 
     CodeSnippet, CodeTemplate, ExecutionSession, ExamSession, 
     User, Job, StudentProfile, Course, AppliedJob, CourseEnrollment
 )
-from myapp.serializers import (
+from ..serializers import (
     LeaveRequestSerializer, PythonQuestionSerializer, ExamAttemptSerializer, 
     CodeSnippetSerializer, CodeTemplateSerializer, ExecutionSessionSerializer, 
     UserSerializer
 )
-from myapp.email_utils import send_exam_confirmation_email
+from ..email_utils import send_exam_confirmation_email
 
 # ==================== USER COMBINED RESULTS API ====================
 
@@ -1730,7 +1730,7 @@ def admin_create_credentials_api(request):
                 defaults={'level': 'Beginner', 'duration': 'Self-paced', 'topics': [], 'progress': 0, 'locked': False}
             )
         
-        from myapp.models import StudentProfile
+        from ..models import StudentProfile
         StudentProfile.objects.create(
             user=user,
             course=course_obj,

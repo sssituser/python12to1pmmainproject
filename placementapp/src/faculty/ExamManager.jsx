@@ -100,6 +100,11 @@ export default function ExamManager() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Action modal states
+  const [viewExam, setViewExam] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Step 1
   const [examTitle, setExamTitle] = useState("");
   const [examType, setExamType] = useState("daily");
@@ -288,6 +293,35 @@ export default function ExamManager() {
       console.error(e);
       toast.error("Failed to publish exam.");
     } finally { setIsPublishing(false); }
+  };
+
+  // ─── Action Handlers ────────────────────────────────────────────────────────
+  const handleViewExam = (exam) => setViewExam(exam);
+
+  const handleDeleteExam = async (examId) => {
+    setIsDeleting(true);
+    try {
+      await axios.delete(`${API_BASE}/exams/delete/${examId}/`);
+      setExams(prev => prev.filter(e => e.id !== examId));
+      setDeleteConfirmId(null);
+      toast.success("🗑️ Exam deleted successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { fontFamily: "'Outfit','Inter',sans-serif", fontWeight: 700 }
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to delete exam. Please try again.", {
+        position: "top-right",
+        autoClose: 4000,
+        style: { fontFamily: "'Outfit','Inter',sans-serif", fontWeight: 700 }
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const filtered = exams.filter(e =>
@@ -578,6 +612,7 @@ export default function ExamManager() {
 
   // ─── Main Render ──────────────────────────────────────────────────────────
   return (
+    <>
     <div style={{fontFamily:"'Outfit','Inter',sans-serif",color:"#1e293b",width:"100%"}}>
       <ToastContainer position="top-right"/>
 
@@ -674,9 +709,24 @@ export default function ExamManager() {
                 </td>
                 <td style={{padding:"14px 16px"}}>
                   <div style={{display:"flex",gap:8}}>
-                    <button title="View" style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b"}}><FontAwesomeIcon icon={faEye} style={{fontSize:12}}/></button>
-                    <button title="Edit" style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#6366f1"}}><FontAwesomeIcon icon={faEdit} style={{fontSize:12}}/></button>
-                    <button title="Delete" style={{width:30,height:30,borderRadius:8,border:"1px solid #fee2e2",background:"#fef2f2",cursor:"pointer",color:"#ef4444"}}><FontAwesomeIcon icon={faTrash} style={{fontSize:12}}/></button>
+                    <button title="View Details" onClick={() => handleViewExam(exam)}
+                      style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b",transition:"all 0.15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#f1f5f9";e.currentTarget.style.color="#1e293b";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#f8fafc";e.currentTarget.style.color="#64748b";}}>
+                      <FontAwesomeIcon icon={faEye} style={{fontSize:12}}/>
+                    </button>
+                    <button title="Edit Exam" onClick={() => { toast.info("✏️ Edit: Re-create the exam with the same settings.", {autoClose:3000}); }}
+                      style={{width:30,height:30,borderRadius:8,border:"1px solid #e0e7ff",background:"#eef2ff",cursor:"pointer",color:"#6366f1",transition:"all 0.15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#e0e7ff";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#eef2ff";}}>
+                      <FontAwesomeIcon icon={faEdit} style={{fontSize:12}}/>
+                    </button>
+                    <button title="Delete Exam" onClick={() => setDeleteConfirmId(exam.id)}
+                      style={{width:30,height:30,borderRadius:8,border:"1px solid #fee2e2",background:"#fef2f2",cursor:"pointer",color:"#ef4444",transition:"all 0.15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#fee2e2";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#fef2f2";}}>
+                      <FontAwesomeIcon icon={faTrash} style={{fontSize:12}}/>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -751,5 +801,88 @@ export default function ExamManager() {
         </div>
       )}
     </div>
+
+      {/* ── View Exam Details Modal ────────────────────────────────────────── */}
+      {viewExam && (
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.6)",backdropFilter:"blur(4px)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+          onClick={() => setViewExam(null)}>
+          <div style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:560,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 25px 60px rgba(0,0,0,0.3)"}}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{padding:"18px 24px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#4338ca,#6366f1)",borderRadius:"20px 20px 0 0"}}>
+              <div>
+                <div style={{fontSize:16,fontWeight:900,color:"#fff"}}>{viewExam.title}</div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2}}>
+                  {EXAM_TYPES.find(t=>t.value===viewExam.exam_type)?.icon} {viewExam.exam_type?.toUpperCase()} · {viewExam.subject}
+                </div>
+              </div>
+              <button onClick={() => setViewExam(null)} style={{width:32,height:32,borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.15)",cursor:"pointer",color:"#fff",fontSize:16}}>
+                <FontAwesomeIcon icon={faTimes}/>
+              </button>
+            </div>
+            {/* Body */}
+            <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",gap:14}}>
+              {[
+                {title:"Exam Info",rows:[["Title",viewExam.title],["Type",viewExam.exam_type],["Subject",viewExam.subject],["Course",viewExam.course||"—"]]},
+                {title:"Configuration",rows:[["Duration",`${viewExam.duration} min`],["Total Questions",viewExam.total_questions],["Total Marks",viewExam.total_marks],["Pass Marks",viewExam.pass_marks]]},
+                {title:"Status & Schedule",rows:[["Status",viewExam.status||"scheduled"],["Start Time",viewExam.start_time?new Date(viewExam.start_time).toLocaleString():"Manual"],["End Time",viewExam.end_time?new Date(viewExam.end_time).toLocaleString():"Manual"],["Paper ID",viewExam.paper_id||"—"]]},
+              ].map(section => (
+                <div key={section.title} style={{background:"#f8fafc",borderRadius:12,padding:"14px 16px",border:"1px solid #f1f5f9"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#6366f1",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>{section.title}</div>
+                  {section.rows.map(([k,v]) => (
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #f1f5f9"}}>
+                      <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{k}</span>
+                      <span style={{fontSize:12,color:"#0f172a",fontWeight:700}}>{String(v??"—")}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {viewExam.settings && (
+                <div style={{background:"#fafbff",borderRadius:12,padding:"14px 16px",border:"1px solid #e0e7ff"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#6366f1",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>Security Settings</div>
+                  {[["Fullscreen Required",viewExam.settings.fullscreen_required?"✅ Yes":"❌ No"],["Randomize Questions",viewExam.settings.randomize_questions?"✅ Yes":"❌ No"],["Negative Marking",viewExam.settings.negative_marking?`✅ -${viewExam.settings.negative_marks}pts`:"❌ No"],["Departments",viewExam.settings.departments?.length?viewExam.settings.departments.join(", "):"All"],["Years",viewExam.settings.years?.length?viewExam.settings.years.join(", "):"All"]].map(([k,v]) => (
+                    <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #eef2ff"}}>
+                      <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>{k}</span>
+                      <span style={{fontSize:12,color:"#0f172a",fontWeight:700}}>{String(v??"—")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setViewExam(null)} style={{padding:"10px",borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:800,fontSize:13,marginTop:4}}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ───────────────────────────────────────────── */}
+      {deleteConfirmId !== null && (
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.65)",backdropFilter:"blur(4px)",zIndex:1200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}
+          onClick={() => !isDeleting && setDeleteConfirmId(null)}>
+          <div style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:400,padding:"28px 28px 24px",boxShadow:"0 25px 60px rgba(0,0,0,0.3)",textAlign:"center"}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{width:56,height:56,background:"#fef2f2",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+              <FontAwesomeIcon icon={faTrash} style={{fontSize:22,color:"#ef4444"}}/>
+            </div>
+            <div style={{fontSize:17,fontWeight:900,color:"#0f172a",marginBottom:8}}>Delete Exam?</div>
+            <div style={{fontSize:13,color:"#64748b",marginBottom:24,lineHeight:1.6}}>
+              This action is <strong>permanent</strong> and cannot be undone.<br/>The exam and all its data will be removed.
+            </div>
+            <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+              <button disabled={isDeleting} onClick={() => setDeleteConfirmId(null)}
+                style={{padding:"10px 24px",borderRadius:10,border:"1.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",fontWeight:700,fontSize:13,color:"#64748b"}}>
+                Cancel
+              </button>
+              <button disabled={isDeleting} onClick={() => handleDeleteExam(deleteConfirmId)}
+                style={{padding:"10px 24px",borderRadius:10,border:"none",cursor:isDeleting?"not-allowed":"pointer",background:"#ef4444",color:"#fff",fontWeight:800,fontSize:13,display:"flex",alignItems:"center",gap:8,opacity:isDeleting?0.7:1}}>
+                {isDeleting ? <FontAwesomeIcon icon={faSpinner} spin/> : <FontAwesomeIcon icon={faTrash}/>}
+                {isDeleting ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -199,6 +199,28 @@ def list_placement_exams(request):
     return Response(merged)
 
 
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthenticatedUserThrottle])
+def delete_placement_exam(request, exam_id):
+    """
+    Delete a placement exam from both in-memory store and DB.
+    """
+    global _EXAM_STORE
+
+    # Remove from in-memory store
+    before = len(_EXAM_STORE)
+    _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != exam_id]
+
+    # Remove from DB
+    deleted_count, _ = AutomatedExamConfig.objects.filter(id=exam_id).delete()
+
+    if deleted_count == 0 and len(_EXAM_STORE) == before:
+        return Response({"error": "Exam not found"}, status=404)
+
+    return Response({"status": "success", "message": "Exam deleted successfully"}, status=200)
+
+
 # ---------------- MULTI-SUBJECT EXAM ENGINE APIS ----------------
 
 @api_view(['POST'])
