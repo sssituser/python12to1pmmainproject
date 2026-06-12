@@ -204,7 +204,7 @@ def send_job_notification_email(user_email, username, job):
     """
     subject = f"🚀 New Job Opportunity: {job.job_title} at {job.company}"
 
-    platform_url = getattr(settings, 'PLATFORM_URL', 'http://localhost:5174')
+    platform_url = getattr(settings, 'PLATFORM_URL', 'http://40.192.98.128:5173/faculty/jobs')
     apply_link = f"{platform_url}/dashboard/jobs"
 
     # Build optional details rows

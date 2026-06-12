@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes, authentication_classes
 from myapp.throttles import ExamRateThrottle, AuthenticatedUserThrottle
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -28,6 +28,7 @@ _EXAM_STORE = []   # Simple in-process store (persists for session)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def create_placement_exam(request):
     """
@@ -155,6 +156,7 @@ def create_placement_exam(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def list_placement_exams(request):
     """
@@ -201,6 +203,7 @@ def list_placement_exams(request):
 
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def delete_placement_exam(request, exam_id):
     """
@@ -225,6 +228,7 @@ def delete_placement_exam(request, exam_id):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([ExamRateThrottle])
 def log_exam_violation(request):
     """
@@ -284,6 +288,7 @@ def log_exam_violation(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def create_exam_question_api(request):
     """
@@ -322,6 +327,7 @@ def create_exam_question_api(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def auto_generate_exam_paper(request):
     """
@@ -374,6 +380,7 @@ def auto_generate_exam_paper(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def get_exam_paper_questions(request, paper_id):
     """
@@ -415,6 +422,7 @@ def get_exam_paper_questions(request, paper_id):
 # ---------------- AUTOMATED EXAM CONFIG ----------------
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def automated_exam_config_view(request):
     if request.method == 'POST':
@@ -651,6 +659,7 @@ import re
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([AuthenticatedUserThrottle])
 def import_exam_questions_file(request):
     """

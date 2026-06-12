@@ -262,6 +262,8 @@ export default function ExamManager() {
     setIsPublishing(true);
     try {
       const token = localStorage.getItem("access")?.replace(/^"|"$/g,"");
+      const authHeader = (token && token !== "null" && token !== "undefined") ? { Authorization: `Bearer ${token}` } : {};
+
       await axios.post(`${API_BASE}/exams/create/`, {
         title:examTitle, exam_type:examType, subject, topic, description, course_name:course,
         duration, total_questions:questions.length||totalQuestions, total_marks:totalMarks,
@@ -276,7 +278,7 @@ export default function ExamManager() {
         show_result_immediately:showResultImmediately, show_correct_answers:showCorrectAnswers,
         show_leaderboard:showLeaderboard, certificate_enabled:certificateEnabled,
         questions
-      }, { headers: token ? {Authorization:`Bearer ${token}`} : {} });
+      }, { headers: authHeader });
 
       await axios.post(`${API_BASE}/automated-exam-config/`, {
         category:examType.charAt(0).toUpperCase()+examType.slice(1),
@@ -284,7 +286,7 @@ export default function ExamManager() {
         duration, passing_strategy:"percentage",
         requirement:Math.round((passMarks/totalMarks)*100),
         question_count:questions.length||totalQuestions, marks_per_question:marksPerQuestion
-      });
+      }, { headers: authHeader });
 
       toast.success("🚀 Exam published and is LIVE!");
       closeModal();
