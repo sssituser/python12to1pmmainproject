@@ -280,14 +280,6 @@ export default function ExamManager() {
         questions
       }, { headers: authHeader });
 
-      await axios.post(`${API_BASE}/automated-exam-config/`, {
-        category:examType.charAt(0).toUpperCase()+examType.slice(1),
-        course_name:course.toUpperCase(), exam_name:examTitle, subjects:[subject],
-        duration, passing_strategy:"percentage",
-        requirement:Math.round((passMarks/totalMarks)*100),
-        question_count:questions.length||totalQuestions, marks_per_question:marksPerQuestion
-      }, { headers: authHeader });
-
       toast.success("🚀 Exam published and is LIVE!");
       closeModal();
       fetchExams();

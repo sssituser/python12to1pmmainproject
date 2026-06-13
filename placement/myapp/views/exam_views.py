@@ -45,6 +45,8 @@ def create_placement_exam(request):
         exam_type = data.get('exam_type', 'daily')
         subject = str(data.get('subject', 'PYTHON')).upper()
         course_name = str(data.get('course_name', '')).strip().upper()
+        if not course_name:
+            course_name = "ALL COURSES"
 
         def safe_int(val, default):
             try:
@@ -245,8 +247,10 @@ def list_placement_exams(request):
     for c in db_configs:
         # Extract exam_type from the course_name key (format: "course::type::title")
         parts = c.course_name.split("::")
-        exam_type = parts[1] if len(parts) >= 2 else 'daily'
-        title = parts[2] if len(parts) >= 3 else c.exam_name
+        if len(parts) < 3:
+            continue
+        exam_type = parts[1]
+        title = parts[2]
         paper = ExamPaper.objects.filter(title=title).order_by('-id').first()
         db_entries.append({
             'id': c.id,
