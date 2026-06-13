@@ -1240,11 +1240,28 @@ def exam_settings_api(request):
         storage_key = f"{course}_{category}" if course else category
         
         if category:
-            # Check specific course config first
-            result_data = data.get(storage_key)
+            # Check specific course config first (case-insensitive match, prefer one with questions)
+            result_data = None
+            matching_keys = [k for k in data.keys() if k.lower() == storage_key.lower()]
+            if matching_keys:
+                best_key = matching_keys[0]
+                for mk in matching_keys:
+                    if data[mk].get('questions'):
+                        best_key = mk
+                        break
+                result_data = data[best_key]
+                
             # Fallback to general category config if course specific is not found
             if not result_data and course:
-                result_data = data.get(category)
+                matching_cat_keys = [k for k in data.keys() if k.lower() == category.lower()]
+                if matching_cat_keys:
+                    best_cat_key = matching_cat_keys[0]
+                    for mk in matching_cat_keys:
+                        if data[mk].get('questions'):
+                            best_cat_key = mk
+                            break
+                    result_data = data[best_cat_key]
+                    
             # Final fallback to empty format
             if not result_data:
                 result_data = {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45}
@@ -1271,8 +1288,18 @@ def exam_settings_api(request):
         new_val = request.data.get('passingValue', None)
         new_duration = request.data.get('duration', None)
 
+        # Resolve key case-insensitively, prefer one that has questions already
+        resolved_key = storage_key
+        matching_keys = [k for k in existing_data.keys() if k.lower() == storage_key.lower()]
+        if matching_keys:
+            resolved_key = matching_keys[0]
+            for mk in matching_keys:
+                if existing_data[mk].get('questions'):
+                    resolved_key = mk
+                    break
+
         # Get existing category data to merge into
-        existing_category = existing_data.get(storage_key, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
+        existing_category = existing_data.get(resolved_key, {'maxQuestions': 50, 'questions': [], 'passingRule': 'percentage', 'passingValue': 50, 'duration': 45})
 
         # 🏗️ SAFE TYPE CONVERSION SYSTEM
         def safe_int(val, default):
@@ -1298,7 +1325,7 @@ def exam_settings_api(request):
         if new_questions is not None:
             existing_category['questions'] = new_questions
 
-        existing_data[storage_key] = existing_category
+        existing_data[resolved_key] = existing_category
         
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, indent=4)

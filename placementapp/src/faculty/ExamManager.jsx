@@ -365,7 +365,7 @@ export default function ExamManager() {
           </div>
           <div style={g2}>
             <div><label style={label}>Subject *</label><select style={sel} value={subject} onChange={e=>setSubject(e.target.value)}>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></div>
-            <div><label style={label}>Target Course</label><select style={sel} value={course} onChange={e=>setCourse(e.target.value)}>{industryCourses.map(c=><option key={c}>{c}</option>)}</select></div>
+            <div><label style={label}>Target Course</label><select style={sel} value={course} onChange={e=>setCourse(e.target.value)}><option value="ALL COURSES">ALL COURSES</option>{industryCourses.map(c=><option key={c}>{c}</option>)}</select></div>
           </div>
           <div><label style={label}>Topic / Chapter</label><input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Functions, OOP, Modules"/></div>
           <div><label style={label}>Instructions (Optional)</label><textarea style={ta} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Exam instructions for students..." rows={2}/></div>

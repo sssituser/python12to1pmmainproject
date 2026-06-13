@@ -155,6 +155,68 @@ def create_placement_exam(request):
         _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != config.id]
         _EXAM_STORE.insert(0, exam_entry)
 
+        # 🔄 Sync to exam_settings.json so student assessment engine retrieves the questions instantly
+        try:
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            settings_file = os.path.join(base_dir, 'exam_settings.json')
+            
+            existing_settings = {}
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as sf:
+                    content = sf.read().strip()
+                    if content:
+                        existing_settings = _json.loads(content)
+                        
+            category = exam_type.capitalize()
+            
+            formatted_qs = []
+            for idx, q in enumerate(questions):
+                opts = q.get('options', [])
+                correct_idx = safe_int(q.get('correct'), 0)
+                answer_text = opts[correct_idx] if 0 <= correct_idx < len(opts) else ""
+                
+                formatted_qs.append({
+                    "id": q.get('id') or int(timezone.now().timestamp() * 1000) + idx,
+                    "question": q.get('question', ''),
+                    "options": opts,
+                    "answer": answer_text,
+                    "type": q.get('type', 'mcq'),
+                    "marks": safe_int(q.get('marks'), marks_per_question),
+                    "subject": subject.upper()
+                })
+                
+            exam_config = {
+                "maxQuestions": len(formatted_qs) if formatted_qs else total_questions,
+                "questions": formatted_qs,
+                "passingRule": "percentage",
+                "passingValue": int((pass_marks / total_marks) * 100) if total_marks > 0 else 50,
+                "duration": duration
+            }
+
+            if course_name.upper() == "ALL COURSES":
+                # Overwrite general key
+                existing_settings[category] = exam_config
+                # Overwrite all course-specific keys for this category
+                for k in list(existing_settings.keys()):
+                    if k.lower().endswith(f"_{category.lower()}"):
+                        existing_settings[k] = exam_config
+            else:
+                target_key = f"{course_name}_{category}" if course_name else category
+                
+                # Resolve key case-insensitively to overwrite existing configurations
+                resolved_key = target_key
+                for k in existing_settings.keys():
+                    if k.lower() == target_key.lower():
+                        resolved_key = k
+                        break
+                existing_settings[resolved_key] = exam_config
+            
+            with open(settings_file, 'w', encoding='utf-8') as sf:
+                _json.dump(existing_settings, sf, indent=4)
+        except Exception as es_err:
+            print(f"Error syncing to exam_settings.json: {es_err}")
+
         return Response({
             "status": "success",
             "exam_id": config.id,
