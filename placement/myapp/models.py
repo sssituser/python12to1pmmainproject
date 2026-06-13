@@ -955,6 +955,137 @@ class PlacementExamSettings(models.Model):
     screenshot_interval = models.IntegerField(default=30) # seconds
     auto_submit = models.BooleanField(default=True)
     risk_threshold = models.IntegerField(default=50)
+
+
+# ===============================
+# Signal Handlers for Course Notifications
+# ===============================
+# These handlers send emails to enrolled students when faculty adds topics or updates courses
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from threading import Thread
+
+@receiver(post_save, sender=CourseTopic)
+def send_topic_notification_emails(sender, instance, created, **kwargs):
+    """
+    Signal handler that sends email notifications to all students enrolled in a course
+    when a new topic is added by the faculty.
+    """
+    if not created:
+        # Only send emails for newly created topics
+        return
+    
+    def send_emails_async():
+        """Send emails asynchronously to avoid blocking the request"""
+        try:
+            from myapp.email_utils import send_course_update_email
+            
+            # Get the course
+            course = instance.course
+            
+            # Get all students enrolled in this course
+            enrolled_students = CourseEnrollment.objects.filter(
+                course=course
+            ).select_related('user')
+            
+            # Send email to each enrolled student
+            for enrollment in enrolled_students:
+                student = enrollment.user
+                try:
+                    send_course_update_email(
+                        user_email=student.email,
+                        username=student.username,
+                        course_title=course.title,
+                        update_type='topic',
+                        update_details={
+                            'name': instance.topic_text,
+                            'description': f'Topic added to {course.title}'
+                        }
+                    )
+                except Exception as e:
+                    print(f"Failed to send email to {student.email}: {e}")
+        except Exception as e:
+            print(f"Error in send_topic_notification_emails: {e}")
+    
+    # Send emails in a background thread to avoid blocking
+    email_thread = Thread(target=send_emails_async, daemon=True)
+    email_thread.start()
+
+
+@receiver(post_save, sender=Course)
+def send_course_update_notification_emails(sender, instance, created, update_fields=None, **kwargs):
+    """
+    Signal handler that sends email notifications to all students enrolled in a course
+    when topics/modules are updated via the Course model (JSON fields).
+    """
+    # For new courses, we don't need to send notifications
+    if created:
+        return
+    
+    # Only process if topics were actually updated
+    if update_fields and 'topics' not in update_fields and 'modules' not in update_fields:
+        return
+    
+    def send_emails_for_course_updates():
+        """Send emails asynchronously for course updates"""
+        try:
+            from myapp.email_utils import send_course_update_email
+            
+            # Get all students enrolled in this course
+            enrolled_students = CourseEnrollment.objects.filter(
+                course=instance
+            ).select_related('user')
+            
+            if not enrolled_students.exists():
+                return
+            
+            # Determine what was updated
+            topics_to_notify = instance.topics if instance.topics else []
+            modules_to_notify = instance.modules if instance.modules else []
+            
+            # Send email to each enrolled student
+            for enrollment in enrolled_students:
+                student = enrollment.user
+                try:
+                    # Notify about topics
+                    if topics_to_notify:
+                        for topic in topics_to_notify:
+                            topic_name = topic if isinstance(topic, str) else topic.get('name', 'New Content')
+                            send_course_update_email(
+                                user_email=student.email,
+                                username=student.username,
+                                course_title=instance.title,
+                                update_type='topic',
+                                update_details={
+                                    'name': topic_name,
+                                    'description': f'New topic added to {instance.title}'
+                                }
+                            )
+                    
+                    # Notify about modules/subjects
+                    if modules_to_notify:
+                        for module in modules_to_notify:
+                            module_name = module.get('name') or module.get('title', 'New Module') if isinstance(module, dict) else str(module)
+                            send_course_update_email(
+                                user_email=student.email,
+                                username=student.username,
+                                course_title=instance.title,
+                                update_type='subject',
+                                update_details={
+                                    'name': module_name,
+                                    'description': f'New subject/module added to {instance.title}'
+                                }
+                            )
+                except Exception as e:
+                    print(f"Failed to send email to {student.email}: {e}")
+        except Exception as e:
+            print(f"Error in send_course_update_notification_emails: {e}")
+    
+    # Send emails in a background thread to avoid blocking
+    email_thread = Thread(target=send_emails_for_course_updates, daemon=True)
+    email_thread.start()
+
     
 
 

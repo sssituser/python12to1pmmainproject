@@ -265,3 +265,55 @@ def send_job_notification_email(user_email, username, job):
     """
 
     return _send_rich_email(subject, user_email, _build_html(content, "New Job Opportunity 🎯"))
+
+
+def send_course_update_email(user_email, username, course_title, update_type, update_details):
+    """
+    Sends a course update notification email to a student when faculty adds a new subject or topic to a course.
+    
+    Args:
+        user_email: Student's email
+        username: Student's username
+        course_title: Name of the course
+        update_type: 'topic' or 'subject'
+        update_details: Dict with 'name' and optionally 'description'
+    """
+    
+    icon_map = {
+        'topic': '📚',
+        'subject': '🎓'
+    }
+    
+    update_icon = icon_map.get(update_type, '✨')
+    update_type_display = 'Topic' if update_type == 'topic' else 'Subject'
+    
+    subject = f"📖 New {update_type_display} Added: {course_title}"
+    
+    platform_url = getattr(settings, 'PLATFORM_URL', 'http://localhost:5174')
+    course_link = f"{platform_url}/student/courses/{course_title.lower().replace(' ', '-').replace('(', '').replace(')', '')}"
+    
+    content = f"""
+        <h2 style="color:#a5b4fc;margin-top:0;">{update_icon} New {update_type_display} Added to Your Course!</h2>
+        <p>Hi <strong>{username}</strong>, your instructor has added a new {update_type} to the course you're enrolled in.</p>
+        
+        <div style="background:linear-gradient(135deg,#1e1b4b,#1e293b);padding:24px;border-radius:14px;margin:24px 0;border-left:4px solid #6366f1;">
+            <h3 style="margin:0 0 8px;font-size:18px;color:#e0e7ff;">📖 {course_title}</h3>
+            <p style="margin:0;color:#94a3b8;font-weight:600;">{update_type_display}: <span style="color:#a5b4fc;">{update_details.get('name', 'N/A')}</span></p>
+        </div>
+        
+        <div style="background-color:#1e293b;padding:16px;border-radius:12px;margin:20px 0;">
+            <p style="margin:0;color:#94a3b8;font-size:13px;text-transform:uppercase;margin-bottom:8px;">Details:</p>
+            <p style="margin:0;color:#cbd5e1;"><strong>Course:</strong> {course_title}</p>
+            <p style="margin:8px 0 0;color:#cbd5e1;"><strong>{update_type_display} Name:</strong> {update_details.get('name', 'N/A')}</p>
+            {f'<p style="margin:8px 0 0;color:#cbd5e1;"><strong>Description:</strong> {update_details.get("description", "")}</p>' if update_details.get('description') else ''}
+        </div>
+        
+        <p style="color:#94a3b8;font-size:14px;margin:24px 0 0;">
+            Start learning the new content to stay updated with your course curriculum!
+        </p>
+        
+        <a href="{course_link}" style="{BUTTON_STYLE}">View Course →</a>
+    """
+    
+    return _send_rich_email(subject, user_email, _build_html(content, f"Course Update: {update_type_display} Added"))
+
