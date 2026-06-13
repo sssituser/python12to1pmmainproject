@@ -763,23 +763,32 @@ def import_exam_questions_file(request):
                 if not row or len(row) < 6:
                     continue
                 question_text = str(row[0] or '').strip()
+                if not question_text:
+                    continue
                 options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
                 correct_indicator = str(row[5] or '').strip()
                 
                 correct_idx = 0
                 if correct_indicator.isdigit():
                     val = int(correct_indicator)
+                    # Support 1-based (1-4) or 0-based (0-3) indexing
                     if 1 <= val <= 4:
                         correct_idx = val - 1
-                    else:
+                    elif 0 <= val <= 3:
                         correct_idx = val
+                    else:
+                        correct_idx = 0  # fallback
                 elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
                     correct_idx = ord(correct_indicator.upper()) - ord('A')
                 else:
+                    # Try to match option text
                     for idx, opt in enumerate(options):
-                        if opt.lower() == correct_indicator.lower():
+                        if opt and opt.lower() == correct_indicator.lower():
                             correct_idx = idx
                             break
+                
+                # Clamp to valid range
+                correct_idx = max(0, min(correct_idx, len([o for o in options if o]) - 1))
                 
                 difficulty = str(row[6] or '').strip().lower() if len(row) > 6 else 'medium'
                 if difficulty not in ['easy', 'medium', 'hard']:
@@ -806,6 +815,8 @@ def import_exam_questions_file(request):
                 if not row or len(row) < 6 or not row[0]:
                     continue
                 question_text = str(row[0] or '').strip()
+                if not question_text:
+                    continue
                 options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
                 correct_indicator = str(row[5] or '').strip()
                 
@@ -814,21 +825,27 @@ def import_exam_questions_file(request):
                     val = int(correct_indicator)
                     if 1 <= val <= 4:
                         correct_idx = val - 1
-                    else:
+                    elif 0 <= val <= 3:
                         correct_idx = val
+                    else:
+                        correct_idx = 0
                 elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
                     correct_idx = ord(correct_indicator.upper()) - ord('A')
                 else:
                     for idx, opt in enumerate(options):
-                        if opt.lower() == correct_indicator.lower():
+                        if opt and opt.lower() == correct_indicator.lower():
                             correct_idx = idx
                             break
+                
+                # Clamp to valid range
+                correct_idx = max(0, min(correct_idx, len([o for o in options if o]) - 1))
                             
                 difficulty = str(row[6] or '').strip().lower() if len(row) > 6 and row[6] else 'medium'
                 if difficulty not in ['easy', 'medium', 'hard']:
                     difficulty = 'medium'
-                    
-                marks = int(row[7]) if len(row) > 7 and str(row[7]).isdigit() else 1
+                
+                raw_marks = row[7] if len(row) > 7 else None
+                marks = int(raw_marks) if raw_marks is not None and str(raw_marks).strip().isdigit() else 1
                 
                 questions.append({
                     "question": question_text,
@@ -845,13 +862,22 @@ def import_exam_questions_file(request):
             questions = parse_raw_text_to_questions(full_text)
             
         elif filename.endswith('.pdf'):
-            import pypdf
-            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+            except ImportError:
+                import PyPDF2 as pypdf
+                reader = pypdf.PdfReader(io.BytesIO(file_bytes))
             full_text = ""
             for page in reader.pages:
-                text = page.extract_text()
+                try:
+                    text = page.extract_text()
+                except Exception:
+                    text = ""
                 if text:
                     full_text += text + "\n"
+            # Clean up common PDF artifacts
+            full_text = re.sub(r'[ \t]+', ' ', full_text)
             questions = parse_raw_text_to_questions(full_text)
             
         else:
@@ -863,57 +889,86 @@ def import_exam_questions_file(request):
     return Response({"status": "success", "questions": questions})
 
 def parse_raw_text_to_questions(text):
+    """
+    Parse structured Q&A text from PDF/DOCX into question dicts.
+    Supports formats:
+      - Q1. / Question 1. / 1. / 1) as question markers
+      - A) / B) / a. / 1) / 2) / (A) as option markers
+      - Answer: B / Ans: 2 / Correct Answer: A as answer markers
+    """
     questions = []
     lines = text.split('\n')
     current_q = None
-    
-    q_pattern = re.compile(r'^(?:Q(?:uestion)?\s*\d+[\.:]|\d+[\.:])\s*(.*)', re.IGNORECASE)
-    opt_pattern = re.compile(r'^\s*([A-D])[\)\.\-\s]\s*(.*)', re.IGNORECASE)
-    ans_pattern = re.compile(r'^\s*(?:Correct\s*)?Ans(?:wer)?[\s\.:]+([A-D]|\d+)', re.IGNORECASE)
-    
+
+    # Match: Q1. / Q1: / Question 1. / 1. / 1) / 1:
+    q_pattern = re.compile(
+        r'^(?:Q(?:uestion)?[\s.]*(\d+)|(?:(\d+)[\)\.:]))\s+(.*)',
+        re.IGNORECASE
+    )
+    # Match: A) / A. / A - / (A) / a) and numbered 1) / 1. / (1)
+    opt_pattern = re.compile(
+        r'^\s*(?:\(?([A-Da-d1-4])[\)\.\-\s]|\(([A-Da-d1-4])\))\s+(.*)',
+        re.IGNORECASE
+    )
+    # Match: Answer: B / Ans: 2 / Correct Answer: A / Key: C
+    ans_pattern = re.compile(
+        r'^\s*(?:correct\s*)?(?:ans(?:wer)?|key)[\s\.:]+([A-Da-d]|[1-4])',
+        re.IGNORECASE
+    )
+
+    def _save_current(q):
+        """Pad options to 4 and append."""
+        if q and len(q['options']) >= 2:
+            while len(q['options']) < 4:
+                q['options'].append("")
+            # Clamp correct index
+            q['correct'] = max(0, min(q['correct'], len(q['options']) - 1))
+            questions.append(q)
+
+    def _parse_correct(val_str):
+        v = val_str.strip().upper()
+        if v in ['A', 'B', 'C', 'D']:
+            return ord(v) - ord('A')
+        elif v in ['1', '2', '3', '4']:
+            return int(v) - 1  # convert 1-based to 0-based
+        return 0
+
     for line in lines:
         line_str = line.strip()
         if not line_str:
             continue
-            
+
         q_match = q_pattern.match(line_str)
         if q_match:
-            if current_q and len(current_q['options']) >= 2:
-                while len(current_q['options']) < 4:
-                    current_q['options'].append("")
-                questions.append(current_q)
+            _save_current(current_q)
+            # group(3) is the question text (after number)
             current_q = {
-                "question": q_match.group(1).strip(),
+                "question": q_match.group(3).strip(),
                 "options": [],
                 "correct": 0,
                 "difficulty": "medium",
                 "marks": 1
             }
             continue
-            
-        if current_q:
-            opt_match = opt_pattern.match(line_str)
-            if opt_match:
-                opt_val = opt_match.group(2).strip()
-                current_q['options'].append(opt_val)
-                continue
-                
+
+        if current_q is not None:
             ans_match = ans_pattern.match(line_str)
             if ans_match:
-                ans_val = ans_match.group(1).upper()
-                if ans_val in ['A', 'B', 'C', 'D']:
-                    current_q['correct'] = ord(ans_val) - ord('A')
-                elif ans_val.isdigit():
-                    current_q['correct'] = int(ans_val)
+                current_q['correct'] = _parse_correct(ans_match.group(1))
                 continue
-                
+
+            opt_match = opt_pattern.match(line_str)
+            if opt_match:
+                # group(1) = unparenthesised label, group(2) = parenthesised label, group(3) = text
+                opt_label = (opt_match.group(1) or opt_match.group(2) or '').upper()
+                opt_text = opt_match.group(3).strip()
+                current_q['options'].append(opt_text)
+                continue
+
+            # If no options yet, this may be a continuation of the question
             if not current_q['options']:
-                current_q['question'] += " " + line_str
-                
-    if current_q and len(current_q['options']) >= 2:
-        while len(current_q['options']) < 4:
-            current_q['options'].append("")
-        questions.append(current_q)
-        
+                current_q['question'] += ' ' + line_str
+
+    _save_current(current_q)
     return questions
 
