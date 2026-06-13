@@ -9,6 +9,9 @@ class MyappConfig(AppConfig):
     
     def ready(self):
         """Register signals and initialize 1000% Reliable Sync Engine"""
+        # Import models to register signals
+        import myapp.models  # noqa
+        
         # Trigger on migrations
         post_migrate.connect(on_post_migrate, sender=self)
         
