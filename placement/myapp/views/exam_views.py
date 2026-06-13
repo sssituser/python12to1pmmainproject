@@ -35,123 +35,136 @@ def create_placement_exam(request):
     Persist a complete 10-step wizard exam to the database.
     Stores the full payload in AutomatedExamConfig with extended JSON.
     """
-    data = request.data
+    try:
+        data = request.data
 
-    title = str(data.get('title', '')).strip()
-    if not title:
-        return Response({"error": "Exam title is required"}, status=400)
+        title = str(data.get('title', '')).strip()
+        if not title:
+            return Response({"error": "Exam title is required"}, status=400)
 
-    exam_type = data.get('exam_type', 'daily')
-    subject = str(data.get('subject', 'PYTHON')).upper()
-    course_name = str(data.get('course_name', '')).strip().upper()
-    duration = int(data.get('duration', 60))
-    total_questions = int(data.get('total_questions', 30))
-    total_marks = int(data.get('total_marks', 30))
-    pass_marks = int(data.get('pass_marks', 15))
-    marks_per_question = int(data.get('marks_per_question', 1))
+        exam_type = data.get('exam_type', 'daily')
+        subject = str(data.get('subject', 'PYTHON')).upper()
+        course_name = str(data.get('course_name', '')).strip().upper()
 
-    # Persist via AutomatedExamConfig (reuse existing infrastructure)
-    import json as _json
-    config_key = f"{course_name}_{exam_type}_{subject}_{title}".replace(' ', '_')[:100]
+        def safe_int(val, default):
+            try:
+                if val is None or str(val).strip() == "": return default
+                return int(float(val))
+            except:
+                return default
 
-    # Create a unique course_name key per exam (avoids UniqueConstraint collision)
-    unique_course_key = f"{course_name or subject}::{exam_type}::{title}"[:255]
+        duration = safe_int(data.get('duration'), 60)
+        total_questions = safe_int(data.get('total_questions'), 30)
+        total_marks = safe_int(data.get('total_marks'), 30)
+        pass_marks = safe_int(data.get('pass_marks'), 15)
+        marks_per_question = safe_int(data.get('marks_per_question'), 1)
 
-    config_data = {
-        'exam_name': title,
-        'subjects': [subject],
-        'duration': duration,
-        'passing_strategy': 'marks',
-        'requirement': pass_marks,
-        'question_count': total_questions,
-        'marks_per_question': marks_per_question,
-    }
+        # Persist via AutomatedExamConfig (reuse existing infrastructure)
+        import json as _json
+        config_key = f"{course_name}_{exam_type}_{subject}_{title}".replace(' ', '_')[:100]
 
-    # Save or update the config using update_or_create
-    config, created = AutomatedExamConfig.objects.update_or_create(
-        course_name=unique_course_key,
-        defaults=config_data
-    )
+        # Create a unique course_name key per exam (avoids UniqueConstraint collision)
+        unique_course_key = f"{course_name or subject}::{exam_type}::{title}"[:255]
 
-    # Save questions if provided
-    questions = data.get('questions', [])
-    paper = None
-    if questions:
-        paper = ExamPaper.objects.create(
-            title=title,
-            subject=subject,
-            duration=duration,
-            total_marks=total_marks,
-            instructions=data.get('description', '')
-        )
-        for idx, q in enumerate(questions):
-            question = ExamQuestion.objects.create(
-                subject=subject,
-                topic=data.get('topic', ''),
-                difficulty=q.get('difficulty', 'medium'),
-                question_text=q.get('question', ''),
-                question_type='mcq',
-                marks=q.get('marks', marks_per_question)
-            )
-            opts = q.get('options', [])
-            correct_idx = q.get('correct', 0)
-            for oi, opt_text in enumerate(opts):
-                ExamQuestionChoice.objects.create(
-                    question=question,
-                    choice_text=opt_text,
-                    is_correct=(oi == correct_idx)
-                )
-            ExamPaperQuestionRelation.objects.create(
-                paper=paper, question=question, order=idx + 1
-            )
-
-    # Store full metadata in memory store for list API
-    exam_entry = {
-        'id': config.id,
-        'title': title,
-        'exam_type': exam_type,
-        'subject': subject,
-        'course': course_name,
-        'duration': duration,
-        'total_questions': len(questions) if questions else total_questions,
-        'total_marks': total_marks,
-        'pass_marks': pass_marks,
-        'paper_id': paper.id if paper else None,
-        'status': 'scheduled',
-        'created_at': timezone.now().isoformat(),
-        'settings': {
-            'webcam_required': data.get('webcam_required', False),
-            'face_detection': data.get('face_detection', True),
-            'multi_face_detection': data.get('multi_face_detection', True),
-            'fullscreen_required': data.get('fullscreen_required', True),
-            'tab_switch_limit': data.get('tab_switch_limit', 3),
-            'disable_copy_paste': data.get('disable_copy_paste', True),
-            'randomize_questions': data.get('randomize_questions', True),
-            'randomize_options': data.get('randomize_options', True),
-            'negative_marking': data.get('negative_marking', False),
-            'negative_marks': data.get('negative_marks', 0.25),
-            'auto_submit': data.get('auto_submit', True),
-            'risk_threshold': data.get('risk_threshold', 50),
-            'departments': data.get('departments', []),
-            'years': data.get('years', []),
-            'start_time': data.get('start_time', ''),
-            'end_time': data.get('end_time', ''),
-            'show_result_immediately': data.get('show_result_immediately', True),
-            'show_leaderboard': data.get('show_leaderboard', True),
-            'certificate_enabled': data.get('certificate_enabled', False),
+        config_data = {
+            'exam_name': title,
+            'subjects': [subject],
+            'duration': duration,
+            'passing_strategy': 'marks',
+            'requirement': pass_marks,
+            'question_count': total_questions,
+            'marks_per_question': marks_per_question,
         }
-    }
-    # Deduplicate by id
-    global _EXAM_STORE
-    _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != config.id]
-    _EXAM_STORE.insert(0, exam_entry)
 
-    return Response({
-        "status": "success",
-        "exam_id": config.id,
-        "paper_id": paper.id if paper else None,
-        "message": f"Exam '{title}' published successfully!"
-    })
+        # Save or update the config using update_or_create
+        config, created = AutomatedExamConfig.objects.update_or_create(
+            course_name=unique_course_key,
+            defaults=config_data
+        )
+
+        # Save questions if provided
+        questions = data.get('questions', [])
+        paper = None
+        if questions:
+            paper = ExamPaper.objects.create(
+                title=title,
+                subject=subject,
+                duration=duration,
+                total_marks=total_marks,
+                instructions=data.get('description', '')
+            )
+            for idx, q in enumerate(questions):
+                question = ExamQuestion.objects.create(
+                    subject=subject,
+                    topic=data.get('topic', ''),
+                    difficulty=q.get('difficulty', 'medium'),
+                    question_text=q.get('question', ''),
+                    question_type='mcq',
+                    marks=q.get('marks', marks_per_question)
+                )
+                opts = q.get('options', [])
+                correct_idx = safe_int(q.get('correct'), 0)
+                for oi, opt_text in enumerate(opts):
+                    ExamQuestionChoice.objects.create(
+                        question=question,
+                        choice_text=opt_text,
+                        is_correct=(oi == correct_idx)
+                    )
+                ExamPaperQuestionRelation.objects.create(
+                    paper=paper, question=question, order=idx + 1
+                )
+
+        # Store full metadata in memory store for list API
+        exam_entry = {
+            'id': config.id,
+            'title': title,
+            'exam_type': exam_type,
+            'subject': subject,
+            'course': course_name,
+            'duration': duration,
+            'total_questions': len(questions) if questions else total_questions,
+            'total_marks': total_marks,
+            'pass_marks': pass_marks,
+            'paper_id': paper.id if paper else None,
+            'status': 'scheduled',
+            'created_at': timezone.now().isoformat(),
+            'settings': {
+                'webcam_required': data.get('webcam_required', False),
+                'face_detection': data.get('face_detection', True),
+                'multi_face_detection': data.get('multi_face_detection', True),
+                'fullscreen_required': data.get('fullscreen_required', True),
+                'tab_switch_limit': data.get('tab_switch_limit', 3),
+                'disable_copy_paste': data.get('disable_copy_paste', True),
+                'randomize_questions': data.get('randomize_questions', True),
+                'randomize_options': data.get('randomize_options', True),
+                'negative_marking': data.get('negative_marking', False),
+                'negative_marks': data.get('negative_marks', 0.25),
+                'auto_submit': data.get('auto_submit', True),
+                'risk_threshold': data.get('risk_threshold', 50),
+                'departments': data.get('departments', []),
+                'years': data.get('years', []),
+                'start_time': data.get('start_time', ''),
+                'end_time': data.get('end_time', ''),
+                'show_result_immediately': data.get('show_result_immediately', True),
+                'show_leaderboard': data.get('show_leaderboard', True),
+                'certificate_enabled': data.get('certificate_enabled', False),
+            }
+        }
+        # Deduplicate by id
+        global _EXAM_STORE
+        _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != config.id]
+        _EXAM_STORE.insert(0, exam_entry)
+
+        return Response({
+            "status": "success",
+            "exam_id": config.id,
+            "paper_id": paper.id if paper else None,
+            "message": f"Exam '{title}' published successfully!"
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({"status": "error", "message": f"Server error occurred: {str(e)}"}, status=500)
 
 
 @api_view(['GET'])
@@ -675,20 +688,25 @@ def import_exam_questions_file(request):
     questions = []
     
     try:
+        file_bytes = uploaded_file.read()
         if filename.endswith('.csv'):
-            file_data = uploaded_file.read().decode('utf-8-sig', errors='ignore')
+            file_data = file_bytes.decode('utf-8-sig', errors='ignore')
             reader = csv.reader(io.StringIO(file_data))
             header = next(reader, None)  # skip header
             for row in reader:
                 if not row or len(row) < 6:
                     continue
-                question_text = row[0].strip()
-                options = [row[1].strip(), row[2].strip(), row[3].strip(), row[4].strip()]
-                correct_indicator = row[5].strip()
+                question_text = str(row[0] or '').strip()
+                options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
+                correct_indicator = str(row[5] or '').strip()
                 
                 correct_idx = 0
                 if correct_indicator.isdigit():
-                    correct_idx = int(correct_indicator)
+                    val = int(correct_indicator)
+                    if 1 <= val <= 4:
+                        correct_idx = val - 1
+                    else:
+                        correct_idx = val
                 elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
                     correct_idx = ord(correct_indicator.upper()) - ord('A')
                 else:
@@ -697,11 +715,11 @@ def import_exam_questions_file(request):
                             correct_idx = idx
                             break
                 
-                difficulty = row[6].strip().lower() if len(row) > 6 else 'medium'
+                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 else 'medium'
                 if difficulty not in ['easy', 'medium', 'hard']:
                     difficulty = 'medium'
                     
-                marks = int(row[7].strip()) if len(row) > 7 and row[7].strip().isdigit() else 1
+                marks = int(str(row[7] or '').strip()) if len(row) > 7 and str(row[7] or '').strip().isdigit() else 1
                 
                 questions.append({
                     "question": question_text,
@@ -713,7 +731,7 @@ def import_exam_questions_file(request):
                 
         elif filename.endswith('.xlsx') or filename.endswith('.xls'):
             import openpyxl
-            wb = openpyxl.load_workbook(uploaded_file, data_only=True)
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
             sheet = wb.active
             rows = iter(sheet.rows)
             header = next(rows, None)  # skip header
@@ -721,13 +739,17 @@ def import_exam_questions_file(request):
                 row = [cell.value for cell in r]
                 if not row or len(row) < 6 or not row[0]:
                     continue
-                question_text = str(row[0]).strip()
-                options = [str(row[1]).strip(), str(row[2]).strip(), str(row[3]).strip(), str(row[4]).strip()]
-                correct_indicator = str(row[5]).strip()
+                question_text = str(row[0] or '').strip()
+                options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
+                correct_indicator = str(row[5] or '').strip()
                 
                 correct_idx = 0
                 if correct_indicator.isdigit():
-                    correct_idx = int(correct_indicator)
+                    val = int(correct_indicator)
+                    if 1 <= val <= 4:
+                        correct_idx = val - 1
+                    else:
+                        correct_idx = val
                 elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
                     correct_idx = ord(correct_indicator.upper()) - ord('A')
                 else:
@@ -736,7 +758,7 @@ def import_exam_questions_file(request):
                             correct_idx = idx
                             break
                             
-                difficulty = str(row[6]).strip().lower() if len(row) > 6 and row[6] else 'medium'
+                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 and row[6] else 'medium'
                 if difficulty not in ['easy', 'medium', 'hard']:
                     difficulty = 'medium'
                     
@@ -752,16 +774,18 @@ def import_exam_questions_file(request):
                 
         elif filename.endswith('.docx'):
             import docx
-            doc = docx.Document(uploaded_file)
+            doc = docx.Document(io.BytesIO(file_bytes))
             full_text = "\n".join([p.text for p in doc.paragraphs])
             questions = parse_raw_text_to_questions(full_text)
             
         elif filename.endswith('.pdf'):
             import pypdf
-            reader = pypdf.PdfReader(uploaded_file)
+            reader = pypdf.PdfReader(io.BytesIO(file_bytes))
             full_text = ""
             for page in reader.pages:
-                full_text += page.extract_text() + "\n"
+                text = page.extract_text()
+                if text:
+                    full_text += text + "\n"
             questions = parse_raw_text_to_questions(full_text)
             
         else:

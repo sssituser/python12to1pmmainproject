@@ -6,4 +6,7 @@ djangorestframework-simplejwt
 requests
 cryptography
 Pillow
-django-ratelimit
+django-ratelimit
+python-docx
+openpyxl
+pypdf
