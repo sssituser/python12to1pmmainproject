@@ -6,6 +6,9 @@ from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 import json
+import csv
+import io
+import re
 
 from myapp.models import (
     ExamSession, ExamAnswer, PythonQuestion, Choice,
@@ -20,8 +23,6 @@ import random
 
 # ============================================================
 # PLACEMENT EXAM DYNAMIC STORAGE
-# Stores exams as JSON in a simple in-memory + persistent dict
-# Uses AutomatedExamConfig as backend storage with JSONField
 # ============================================================
 
 _EXAM_STORE = []   # Simple in-process store (persists for session)
@@ -33,7 +34,6 @@ _EXAM_STORE = []   # Simple in-process store (persists for session)
 def create_placement_exam(request):
     """
     Persist a complete 10-step wizard exam to the database.
-    Stores the full payload in AutomatedExamConfig with extended JSON.
     """
     try:
         data = request.data
@@ -61,11 +61,7 @@ def create_placement_exam(request):
         pass_marks = safe_int(data.get('pass_marks'), 15)
         marks_per_question = safe_int(data.get('marks_per_question'), 1)
 
-        # Persist via AutomatedExamConfig (reuse existing infrastructure)
         import json as _json
-        config_key = f"{course_name}_{exam_type}_{subject}_{title}".replace(' ', '_')[:100]
-
-        # Create a unique course_name key per exam (avoids UniqueConstraint collision)
         unique_course_key = f"{course_name or subject}::{exam_type}::{title}"[:255]
 
         config_data = {
@@ -78,13 +74,11 @@ def create_placement_exam(request):
             'marks_per_question': marks_per_question,
         }
 
-        # Save or update the config using update_or_create
         config, created = AutomatedExamConfig.objects.update_or_create(
             course_name=unique_course_key,
             defaults=config_data
         )
 
-        # Save questions if provided
         questions = data.get('questions', [])
         paper = None
         if questions:
@@ -116,7 +110,6 @@ def create_placement_exam(request):
                     paper=paper, question=question, order=idx + 1
                 )
 
-        # Store full metadata in memory store for list API
         exam_entry = {
             'id': config.id,
             'title': title,
@@ -152,32 +145,31 @@ def create_placement_exam(request):
                 'certificate_enabled': data.get('certificate_enabled', False),
             }
         }
-        # Deduplicate by id
         global _EXAM_STORE
         _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != config.id]
         _EXAM_STORE.insert(0, exam_entry)
 
-        # 🔄 Sync to exam_settings.json so student assessment engine retrieves the questions instantly
+        # Sync to exam_settings.json
         try:
             import os
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             settings_file = os.path.join(base_dir, 'exam_settings.json')
-            
+
             existing_settings = {}
             if os.path.exists(settings_file):
                 with open(settings_file, 'r', encoding='utf-8') as sf:
                     content = sf.read().strip()
                     if content:
                         existing_settings = _json.loads(content)
-                        
+
             category = exam_type.capitalize()
-            
+
             formatted_qs = []
             for idx, q in enumerate(questions):
                 opts = q.get('options', [])
                 correct_idx = safe_int(q.get('correct'), 0)
                 answer_text = opts[correct_idx] if 0 <= correct_idx < len(opts) else ""
-                
+
                 formatted_qs.append({
                     "id": q.get('id') or int(timezone.now().timestamp() * 1000) + idx,
                     "question": q.get('question', ''),
@@ -187,7 +179,7 @@ def create_placement_exam(request):
                     "marks": safe_int(q.get('marks'), marks_per_question),
                     "subject": subject.upper()
                 })
-                
+
             exam_config = {
                 "maxQuestions": len(formatted_qs) if formatted_qs else total_questions,
                 "questions": formatted_qs,
@@ -197,23 +189,19 @@ def create_placement_exam(request):
             }
 
             if course_name.upper() == "ALL COURSES":
-                # Overwrite general key
                 existing_settings[category] = exam_config
-                # Overwrite all course-specific keys for this category
                 for k in list(existing_settings.keys()):
                     if k.lower().endswith(f"_{category.lower()}"):
                         existing_settings[k] = exam_config
             else:
                 target_key = f"{course_name}_{category}" if course_name else category
-                
-                # Resolve key case-insensitively to overwrite existing configurations
                 resolved_key = target_key
                 for k in existing_settings.keys():
                     if k.lower() == target_key.lower():
                         resolved_key = k
                         break
                 existing_settings[resolved_key] = exam_config
-            
+
             with open(settings_file, 'w', encoding='utf-8') as sf:
                 _json.dump(existing_settings, sf, indent=4)
         except Exception as es_err:
@@ -241,11 +229,9 @@ def list_placement_exams(request):
     """
     global _EXAM_STORE
 
-    # Also pull from DB for persistence across restarts
     db_configs = AutomatedExamConfig.objects.all().order_by('-id')[:50]
     db_entries = []
     for c in db_configs:
-        # Extract exam_type from the course_name key (format: "course::type::title")
         parts = c.course_name.split("::")
         if len(parts) < 3:
             continue
@@ -273,7 +259,6 @@ def list_placement_exams(request):
             }
         })
 
-    # Merge: in-memory takes priority (has richer metadata)
     mem_ids = {e['id'] for e in _EXAM_STORE}
     merged = list(_EXAM_STORE) + [e for e in db_entries if e['id'] not in mem_ids]
 
@@ -290,11 +275,9 @@ def delete_placement_exam(request, exam_id):
     """
     global _EXAM_STORE
 
-    # Remove from in-memory store
     before = len(_EXAM_STORE)
     _EXAM_STORE = [e for e in _EXAM_STORE if e['id'] != exam_id]
 
-    # Remove from DB
     deleted_count, _ = AutomatedExamConfig.objects.filter(id=exam_id).delete()
 
     if deleted_count == 0 and len(_EXAM_STORE) == before:
@@ -312,7 +295,6 @@ def delete_placement_exam(request, exam_id):
 def log_exam_violation(request):
     """
     Log secure assessment visibility, tab switches, and full-screen exits.
-    Calculates dynamic Browser Lock Score on the fly.
     """
     data = request.data
     session_id = data.get('session_id')
@@ -324,8 +306,7 @@ def log_exam_violation(request):
         return Response({"error": "session_id and violation_type are required"}, status=400)
 
     session = get_object_or_404(ExamSession, id=session_id)
-    
-    # Calculate penalty scores
+
     penalty_mapping = {
         'TAB_SWITCH': 5,
         'FULLSCREEN_EXIT': 10,
@@ -344,17 +325,15 @@ def log_exam_violation(request):
         remarks=remarks
     )
 
-    # Accumulate Browser Lock Risk Score
     session.browser_lock_score += severity
-    
-    # Determine risk verdict
+
     if session.browser_lock_score > 50:
         session.final_verdict = 'High Risk'
     elif session.browser_lock_score > 20:
         session.final_verdict = 'Suspicious'
     else:
         session.final_verdict = 'Safe'
-        
+
     session.save()
 
     return Response({
@@ -420,7 +399,6 @@ def auto_generate_exam_paper(request):
     hard_count = int(data.get('hard_count', 5))
     duration = int(data.get('duration', 60))
 
-    # Fetch pool of questions
     easy_q = list(ExamQuestion.objects.filter(subject=subject, difficulty='easy'))
     medium_q = list(ExamQuestion.objects.filter(subject=subject, difficulty='medium'))
     hard_q = list(ExamQuestion.objects.filter(subject=subject, difficulty='hard'))
@@ -434,7 +412,7 @@ def auto_generate_exam_paper(request):
         return Response({"error": "No questions exist matching criteria in Question Bank"}, status=400)
 
     total_marks = sum(q.marks for q in selected_questions)
-    
+
     paper = ExamPaper.objects.create(
         title=title,
         subject=subject,
@@ -467,7 +445,7 @@ def get_exam_paper_questions(request, paper_id):
     """
     paper = get_object_or_404(ExamPaper, id=paper_id)
     relations = ExamPaperQuestionRelation.objects.filter(paper=paper).order_by('order')
-    
+
     questions_list = []
     for rel in relations:
         q = rel.question
@@ -507,17 +485,14 @@ def automated_exam_config_view(request):
     if request.method == 'POST':
         data = request.data
         course_name = str(data.get('course_name', '')).strip()
-        
+
         if not course_name:
-            # For 1000% reliability, don't 400. Just ignore if possible or return success with a warning.
             return Response({"status": "skipped", "message": "course_name required for save"}, status=200)
 
-        # 🛡️ 1000% Persist automated configuration for the entire Course (Safe Case-Insensitive Match)
         course_name_normalized = course_name.upper()
-        
+
         config = AutomatedExamConfig.objects.filter(course_name__iexact=course_name_normalized).first()
-        
-        # 🏗️ SAFE TYPE CONVERSION SYSTEM
+
         def safe_int(val, default):
             try:
                 if val is None or str(val).strip() == "": return default
@@ -525,7 +500,7 @@ def automated_exam_config_view(request):
             except: return default
 
         defaults = {
-            'course_name': course_name_normalized, 
+            'course_name': course_name_normalized,
             'exam_name': data.get('exam_name', 'Daily Assessment'),
             'subjects': data.get('subjects', []),
             'duration': safe_int(data.get('duration'), 80),
@@ -545,23 +520,19 @@ def automated_exam_config_view(request):
             msg = f"Successfully created automated config for {course_name_normalized}"
 
         return Response({
-            "status": "success", 
-            "config_id": config.id, 
+            "status": "success",
+            "config_id": config.id,
             "message": msg
         })
 
-
-    # GET logic: Fetch the active config for a specific course (🛡️ Robust Lookup)
     course_name = request.query_params.get('course_name', '').strip()
     if not course_name:
-        # 1000% Reliability: Return empty instead of 400 error
         return Response({"status": "not_found", "message": "No course_name provided"}, status=200)
-        
+
     config = AutomatedExamConfig.objects.filter(course_name__iexact=course_name).first()
     if not config:
         return Response({"status": "not_found", "message": "No specific faculty override found for this course."}, status=200)
 
-        
     return Response({
         "status": "success",
         "exam_name": config.exam_name,
@@ -576,6 +547,8 @@ def automated_exam_config_view(request):
 
 # ---------------- START EXAM SESSION ----------------
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 @throttle_classes([ExamRateThrottle])
 def start_exam_session(request):
     data = request.data
@@ -597,7 +570,6 @@ def start_exam_session(request):
 def submit_answer(request, session_id=None):
     data = request.data
 
-    # Use session_id from URL if available, else from data
     s_id = session_id or data.get("session_id")
     session = get_object_or_404(ExamSession, id=s_id)
     question = get_object_or_404(PythonQuestion, id=data.get("question_id"))
@@ -629,17 +601,14 @@ def end_exam_session(request, session_id):
     total_marks = 0
 
     for answer in answers:
-
         question = answer.question
         total_marks += question.marks
 
         if answer.selected_choice_id:
             try:
                 choice = Choice.objects.get(id=answer.selected_choice_id)
-
                 if choice.is_correct:
                     total_score += question.marks
-
             except Choice.DoesNotExist:
                 pass
 
@@ -647,7 +616,6 @@ def end_exam_session(request, session_id):
     session.total_marks = total_marks
     session.save()
 
-    # Send exam report email notification
     if session.student_email:
         try:
             threading.Thread(
@@ -663,9 +631,6 @@ def end_exam_session(request, session_id):
     })
 
 
-# Webcam snapshot save endpoint was removed as webcam proctoring is disabled.
-
-
 # ---------------- GET ALL EXAM SESSIONS ----------------
 @api_view(['GET'])
 @throttle_classes([AuthenticatedUserThrottle])
@@ -676,7 +641,6 @@ def get_exam_sessions(request):
     data = []
 
     for session in sessions:
-
         data.append({
             "id": session.id,
             "student_name": session.student_name,
@@ -719,8 +683,9 @@ def create_question(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
- # ---------------- DELETE EXAM SESSION ----------------
+
+
+# ---------------- DELETE EXAM SESSION ----------------
 @api_view(['DELETE'])
 @throttle_classes([AuthenticatedUserThrottle])
 def delete_exam_session(request, pk):
@@ -732,9 +697,6 @@ def delete_exam_session(request, pk):
 
 
 # ---------------- IMPORT EXAM QUESTIONS FILE ----------------
-import csv
-import io
-import re
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -747,14 +709,15 @@ def import_exam_questions_file(request):
     """
     if 'file' not in request.FILES:
         return Response({"error": "No file uploaded"}, status=400)
-    
+
     uploaded_file = request.FILES['file']
     filename = uploaded_file.name.lower()
-    
+
     questions = []
-    
+
     try:
         file_bytes = uploaded_file.read()
+
         if filename.endswith('.csv'):
             file_data = file_bytes.decode('utf-8-sig', errors='ignore')
             reader = csv.reader(io.StringIO(file_data))
@@ -765,61 +728,10 @@ def import_exam_questions_file(request):
                 question_text = str(row[0] or '').strip()
                 if not question_text:
                     continue
-                options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
+                options = [str(row[1] or '').strip(), str(row[2] or '').strip(),
+                           str(row[3] or '').strip(), str(row[4] or '').strip()]
                 correct_indicator = str(row[5] or '').strip()
-                
-                correct_idx = 0
-                if correct_indicator.isdigit():
-                    val = int(correct_indicator)
-                    # Support 1-based (1-4) or 0-based (0-3) indexing
-                    if 1 <= val <= 4:
-                        correct_idx = val - 1
-                    elif 0 <= val <= 3:
-                        correct_idx = val
-                    else:
-                        correct_idx = 0  # fallback
-                elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
-                    correct_idx = ord(correct_indicator.upper()) - ord('A')
-                else:
-                    # Try to match option text
-                    for idx, opt in enumerate(options):
-                        if opt and opt.lower() == correct_indicator.lower():
-                            correct_idx = idx
-                            break
-                
-                # Clamp to valid range
-                correct_idx = max(0, min(correct_idx, len([o for o in options if o]) - 1))
-                
-                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 else 'medium'
-                if difficulty not in ['easy', 'medium', 'hard']:
-                    difficulty = 'medium'
-                    
-                marks = int(str(row[7] or '').strip()) if len(row) > 7 and str(row[7] or '').strip().isdigit() else 1
-                
-                questions.append({
-                    "question": question_text,
-                    "options": options,
-                    "correct": correct_idx,
-                    "difficulty": difficulty,
-                    "marks": marks
-                })
-                
-        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
-            import openpyxl
-            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-            sheet = wb.active
-            rows = iter(sheet.rows)
-            header = next(rows, None)  # skip header
-            for r in rows:
-                row = [cell.value for cell in r]
-                if not row or len(row) < 6 or not row[0]:
-                    continue
-                question_text = str(row[0] or '').strip()
-                if not question_text:
-                    continue
-                options = [str(row[1] or '').strip(), str(row[2] or '').strip(), str(row[3] or '').strip(), str(row[4] or '').strip()]
-                correct_indicator = str(row[5] or '').strip()
-                
+
                 correct_idx = 0
                 if correct_indicator.isdigit():
                     val = int(correct_indicator)
@@ -836,17 +748,15 @@ def import_exam_questions_file(request):
                         if opt and opt.lower() == correct_indicator.lower():
                             correct_idx = idx
                             break
-                
-                # Clamp to valid range
+
                 correct_idx = max(0, min(correct_idx, len([o for o in options if o]) - 1))
-                            
-                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 and row[6] else 'medium'
+
+                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 else 'medium'
                 if difficulty not in ['easy', 'medium', 'hard']:
                     difficulty = 'medium'
-                
-                raw_marks = row[7] if len(row) > 7 else None
-                marks = int(raw_marks) if raw_marks is not None and str(raw_marks).strip().isdigit() else 1
-                
+
+                marks = int(str(row[7] or '').strip()) if len(row) > 7 and str(row[7] or '').strip().isdigit() else 1
+
                 questions.append({
                     "question": question_text,
                     "options": options,
@@ -854,13 +764,64 @@ def import_exam_questions_file(request):
                     "difficulty": difficulty,
                     "marks": marks
                 })
-                
+
+        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+            import openpyxl
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+            sheet = wb.active
+            rows = iter(sheet.rows)
+            header = next(rows, None)  # skip header
+            for r in rows:
+                row = [cell.value for cell in r]
+                if not row or len(row) < 6 or not row[0]:
+                    continue
+                question_text = str(row[0] or '').strip()
+                if not question_text:
+                    continue
+                options = [str(row[1] or '').strip(), str(row[2] or '').strip(),
+                           str(row[3] or '').strip(), str(row[4] or '').strip()]
+                correct_indicator = str(row[5] or '').strip()
+
+                correct_idx = 0
+                if correct_indicator.isdigit():
+                    val = int(correct_indicator)
+                    if 1 <= val <= 4:
+                        correct_idx = val - 1
+                    elif 0 <= val <= 3:
+                        correct_idx = val
+                    else:
+                        correct_idx = 0
+                elif correct_indicator.upper() in ['A', 'B', 'C', 'D']:
+                    correct_idx = ord(correct_indicator.upper()) - ord('A')
+                else:
+                    for idx, opt in enumerate(options):
+                        if opt and opt.lower() == correct_indicator.lower():
+                            correct_idx = idx
+                            break
+
+                correct_idx = max(0, min(correct_idx, len([o for o in options if o]) - 1))
+
+                difficulty = str(row[6] or '').strip().lower() if len(row) > 6 and row[6] else 'medium'
+                if difficulty not in ['easy', 'medium', 'hard']:
+                    difficulty = 'medium'
+
+                raw_marks = row[7] if len(row) > 7 else None
+                marks = int(raw_marks) if raw_marks is not None and str(raw_marks).strip().isdigit() else 1
+
+                questions.append({
+                    "question": question_text,
+                    "options": options,
+                    "correct": correct_idx,
+                    "difficulty": difficulty,
+                    "marks": marks
+                })
+
         elif filename.endswith('.docx'):
             import docx
             doc = docx.Document(io.BytesIO(file_bytes))
             full_text = "\n".join([p.text for p in doc.paragraphs])
             questions = parse_raw_text_to_questions(full_text)
-            
+
         elif filename.endswith('.pdf'):
             try:
                 import pypdf
@@ -876,99 +837,99 @@ def import_exam_questions_file(request):
                     text = ""
                 if text:
                     full_text += text + "\n"
-            # Clean up common PDF artifacts
+            # Collapse multiple spaces (common PDF artifact)
             full_text = re.sub(r'[ \t]+', ' ', full_text)
             questions = parse_raw_text_to_questions(full_text)
-            
+
         else:
             return Response({"error": "Unsupported file format. Please upload CSV, Excel, Word (docx), or PDF."}, status=400)
-            
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({"error": f"Failed to parse file: {str(e)}"}, status=500)
-        
+
     return Response({"status": "success", "questions": questions})
+
 
 def parse_raw_text_to_questions(text):
     """
     Parse structured Q&A text from PDF/DOCX into question dicts.
-    Supports formats:
-      - Q1. / Question 1. / 1. / 1) as question markers
-      - A) / B) / a. / 1) / 2) / (A) as option markers
-      - Answer: B / Ans: 2 / Correct Answer: A as answer markers
+
+    KEY FIX: Handles the common PDF layout where all 4 options appear on a
+    single line: "A) opt1 B) opt2 C) opt3 D) opt4"
+
+    Strategy:
+    1. Use re.finditer to locate every question number marker in the text.
+    2. Slice the text between consecutive markers to get each question's block.
+    3. Within each block, find all A/B/C/D options (even if on one line).
+    4. Extract question body and optional answer key.
     """
     questions = []
-    lines = text.split('\n')
-    current_q = None
 
-    # Match: Q1. / Q1: / Question 1. / 1. / 1) / 1:
-    q_pattern = re.compile(
-        r'^(?:Q(?:uestion)?[\s.]*(\d+)|(?:(\d+)[\)\.:]))\s+(.*)',
+    # Locate all question starters: "1.", "1)", "Q1.", "Question 1." etc.
+    q_start_re = re.compile(
+        r'(?:^|\n)\s*(?:Q(?:uestion)?\s*\.?\s*\d+|(\d+)\s*[\)\.:])\s+',
         re.IGNORECASE
     )
-    # Match: A) / A. / A - / (A) / a) and numbered 1) / 1. / (1)
-    opt_pattern = re.compile(
-        r'^\s*(?:\(?([A-Da-d1-4])[\)\.\-\s]|\(([A-Da-d1-4])\))\s+(.*)',
-        re.IGNORECASE
-    )
-    # Match: Answer: B / Ans: 2 / Correct Answer: A / Key: C
-    ans_pattern = re.compile(
-        r'^\s*(?:correct\s*)?(?:ans(?:wer)?|key)[\s\.:]+([A-Da-d]|[1-4])',
-        re.IGNORECASE
-    )
+    matches = list(q_start_re.finditer(text))
 
-    def _save_current(q):
-        """Pad options to 4 and append."""
-        if q and len(q['options']) >= 2:
-            while len(q['options']) < 4:
-                q['options'].append("")
-            # Clamp correct index
-            q['correct'] = max(0, min(q['correct'], len(q['options']) - 1))
-            questions.append(q)
+    if not matches:
+        return questions
 
-    def _parse_correct(val_str):
-        v = val_str.strip().upper()
-        if v in ['A', 'B', 'C', 'D']:
-            return ord(v) - ord('A')
-        elif v in ['1', '2', '3', '4']:
-            return int(v) - 1  # convert 1-based to 0-based
-        return 0
+    for i, m in enumerate(matches):
+        # Slice text for this question's block
+        block_start = m.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        block = text[block_start:block_end].strip()
 
-    for line in lines:
-        line_str = line.strip()
-        if not line_str:
+        if not block:
             continue
 
-        q_match = q_pattern.match(line_str)
-        if q_match:
-            _save_current(current_q)
-            # group(3) is the question text (after number)
-            current_q = {
-                "question": q_match.group(3).strip(),
-                "options": [],
-                "correct": 0,
+        # ── Extract the question body (everything before first option marker) ──
+        first_opt_re = re.compile(r'(?<!\w)[A-D]\s*[\)\.]\s', re.IGNORECASE)
+        first_opt = first_opt_re.search(block)
+        if first_opt:
+            question_body = block[:first_opt.start()].strip()
+            options_block = block[first_opt.start():]
+        else:
+            question_body = block.strip()
+            options_block = ""
+
+        if not question_body:
+            continue
+
+        # ── Extract all options from the options block ──────────────────────
+        # Works for BOTH single-line ("A) text B) text") and multi-line formats
+        options = []
+        if options_block:
+            # Split on option markers: A), B), C), D) (case-insensitive)
+            # Using lookahead so the marker itself is kept with next group
+            parts = re.split(r'(?i)(?<!\w)([A-D])\s*[\)\.]\s*', options_block)
+            # parts layout: ['', 'A', 'text_a', 'B', 'text_b', 'C', 'text_c', 'D', 'text_d', ...]
+            for j in range(1, len(parts) - 1, 2):
+                label = parts[j].upper()
+                opt_text = parts[j + 1].strip() if j + 1 < len(parts) else ""
+                # Remove any trailing answer-key text ("Answer: B" etc.)
+                opt_text = re.sub(r'\s*(?:ans(?:wer)?|key)[\s\.:]+[A-D1-4].*$', '', opt_text, flags=re.IGNORECASE).strip()
+                if label in 'ABCD' and opt_text:
+                    options.append(opt_text)
+
+        # ── Find answer key if present ──────────────────────────────────────
+        correct_idx = 0
+        ans_match = re.search(r'(?i)(?:ans(?:wer)?|key)\s*[\s\.:]+([A-D])', block)
+        if ans_match:
+            correct_idx = ord(ans_match.group(1).upper()) - ord('A')
+
+        # ── Only save if we have at least 2 options ─────────────────────────
+        if len(options) >= 2:
+            padded = (options + [""] * 4)[:4]
+            questions.append({
+                "question": question_body,
+                "options": padded,
+                "correct": max(0, min(correct_idx, len(options) - 1)),
                 "difficulty": "medium",
                 "marks": 1
-            }
-            continue
+            })
 
-        if current_q is not None:
-            ans_match = ans_pattern.match(line_str)
-            if ans_match:
-                current_q['correct'] = _parse_correct(ans_match.group(1))
-                continue
-
-            opt_match = opt_pattern.match(line_str)
-            if opt_match:
-                # group(1) = unparenthesised label, group(2) = parenthesised label, group(3) = text
-                opt_label = (opt_match.group(1) or opt_match.group(2) or '').upper()
-                opt_text = opt_match.group(3).strip()
-                current_q['options'].append(opt_text)
-                continue
-
-            # If no options yet, this may be a continuation of the question
-            if not current_q['options']:
-                current_q['question'] += ' ' + line_str
-
-    _save_current(current_q)
     return questions
-

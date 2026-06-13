@@ -480,7 +480,21 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-06-12 11:50:56.818874+00:00"
+            "updated_at": "2026-06-13 06:04:12.489145+00:00"
+        },
+        {
+            "id": 5,
+            "exam_name": "Aptitude exam 13-06-2026",
+            "course_name": "ALL COURSES::weekly::Aptitude exam 13-06-2026",
+            "subjects": [
+                "APTITUDE"
+            ],
+            "duration": 45,
+            "passing_strategy": "marks",
+            "requirement": 15,
+            "question_count": 30,
+            "marks_per_question": 1,
+            "updated_at": "2026-06-13 06:06:50.879125+00:00"
         }
     ]
 }

@@ -1236,7 +1236,7 @@ def exam_settings_api(request):
             data = {}
             
         category = request.GET.get('category', '').strip()
-        course = request.GET.get('course', '').strip()
+        course = request.GET.get('course', '').strip().upper()   # ✅ Normalise to match storage key
         storage_key = f"{course}_{category}" if course else category
         
         if category:
@@ -1279,7 +1279,7 @@ def exam_settings_api(request):
                     existing_data = json.loads(content)
             
         category = request.data.get('category', 'Weekly')
-        course = request.data.get('course', '')
+        course = request.data.get('course', '').strip().upper()   # ✅ Normalise to match storage key
         storage_key = f"{course}_{category}" if course else category
         
         new_questions = request.data.get('questions', None)

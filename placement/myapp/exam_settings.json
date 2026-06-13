@@ -7,46 +7,1288 @@
         "duration": 45
     },
     "Python Full Stack_Weekly": {
-        "maxQuestions": 25,
-        "questions": [],
-        "passingRule": "correct_answers",
-        "passingValue": 13,
-        "duration": 75
+        "maxQuestions": 30,
+        "questions": [
+            {
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
+                "options": [
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
+                ],
+                "answer": "1700",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
+                "options": [
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "answer": "Wednesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
+                "options": [
+                    "4",
+                    "5",
+                    "3",
+                    "6"
+                ],
+                "answer": "4",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
+                "options": [
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
+                ],
+                "answer": "4 April",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
+                "options": [
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
+                ],
+                "answer": "Father",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
+                "options": [
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
+                ],
+                "answer": "Brother",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
+                "options": [
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
+                ],
+                "answer": "Son",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
+                "options": [
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
+                ],
+                "answer": "Uncle",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
+                "options": [
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
+                ],
+                "answer": "M + K \u00d7 T",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
+                "options": [
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
+                ],
+                "answer": "P @ R # Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
+                "options": [
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
+                ],
+                "answer": "P * R % Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
+                "options": [
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
+                ],
+                "answer": "15 m North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
+                "options": [
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
+                ],
+                "answer": "6 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
+                "options": [
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
+                ],
+                "answer": "30 m East and 10 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
+                "options": [
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
+                ],
+                "answer": "North-East",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
+                "options": [
+                    "North",
+                    "South",
+                    "East",
+                    "West"
+                ],
+                "answer": "North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
+                "options": [
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
+                ],
+                "answer": "6 m East and 2 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
+                "options": [
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
+                ],
+                "answer": "Tuesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
+                "options": [
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
+                ],
+                "answer": "0 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
+                "options": [
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
+                ],
+                "answer": "Friday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
+                "options": [
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                ],
+                "answer": "Thursday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     },
     ".net Full Stack_Weekly": {
-        "maxQuestions": 50,
-        "questions": [],
+        "maxQuestions": 30,
+        "questions": [
+            {
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
+                "options": [
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
+                ],
+                "answer": "1700",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
+                "options": [
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "answer": "Wednesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
+                "options": [
+                    "4",
+                    "5",
+                    "3",
+                    "6"
+                ],
+                "answer": "4",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
+                "options": [
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
+                ],
+                "answer": "4 April",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
+                "options": [
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
+                ],
+                "answer": "Father",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
+                "options": [
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
+                ],
+                "answer": "Brother",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
+                "options": [
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
+                ],
+                "answer": "Son",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
+                "options": [
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
+                ],
+                "answer": "Uncle",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
+                "options": [
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
+                ],
+                "answer": "M + K \u00d7 T",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
+                "options": [
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
+                ],
+                "answer": "P @ R # Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
+                "options": [
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
+                ],
+                "answer": "P * R % Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
+                "options": [
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
+                ],
+                "answer": "15 m North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
+                "options": [
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
+                ],
+                "answer": "6 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
+                "options": [
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
+                ],
+                "answer": "30 m East and 10 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
+                "options": [
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
+                ],
+                "answer": "North-East",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
+                "options": [
+                    "North",
+                    "South",
+                    "East",
+                    "West"
+                ],
+                "answer": "North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
+                "options": [
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
+                ],
+                "answer": "6 m East and 2 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
+                "options": [
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
+                ],
+                "answer": "Tuesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
+                "options": [
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
+                ],
+                "answer": "0 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
+                "options": [
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
+                ],
+                "answer": "Friday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
+                "options": [
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                ],
+                "answer": "Thursday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            }
+        ],
         "passingRule": "percentage",
         "passingValue": 50,
         "duration": 45
     },
     "Java Full Stack_Weekly": {
-        "maxQuestions": 2,
+        "maxQuestions": 30,
         "questions": [
             {
-                "type": "mcq",
-                "question": "asdsfdghjhghfgdsdsa",
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
                 "options": [
-                    "SADSFDGFHG",
-                    "Sadsfdgfh",
-                    "dsfdgfhgjh",
-                    "SADSFDGF"
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
                 ],
-                "answer": "SADSFDGF",
-                "language": "python",
-                "testCases": [
-                    {
-                        "input": "",
-                        "output": ""
-                    }
+                "answer": "1700",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
                 ],
-                "marks": 2,
-                "id": 1775411014298
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
+                "options": [
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "answer": "Wednesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
+                "options": [
+                    "4",
+                    "5",
+                    "3",
+                    "6"
+                ],
+                "answer": "4",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
+                "options": [
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
+                ],
+                "answer": "4 April",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
+                "options": [
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
+                ],
+                "answer": "Father",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
+                "options": [
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
+                ],
+                "answer": "Brother",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
+                "options": [
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
+                ],
+                "answer": "Son",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
+                "options": [
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
+                ],
+                "answer": "Uncle",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
+                "options": [
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
+                ],
+                "answer": "M + K \u00d7 T",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
+                "options": [
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
+                ],
+                "answer": "P @ R # Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
+                "options": [
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
+                ],
+                "answer": "P * R % Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
+                "options": [
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
+                ],
+                "answer": "15 m North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
+                "options": [
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
+                ],
+                "answer": "6 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
+                "options": [
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
+                ],
+                "answer": "30 m East and 10 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
+                "options": [
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
+                ],
+                "answer": "North-East",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
+                "options": [
+                    "North",
+                    "South",
+                    "East",
+                    "West"
+                ],
+                "answer": "North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
+                "options": [
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
+                ],
+                "answer": "6 m East and 2 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
+                "options": [
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
+                ],
+                "answer": "Tuesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
+                "options": [
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
+                ],
+                "answer": "0 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
+                "options": [
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
+                ],
+                "answer": "Friday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
+                "options": [
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                ],
+                "answer": "Thursday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
             }
         ],
-        "passingRule": "correct_answers",
-        "passingValue": 1,
-        "duration": 1
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     },
     "Python Full Stack_Daily": {
         "maxQuestions": 30,
@@ -106,719 +1348,1287 @@
         "duration": 45
     },
     "java full stack_Weekly": {
-        "maxQuestions": 25,
+        "maxQuestions": 30,
         "questions": [
             {
-                "question": "[Knowledge Check] Which design pattern is fundamental to java full stack? (In Enterprise Context)",
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
                 "options": [
-                    "Singleton",
-                    "Strategy",
-                    "Prototype",
-                    "Proxy"
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
                 ],
-                "answer": "Proxy",
+                "answer": "1700",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ext_1_tlyc7_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How does java full stack handle concurrent requests in java full stack?",
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
                 "options": [
-                    "Non-blocking event loop",
-                    "Master-worker pattern",
-                    "Thread pooling",
-                    "Blocking IO"
+                    "0",
+                    "1",
+                    "2",
+                    "3"
                 ],
-                "answer": "Thread pooling",
+                "answer": "0",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_oat7dmb9d_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which design pattern is fundamental to JAVA FULL STACK?",
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
                 "options": [
-                    "Prototype",
-                    "Proxy",
-                    "Singleton",
-                    "Strategy"
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
                 ],
-                "answer": "Proxy",
+                "answer": "Wednesday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_wfpm5s0r2_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which error is most likely when java full stack fails? (In Enterprise Context)",
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
                 "options": [
-                    "StackOverflowError",
-                    "NullPointerException",
-                    "BeanCreationException",
-                    "NoClassDefFoundError"
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
                 ],
-                "answer": "BeanCreationException",
+                "answer": "Monday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ext_5_nwix6_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the memory footprint of JAVA FULL STACK in a standard JVM? (In Corporate Context)",
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
                 "options": [
-                    "Metaspace intensive",
-                    "Constant overhead",
-                    "Heap bound",
-                    "Stack bound"
+                    "4",
+                    "5",
+                    "3",
+                    "6"
                 ],
-                "answer": "Heap bound",
+                "answer": "4",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_8_m4dyi_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do you optimize JAVA FULL STACK for high traffic? (In Enterprise Context)",
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
                 "options": [
-                    "Load Balancing",
-                    "Caching",
-                    "Code Refactoring",
-                    "Vertical Scaling"
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
                 ],
-                "answer": "Caching",
+                "answer": "4 April",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_9_etzu3_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which error is most likely when JAVA FULL STACK fails? (In Corporate Context)",
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
                 "options": [
-                    "NoClassDefFoundError",
-                    "BeanCreationException",
-                    "StackOverflowError",
-                    "NullPointerException"
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
                 ],
-                "answer": "BeanCreationException",
+                "answer": "Sister",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_4_nixq3_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which design pattern is fundamental to JAVA FULL STACK? (In Corporate Context)",
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
                 "options": [
-                    "Prototype",
-                    "Proxy",
-                    "Singleton",
-                    "Strategy"
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
                 ],
-                "answer": "Proxy",
+                "answer": "Sister",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_6_e0fi4_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which error is most likely when JAVA FULL STACK fails?",
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
                 "options": [
-                    "NoClassDefFoundError",
-                    "BeanCreationException",
-                    "StackOverflowError",
-                    "NullPointerException"
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
                 ],
-                "answer": "BeanCreationException",
+                "answer": "Father",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_6crtt94c1_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In the context of java full stack, why is JAVA FULL STACK considered essential?",
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
                 "options": [
-                    "Community Support",
-                    "Ease of Testing",
-                    "Efficiency",
-                    "Type Stability"
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
                 ],
-                "answer": "Efficiency",
+                "answer": "Brother",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_co3k3zhta_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do you optimize JAVA FULL STACK for high traffic?",
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
                 "options": [
-                    "Load Balancing",
-                    "Caching",
-                    "Code Refactoring",
-                    "Vertical Scaling"
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
                 ],
-                "answer": "Caching",
+                "answer": "Son",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_7nxt6fxqx_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do you optimize java full stack for high traffic?",
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
                 "options": [
-                    "Load Balancing",
-                    "Caching",
-                    "Vertical Scaling",
-                    "Code Refactoring"
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
                 ],
-                "answer": "Caching",
+                "answer": "Uncle",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_4kmospw0x_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In the context of java full stack, why is JAVA FULL STACK considered essential? (In Corporate Context)",
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
                 "options": [
-                    "Community Support",
-                    "Ease of Testing",
-                    "Efficiency",
-                    "Type Stability"
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
                 ],
-                "answer": "Efficiency",
+                "answer": "M + K \u00d7 T",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_0_r5xc1_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How does java full stack handle concurrent requests in java full stack? (In Enterprise Context)",
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
                 "options": [
-                    "Non-blocking event loop",
-                    "Master-worker pattern",
-                    "Thread pooling",
-                    "Blocking IO"
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
                 ],
-                "answer": "Thread pooling",
+                "answer": "P @ R # Q",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ext_7_xfh00_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which error is most likely when java full stack fails?",
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
                 "options": [
-                    "StackOverflowError",
-                    "NullPointerException",
-                    "BeanCreationException",
-                    "NoClassDefFoundError"
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
                 ],
-                "answer": "BeanCreationException",
+                "answer": "P * R % Q",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ig8mh1qi0_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the standard configuration for java full stack?",
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
                 "options": [
-                    "Hardcoded in Main",
-                    "XML mapping",
-                    "Annotation based",
-                    "Environment variables"
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
                 ],
-                "answer": "Annotation based",
+                "answer": "15 m North",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_np4nn0t5m_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How does JAVA FULL STACK handle concurrent requests in java full stack? (In Corporate Context)",
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
                 "options": [
-                    "Thread pooling",
-                    "Non-blocking event loop",
-                    "Master-worker pattern",
-                    "Blocking IO"
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
                 ],
-                "answer": "Thread pooling",
+                "answer": "6 km",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_ext_2_gc9cz_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the standard configuration for JAVA FULL STACK?",
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
                 "options": [
-                    "XML mapping",
-                    "Hardcoded in Main",
-                    "Annotation based",
-                    "Environment variables"
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
                 ],
-                "answer": "Annotation based",
+                "answer": "30 m East and 10 m South",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_nxo5fezo6_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the memory footprint of JAVA FULL STACK in a standard JVM?",
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
                 "options": [
-                    "Metaspace intensive",
-                    "Constant overhead",
-                    "Heap bound",
-                    "Stack bound"
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
                 ],
-                "answer": "Heap bound",
+                "answer": "North-East",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_wta78b8m8_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the memory footprint of java full stack in a standard JVM?",
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
                 "options": [
-                    "Heap bound",
-                    "Metaspace intensive",
-                    "Constant overhead",
-                    "Stack bound"
+                    "North",
+                    "South",
+                    "East",
+                    "West"
                 ],
-                "answer": "Heap bound",
+                "answer": "North",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_aeqe42oav_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is the memory footprint of java full stack in a standard JVM? (In Enterprise Context)",
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
                 "options": [
-                    "Heap bound",
-                    "Metaspace intensive",
-                    "Constant overhead",
-                    "Stack bound"
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
                 ],
-                "answer": "Heap bound",
+                "answer": "6 m East and 2 m South",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ext_3_nvt0h_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In the context of java full stack, why is java full stack considered essential? (In Corporate Context)",
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
                 "options": [
-                    "Ease of Testing",
-                    "Community Support",
-                    "Efficiency",
-                    "Type Stability"
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
                 ],
-                "answer": "Efficiency",
+                "answer": "Tuesday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_ext_10_t8b46_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In the context of java full stack, why is java full stack considered essential?",
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
                 "options": [
-                    "Ease of Testing",
-                    "Community Support",
-                    "Efficiency",
-                    "Type Stability"
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
                 ],
-                "answer": "Efficiency",
+                "answer": "0 km",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_kdmiubfw9_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which design pattern is fundamental to java full stack?",
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
                 "options": [
-                    "Singleton",
-                    "Strategy",
-                    "Prototype",
-                    "Proxy"
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
                 ],
-                "answer": "Proxy",
+                "answer": "Friday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "java full stack",
-                "id": "auto_y8z8yx5ak_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How does JAVA FULL STACK handle concurrent requests in java full stack?",
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
                 "options": [
-                    "Thread pooling",
-                    "Non-blocking event loop",
-                    "Master-worker pattern",
-                    "Blocking IO"
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
                 ],
-                "answer": "Thread pooling",
+                "answer": "Thursday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "JAVA FULL STACK",
-                "id": "auto_anpfcguh0_1775979712672"
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
             }
         ],
-        "passingRule": "correct_answers",
-        "passingValue": 13,
-        "duration": 75
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     },
     "ORACLE DATABASE_Weekly": {
-        "maxQuestions": 25,
+        "maxQuestions": 30,
         "questions": [
             {
-                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
                 "options": [
-                    "Validation Sets",
-                    "Training Loss",
-                    "Manual Review",
-                    "Deployment Feedback"
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
                 ],
-                "answer": "Validation Sets",
+                "answer": "1700",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_13_upmzi_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
                 "options": [
-                    "Data Quality",
-                    "Algorithmic Complexity",
-                    "Processing Power",
-                    "All of the above"
+                    "0",
+                    "1",
+                    "2",
+                    "3"
                 ],
-                "answer": "All of the above",
+                "answer": "0",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_10_azw6o_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success?",
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
                 "options": [
-                    "Linear Algebra",
-                    "Graph Theory",
-                    "Probability",
-                    "Calculus"
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
                 ],
-                "answer": "Linear Algebra",
+                "answer": "Wednesday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_q51h2a4wh_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
                 "options": [
-                    "Linear Algebra",
-                    "Graph Theory",
-                    "Probability",
-                    "Calculus"
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
                 ],
-                "answer": "Linear Algebra",
+                "answer": "Monday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_0_etbvp_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE?",
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
                 "options": [
-                    "Validation Sets",
-                    "Training Loss",
-                    "Manual Review",
-                    "Deployment Feedback"
+                    "4",
+                    "5",
+                    "3",
+                    "6"
                 ],
-                "answer": "Validation Sets",
+                "answer": "4",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_b9jmtawpw_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
                 "options": [
-                    "Exporting Results",
-                    "Client Meeting",
-                    "Algorithm Selection",
-                    "Data Cleaning"
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
                 ],
-                "answer": "Data Cleaning",
+                "answer": "4 April",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_17_gt8oz_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
                 "options": [
-                    "Linear Algebra",
-                    "Graph Theory",
-                    "Probability",
-                    "Calculus"
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
                 ],
-                "answer": "Linear Algebra",
+                "answer": "Sister",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_18_ted2a_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
                 "options": [
-                    "Python/R",
-                    "Excel",
-                    "Power BI",
-                    "Depends on Scale"
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
                 ],
-                "answer": "Depends on Scale",
+                "answer": "Sister",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_8_o5pje_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
                 "options": [
-                    "Exporting Results",
-                    "Client Meeting",
-                    "Algorithm Selection",
-                    "Data Cleaning"
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
                 ],
-                "answer": "Data Cleaning",
+                "answer": "Father",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_5_9je0s_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
                 "options": [
-                    "Python/R",
-                    "Excel",
-                    "Power BI",
-                    "Depends on Scale"
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
                 ],
-                "answer": "Depends on Scale",
+                "answer": "Brother",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_2_d592u_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
                 "options": [
-                    "Linear Algebra",
-                    "Graph Theory",
-                    "Probability",
-                    "Calculus"
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
                 ],
-                "answer": "Linear Algebra",
+                "answer": "Son",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_6_zlurr_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step?",
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
                 "options": [
-                    "Exporting Results",
-                    "Client Meeting",
-                    "Algorithm Selection",
-                    "Data Cleaning"
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
                 ],
-                "answer": "Data Cleaning",
+                "answer": "Uncle",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_t94xt5bzp_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
                 "options": [
-                    "Validation Sets",
-                    "Training Loss",
-                    "Manual Review",
-                    "Deployment Feedback"
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
                 ],
-                "answer": "Validation Sets",
+                "answer": "M + K \u00d7 T",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_7_s45ua_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE?",
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
                 "options": [
-                    "Python/R",
-                    "Excel",
-                    "Power BI",
-                    "Depends on Scale"
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
                 ],
-                "answer": "Depends on Scale",
+                "answer": "P @ R # Q",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_viay4eur9_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] How do we measure the accuracy of ORACLE DATABASE? (In Enterprise Context)",
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
                 "options": [
-                    "Validation Sets",
-                    "Training Loss",
-                    "Manual Review",
-                    "Deployment Feedback"
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
                 ],
-                "answer": "Validation Sets",
+                "answer": "P * R % Q",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_1_8v0e8_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
                 "options": [
-                    "User Interface",
-                    "Networking",
-                    "Data Storage",
-                    "Pattern Recognition"
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
                 ],
-                "answer": "Pattern Recognition",
+                "answer": "15 m North",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_15_fydjo_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
                 "options": [
-                    "User Interface",
-                    "Networking",
-                    "Data Storage",
-                    "Pattern Recognition"
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
                 ],
-                "answer": "Pattern Recognition",
+                "answer": "6 km",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_9_n46i9_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] When performing ORACLE DATABASE in ORACLE DATABASE, what is the first step? (In Enterprise Context)",
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
                 "options": [
-                    "Exporting Results",
-                    "Client Meeting",
-                    "Algorithm Selection",
-                    "Data Cleaning"
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
                 ],
-                "answer": "Data Cleaning",
+                "answer": "30 m East and 10 m South",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_11_xo0pa_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for: (In Enterprise Context)",
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
                 "options": [
-                    "User Interface",
-                    "Networking",
-                    "Data Storage",
-                    "Pattern Recognition"
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
                 ],
-                "answer": "Pattern Recognition",
+                "answer": "North-East",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_3_zweep_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
                 "options": [
-                    "Data Quality",
-                    "Algorithmic Complexity",
-                    "Processing Power",
-                    "All of the above"
+                    "North",
+                    "South",
+                    "East",
+                    "West"
                 ],
-                "answer": "All of the above",
+                "answer": "North",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_4_5uril_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] In ORACLE DATABASE, ORACLE DATABASE is most effective for:",
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
                 "options": [
-                    "User Interface",
-                    "Networking",
-                    "Data Storage",
-                    "Pattern Recognition"
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
                 ],
-                "answer": "Pattern Recognition",
+                "answer": "6 m East and 2 m South",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_pxlgb8t1f_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation? (In Corporate Context)",
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
                 "options": [
-                    "Data Quality",
-                    "Algorithmic Complexity",
-                    "Processing Power",
-                    "All of the above"
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
                 ],
-                "answer": "All of the above",
+                "answer": "Tuesday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_16_cpjq5_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which tool is the industry standard for ORACLE DATABASE? (In Corporate Context)",
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
                 "options": [
-                    "Python/R",
-                    "Excel",
-                    "Power BI",
-                    "Depends on Scale"
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
                 ],
-                "answer": "Depends on Scale",
+                "answer": "0 km",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_14_rnw3x_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] What is a major challenge during ORACLE DATABASE implementation?",
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
                 "options": [
-                    "Data Quality",
-                    "Algorithmic Complexity",
-                    "Processing Power",
-                    "All of the above"
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
                 ],
-                "answer": "All of the above",
+                "answer": "Friday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_jo4agub7c_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
             },
             {
-                "question": "[Knowledge Check] Which mathematical concept is core to ORACLE DATABASE success? (In Corporate Context)",
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
                 "options": [
-                    "Linear Algebra",
-                    "Graph Theory",
-                    "Probability",
-                    "Calculus"
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
                 ],
-                "answer": "Linear Algebra",
+                "answer": "Thursday",
                 "type": "mcq",
-                "marks": 2,
-                "subject": "ORACLE DATABASE",
-                "id": "auto_ext_12_4w5x7_1775989572251"
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
             }
         ],
-        "passingRule": "correct_answers",
-        "passingValue": 13,
-        "duration": 75
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
+    },
+    "Weekly": {
+        "maxQuestions": 30,
+        "questions": [
+            {
+                "id": 1781330757022,
+                "question": "Which of the following years is a leap year?",
+                "options": [
+                    "1700",
+                    "1800",
+                    "1900",
+                    "2000"
+                ],
+                "answer": "1700",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757023,
+                "question": "Find the total number of odd days in the year 1800.",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757024,
+                "question": "India gained independence on 15 August 1947. What day of the week was it?",
+                "options": [
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday"
+                ],
+                "answer": "Wednesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757025,
+                "question": "What day of the week was 5 March 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757026,
+                "question": "How many Wednesdays occurred in April 2001?",
+                "options": [
+                    "4",
+                    "5",
+                    "3",
+                    "6"
+                ],
+                "answer": "4",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757027,
+                "question": "On which date did the first Wednesday fall in April 2001?",
+                "options": [
+                    "4 April",
+                    "5 April",
+                    "3 April",
+                    "2 April"
+                ],
+                "answer": "4 April",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757028,
+                "question": "Pointing to a woman, Arun said:  \"She is the daughter of the wife of the only son of my grandfather.\" How is the woman related to Arun?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Daughter",
+                    "Niece"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757029,
+                "question": "Pointing to a photograph of a man, a woman said: \"His mother's only daughter is my mother.\" How is the woman related to the man?",
+                "options": [
+                    "Sister",
+                    "Cousin",
+                    "Niece",
+                    "Daughter"
+                ],
+                "answer": "Sister",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757030,
+                "question": "A woman said: \"The person in the photograph is the father of the son of my grandfather's only daughter.\" How is the person related to the woman?",
+                "options": [
+                    "Father",
+                    "Grandfather",
+                    "Uncle",
+                    "Brother"
+                ],
+                "answer": "Father",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757031,
+                "question": "Introducing a man, Ravi said: \"He is the son of my grandfather's only son.\" How is the man related to Ravi?",
+                "options": [
+                    "Brother",
+                    "Cousin",
+                    "Uncle",
+                    "Father"
+                ],
+                "answer": "Brother",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757033,
+                "question": "A woman introduces a boy as: \"He is the son of the daughter of my father.\" How is the boy related to the woman?",
+                "options": [
+                    "Son",
+                    "Nephew",
+                    "Grandson",
+                    "Cousin"
+                ],
+                "answer": "Son",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757034,
+                "question": "P is the brother of Q. Q is the mother of R. R is the sister of S.\tHow is P related to S?",
+                "options": [
+                    "Uncle",
+                    "Brother",
+                    "Grandfather",
+                    "Father"
+                ],
+                "answer": "Uncle",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757035,
+                "question": "If:\tP + Q means P is the brother of Q, \tP \u2212 Q means P is the sister of Q, P \u00d7 Q means P is the father of Q. Which expression indicates that M is the uncle of T?",
+                "options": [
+                    "M + K \u00d7 T",
+                    "M \u2212 K \u00d7 T",
+                    "K \u00d7 M + T",
+                    "T + K \u00d7 M"
+                ],
+                "answer": "M + K \u00d7 T",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757036,
+                "question": "If:\tA @ B means A is the sister of B, A # B means A is the father of B, Which expression indicates that P is the aunt of Q?",
+                "options": [
+                    "P @ R # Q",
+                    "P # R @ Q",
+                    "P @ R @ Q",
+                    "P # R # Q"
+                ],
+                "answer": "P @ R # Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757037,
+                "question": "If:\tX % Y means X is the father of Y, X * Y means X is the brother of Y\nX & Y means X is the son of Y, Which expression shows that P is the uncle of Q?",
+                "options": [
+                    "P * R % Q",
+                    "P % R * Q",
+                    "P & R % Q",
+                    "P % R & Q"
+                ],
+                "answer": "P * R % Q",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757038,
+                "question": "A person starts from a point and walks 15 m North, then 20 m East, then 30 m South and finally 20 m West. How far and in which direction is he from the starting point?",
+                "options": [
+                    "15 m North",
+                    "15 m South",
+                    "20 m South",
+                    "30 m North"
+                ],
+                "answer": "15 m North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757039,
+                "question": "Rehan drove 8 km West, then 10 km South, then 14 km East and finally 2 km North. What is the shortest distance between his house and office?",
+                "options": [
+                    "6 km",
+                    "8 km",
+                    "10 km",
+                    "12 km"
+                ],
+                "answer": "6 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757040,
+                "question": "A man walks 15 m towards North. He then turns right and walks 20 m. He again turns right and walks 25 m. Finally, he turns left and walks 10 m. What is his position with respect to the starting point?",
+                "options": [
+                    "30 m East and 10 m South",
+                    "20 m East and 10 m South",
+                    "30 m East and 10 m North",
+                    "20 m East and 10 m North"
+                ],
+                "answer": "30 m East and 10 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757041,
+                "question": "A man is facing North-West. He turns 90\u00b0 clockwise, then 180\u00b0 anti-clockwise and then another 90\u00b0 anti-clockwise. Which direction is he facing now?",
+                "options": [
+                    "North-East",
+                    "South-East",
+                    "South-West",
+                    "North-West"
+                ],
+                "answer": "North-East",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757042,
+                "question": "One morning after sunrise, Suresh was standing facing a pole. The shadow of the pole fell exactly to his right side.\nWhich direction was Suresh facing?",
+                "options": [
+                    "North",
+                    "South",
+                    "East",
+                    "West"
+                ],
+                "answer": "North",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757043,
+                "question": "Point K is 10 m North of J. Point P is 14 m East of K. Point M is 6 m South of P. Point H is 8 m West of M. A person walks 4 m North from H to reach Z. What is the position of Z with respect to K?",
+                "options": [
+                    "6 m East and 2 m South",
+                    "6 m East and 2 m North",
+                    "8 m East and 2 m South",
+                    "8 m East and 2 m North"
+                ],
+                "answer": "6 m East and 2 m South",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757044,
+                "question": "If yesterday was Monday, what day will it be 100 days from now?",
+                "options": [
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
+                ],
+                "answer": "Tuesday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757045,
+                "question": "A man walks 5 km North, then 5 km East, then 5 km South. How far is he from the starting point?",
+                "options": [
+                    "0 km",
+                    "5 km",
+                    "10 km",
+                    "15 km"
+                ],
+                "answer": "0 km",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757046,
+                "question": "If 1 January 2026 is Thursday, what day will 1 January 2027 be?",
+                "options": [
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                    "Monday"
+                ],
+                "answer": "Friday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757047,
+                "question": "If the day before yesterday was Sunday, what day will it be three days after tomorrow?",
+                "options": [
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday"
+                ],
+                "answer": "Thursday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757048,
+                "question": "If 1 January 2024 was a Monday, what day was 31 December 2024?",
+                "options": [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday"
+                ],
+                "answer": "Monday",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757049,
+                "question": "Pointing to a girl, Arun said: \"She is the daughter of the only daughter of my mother.\" How is the girl related to Arun?",
+                "options": [
+                    "Daughter",
+                    "Sister",
+                    "Niece",
+                    "Cousin"
+                ],
+                "answer": "Daughter",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757050,
+                "question": "A man walks 12 m East, then 5 m North, then 12 m West. How far is he from the starting point?",
+                "options": [
+                    "5 m",
+                    "12 m",
+                    "13 m",
+                    "17 m"
+                ],
+                "answer": "5 m",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757051,
+                "question": "How many odd days are there in 800 years?",
+                "options": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "answer": "0",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            },
+            {
+                "id": 1781330757052,
+                "question": "A is the mother of",
+                "options": [
+                    "B is the sister of",
+                    "C is the father of",
+                    "How is A related to D?",
+                    "Mother"
+                ],
+                "answer": "B is the sister of",
+                "type": "mcq",
+                "marks": 1,
+                "subject": "APTITUDE"
+            }
+        ],
+        "passingRule": "percentage",
+        "passingValue": 50,
+        "duration": 45
     }
 }
