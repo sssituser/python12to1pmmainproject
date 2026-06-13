@@ -579,11 +579,17 @@ def register(request):
         role_normalized = role.lower().strip() if role else ""
         
         # Create StudentProfile with course(s) for students
-        if role_normalized == 'student' and course:
+        if role_normalized == 'student':
             from myapp.models import StudentProfile, Course, CourseEnrollment
             
             # Handle multiple courses if 'course' is a list
-            course_titles = course if isinstance(course, list) else [course]
+            course_titles = course if isinstance(course, list) else [course] if course else []
+            
+            # Ensure "Aptitude and Reasoning" is in the course list
+            aptitude_reasoning_title = "Aptitude and Reasoning"
+            if aptitude_reasoning_title not in course_titles:
+                course_titles.append(aptitude_reasoning_title)
+            
             primary_course_obj = None
             
             for title in course_titles:
@@ -599,7 +605,10 @@ def register(request):
                     }
                 )
                 if not primary_course_obj:
-                    primary_course_obj = course_obj
+                    if course and title == aptitude_reasoning_title and len(course_titles) > 1:
+                        pass
+                    else:
+                        primary_course_obj = course_obj
                 
                 # Also create enrollment for each course
                 CourseEnrollment.objects.get_or_create(user=user, course=course_obj)

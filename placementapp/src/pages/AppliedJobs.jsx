@@ -144,6 +144,16 @@ function AppliedJobs() {
                           <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px] uppercase tracking-wider">
                             <FaBuilding className="text-slate-300" /> {j.job_details?.company || "N/A"}
                           </div>
+                          {j.job_details?.external_application_link && (
+                            <a
+                              href={j.job_details.external_application_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1.5 mt-1 transition-colors w-fit"
+                            >
+                              🔗 Follow up / Visit Application
+                            </a>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-6 text-center border-b border-gray-50">

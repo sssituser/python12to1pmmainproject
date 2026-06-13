@@ -257,16 +257,30 @@ useEffect(() => {
                     <FaEye size={14} /> VIEW
                   </button>
 
-                  <button
-                    onClick={() => job.status !== 'Closed' && job.status !== 'Applied' && applyJob(job.id, job.external_application_link)}
-                    disabled={job.status === 'Closed' || job.status === 'Applied'}
-                    className={`flex-1 py-3 rounded-2xl font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-sm
-                      ${job.status === 'Closed' || job.status === 'Applied'
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30'}`}
-                  >
-                    {job.status === 'Applied' ? 'APPLIED' : job.status === 'Closed' ? 'CLOSED' : 'APPLY'}
-                  </button>
+                  {(() => {
+                    const hasApplied = ['Applied', 'Under Process', 'Selected', 'Rejected'].includes(job.status);
+                    return hasApplied && job.external_application_link ? (
+                      <a
+                        href={job.external_application_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-3 rounded-2xl font-bold text-[13px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-2 shadow-sm text-center"
+                      >
+                        APPLY
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => job.status !== 'Closed' && !hasApplied && applyJob(job.id, job.external_application_link)}
+                        disabled={job.status === 'Closed' || hasApplied}
+                        className={`flex-1 py-3 rounded-2xl font-bold text-[13px] transition-all flex items-center justify-center gap-2 shadow-sm
+                          ${job.status === 'Closed' || hasApplied
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg hover:shadow-blue-500/30'}`}
+                      >
+                        {hasApplied ? 'APPLIED' : job.status === 'Closed' ? 'CLOSED' : 'APPLY'}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

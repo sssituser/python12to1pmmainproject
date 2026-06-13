@@ -225,8 +225,20 @@ function JobDetails() {
 
               <div className="space-y-3 pt-4 border-t border-white/10">
                 {applied ? (
-                  <div className="bg-emerald-500/20 text-emerald-400 font-bold text-center py-4 rounded-2xl flex items-center justify-center gap-2 border border-emerald-500/30">
-                    <FaCheckCircle /> Applied Successfully
+                  <div className="space-y-3">
+                    <div className="bg-emerald-500/20 text-emerald-400 font-bold text-center py-4 rounded-2xl flex items-center justify-center gap-2 border border-emerald-500/30">
+                      <FaCheckCircle /> Applied Successfully
+                    </div>
+                    {job.external_application_link && (
+                      <a 
+                        href={job.external_application_link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl transition-all text-center block hover:shadow-lg hover:shadow-blue-500/40 text-sm"
+                      >
+                        APPLY
+                      </a>
+                    )}
                   </div>
                 ) : job.status === "Closed" ? (
                   <div className="bg-red-500/20 text-red-400 font-bold text-center py-4 rounded-2xl flex items-center justify-center gap-2 border border-red-500/30">

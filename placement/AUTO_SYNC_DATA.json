@@ -450,6 +450,20 @@
             "modules": [],
             "custom_videos": {},
             "created_at": "2026-05-31 13:59:44.935460+00:00"
+        },
+        {
+            "id": 44,
+            "title": "Aptitude and Reasoning",
+            "level": "Beginner",
+            "duration": "Self-paced",
+            "progress": 0,
+            "locked": false,
+            "topics": [
+                "Introduction to Aptitude and Reasoning"
+            ],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-06-13 07:26:25.703922+00:00"
         }
     ],
     "configs": [
@@ -480,7 +494,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-06-13 06:04:12.489145+00:00"
+            "updated_at": "2026-06-13 07:29:43.421319+00:00"
         },
         {
             "id": 5,
@@ -494,7 +508,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-06-13 06:06:50.879125+00:00"
+            "updated_at": "2026-06-13 07:29:43.435463+00:00"
         }
     ]
 }
