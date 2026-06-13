@@ -77,6 +77,14 @@ export default function Profile() {
   };
 
   useEffect(() => {
+    document.title = "Student Profile | SSSIT Placement Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Manage your profile details, skills, education records, links, and resume to stand out to employers.");
+    }
+  }, []);
+
+  useEffect(() => {
     const token = getStoredToken("access");
     if (!token) {
       clearSession("Session expired. Please log in again.");

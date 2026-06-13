@@ -72,6 +72,21 @@ function CoursesPage() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [studentCourse, setStudentCourse] = useState("");
   const [isValidating, setIsValidating] = useState(true);
+
+  useEffect(() => {
+    document.title = selectedCourse 
+      ? `${selectedCourse.title} - Curriculum | SSSIT Placement Portal`
+      : "My Enrolled Courses | SSSIT Placement Portal";
+    
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      if (selectedCourse) {
+        metaDesc.setAttribute("content", `Access the curriculum modules, subjects, and video learning resources for the ${selectedCourse.title} course.`);
+      } else {
+        metaDesc.setAttribute("content", "View all your enrolled courses, subjects, lessons, and learning progress on the SSSIT Placement Portal.");
+      }
+    }
+  }, [selectedCourse]);
   
   // Icon and course state initialization (with deduplication)
   const [courses, setCourses] = useState(() => {

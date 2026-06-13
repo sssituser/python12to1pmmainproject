@@ -1013,18 +1013,74 @@ def send_topic_notification_emails(sender, instance, created, **kwargs):
     email_thread.start()
 
 
+from django.db.models.signals import pre_save
+
+@receiver(pre_save, sender=Course)
+def capture_old_course_state(sender, instance, **kwargs):
+    """
+    Capture the old topics and modules lists before saving the course
+    to compare and identify newly added subjects/topics in post_save.
+    """
+    if instance.id:
+        try:
+            old_instance = Course.objects.get(id=instance.id)
+            instance._old_topics = list(old_instance.topics) if old_instance.topics else []
+            instance._old_modules = list(old_instance.modules) if old_instance.modules else []
+        except Course.DoesNotExist:
+            instance._old_topics = []
+            instance._old_modules = []
+    else:
+        instance._old_topics = []
+        instance._old_modules = []
+
+
 @receiver(post_save, sender=Course)
 def send_course_update_notification_emails(sender, instance, created, update_fields=None, **kwargs):
     """
     Signal handler that sends email notifications to all students enrolled in a course
-    when topics/modules are updated via the Course model (JSON fields).
+    only when newly added topics/modules (subjects) are detected.
     """
     # For new courses, we don't need to send notifications
     if created:
         return
     
-    # Only process if topics were actually updated
-    if update_fields and 'topics' not in update_fields and 'modules' not in update_fields:
+    # Retrieve old states captured in pre_save
+    old_topics = getattr(instance, '_old_topics', [])
+    old_modules = getattr(instance, '_old_modules', [])
+    
+    new_topics = instance.topics if instance.topics else []
+    new_modules = instance.modules if instance.modules else []
+    
+    # Identify newly added topics
+    added_topics = []
+    for t in new_topics:
+        t_str = t if isinstance(t, str) else t.get('name') if isinstance(t, dict) else str(t)
+        if t_str:
+            was_present = False
+            for old_t in old_topics:
+                old_t_str = old_t if isinstance(old_t, str) else old_t.get('name') if isinstance(old_t, dict) else str(old_t)
+                if old_t_str == t_str:
+                    was_present = True
+                    break
+            if not was_present:
+                added_topics.append(t_str)
+
+    # Identify newly added subjects (modules)
+    added_modules = []
+    for m in new_modules:
+        m_name = m.get('name') or m.get('title') if isinstance(m, dict) else str(m)
+        if m_name:
+            was_present = False
+            for old_m in old_modules:
+                old_m_name = old_m.get('name') or old_m.get('title') if isinstance(old_m, dict) else str(old_m)
+                if old_m_name == m_name:
+                    was_present = True
+                    break
+            if not was_present:
+                added_modules.append(m_name)
+
+    # If nothing was added, do not send any emails
+    if not added_topics and not added_modules:
         return
     
     def send_emails_for_course_updates():
@@ -1040,43 +1096,37 @@ def send_course_update_notification_emails(sender, instance, created, update_fie
             if not enrolled_students.exists():
                 return
             
-            # Determine what was updated
-            topics_to_notify = instance.topics if instance.topics else []
-            modules_to_notify = instance.modules if instance.modules else []
-            
             # Send email to each enrolled student
             for enrollment in enrolled_students:
                 student = enrollment.user
+                if not student.email:
+                    continue
                 try:
-                    # Notify about topics
-                    if topics_to_notify:
-                        for topic in topics_to_notify:
-                            topic_name = topic if isinstance(topic, str) else topic.get('name', 'New Content')
-                            send_course_update_email(
-                                user_email=student.email,
-                                username=student.username,
-                                course_title=instance.title,
-                                update_type='topic',
-                                update_details={
-                                    'name': topic_name,
-                                    'description': f'New topic added to {instance.title}'
-                                }
-                            )
+                    # Notify about newly added topics
+                    for topic_name in added_topics:
+                        send_course_update_email(
+                            user_email=student.email,
+                            username=student.username,
+                            course_title=instance.title,
+                            update_type='topic',
+                            update_details={
+                                'name': topic_name,
+                                'description': f'New topic added to {instance.title}'
+                            }
+                        )
                     
-                    # Notify about modules/subjects
-                    if modules_to_notify:
-                        for module in modules_to_notify:
-                            module_name = module.get('name') or module.get('title', 'New Module') if isinstance(module, dict) else str(module)
-                            send_course_update_email(
-                                user_email=student.email,
-                                username=student.username,
-                                course_title=instance.title,
-                                update_type='subject',
-                                update_details={
-                                    'name': module_name,
-                                    'description': f'New subject/module added to {instance.title}'
-                                }
-                            )
+                    # Notify about newly added modules/subjects
+                    for module_name in added_modules:
+                        send_course_update_email(
+                            user_email=student.email,
+                            username=student.username,
+                            course_title=instance.title,
+                            update_type='subject',
+                            update_details={
+                                'name': module_name,
+                                'description': f'New subject/module added to {instance.title}'
+                            }
+                        )
                 except Exception as e:
                     print(f"Failed to send email to {student.email}: {e}")
         except Exception as e:

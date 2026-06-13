@@ -160,13 +160,17 @@ def update_course(request, course_id):
     """API endpoint for faculty to update existing courses - Saves to DB"""
     try:
         data = json.loads(request.body)
-        Course.objects.filter(id=course_id).update(
-            title=data.get("title"),
-            level=data.get("level"),
-            duration=data.get("duration"),
-            modules=data.get("modules"),
-            topics=data.get("topics")
-        )
+        course = Course.objects.filter(id=course_id).first()
+        if not course:
+            return JsonResponse({"success": False, "error": "Course not found"}, status=404)
+        
+        course.title = data.get("title")
+        course.level = data.get("level")
+        course.duration = data.get("duration")
+        course.modules = data.get("modules")
+        course.topics = data.get("topics")
+        course.save()
+        
         return JsonResponse({"success": True, "message": "Course updated successfully"})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)

@@ -9,6 +9,14 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "Student Sign In | SSSIT Placement Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Sign in securely to your SSSIT student account to check placement drives, exam status, and curriculum progress.");
+    }
+  }, []);
+
   const [form, setForm] = useState({
     studentId: "",
     password: "",

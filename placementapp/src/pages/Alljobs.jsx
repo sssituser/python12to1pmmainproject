@@ -10,6 +10,14 @@ function AllJobs() {
   const [expandedDescriptions, setExpandedDescriptions] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    document.title = "Career Job Openings | SSSIT Placement Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Explore the latest career opportunities, jobs, and internships across top tech companies on the SSSIT Placement Portal.");
+    }
+  }, []);
+
   const toggleDescription = (id) => {
     setExpandedDescriptions((prev) => {
       const next = new Set(prev);

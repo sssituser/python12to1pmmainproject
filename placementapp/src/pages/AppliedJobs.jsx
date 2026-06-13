@@ -6,6 +6,14 @@ function AppliedJobs() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    document.title = "My Job Applications | SSSIT Placement Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Track the status, follow up on external links, and review the history of all your job and internship applications.");
+    }
+  }, []);
+
   const token = localStorage.getItem("access");
 
   useEffect(() => {

@@ -41,6 +41,16 @@ function JobDetails() {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+    if (job) {
+      document.title = `${job.job_title} at ${job.company} | SSSIT Placement Portal`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute("content", `Apply for the ${job.job_title} role at ${job.company}. Location: ${job.location || 'Remote'}. Required Skills: ${job.primary_skills || 'N/A'}.`);
+      }
+    }
+  }, [job]);
+
   const handleApply = async () => {
     const token = localStorage.getItem("access");
     try {

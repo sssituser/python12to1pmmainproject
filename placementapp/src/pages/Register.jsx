@@ -7,6 +7,14 @@ import { industryCourses } from "../components/CourseData.jsx";
 function Register() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "Student Registration | SSSIT Placement Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Register an account on the SSSIT Placement Portal to begin your career journey, access programs, mock assessments, and corporate placement resources.");
+    }
+  }, []);
+
   const [step, setStep] = useState(1);
 
   const [showPassword, setShowPassword] = useState(false);
