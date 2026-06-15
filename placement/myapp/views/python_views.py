@@ -613,7 +613,10 @@ def save_exam_report_api(request):
         final_status = 'Fail'
     else:
         marks_obtained = data.get('marks_obtained') or data.get('marks') or data.get('score', 0)
-        total_marks = data.get('total_marks') or data.get('totalMarks') or 60
+        # Use actual total_marks from request; fall back to 60 only if truly nothing provided
+        total_marks = data.get('total_marks') or data.get('totalMarks') or data.get('total_possible_marks') or 0
+        if not total_marks:
+            total_marks = 60  # last resort fallback
         
         # Calculate percentage for pass/fail decision
         percentage = (float(marks_obtained) / float(total_marks)) * 100 if total_marks > 0 else 0
@@ -639,6 +642,11 @@ def save_exam_report_api(request):
             'saved_username': user.username
         })
 
+    # Resolve actual total_marks to save — use what frontend sent
+    actual_total_marks = data.get('total_marks') or data.get('totalMarks') or data.get('total_possible_marks') or 0
+    if not actual_total_marks:
+        actual_total_marks = 60  # last resort
+
     attempt = ExamAttempt.objects.create(
         user=user,
         exam_title=data.get('exam_title') or data.get('examTitle', 'Python Exam'),
@@ -648,7 +656,7 @@ def save_exam_report_api(request):
         correct_answers=data.get('correct_answers') or data.get('correctAnswers', 0),
         incorrect_answers=data.get('incorrect_answers') or data.get('incorrectAnswers', 0),
         marks_obtained=data.get('marks_obtained') or data.get('marks') or data.get('score', 0),
-        total_marks=data.get('total_marks') or data.get('totalMarks', 60),
+        total_marks=actual_total_marks,
         time_taken=data.get('time_taken') or data.get('timeTaken', 0),
         start_time=start_time,
         end_time=end_time,

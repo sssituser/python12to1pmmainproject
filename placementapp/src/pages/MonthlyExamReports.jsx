@@ -98,7 +98,7 @@ function MonthlyExamReports() {
       const finalProgress = {};
       exams.forEach((exam, index) => {
         const score = exam.marks_obtained ?? exam.score ?? 0;
-        const total = (exam.totalQuestions ? (exam.totalQuestions * (exam.marksPerQuestion || 2)) : (exam.total_marks ?? exam.totalMarks)) || 100;
+        const total = (exam.total_marks ?? exam.totalMarks ?? (exam.totalQuestions || 30)) || 30;
         const percentage = total > 0 ? (score / total) * 100 : 0;
         finalProgress[exam.id || index || exam.examDate] = percentage;
       });
@@ -126,6 +126,7 @@ function MonthlyExamReports() {
 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-purple-600 mb-1">SSSIT Assessment Analysis</p>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
               Monthly <span className="text-purple-600">Mastery</span>
             </h1>
@@ -151,7 +152,7 @@ function MonthlyExamReports() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {exams.map((exam, index) => {
               const scoreValue = exam.marks_obtained ?? exam.score ?? 0;
-              const total = (exam.totalQuestions ? (exam.totalQuestions * (exam.marksPerQuestion || 2)) : (exam.total_marks ?? exam.totalMarks)) || 100;
+              const total = (exam.total_marks ?? exam.totalMarks ?? (exam.totalQuestions || 30)) || 30;
               const percentage = total > 0 ? (scoreValue / total) * 100 : 0;
               const value = progress[exam.id || index || exam.examDate] || 0;
               const color = getColor(percentage);

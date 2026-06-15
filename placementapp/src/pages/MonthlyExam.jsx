@@ -44,6 +44,7 @@ const MonthlyExam = () => {
   const [warningCount, setWarningCount] = useState(0);
   const [warningMessage, setWarningMessage] = useState("");
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const [sessionId, setSessionId] = useState(null);
 
@@ -241,9 +242,14 @@ const MonthlyExam = () => {
     if (examSubmittedRef.current) return;
     let submissionReason = (reason && typeof reason === "string") ? reason : "Manual";
     if (submissionReason === "Manual") {
-      const confirmSubmit = window.confirm("Are you sure you want to finish and submit your exam?");
-      if (!confirmSubmit) return;
+      setShowSubmitModal(true);
+      return;
     }
+    await doSubmitExam(submissionReason);
+  };
+
+  const doSubmitExam = async (submissionReason = "Manual") => {
+    if (examSubmittedRef.current) return;
     examSubmittedRef.current = true;
     setExamSubmitted(true);
 
@@ -514,6 +520,43 @@ const MonthlyExam = () => {
                 Reason: <span className="text-amber-600 font-bold">{warningMessage}</span>
               </p>
               <button onClick={handleCloseWarningModal} className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-xl shadow-amber-100 active:scale-95">Resume Session</button>
+           </div>
+        </div>
+      )}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
+           <div className="bg-white p-10 rounded-[2.5rem] max-w-md w-full text-center shadow-2xl border border-blue-50 animate-in fade-in zoom-in duration-200">
+              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Submit Exam?</h3>
+              <p className="text-gray-500 font-medium mb-2 leading-relaxed">
+                You have answered <span className="text-blue-600 font-black">{answers.filter(a => a !== null && a !== undefined).length}</span> out of <span className="font-black text-gray-800">{questions.length}</span> questions.
+              </p>
+              {answers.filter(a => a === null || a === undefined).length > 0 && (
+                <p className="text-amber-600 font-bold text-sm mb-4 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
+                  ⚠️ {answers.filter(a => a === null || a === undefined).length} question(s) left unanswered
+                </p>
+              )}
+              <p className="text-gray-400 text-xs mb-8 font-medium">Once submitted, you cannot change your answers.</p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowSubmitModal(false)} 
+                  className="flex-1 py-4 bg-gray-100 text-gray-700 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => { setShowSubmitModal(false); doSubmitExam("Manual"); }} 
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                >
+                  Submit Now
+                </button>
+              </div>
            </div>
         </div>
       )}

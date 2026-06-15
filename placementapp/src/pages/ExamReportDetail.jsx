@@ -113,6 +113,9 @@ function ExamReportDetail() {
         <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden mb-8 transform hover:scale-[1.005] transition-transform duration-300">
           <div className={`px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 ${passed ? "bg-emerald-600" : "bg-emerald-200 border-b border-emerald-300"}`}>
             <div className="text-center sm:text-left">
+              <p className={`text-xs font-black uppercase tracking-[0.25em] mb-1 ${passed ? "text-white/60" : "text-emerald-700/60"}`}>
+                SSSIT Assessment Result Report
+              </p>
               <h1 className={`text-2xl font-black tracking-tight ${passed ? "text-white" : "text-emerald-900"}`}>
                 {(report.exam_title || report.examTitle || "Assessment Report").replace(/^Daily\s+/i, "").toUpperCase()}
               </h1>
