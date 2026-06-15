@@ -238,6 +238,11 @@ const WeeklyExam = () => {
 
   const handleSubmitExam = async (reason = "Manual") => {
     if (examSubmittedRef.current) return;
+    let submissionReason = (reason && typeof reason === "string") ? reason : "Manual";
+    if (submissionReason === "Manual") {
+      const confirmSubmit = window.confirm("Are you sure you want to finish and submit your exam?");
+      if (!confirmSubmit) return;
+    }
     examSubmittedRef.current = true;
     setExamSubmitted(true);
 
