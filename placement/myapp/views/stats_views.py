@@ -69,11 +69,19 @@ def students_api(request):
         
         # Get exam attempts for this student
         exams = ExamAttempt.objects.filter(user=user)
-        avg_score = 0
+        avg_percentage = 0
         if exams.exists():
-            scores = [exam.score for exam in exams if hasattr(exam, 'score') and exam.score is not None]
-            if scores:
-                avg_score = sum(scores) / len(scores)
+            percentages = []
+            for exam in exams:
+                total = exam.total_marks if exam.total_marks and exam.total_marks > 0 else None
+                score = exam.marks_obtained if exam.marks_obtained is not None else exam.score
+                if total and score is not None:
+                    percentages.append((score / total) * 100)
+                elif exam.score is not None and exam.total_questions and exam.total_questions > 0:
+                    # Fallback: treat score as out of total_questions
+                    percentages.append((exam.score / exam.total_questions) * 100)
+            if percentages:
+                avg_percentage = sum(percentages) / len(percentages)
         
         # Get job applications for this student
         job_app = JobApplication.objects.filter(user_id=user.id).first()
@@ -95,7 +103,7 @@ def students_api(request):
             'cgpa': profile.cgpa if profile and profile.cgpa else 0,
             'status': 'Active' if user.is_active else 'Inactive',
             'is_active': user.is_active,
-            'progress': round(avg_score, 2) if avg_score else 0,
+            'progress': round(avg_percentage, 1),
             'exam_count': exams.count(),
             'job_status': job_app.status if job_app else 'Not Applied',
             'date_joined': user.date_joined,
@@ -139,11 +147,18 @@ def student_stats(request):
             # Get exam attempts
             exams = ExamAttempt.objects.filter(user=user)
             
-            avg_score = 0
+            avg_percentage = 0
             if exams.exists():
-                scores = [exam.score for exam in exams if hasattr(exam, 'score') and exam.score is not None]
-                if scores:
-                    avg_score = sum(scores) / len(scores)
+                percentages = []
+                for exam in exams:
+                    total = exam.total_marks if exam.total_marks and exam.total_marks > 0 else None
+                    score = exam.marks_obtained if exam.marks_obtained is not None else exam.score
+                    if total and score is not None:
+                        percentages.append((score / total) * 100)
+                    elif exam.score is not None and exam.total_questions and exam.total_questions > 0:
+                        percentages.append((exam.score / exam.total_questions) * 100)
+                if percentages:
+                    avg_percentage = sum(percentages) / len(percentages)
             
             # Get job applications
             job_app = JobApplication.objects.filter(user_id=user.id).first()
@@ -158,8 +173,8 @@ def student_stats(request):
                 "cgpa": profile.cgpa if profile and hasattr(profile, 'cgpa') else 0,
                 "college": profile.college if profile and hasattr(profile, 'college') else "N/A",
                 "course_title": profile.course.title if profile and profile.course else "Not assigned",
-                "avg_score": round(avg_score, 2),
-                "progress": round(avg_score, 2) if avg_score else 0,
+                "avg_score": round(avg_percentage, 1),
+                "progress": round(avg_percentage, 1),
                 "exam_count": exams.count(),
                 "job_status": job_app.status if job_app else "Not Applied",
                 "status": 'Active' if user.is_active else 'Inactive',
@@ -168,7 +183,7 @@ def student_stats(request):
                 "last_login": user.last_login
             })
             
-            total_score += avg_score
+            total_score += avg_percentage
             total_exams += exams.count()
         
         total_students = student_users.count()

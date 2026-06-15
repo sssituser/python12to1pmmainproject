@@ -282,12 +282,21 @@ const MonthlyExam = () => {
     localStorage.setItem("examResult", JSON.stringify(result));
     
     const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
-    if (token) {
+    try {
+      console.log("🚀 Saving monthly exam report to server...");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
+        headers
+      });
+      console.log("✅ Report saved successfully");
+    } catch (err) {
+      console.warn("⚠️ Failed to persist to server with auth, retrying anonymously...", err);
       try {
-        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (err) { console.error("Persistence failed", err); }
+        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result);
+        console.log("✅ Report saved successfully (anonymous fallback)");
+      } catch (retryErr) {
+        console.error("❌ Failed to persist to server anonymously", retryErr);
+      }
     }
     
     const allResults = JSON.parse(localStorage.getItem("allExamResults") || "[]");

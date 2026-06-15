@@ -418,15 +418,20 @@ const DailyExam = () => {
     
     // 🛡️ PERMANENT PERSISTENCE: Save to server database
     const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
-    if (token) {
+    try {
+      console.log("🚀 Saving daily exam report to server...");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
+        headers
+      });
+      console.log("✅ Report saved successfully");
+    } catch (err) {
+      console.warn("⚠️ Failed to persist to server with auth, retrying anonymously...", err);
       try {
-        console.log("🚀 Saving daily exam report to server...");
-        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log("✅ Report saved successfully");
-      } catch (err) {
-        console.error("❌ Failed to persist to server", err);
+        await axios.post(`http://${window.location.hostname}:8000/api/save-exam-report/`, result);
+        console.log("✅ Report saved successfully (anonymous fallback)");
+      } catch (retryErr) {
+        console.error("❌ Failed to persist to server anonymously", retryErr);
       }
     }
     
