@@ -206,7 +206,7 @@ function DetailedResults() {
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(63, 81, 181); 
-    doc.text('Assessment Results Report', 105, y, { align: 'center' });
+    doc.text('SSSIT Assessment Result Report', 105, y, { align: 'center' });
     y += 15;
 
     // 👤 Header 2: Student Details
