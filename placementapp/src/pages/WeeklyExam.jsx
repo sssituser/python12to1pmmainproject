@@ -255,10 +255,10 @@ const WeeklyExam = () => {
         name: (JSON.parse(localStorage.getItem("sssit-profile") || "{}")).fullName || storedUser.fullName || storedUser.firstName || "Student"
       },
       score,
-      total_marks: questions.length * 2,
+      total_marks: totalPossibleMarks,
       totalQuestions: questions.length,
-      correctAnswers: Math.round(score / 2),
-      passed: (score / (questions.length * 2)) * 100 >= 35,
+      correctAnswers: answers.filter((ans, idx) => ans === questions[idx]?.correct).length,
+      passed: totalPossibleMarks > 0 ? (score / totalPossibleMarks) * 100 >= passingValue : false,
       timeTaken: (examDuration * 60) - timeLeft,
       examDate: new Date().toISOString(),
       questions,

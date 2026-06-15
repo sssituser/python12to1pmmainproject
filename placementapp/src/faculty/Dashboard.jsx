@@ -175,6 +175,7 @@ function Dashboard() {
                 // Robust fallbacks for ID, Name, and Mobile
                 studentId: student.studentId || student.student_id || student.id || userObj.studentId || userObj.id || "--",
                 studentName: student.studentName || student.name || userObj.name || userObj.username || student.username || 'Unknown',
+                username: userObj.username || student.username || student.studentName || student.name || 'Unknown',
                 mobileNo: student.mobileNo || student.phone || student.mobile || userObj.phone || userObj.mobile || "--",
                 courseType: student.course_title || student.course?.title || student.course_type || 'Not assigned',
                 status: student.is_active !== undefined ? (student.is_active ? 'Active' : 'Inactive') : 
@@ -228,6 +229,7 @@ function Dashboard() {
                 sno: index + 1,
                 studentId: studentId,
                 studentName: name,
+                username: userObj.username || student.username || student.studentName || student.name || "Unknown",
                 mobileNo: mobileNo,
                 courseType: student.courseType || student.course_title || student.course_type || "Not assigned",
                 status: student.status || (student.is_active ? 'Active' : 'Inactive'),
@@ -558,7 +560,7 @@ function Dashboard() {
                           <td className="text-center py-3 px-4">
                             <div className="flex items-center justify-center gap-3">
                               <button 
-                                onClick={() => navigate(`/faculty/student-report/${student.studentName}`)}
+                                onClick={() => navigate(`/faculty/student-report/${student.username || student.studentName}`)}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center gap-1 group"
                               >
                                 <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -635,16 +637,16 @@ function Dashboard() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-800">
-                      {report.exam_title || `Exam ${index + 1}`}
+                      {report.examTitle || report.exam_title || `Exam ${index + 1}`}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Score: {report.score || 0}/{report.total_questions || 0}
+                      Score: {report.score || 0}/{report.totalMarks || report.totalQuestions || report.total_questions || 0}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500">
-                    {report.exam_date ? new Date(report.exam_date).toLocaleDateString() : 'Recent'}
+                    {(report.examDate || report.exam_date) ? new Date(report.examDate || report.exam_date).toLocaleDateString() : 'Recent'}
                   </p>
                   <p className="text-xs text-gray-400">
                     {report.user?.username || 'Student'}

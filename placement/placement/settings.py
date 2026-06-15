@@ -124,7 +124,7 @@ IS_DOCKER = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') 
 # - inside Docker container: connect to service name `db` on port 3306
 # - outside Docker with a native MySQL install: connect to localhost on port 3306
 # - outside Docker with the compose MySQL container mapped to host: use DB_PORT=3307
-DB_HOST = os.environ.get('DB_HOST', 'db' if IS_DOCKER else '127.0.0.1')
+DB_HOST = os.environ.get('DB_HOST', 'db' if IS_DOCKER else '40.192.98.128')
 DB_PORT = os.environ.get('DB_PORT', '3306')
 
 DATABASES = {

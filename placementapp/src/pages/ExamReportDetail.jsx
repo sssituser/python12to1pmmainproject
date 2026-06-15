@@ -70,7 +70,10 @@ function ExamReportDetail() {
   if (!report) return null;
 
   const currentPassThreshold = getPassingScore(report.exam_title || report.examTitle || "");
-  const { obtained: displayMarks, total: displayTotal } = syncMarks(report.marks_obtained || report.score || 0, report.total_questions || report.total_marks || 25);
+  const { obtained: displayMarks, total: displayTotal } = 
+    (report.total_marks && report.total_marks > (report.total_questions || 0))
+    ? { obtained: report.marks_obtained || report.score || 0, total: report.total_marks }
+    : syncMarks(report.marks_obtained || report.score || 0, report.total_questions || report.total_marks || 25);
   const passed = displayMarks >= currentPassThreshold;
   const percentage = displayTotal > 0 ? ((displayMarks / displayTotal) * 100).toFixed(1) : 0;
 

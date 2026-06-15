@@ -42,7 +42,7 @@ function ExamReports() {
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tight mb-3">
-             Exam <span className="text-blue-600">Reports</span>
+             SSSIT <span className="text-blue-600">Assessment Analysis</span>
           </h1>
           <div className="h-1.5 w-20 bg-blue-600 mx-auto rounded-full"></div>
         </div>
