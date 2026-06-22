@@ -126,14 +126,13 @@ const WeeklyExam = () => {
 
           const mappedQuestions = weeklyQuestions.map((q, idx) => {
             const opts = q.options || [];
-            const shuffledOptions = shuffleArray(opts);
             return {
               ...q,
               id: idx + 1,
               marks: parseInt(q.marks) || 10,
               question: q.question,
-              options: shuffledOptions,
-              correct: shuffledOptions.indexOf(q.answer) !== -1 ? shuffledOptions.indexOf(q.answer) : 0
+              options: opts,
+              correct: opts.indexOf(q.answer) !== -1 ? opts.indexOf(q.answer) : 0
             };
           });
           setQuestions(mappedQuestions);

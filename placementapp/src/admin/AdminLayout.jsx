@@ -118,22 +118,31 @@ function AdminLayout() {
   return (
     <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
 
+      {/* Backdrop for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR */}
       <div
         onMouseEnter={() => setHoverOpen(true)}
         onMouseLeave={() => setHoverOpen(false)}
-        className={`bg-slate-900 text-gray-300 min-h-screen flex flex-col justify-between transition-all duration-300 ${
-          open ? "w-64" : "w-20"
-        }`}
+        className={`bg-slate-900 text-gray-300 h-screen flex flex-col justify-between transition-all duration-300 fixed md:sticky top-0 left-0 z-50 md:z-30 shrink-0
+          ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 w-64 md:w-20"}
+          ${hoverOpen ? "md:w-64" : ""}
+        `}
       >
-        {/* HEADER */}
-        <div>
-          <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700">
+        {/* TOP SECTION (Header + Menu) */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700 shrink-0">
             {open ? "Admin Panel" : "AP"}
           </div>
 
-          {/* MENU */}
-          <div className="p-2 space-y-2">
+          {/* MENU (Scrollable) */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
             {menu.map((item) => (
               <NavLink
                 key={item.path}
@@ -151,46 +160,46 @@ function AdminLayout() {
               </NavLink>
             ))}
           </div>
+        </div>
 
-          {/* USER PROFILE SECTION */}
-          <div className="border-t border-slate-700 p-3">
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition cursor-pointer" onClick={() => navigate("/admin/profile")}>
-              <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full rounded-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = getInitials();
-                    }}
-                  />
-                ) : (
-                  getInitials()
-                )}
-              </div>
-              {sidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {getDisplayName()}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {getDisplayEmail()}
-                  </p>
-                </div>
+        {/* BOTTOM SECTION (User Profile + Logout) */}
+        <div className="border-t border-slate-700 p-3 shrink-0 bg-slate-950">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition cursor-pointer" onClick={() => navigate("/admin/profile")}>
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = getInitials();
+                  }}
+                />
+              ) : (
+                getInitials()
               )}
             </div>
-            
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left transition hover:bg-red-600 hover:text-white mt-2"
-            >
-              <LogOut size={18} />
-              {open && "Logout"}
-            </button>
+            {open && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {getDisplayName()}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {getDisplayEmail()}
+                </p>
+              </div>
+            )}
           </div>
+          
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left transition hover:bg-red-600 hover:text-white mt-2"
+          >
+            <LogOut size={18} />
+            {open && "Logout"}
+          </button>
         </div>
       </div>
 

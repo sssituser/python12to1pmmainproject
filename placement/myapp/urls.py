@@ -32,6 +32,12 @@ from .views.monitoring_views import get_login_email_status, get_login_email_hist
 from .views.playground_dispatcher import playground_questions_dispatcher
 from .views.marks_views import get_students_and_marks, upload_exam_marks, get_course_exams
 from .views.email_test_views import smtp_test_email
+from .views.ai_views import (
+    analyze_resume_view, get_resume_analysis_view,
+    job_recommendations_view, skill_gap_view,
+    generate_interview_view, rank_candidates_view,
+    generate_report_view, chat_view,
+)
 
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
@@ -169,4 +175,14 @@ urlpatterns = [
     path('test-faculty-profile/', lambda request: JsonResponse({'message': 'Test endpoint working'}), name='test_faculty_profile'),
     path('test-faculty-minimal/', faculty_profile_minimal_test, name='test_faculty_minimal'),
     path('test-smtp-email/', smtp_test_email, name='test_smtp_email'),
+
+    # ── AI Module URLs ────────────────────────────────────────────────────────────
+    path('ai/analyze-resume/', analyze_resume_view, name='ai_analyze_resume'),
+    path('ai/resume-analysis/', get_resume_analysis_view, name='ai_resume_analysis'),
+    path('ai/job-recommendations/', job_recommendations_view, name='ai_job_recommendations'),
+    path('ai/skill-gap/', skill_gap_view, name='ai_skill_gap'),
+    path('ai/generate-interview/', generate_interview_view, name='ai_generate_interview'),
+    path('ai/rank-candidates/', rank_candidates_view, name='ai_rank_candidates'),
+    path('ai/generate-report/', generate_report_view, name='ai_generate_report'),
+    path('ai/chat/', chat_view, name='ai_chat'),
 ]

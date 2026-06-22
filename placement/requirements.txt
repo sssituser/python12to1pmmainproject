@@ -9,4 +9,7 @@ Pillow
 django-ratelimit
 python-docx
 openpyxl
-pypdf
+pypdf
+numpy
+google-genai>=2.0
+

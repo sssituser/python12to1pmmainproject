@@ -1136,6 +1136,23 @@ def send_course_update_notification_emails(sender, instance, created, update_fie
     email_thread = Thread(target=send_emails_for_course_updates, daemon=True)
     email_thread.start()
 
+
+class ResumeAnalysis(models.Model):
+    student = models.OneToOneField(StudentProfile, on_delete=models.CASCADE, related_name='resume_analysis')
+    raw_text = models.TextField(blank=True, null=True)
+    technical_skills = models.JSONField(default=list, blank=True)
+    soft_skills = models.JSONField(default=list, blank=True)
+    education = models.JSONField(default=list, blank=True)
+    projects = models.JSONField(default=list, blank=True)
+    certifications = models.JSONField(default=list, blank=True)
+    ats_score = models.IntegerField(default=0)
+    improvements = models.JSONField(default=list, blank=True)
+    analyzed_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Resume Analysis - {self.student.user.username}"
+
+
     
 
 

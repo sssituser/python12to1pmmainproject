@@ -260,13 +260,12 @@ const DailyExam = () => {
           const shuffled = shuffleArray(pool).slice(0, qLim);
           setQuestions(shuffled.map((q, i) => {
             const opts = q.options || [];
-            const shuffledOptions = shuffleArray(opts);
             return {
               ...q,
               id: i + 1,
               marks: weight,
-              options: shuffledOptions,
-              correct: shuffledOptions.indexOf(q.answer) !== -1 ? shuffledOptions.indexOf(q.answer) : (q.correct ?? 0)
+              options: opts,
+              correct: opts.indexOf(q.answer) !== -1 ? opts.indexOf(q.answer) : (q.correct ?? 0)
             };
           }));
         } else {

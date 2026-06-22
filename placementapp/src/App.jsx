@@ -43,6 +43,13 @@ const VideoPlayer = lazy(() => import("./pages/VideoPlayer"));
 const WeeklyExam = lazy(() => import("./pages/WeeklyExam"));
 const WeeklyExamReports = lazy(() => import("./pages/WeeklyExamReports"));
 
+/* 🔹 AI MODULE (LAZY) */
+const AIResumeAnalyzer = lazy(() => import("./pages/AIResumeAnalyzer"));
+const AIJobRecommendations = lazy(() => import("./pages/AIJobRecommendations"));
+const AIChatAssistant = lazy(() => import("./pages/AIChatAssistant"));
+const AICandidateRanker = lazy(() => import("./pages/AICandidateRanker"));
+const AIFacultyReports = lazy(() => import("./pages/AIFacultyReports"));
+
 /* 🔹 ADMIN (LAZY/DIRECT) */
 import AdminLogin from "./admin/AdminLogin";
 // adminRoutes needs to stay as is if it's data, or be refactored. 
@@ -211,6 +218,11 @@ function App() {
 
             {/* Logout */}
             <Route path="logout" element={<Logout />} />
+
+            {/* 🤖 AI MODULE — Student Routes */}
+            <Route path="ai/resume" element={<AIResumeAnalyzer />} />
+            <Route path="ai/jobs" element={<AIJobRecommendations />} />
+            <Route path="ai/chat" element={<AIChatAssistant />} />
           </Route>
 
           {/* 👨‍🏫 FACULTY PANEL */}
@@ -234,6 +246,11 @@ function App() {
             <Route path="leaves" element={<Leaves />} />
             <Route path="Course" element={<FacultyCourse />} />
             <Route path="Course/:courseId" element={<FacultyCourse />} />
+
+            {/* 🤖 AI MODULE — Faculty Routes */}
+            <Route path="ai/reports" element={<AIFacultyReports />} />
+            <Route path="ai/candidates" element={<AICandidateRanker />} />
+            <Route path="ai/chat" element={<AIChatAssistant />} />
           </Route>
 
           {/* 🛡️ ADMIN PANEL */}

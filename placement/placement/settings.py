@@ -120,12 +120,30 @@ WSGI_APPLICATION = 'placement.wsgi.application'
 # Detect if running inside Docker
 IS_DOCKER = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
 
-# Local development defaults:
-# - inside Docker container: connect to service name `db` on port 3306
-# - outside Docker with a native MySQL install: connect to localhost on port 3306
-# - outside Docker with the compose MySQL container mapped to host: use DB_PORT=3307
-DB_HOST = os.environ.get('DB_HOST', 'db' if IS_DOCKER else '40.192.98.128')
 DB_PORT = os.environ.get('DB_PORT', '3306')
+
+def _detect_db_host():
+    if IS_DOCKER:
+        return 'db'
+    
+    env_host = os.environ.get('DB_HOST')
+    if env_host:
+        return env_host
+        
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        result = s.connect_ex(('40.192.98.128', int(DB_PORT)))
+        s.close()
+        if result == 0:
+            return '40.192.98.128'
+    except Exception:
+        pass
+        
+    return '127.0.0.1'
+
+DB_HOST = _detect_db_host()
 
 DATABASES = {
     'default': {

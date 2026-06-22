@@ -41,9 +41,11 @@ def user_combined_results_api(request):
             'error': 'Username parameter is required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Get user by username
+    # Get user by username (case-insensitive)
     try:
-        target_user = User.objects.get(username=username)
+        target_user = User.objects.filter(username__iexact=username).first()
+        if not target_user:
+            raise User.DoesNotExist()
     except User.DoesNotExist:
         return Response({
             'success': False,

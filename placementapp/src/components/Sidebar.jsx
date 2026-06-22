@@ -13,15 +13,22 @@ import {
   Folder,
   CheckCircle,
   ClipboardList,
+  Sparkles,
+  FileSearch,
+  Lightbulb,
+  MessageSquare,
 } from "lucide-react";
 
-function Sidebar({ sidebarOpen }) {
+function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const [hoverOpen, setHoverOpen] = useState(false);
   const [jobsOpen, setJobsOpen] = useState(() => {
     return localStorage.getItem("jobsOpen") === "true";
   });
   const [playOpen, setPlayOpen] = useState(() => {
     return localStorage.getItem("playOpen") === "true";
+  });
+  const [aiOpen, setAiOpen] = useState(() => {
+    return localStorage.getItem("aiOpen") === "true";
   });
 
   const toggleJobs = () => {
@@ -36,6 +43,14 @@ function Sidebar({ sidebarOpen }) {
     setPlayOpen(prev => {
       const next = !prev;
       localStorage.setItem("playOpen", next);
+      return next;
+    });
+  };
+
+  const toggleAi = () => {
+    setAiOpen(prev => {
+      const next = !prev;
+      localStorage.setItem("aiOpen", next);
       return next;
     });
   };
@@ -85,21 +100,32 @@ function Sidebar({ sidebarOpen }) {
     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium no-underline transition";
 
   return (
-    <div
-      onMouseEnter={() => setHoverOpen(true)}
-      onMouseLeave={() => setHoverOpen(false)}
-      className={`bg-slate-900 text-gray-300 min-h-screen flex flex-col justify-between
-      transition-all duration-300 ${open ? "w-64" : "w-20"}`}
-    >
+    <>
+      {/* Backdrop for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen && setSidebarOpen(false)}
+        />
+      )}
 
-      {/* HEADER */}
-      <div>
-        <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700">
-          {open ? "Student Dashboard" : "SD"}
-        </div>
+      {/* SIDEBAR */}
+      <div
+        onMouseEnter={() => setHoverOpen(true)}
+        onMouseLeave={() => setHoverOpen(false)}
+        className={`bg-slate-900 text-gray-300 h-screen flex flex-col justify-between transition-all duration-300 fixed md:sticky top-0 left-0 z-50 md:z-30 shrink-0
+          ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 w-64 md:w-20"}
+          ${hoverOpen ? "md:w-64" : ""}
+        `}
+      >
+        {/* TOP SECTION (Header + Menu) */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700 shrink-0">
+            {open ? "Student Dashboard" : "SD"}
+          </div>
 
-        {/* MENU */}
-        <div className="p-2 space-y-2">
+          {/* MENU (Scrollable) */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
 
           {/* PROFILE */}
           <NavLink
@@ -268,6 +294,65 @@ function Sidebar({ sidebarOpen }) {
             )}
           </div>
 
+          {/* AI TOOLS */}
+          <div>
+            <button
+              onClick={toggleAi}
+              className={`${linkClass} w-full justify-between hover:bg-slate-800`}
+            >
+              <span className="flex items-center gap-3">
+                <Sparkles size={18} className="text-indigo-400" />
+                {open && <span className="text-indigo-300 font-semibold">AI Tools</span>}
+              </span>
+              {open && (
+                <ChevronDown
+                  size={16}
+                  className={`transition ${aiOpen && "rotate-180"}`}
+                />
+              )}
+            </button>
+
+            {aiOpen && open && (
+              <div className="ml-6 mt-2 space-y-1 text-sm">
+                <NavLink
+                  to="/dashboard/ai/resume"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
+                >
+                  <FileSearch size={14} />
+                  Resume Analyzer
+                </NavLink>
+
+                <NavLink
+                  to="/dashboard/ai/jobs"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
+                >
+                  <Lightbulb size={14} />
+                  Job Recommendations
+                </NavLink>
+
+                <NavLink
+                  to="/dashboard/ai/chat"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
+                >
+                  <MessageSquare size={14} />
+                  AI Assistant
+                </NavLink>
+              </div>
+            )}
+          </div>
+
           {/* LEAVE */}
           <NavLink
             to="/dashboard/leave-request"
@@ -287,7 +372,7 @@ function Sidebar({ sidebarOpen }) {
       </div>
 
       {/* LOGOUT */}
-      <div className="p-3 border-t border-slate-700">
+      <div className="p-3 border-t border-slate-700 shrink-0 bg-slate-950">
         <button
           onClick={logout}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-red-600 hover:text-white transition"
@@ -297,6 +382,7 @@ function Sidebar({ sidebarOpen }) {
         </button>
       </div>
     </div>
+    </>
   );
 }
 

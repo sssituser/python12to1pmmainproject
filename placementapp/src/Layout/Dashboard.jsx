@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 function Dashboard() {
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebarOpen");
     return saved !== null ? JSON.parse(saved) : false; // Default to false like faculty
@@ -21,7 +22,7 @@ function Dashboard() {
     <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
 
       {/* ✅ SIDEBAR */}
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <div className="flex flex-col flex-1 relative">
 
@@ -29,7 +30,7 @@ function Dashboard() {
         <Navbar toggleSidebar={handleToggleSidebar} />
 
         {/* ✅ MAIN CONTENT */}
-        <div className="p-6 flex-1 overflow-y-auto relative z-10">
+        <div className={`flex-1 overflow-y-auto relative z-10 ${location.pathname.includes('/ai/') ? 'p-0 bg-[#0b1120]' : 'p-6'}`}>
           <Outlet />
         </div>
 
