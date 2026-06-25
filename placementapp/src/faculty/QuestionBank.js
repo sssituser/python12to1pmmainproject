@@ -31,7 +31,7 @@ export const getQuestionBank = (courseName, count = 80, category = "Weekly", sub
           usedTexts.add(qText);
           qs.push({
             question: qText,
-            options: shuffle([...variant.opts.map(o => o.replace(/{topic}/g, topic).replace(/{course}/g, course))]),
+            options: [...variant.opts.map(o => o.replace(/{topic}/g, topic).replace(/{course}/g, course))],
             answer: variant.a.replace(/{topic}/g, topic).replace(/{course}/g, course),
             type: "mcq",
             marks: 2,
