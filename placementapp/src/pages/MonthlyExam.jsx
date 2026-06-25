@@ -241,9 +241,7 @@ const MonthlyExam = () => {
     if (examSubmittedRef.current) return;
     let submissionReason = (reason && typeof reason === "string") ? reason : "Manual";
     if (submissionReason === "Manual") {
-      const confirmSubmit = window.confirm("Are you sure you want to submit your exam?");
-      if (!confirmSubmit) return;
-      await doSubmitExam("Manual");
+      setShowSubmitModal(true);
       return;
     }
     await doSubmitExam(submissionReason);
@@ -520,7 +518,7 @@ const MonthlyExam = () => {
       </div>
 
       {showWarningModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
            <div className="bg-white p-10 rounded-[2.5rem] max-w-sm w-full text-center shadow-2xl border border-amber-50 animate-in fade-in zoom-in duration-300">
               <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <FontAwesomeIcon icon={faFlag} className="text-amber-500 text-2xl" />
@@ -536,7 +534,7 @@ const MonthlyExam = () => {
 
       {/* Submit Confirmation Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10000] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
            <div className="bg-white p-10 rounded-[2.5rem] max-w-md w-full text-center shadow-2xl border border-blue-50 animate-in fade-in zoom-in duration-200">
               <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
