@@ -241,7 +241,9 @@ const MonthlyExam = () => {
     if (examSubmittedRef.current) return;
     let submissionReason = (reason && typeof reason === "string") ? reason : "Manual";
     if (submissionReason === "Manual") {
-      setShowSubmitModal(true);
+      const confirmSubmit = window.confirm("Are you sure you want to submit your exam?");
+      if (!confirmSubmit) return;
+      await doSubmitExam("Manual");
       return;
     }
     await doSubmitExam(submissionReason);

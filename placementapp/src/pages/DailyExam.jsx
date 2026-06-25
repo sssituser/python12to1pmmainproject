@@ -366,7 +366,9 @@ const DailyExam = () => {
     if (examSubmittedRef.current) return;
     let submissionReason = (reason && typeof reason === "string") ? reason : "Manual";
     if (submissionReason === "Manual") {
-      setShowSubmitModal(true);
+      const confirmSubmit = window.confirm("Are you sure you want to submit your exam?");
+      if (!confirmSubmit) return;
+      await doSubmitExam("Manual");
       return;
     }
     await doSubmitExam(submissionReason);
@@ -614,7 +616,7 @@ const DailyExam = () => {
                     {currentQuestion < questions.length - 1 ? (
                       <button onClick={() => setCurrentQuestion(prev => prev + 1)} className="bg-blue-600 text-white px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-95">Next</button>
                     ) : (
-                      <button onClick={handleSubmitExam} className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95">Finish Exam</button>
+                      <button onClick={() => handleSubmitExam()} className="bg-green-600 text-white px-8 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-green-700 shadow-md shadow-green-100 transition-all active:scale-95">Finish Exam</button>
                     )}
                   </div>
                </div>
