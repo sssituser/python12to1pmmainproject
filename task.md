@@ -1,0 +1,30 @@
+# AI Feature Integration Progress Checklist
+
+- [x] Core Setup & Models
+  - [x] Add `ResumeAnalysis` model to `placement/myapp/models.py`
+  - [x] Update `requirements.txt` with required packages (`google-generativeai`, `numpy`)
+  - [x] Run migrations to update the database schema
+- [x] Brain Module Core Development (`placement/brain/`)
+  - [x] Implement `ai_services.py` for routing between Gemini online & offline fallbacks
+  - [x] Implement `prompt_templates.py` containing offline QA data, matching templates, and prompts
+  - [x] Implement `embeddings.py` for local TF-IDF vectorization and online embeddings
+  - [x] Implement `vector_store.py` for numpy-based vector matching
+  - [x] Implement Feature 1: `resume_analyzer.py` and `ats_score.py`
+  - [x] Implement Feature 2 & 3: `job_matcher.py`
+  - [x] Implement Feature 4: `interview_generator.py`
+  - [x] Implement Feature 5: `candidate_ranker.py`
+  - [x] Implement Feature 6: `report_generator.py`
+  - [x] Implement Feature 7: `chatbot.py`
+- [ ] Backend Views & Routing
+  - [x] Create `placement/myapp/views/ai_views.py` with all DRF API views
+  - [x] Register views in `placement/myapp/urls.py`
+- [ ] Frontend React Integration (`placementapp/src/`)
+  - [x] Implement `AIResumeAnalyzer.jsx`
+  - [x] Implement `AIJobRecommendations.jsx` (includes Skill Gap Analysis)
+  - [x] Implement `AIChatAssistant.jsx`
+  - [x] Implement `AICandidateRanker.jsx`
+  - [x] Implement `AIFacultyReports.jsx`
+  - [x] Integrate new views in `App.jsx`
+- [ ] Verification & Tests
+  - [x] Create `tests_ai.py`
+  - [x] Perform manual integration tests

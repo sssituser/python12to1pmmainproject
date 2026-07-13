@@ -9,7 +9,7 @@ class User(AbstractUser):
         ('faculty', 'Faculty'),
         ('admin', 'Admin'),
     )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student', db_index=True)
     is_verified = models.BooleanField(default=False)
     email_password_encrypted = models.TextField(null=True, blank=True)
     class Meta:
@@ -41,7 +41,7 @@ class OTP(models.Model):
 
 class StudentProfile(models.Model):
     user = models.ForeignKey('myapp.User', on_delete=models.CASCADE)
-    student_id = models.IntegerField(null=True, blank=True)
+    student_id = models.IntegerField(null=True, blank=True, db_index=True)
     age = models.IntegerField(null=True, blank=True)
     state = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=15, blank=True)
