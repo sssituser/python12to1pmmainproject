@@ -18,13 +18,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSEO } from "../utils/useSEO";
 
 function AdminPanel() {
+  useSEO("Admin Control Panel", "Manage students, faculty, and system configuration from the SSSIT Admin Control Panel.");
   const navigate = useNavigate();
   const location = useLocation();
-
-  console.log("🔄 AdminPanel component is rendering!");
-  console.log("📍 Current path:", location.pathname);
 
   // Determine active tab based on URL
   useEffect(() => {

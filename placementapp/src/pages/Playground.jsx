@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChartLine, faChartSimple, faTerminal } from "@fortawesome/free-solid-svg-icons";
+import { useSEO } from "../utils/useSEO";
 
 function Playground() {
-
+  useSEO("Code Playground", "Practice coding, run Python and other programs, and sharpen your programming skills in the SSSIT Placement Portal Playground.");
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
 

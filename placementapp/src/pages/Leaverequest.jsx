@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faFileAlt, faPlus, faClock, faEye, faShieldAlt } from "@fortawesome/free-solid-svg-icons";
+import { useSEO } from "../utils/useSEO";
 
 function LeaveRequest() {
+  useSEO("Leave Request", "Submit and track leave requests on the SSSIT Placement Portal. View your leave history, approval status, and summary.");
   const navigate = useNavigate();
 
   // State for leave summary data

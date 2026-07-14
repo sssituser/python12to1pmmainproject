@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSEO } from "../utils/useSEO";
 import {
     Bar,
     BarChart,
@@ -38,9 +39,7 @@ import {
 } from "lucide-react";
 
 function AdminDashboard() {
-  console.log("🔄 AdminDashboard component is rendering!");
-  console.log("📍 AdminDashboard component called at:", new Date().toLocaleTimeString());
-  
+  useSEO("Admin Dashboard", "Admin dashboard for the SSSIT Placement Portal — manage users, view analytics, configure settings, and oversee placement operations.");
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     total_users: 0,
@@ -194,14 +193,11 @@ function AdminDashboard() {
             console.log("📊 Calculated stats:", newStats);
             setStats(prev => ({ ...prev, ...newStats }));
 
-            // Set recent activity from mock dynamic source
-            try {
-              const actRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/recent-activity/`);
-              if (actRes.ok) {
-                const actData = await actRes.json();
-                setRecentActivity(actData.slice().reverse().slice(0, 6)); // Last 6 actions
-              }
-            } catch (err) { console.log("Activity fetch failed"); }
+            // Set recent activity using local mock data (backend does not have a /api/recent-activity/ endpoint)
+            setRecentActivity([
+              { id: 1, action: "System checked and online", timestamp: "Just now" },
+              { id: 2, action: "Dashboard stats computed", timestamp: "1 min ago" }
+            ]);
             
             // Calculate dynamic system health
             const healthStatus = activeUsers > 0 ? 'healthy' : 'warning';
@@ -374,7 +370,7 @@ function AdminDashboard() {
             </div>
           </div>
           <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
-            <ResponsiveContainer width="99%" height="100%">
+            <ResponsiveContainer width="100%" height={320}>
               <PieChart>
                 <Pie
                   data={userDistributionData}
@@ -406,7 +402,7 @@ function AdminDashboard() {
             </div>
           </div>
           <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
-            <ResponsiveContainer width="99%" height="100%">
+            <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
@@ -455,7 +451,7 @@ function AdminDashboard() {
           </div>
         </div>
         <div style={{ width: '100%', height: 320, minHeight: 320, position: 'relative' }}>
-          <ResponsiveContainer width="99%" height="100%">
+          <ResponsiveContainer width="100%" height={320}>
             <LineChart data={performanceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 

@@ -3,8 +3,10 @@ import { Edit3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { useSEO } from "../utils/useSEO";
 
 export default function Profile() {
+  useSEO("My Profile", "View and update your SSSIT student profile — personal details, course enrollment, and placement information.");
   const [editMode, setEditMode] = useState(false);
   const navigate = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");

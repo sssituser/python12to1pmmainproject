@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 import {
   FaPython,
   FaJs,

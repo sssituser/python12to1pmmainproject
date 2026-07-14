@@ -19,8 +19,6 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar"; // adjust path if needed
 
 function AdminLayout() {
-  console.log("🔄 AdminLayout component is rendering!");
-  
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hoverOpen, setHoverOpen] = useState(false);
@@ -208,9 +206,7 @@ function AdminLayout() {
         <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         <div className="flex-1 bg-white p-6 overflow-y-auto">
-          {console.log("🔍 About to render Outlet in AdminLayout")}
           <Outlet />
-          {console.log("✅ Outlet rendered in AdminLayout")}
         </div>
       </div>
     </div>

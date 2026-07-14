@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import { useSEO } from "../utils/useSEO";
 
 function AdminLogin() {
-  console.log("🚀 AdminLogin component is rendering!");
+  useSEO("Admin Sign In", "Secure admin login for the SSSIT Placement Portal. Authorised administrators only.");
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",

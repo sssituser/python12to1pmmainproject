@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { useSEO } from "../utils/useSEO";
 
 function ExamLeaderboard() {
+  useSEO("Exam Leaderboard", "View top performers in daily, weekly, and monthly exams on the SSSIT Placement Portal leaderboard.");
   //  STATE
   const [leaderboard, setLeaderboard] = useState([]);
   const [date, setDate] = useState("");

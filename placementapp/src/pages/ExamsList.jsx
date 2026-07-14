@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClipboardList, faClock, faBook, faShieldAlt, faCamera,
@@ -10,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const API_BASE = `http://${window.location.hostname}:8000/api`;
+
 
 const TYPE_META = {
   daily:        { label: "Daily Exam",           emoji: "📅", bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
@@ -21,6 +23,7 @@ const TYPE_META = {
 };
 
 export default function StudentExamHub() {
+  useSEO("Exams Hub", "Access daily, weekly, and monthly exams on the SSSIT Placement Portal. Track your performance and prepare for placements.");
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);

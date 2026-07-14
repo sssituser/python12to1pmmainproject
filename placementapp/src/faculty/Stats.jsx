@@ -2,6 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
+import { useSEO } from "../utils/useSEO";
 import {
   Bar,
   BarChart,
@@ -17,6 +18,7 @@ import {
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
 
 function Stats() {
+  useSEO("Student Statistics", "Comprehensive student performance statistics, batch analysis, and exam analytics for faculty on the SSSIT Placement Portal.");
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);

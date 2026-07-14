@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FaUser, FaEnvelope, FaPhone, FaGraduationCap, FaBriefcase, FaEdit, FaSave, FaTimes, FaCamera, FaLinkedin, FaTwitter, FaGithub, FaGlobe, FaMapMarkerAlt, FaCalendarAlt, FaAward, FaBook, FaUsers, FaChartLine, FaClock, FaLanguage, FaCertificate, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useSEO } from '../utils/useSEO';
 
 function FacultyProfile() {
+  useSEO("Faculty Profile", "Manage your SSSIT faculty profile — update contact info, teaching experience, qualifications, and professional details.");
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);

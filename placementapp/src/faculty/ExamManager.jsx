@@ -14,6 +14,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { industryCourses } from "../components/CourseData.jsx";
+import { useSEO } from "../utils/useSEO";
 
 const API_BASE = `http://${window.location.hostname}:8000/api`;
 
@@ -93,6 +94,7 @@ const TagSelector = ({ options, selected, onChange }) => (
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function ExamManager() {
+  useSEO("Exam Manager", "Create, schedule, and manage online exams for students using the SSSIT Faculty Exam Manager. Set questions, time limits, and eligibility.");
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState(1);
   const [isPublishing, setIsPublishing] = useState(false);

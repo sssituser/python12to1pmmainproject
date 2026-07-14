@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
+import { useSEO } from "../utils/useSEO";
 import {
     Bar,
     BarChart,
@@ -12,6 +13,7 @@ import {
 } from "recharts";
 
 function Dashboard() {
+  useSEO("Faculty Dashboard", "Faculty dashboard for managing student assessments, job drives, courses, analytics, and placement tracking at SSSIT.");
   const navigate = useNavigate();
   
   const handleExportAllPerformance = async () => {

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useSEO } from "../utils/useSEO";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -11,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FacultyLogin() {
+  useSEO("Faculty Sign In", "Sign in to the SSSIT Faculty Portal to manage exams, student profiles, grades, assessments, and placement drives.");
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ username: "", password: "" });
