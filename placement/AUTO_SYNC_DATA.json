@@ -500,7 +500,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-14 06:43:03.593710+00:00"
+            "updated_at": "2026-07-17 13:44:31.045858+00:00"
         },
         {
             "id": 5,
@@ -514,7 +514,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-14 06:43:03.608750+00:00"
+            "updated_at": "2026-07-17 13:44:31.063476+00:00"
         }
     ]
 }

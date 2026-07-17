@@ -4,6 +4,7 @@ import {
   User,
   Briefcase,
   Book,
+  BookOpen,
   FileText,
   BarChart,
   Trophy,
@@ -267,24 +268,42 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
               <div className="ml-6 mt-2 space-y-1 text-sm">
 
                 <NavLink
-                  to="/dashboard/playground/python"
-                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                  to="/dashboard/playground"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive
+                        ? "bg-slate-800 text-white"
+                        : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
                 >
                   <Code size={14} />
-                  Coding
+                  Practice
                 </NavLink>
 
                 <NavLink
-                  to="/dashboard/playground"
-                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                  to="/dashboard/exams"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive
+                        ? "bg-slate-800 text-white"
+                        : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
                 >
-                  <Code size={14} />
-                  TechLab
+                  <BookOpen size={14} />
+                  Exams
                 </NavLink>
 
                 <NavLink
                   to="/dashboard/playground-results"
-                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-2 py-1 rounded transition ${
+                      isActive
+                        ? "bg-slate-800 text-white"
+                        : "hover:bg-slate-800 hover:text-white"
+                    }`
+                  }
                 >
                   <CheckCircle size={14} />
                   Results

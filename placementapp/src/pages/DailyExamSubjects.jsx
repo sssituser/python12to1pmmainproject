@@ -309,6 +309,7 @@ function DailyExamSubjects() {
   useEffect(() => {
     // Clear any previous exam result flag so we don't instantly bounce back to results
     localStorage.removeItem("examResult");
+    localStorage.removeItem("dailyExamState");
 
     // 🛡️ 1000% Stable Navigation Firewall
     const handlePopState = (e) => {

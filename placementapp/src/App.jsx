@@ -15,6 +15,7 @@ const LoadingSpinner = () => (
 const StudentLayout = lazy(() => import("./Layout/Dashboard"));
 const AllJobs = lazy(() => import("./pages/Alljobs"));
 const AppliedJobs = lazy(() => import("./pages/AppliedJobs"));
+const JobRoundsDetails = lazy(() => import("./pages/JobRoundsDetails"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 const Course = lazy(() => import("./pages/Course"));
 const DailyExam = lazy(() => import("./pages/DailyExam"));
@@ -194,6 +195,7 @@ function App() {
             <Route path="jobs" element={<Jobs />} />
             <Route path="alljobs" element={<AllJobs />} />
             <Route path="appliedjobs" element={<AppliedJobs />} />
+            <Route path="appliedjobs/rounds/:id" element={<JobRoundsDetails />} />
             <Route path="jobs/:id" element={<JobDetails />} />
 
             {/* Exams */}

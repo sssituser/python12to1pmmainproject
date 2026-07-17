@@ -128,12 +128,20 @@ const DailyExam = () => {
   useEffect(() => {
     if (!courseResolved) return;
 
+    // Practice mode: always clear stale cache and fetch fresh questions
+    const isPracticeMode = !sessionStorage.getItem("active_exam_config");
+    if (isPracticeMode) {
+      localStorage.removeItem("dailyExamState");
+    }
+
     const restoreState = () => {
+      // Never restore from localStorage in practice mode — always fetch fresh
+      if (isPracticeMode) return false;
       try {
         const saved = localStorage.getItem('dailyExamState');
         if (saved) {
           const s = JSON.parse(saved);
-          if (s.subjectKey === subjectKey) {
+          if (s.subjectKey === subjectKey && Array.isArray(s.questions) && s.questions.length > 0) {
             setExamStarted(s.examStarted);
             setQuestions(s.questions);
             setAnswers(s.answers);
@@ -158,6 +166,9 @@ const DailyExam = () => {
     const fetchQ = async () => {
       try {
         setIsLoadingQuestions(true);
+
+        // ── DECLARE pool here so all branches below can safely read/write it ──
+        let pool = [];
 
         // Check if started from a specific published exam config
         let activeConfig = null;
@@ -196,16 +207,16 @@ const DailyExam = () => {
         }
 
         const normCourse = (studentCourse || "").toUpperCase();
-        
+
         let cnf = null;
         try {
           const r = await fetch(`http://${window.location.hostname}:8000/api/automated-exam-config/?course_name=${encodeURIComponent(normCourse)}`);
           if (r.ok) cnf = await r.json();
         } catch (e) {}
 
-        const qLim = cnf?.question_count || 25;
-        const dur = cnf?.duration || 80;
-        const weight = cnf?.marks_per_question || 2;
+        const qLim = cnf?.question_count || 30;
+        const dur  = cnf?.duration || 45;
+        const weight = cnf?.marks_per_question || 1;
 
         setExamDuration(dur);
         setTimeLeft(dur * 60);
@@ -213,53 +224,80 @@ const DailyExam = () => {
         setPassingRule(cnf?.passing_strategy || "percentage");
         setPassingValue(cnf?.requirement || 50);
 
-        let pool = [];
-        
-        // 🏗️ Step 1: Attempt to load custom exam questions configured for this course
-        try {
-          const res = await fetch(`http://${window.location.hostname}:8000/api/admin/exam-settings/?category=Daily&course=${encodeURIComponent(studentCourse)}`);
-          if (res.ok) {
-            const d = await res.json();
-            if (d.success && d.data && d.data.questions && d.data.questions.length > 0) {
-              pool = d.data.questions;
-              console.log("🎯 Loaded custom assigned daily questions from Faculty Settings!");
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to retrieve custom exam-settings, falling back:", e);
-        }
-
-        // 🏗️ Step 2: Fallback to subject-specific practice questions if no custom settings exist
-        if (!pool || pool.length === 0) {
-          const slug = subjectKey.replace(/\s+/g, "_");
+        // ── PRACTICE MODE: always hit the playground-questions API directly ──
+        const isPracticeMode = !activeConfig;
+        if (isPracticeMode) {
+          // Build slug: spaces/hyphens → underscores, lowercase
+          const slug = subjectKey.toLowerCase().replace(/[\s-]+/g, "_");
+          console.log(`📚 Practice mode — fetching /api/playground-questions/${slug}/`);
           try {
             const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/${slug}/`);
-            const d = await res.json();
-            pool = d.data || d.questions || d || [];
-          } catch (e) {}
+            if (res.ok) {
+              const d = await res.json();
+              pool = d.data || d.questions || d || [];
+              console.log(`✅ Loaded ${pool.length} practice questions for subject: ${slug}`);
+            }
+          } catch (e) {
+            console.error("Practice fetch failed:", e);
+          }
+        } else {
+          // ── EXAM MODE: try custom faculty settings first, then fall back ──
+          try {
+            const res = await fetch(`http://${window.location.hostname}:8000/api/admin/exam-settings/?category=Daily&course=${encodeURIComponent(studentCourse)}`);
+            if (res.ok) {
+              const d = await res.json();
+              if (d.success && d.data && d.data.questions && d.data.questions.length > 0) {
+                const cleanSubjectKey = subjectKey.toLowerCase().replace(/[\s_]+/g, "");
+                const subjectFiltered = d.data.questions.filter(q => {
+                  const cleanQSubject = String(q.subject || "").trim().toLowerCase().replace(/[\s_]+/g, "");
+                  return cleanQSubject === cleanSubjectKey;
+                });
+                if (subjectFiltered.length > 0) {
+                  pool = subjectFiltered;
+                  console.log("🎯 Loaded custom faculty questions for subject!");
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("Custom exam-settings fetch failed, falling back:", e);
+          }
+
+          // Fallback to playground questions if no faculty questions
+          if (pool.length === 0) {
+            const slug = subjectKey.toLowerCase().replace(/[\s-]+/g, "_");
+            try {
+              const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/${slug}/`);
+              if (res.ok) {
+                const d = await res.json();
+                pool = d.data || d.questions || d || [];
+              }
+            } catch (e) {}
+          }
         }
 
+        // Final fallback: general programming questions
         if (!Array.isArray(pool) || pool.length === 0) {
           try {
             const res = await fetch(`http://${window.location.hostname}:8000/api/playground-questions/general_programming/`);
-            const d = await res.json();
-            pool = d.data || d.questions || d || [];
+            if (res.ok) {
+              const d = await res.json();
+              pool = d.data || d.questions || d || [];
+            }
           } catch (e) {}
         }
 
         if (Array.isArray(pool) && pool.length > 0) {
-          const shuffleArray = (array) => {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
+          const shuffleArray = (arr) => {
+            const s = [...arr];
+            for (let i = s.length - 1; i > 0; i--) {
               const j = Math.floor(Math.random() * (i + 1));
-              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+              [s[i], s[j]] = [s[j], s[i]];
             }
-            return shuffled;
+            return s;
           };
-
           const shuffled = shuffleArray(pool).slice(0, qLim);
           setQuestions(shuffled.map((q, i) => {
-            const opts = q.options || [];
+            const opts = Array.isArray(q.options) ? q.options : [];
             return {
               ...q,
               id: i + 1,
@@ -269,16 +307,20 @@ const DailyExam = () => {
             };
           }));
         } else {
-          setQuestions(Array.from({ length: qLim }, (_, i) => ({
+          // Last resort: placeholder questions
+          setQuestions(Array.from({ length: Math.min(qLim, 10) }, (_, i) => ({
             id: i + 1,
-            title: `Assessment: ${subjectName}`,
-            question: `Explain core concepts of ${subjectName} in depth.`,
+            question: `${subjectName} Practice Question ${i + 1}`,
             options: ["Option A", "Option B", "Option C", "Option D"],
             correct: 0,
             marks: weight
           })));
         }
-      } catch (e) {} finally { setIsLoadingQuestions(false); }
+      } catch (e) {
+        console.error("fetchQ error:", e);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
     };
     fetchQ();
   }, [courseResolved, subjectKey, studentCourse]);
@@ -294,7 +336,8 @@ const DailyExam = () => {
 
   // Advanced Security Monitoring
   useEffect(() => {
-    if (!examStarted || examSubmitted) return;
+    const isPracticeMode = !sessionStorage.getItem("active_exam_config");
+    if (isPracticeMode || !examStarted || examSubmitted) return;
 
     let cleanup = () => {};
     const startSecurityMonitoring = () => {
@@ -324,8 +367,10 @@ const DailyExam = () => {
     return () => cleanup();
   }, [examStarted, examSubmitted]);
 
-  // State Persistence
+  // State Persistence (exam mode only — practice mode never writes to localStorage)
   useEffect(() => {
+    const isPracticeMode = !sessionStorage.getItem("active_exam_config");
+    if (isPracticeMode) return;
     if (examStarted && !examSubmitted) {
       const state = {
         examStarted, questions, answers, timeLeft, examDuration,
@@ -338,6 +383,8 @@ const DailyExam = () => {
 
   // 🔐 SECURITY: Block Back, Forward, and Refresh
   useEffect(() => {
+    const isPracticeMode = !sessionStorage.getItem("active_exam_config");
+    if (isPracticeMode) return;
     if (examStarted && !examSubmitted) {
       // 1. Block BACK/FORWARD navigation
       const blockNavigation = () => {

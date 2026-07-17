@@ -1,201 +1,176 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faChartSimple, faTerminal } from "@fortawesome/free-solid-svg-icons";
 import { useSEO } from "../utils/useSEO";
+import { Code2, BookOpen, ArrowRight, Sparkles, Shield, FlaskConical } from "lucide-react";
 
 function Playground() {
-  useSEO("Code Playground", "Practice coding, run Python and other programs, and sharpen your programming skills in the SSSIT Placement Portal Playground.");
+  useSEO(
+    "Techhub â€” Practice & Exams",
+    "Access the SSSIT Techhub â€” practice coding, take practice exams, or write faculty-uploaded exams."
+  );
   const navigate = useNavigate();
-  const username = localStorage.getItem("username");
 
-  const [dailyQuestions, setDailyQuestions] = useState(20);
-  const [dailyTime, setDailyTime] = useState(45);
-  const [weeklyQuestions, setWeeklyQuestions] = useState(50);
-  const [weeklyTime, setWeeklyTime] = useState(45);
-  const [monthlyQuestions, setMonthlyQuestions] = useState(50);
-  const [monthlyTime, setMonthlyTime] = useState(45);
-  const [studentCourse, setStudentCourse] = useState("");
+  let username = "";
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    username = user.username || user.first_name || localStorage.getItem("username") || "Student";
+  } catch (e) {
+    username = localStorage.getItem("username") || "Student";
+  }
 
-  useEffect(() => {
-    // Fetch limits safely so UI is dynamic based on Faculty settings
-    const fetchSettings = async (courseToUse) => {
-      try {
-        // Fetch all settings
-        const res = await axios.get("/api/admin/exam-settings/");
-        if (res.data && res.data.success && res.data.data) {
-          const s = res.data.data;
-          
-          // Helper to find setting either as 'Course_Category' or just 'Category'
-          const getVal = (cat) => {
-            const prioritized = courseToUse ? s[`${courseToUse}_${cat}`] : null;
-            return prioritized || s[cat] || null;
-          };
-
-          const daily = getVal('Daily');
-          if (daily) {
-            setDailyQuestions(daily.maxQuestions || 20);
-            setDailyTime(daily.duration || 45);
-          }
-
-          const weekly = getVal('Weekly');
-          if (weekly) {
-            setWeeklyQuestions(weekly.maxQuestions || 50);
-            setWeeklyTime(weekly.duration || 45);
-          }
-
-          const monthly = getVal('Monthly');
-          if (monthly) {
-            setMonthlyQuestions(monthly.maxQuestions || 50);
-            setMonthlyTime(monthly.duration || 45);
-          }
-        }
-      } catch (err) {
-        console.error("Could not fetch dynamic exam settings", err);
-      }
-    };
-
-    const userStr = localStorage.getItem("user");
-    let currentCourse = "";
-    if (userStr && userStr !== "undefined") {
-      try {
-        const user = JSON.parse(userStr);
-        currentCourse = user.course || "";
-        setStudentCourse(currentCourse);
-      } catch (e) {}
-    }
-    
-    fetchSettings(currentCourse);
-    
-    // Clear any stale exam result flag when entering the playground
+  React.useEffect(() => {
+    localStorage.removeItem("dailyExamState");
     localStorage.removeItem("examResult");
   }, []);
 
+  const practiceCards = [
+    {
+      id: "practice-exam",
+      badge: "Practice Mode",
+      badgeColor: "blue",
+      icon: <FlaskConical size={26} className="text-white" />,
+      iconBg: "from-blue-500 to-cyan-600",
+      iconShadow: "shadow-blue-200",
+      title: "Practice Exam",
+      description:
+        "Attempt practice MCQ exams using our static question bank. Test your Python and aptitude skills freely â€” no timer pressure, no proctoring.",
+      features: ["Static question bank", "MCQ format", "Instant score feedback"],
+      dotColor: "blue",
+      btnLabel: "Start Practice",
+      btnClass: "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-200",
+      borderHover: "hover:border-blue-200",
+      bgAccent: "from-blue-50",
+      route: "/dashboard/daily-exam",
+    },
+    {
+      id: "code-editor",
+      badge: "Coding Practice",
+      badgeColor: "emerald",
+      icon: <Code2 size={26} className="text-white" />,
+      iconBg: "from-emerald-500 to-teal-600",
+      iconShadow: "shadow-emerald-200",
+      title: "Code Editor",
+      description:
+        "Write and run Python code interactively in a browser editor. Practice programs, test logic, and experiment freely.",
+      features: ["Interactive editor", "Run code instantly", "Multi-language support"],
+      dotColor: "emerald",
+      btnLabel: "Open Editor",
+      btnClass: "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200",
+      borderHover: "hover:border-emerald-200",
+      bgAccent: "from-emerald-50",
+      route: "/dashboard/playground/python",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* 🔹 Header */}
-      <header className="bg-blue-600 text-white shadow-sm overflow-hidden">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Code Playground</h1>
-            <p className="text-sm text-blue-100 mt-0.5">
-              Practice coding and improve your skills
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
+
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-100 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+              <Code2 size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black text-slate-800 tracking-tight">Playground</h1>
+              <p className="text-xs text-slate-400 font-medium">SSSIT Techhub â€” Practice Mode</p>
+            </div>
           </div>
-          <div className="text-2xl bg-white/20 px-3 py-2 rounded-lg font-mono tracking-tighter shadow-inner">
-            {"</>"}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold text-slate-500">
+              Welcome, <span className="text-blue-600">{username}</span> ðŸ‘‹
+            </span>
+            <button
+              onClick={() => navigate("/dashboard/exams")}
+              className="flex items-center gap-1.5 text-xs font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition"
+            >
+              <Shield size={11} />
+              Go to Exams
+            </button>
           </div>
         </div>
       </header>
 
-      {/* 🔹 Main Section */}
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Greeting */}
-        <div className="mb-8">
-          <p className="text-sm text-slate-500 font-medium">
-            Hi {username || "User"},
-          </p>
-          <h2 className="text-3xl font-bold text-slate-800 mt-1">
-            Welcome Back 👋
+      {/* Main */}
+      <main className="max-w-5xl mx-auto px-6 py-12">
+
+        {/* Hero */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full border border-blue-100 mb-5 uppercase tracking-widest">
+            <Sparkles size={12} />
+            Practice Mode â€” No Pressure
+          </div>
+          <h2 className="text-4xl font-black text-slate-800 leading-tight">
+            Choose your practice activity
           </h2>
+          <p className="text-slate-500 mt-3 text-base font-medium max-w-lg mx-auto">
+            Practice exams and coding sessions use static questions. No proctoring, no time limits â€” just learning.
+          </p>
         </div>
 
-        <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
-          📚 Available Coding Sessions
-        </h3>
+        {/* Practice Cards */}
+        <div className="grid md:grid-cols-2 gap-8 mb-10">
+          {practiceCards.map((card) => (
+            <div
+              key={card.id}
+              onClick={() => navigate(card.route)}
+              className={`group relative bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col justify-between cursor-pointer hover:shadow-xl ${card.borderHover} transition-all duration-300 hover:-translate-y-1 overflow-hidden`}
+            >
+              {/* BG accent */}
+              <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl ${card.bgAccent} to-transparent rounded-bl-full opacity-50`} />
 
-        {/* 🔹 Assessment Cards Grid */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          
-          {/* Daily Exam Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                  Daily Exam
-                </h3>
-                 <span className="text-lg bg-blue-50 w-10 h-10 flex items-center justify-center rounded-xl text-blue-600">
-                  <FontAwesomeIcon icon={faTerminal} />
+              <div className="relative">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.iconBg} flex items-center justify-center shadow-lg ${card.iconShadow} mb-6`}>
+                  {card.icon}
+                </div>
+
+                <span className={`inline-block bg-${card.dotColor}-50 text-${card.dotColor}-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-${card.dotColor}-100 mb-4`}>
+                  {card.badge}
                 </span>
+
+                <h3 className="text-2xl font-black text-slate-800 mb-3">{card.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed font-medium">{card.description}</p>
+
+                <ul className="mt-5 space-y-2">
+                  {card.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-slate-600 font-medium">
+                      <div className={`w-4 h-4 rounded-full bg-${card.dotColor}-100 flex items-center justify-center flex-shrink-0`}>
+                        <div className={`w-1.5 h-1.5 rounded-full bg-${card.dotColor}-500`} />
+                      </div>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
-                A daily practice exam designed to evaluate programming skills. It helps improve problem-solving ability and strengthen coding proficiency.
-              </p>
-
-              <span className="inline-block bg-blue-50 text-blue-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-blue-100">
-                Daily practice exam
-              </span>
+              <button className={`mt-8 w-full flex items-center justify-center gap-2 ${card.btnClass} text-white py-3.5 rounded-2xl font-black text-sm transition-all shadow-sm group-hover:gap-3`}>
+                {card.btnLabel}
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </button>
             </div>
-
-            <button
-              onClick={() => navigate("/dashboard/daily-exam")}
-              className="mt-6 bg-blue-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-sm hover:shadow-blue-200 active:scale-[0.98]"
-            >
-              Start Exam
-            </button>
-          </div>
-
-          {/* Weekly Exam Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                  Weekly Exam
-                </h3>
-                 <span className="text-lg bg-emerald-50 w-10 h-10 flex items-center justify-center rounded-xl text-emerald-600">
-                  <FontAwesomeIcon icon={faChartSimple} />
-                </span>
-              </div>
-
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
-                Comprehensive weekly exam to test your knowledge. Cover all topics with multiple choice questions for thorough assessment.
-              </p>
-
-              <span className="inline-block bg-emerald-50 text-emerald-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100">
-                {weeklyQuestions} MCQs • {weeklyTime} min
-              </span>
-            </div>
-
-            <button
-              onClick={() => navigate("/dashboard/weekly-exam")}
-              className="mt-6 bg-emerald-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-emerald-700 transition shadow-sm hover:shadow-emerald-200 active:scale-[0.98]"
-            >
-              Start Exam
-            </button>
-          </div>
-
-          {/* Monthly Exam Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition duration-300">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                  Monthly Exam
-                </h3>
-                 <span className="text-lg bg-indigo-50 w-10 h-10 flex items-center justify-center rounded-xl text-indigo-600">
-                  <FontAwesomeIcon icon={faChartSimple} />
-                </span>
-              </div>
-
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
-                Extensive monthly exam for complete evaluation. Test advanced concepts with multiple choice questions for comprehensive assessment.
-              </p>
-
-              <span className="inline-block bg-indigo-50 text-indigo-600 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-indigo-100">
-                 {monthlyQuestions} MCQs • {monthlyTime} min
-              </span>
-            </div>
-
-            <button
-              onClick={() => navigate("/dashboard/monthly-exam")}
-              className="mt-6 bg-indigo-600 text-white py-2.5 px-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-sm hover:shadow-indigo-200 active:scale-[0.98]"
-            >
-              Start Exam
-            </button>
-          </div>
-
+          ))}
         </div>
+
+        {/* Divider â€” Faculty Exams CTA */}
+        <div
+          onClick={() => navigate("/dashboard/exams")}
+          className="group bg-white border border-slate-100 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-indigo-200 transition-all duration-200"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-700 flex items-center justify-center shadow-md shadow-indigo-100">
+              <BookOpen size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-800">Ready for the real thing?</p>
+              <p className="text-xs text-slate-500 font-medium">Take faculty-uploaded exams â€” proctored, timed & graded</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-indigo-600 font-black text-sm group-hover:gap-3 transition-all">
+            Go to Exams <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
+
       </main>
     </div>
   );
