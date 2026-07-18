@@ -33,13 +33,12 @@ const STEPS = [
   {id:1,label:"Basic Info",icon:faBook},
   {id:2,label:"Config",icon:faCog},
   {id:3,label:"Questions",icon:faKeyboard},
-  {id:4,label:"Randomize",icon:faLayerGroup},
-  {id:5,label:"Proctoring",icon:faCamera},
-  {id:6,label:"Browser Lock",icon:faLock},
-  {id:7,label:"Eligibility",icon:faUsers},
-  {id:8,label:"Schedule",icon:faCalendarAlt},
-  {id:9,label:"Results",icon:faTrophy},
-  {id:10,label:"Publish",icon:faPaperPlane},
+  {id:4,label:"Proctoring",icon:faCamera},
+  {id:5,label:"Browser Lock",icon:faLock},
+  {id:6,label:"Eligibility",icon:faUsers},
+  {id:7,label:"Schedule",icon:faCalendarAlt},
+  {id:8,label:"Results",icon:faTrophy},
+  {id:9,label:"Publish",icon:faPaperPlane},
 ];
 
 // ─── Small reusable components ─────────────────────────────────────────────
@@ -460,21 +459,53 @@ export default function ExamManager() {
               </div>
 
               {parsedQuestions.length > 0 && (
-                <div style={{padding:14,background:"#eff6ff",borderRadius:12,border:"1px solid #bfdbfe"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                    <div style={{fontWeight:800,fontSize:12,color:"#1e40af"}}>📁 Parsed {parsedQuestions.length} Questions</div>
-                    <button onClick={handleConfirmImport} style={{padding:"5px 12px",background:"#2563eb",color:"#fff",border:"none",borderRadius:6,fontWeight:800,fontSize:11,cursor:"pointer"}}>
-                      Confirm & Import
+                <div style={{padding:16,background:"#f8fafc",borderRadius:14,border:"1.5px solid #e2e8f0"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                    <div style={{fontWeight:800,fontSize:13,color:"#1e293b"}}>📋 Review Parsed Questions ({parsedQuestions.length})</div>
+                    <button onClick={handleConfirmImport} style={{padding:"6px 14px",background:"#2563eb",color:"#fff",border:"none",borderRadius:8,fontWeight:800,fontSize:11,cursor:"pointer",boxShadow:"0 2px 4px rgba(37,99,235,0.2)"}}>
+                      Import Checked Drafts
                     </button>
                   </div>
-                  <div style={{maxHeight:150,overflowY:"auto",display:"flex",flexDirection:"column",gap:6}}>
+                  <div style={{maxHeight:300,overflowY:"auto",display:"flex",flexDirection:"column",gap:12}}>
                     {parsedQuestions.map((q,i)=>(
-                      <div key={i} style={{padding:"8px",background:"#fff",borderRadius:8,border:"1px solid #dbeafe",fontSize:11}}>
-                        <strong>Q{i+1}: {q.question}</strong>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginTop:4,color:"#64748b"}}>
+                      <div key={i} style={{padding:12,background:"#fff",borderRadius:10,border:"1px solid #cbd5e1",display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{display:"flex",justifyContent:"space-between",gap:10}}>
+                          <div style={{flex:1}}>
+                            <span style={{fontSize:11,fontWeight:800,color:"#6366f1",marginRight:6}}>Q{i+1}</span>
+                            <textarea style={{...inp,margin:0,background:"#fff",padding:"6px 10px",fontSize:12}} value={q.question} 
+                              onChange={e => {
+                                const updated = [...parsedQuestions];
+                                updated[i].question = e.target.value;
+                                setParsedQuestions(updated);
+                              }}/>
+                          </div>
+                          <button onClick={() => {
+                            setParsedQuestions(prev => prev.filter((_, idx) => idx !== i));
+                          }} style={{background:"none",border:"none",cursor:"pointer",color:"#ef4444",alignSelf:"flex-start",padding:4}}>
+                            <FontAwesomeIcon icon={faTrash} style={{fontSize:12}}/>
+                          </button>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                           {q.options.map((opt,oi)=>(
-                            <div key={oi} style={{color:q.correct===oi?"#16a34a":""}}>
-                              {String.fromCharCode(65+oi)}) {opt}
+                            <div key={oi} style={{display:"flex",alignItems:"center",gap:6}}>
+                              <button onClick={() => {
+                                const updated = [...parsedQuestions];
+                                updated[i].correct = oi;
+                                setParsedQuestions(updated);
+                              }} style={{
+                                width:22,height:22,borderRadius:"50%",border:"none",cursor:"pointer",
+                                background:q.correct===oi?"#22c55e":"#f1f5f9",
+                                color:q.correct===oi?"#fff":"#64748b",
+                                fontWeight:800,fontSize:10,flexShrink:0
+                              }}>
+                                {String.fromCharCode(65+oi)}
+                              </button>
+                              <input style={{...inp,margin:0,background:"#fff",padding:"4px 8px",fontSize:11}} value={opt} 
+                                onChange={e => {
+                                  const updated = [...parsedQuestions];
+                                  updated[i].options[oi] = e.target.value;
+                                  setParsedQuestions(updated);
+                                }}/>
                             </div>
                           ))}
                         </div>
@@ -504,14 +535,6 @@ export default function ExamManager() {
       );
 
       case 4: return (
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          <Toggle value={randomizeQuestions} onChange={setRandomizeQuestions} label="Shuffle Question Order" desc="Each student gets questions in a unique random order"/>
-          <Toggle value={randomizeOptions} onChange={setRandomizeOptions} label="Shuffle Answer Options" desc="A/B/C/D positions are randomized per student"/>
-          <Toggle value={preventBacktrack} onChange={setPreventBacktrack} label="Prevent Backtracking" desc="Students cannot go back to previous questions"/>
-        </div>
-      );
-
-      case 5: return (
         <div style={{display:"flex",flexDirection:"column",gap:12,padding:"20px",background:"#f8fafc",borderRadius:12,border:"1.5px solid #e2e8f0",textAlign:"center",alignItems:"center"}}>
           <FontAwesomeIcon icon={faCamera} style={{fontSize:36,color:"#cbd5e1",marginBottom:12}}/>
           <div style={{fontWeight:800,fontSize:14,color:"#64748b"}}>Webcam Proctoring Disabled</div>
@@ -519,7 +542,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 6: return (
+      case 5: return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <Toggle value={fullscreenRequired} onChange={setFullscreenRequired} label="Force Fullscreen" desc="Exiting fullscreen logs a violation"/>
           <Toggle value={disableCopyPaste} onChange={setDisableCopyPaste} label="Disable Copy & Paste" desc="Block Ctrl+C, Ctrl+V, clipboard access"/>
@@ -532,7 +555,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 7: return (
+      case 6: return (
         <div style={{display:"flex",flexDirection:"column",gap:16}}>
           <div><label style={label}>Eligible Departments <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={DEPARTMENTS} selected={selectedDepts} onChange={setSelectedDepts}/></div>
           <div><label style={label}>Eligible Years <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={YEARS} selected={selectedYears} onChange={setSelectedYears}/></div>
@@ -540,7 +563,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 8: return (
+      case 7: return (
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div style={g2}>
             <div><label style={label}>Start Date & Time</label><input type="datetime-local" style={inp} value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
@@ -555,7 +578,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 9: return (
+      case 8: return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <Toggle value={showResultImmediately} onChange={setShowResultImmediately} label="Show Result Immediately" desc="Students see score right after submission"/>
           <Toggle value={showCorrectAnswers} onChange={setShowCorrectAnswers} label="Show Correct Answers" desc="Reveal correct answers after submission"/>
@@ -564,7 +587,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 10: return (
+      case 9: return (
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {[
@@ -740,7 +763,7 @@ export default function ExamManager() {
             <div style={{padding:"18px 24px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
                 <div style={{fontSize:16,fontWeight:900,color:"#0f172a"}}>Create New Exam</div>
-                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Step {step} of 10 — {STEPS[step-1].label}</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Step {step} of 9 — {STEPS[step-1].label}</div>
               </div>
               <button onClick={closeModal} style={{width:32,height:32,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b",fontSize:16}}>
                 <FontAwesomeIcon icon={faTimes}/>
@@ -766,7 +789,7 @@ export default function ExamManager() {
 
             {/* Progress bar */}
             <div style={{height:3,background:"#f1f5f9"}}>
-              <div style={{height:"100%",width:`${(step/10)*100}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",transition:"width 0.3s"}}/>
+              <div style={{height:"100%",width:`${(step/9)*100}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",transition:"width 0.3s"}}/>
             </div>
 
             {/* Step body */}
@@ -776,12 +799,12 @@ export default function ExamManager() {
 
             {/* Modal Footer */}
             <div style={{padding:"14px 24px",borderTop:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafbff"}}>
-              <div style={{fontSize:11,color:"#94a3b8"}}>Step <strong style={{color:"#6366f1"}}>{step}</strong>/10</div>
+              <div style={{fontSize:11,color:"#94a3b8"}}>Step <strong style={{color:"#6366f1"}}>{step}</strong>/9</div>
               <div style={{display:"flex",gap:10}}>
                 {step>1&&<button onClick={()=>setStep(s=>s-1)} style={{padding:"9px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,color:"#64748b",display:"flex",alignItems:"center",gap:6}}>
                   <FontAwesomeIcon icon={faArrowLeft}/> Back
                 </button>}
-                {step<10 ? (
+                {step<9 ? (
                   <button onClick={()=>setStep(s=>s+1)} style={{padding:"9px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:800,fontSize:12,display:"flex",alignItems:"center",gap:6}}>
                     Next <FontAwesomeIcon icon={faArrowRight}/>
                   </button>

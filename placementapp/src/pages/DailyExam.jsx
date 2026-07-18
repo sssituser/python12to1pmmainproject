@@ -521,7 +521,34 @@ const DailyExam = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Check if exam is outside the valid start/end window
+  const activeConfig = (() => {
+    try {
+      const stored = sessionStorage.getItem("active_exam_config");
+      return stored ? JSON.parse(stored) : null;
+    } catch(e) { return null; }
+  })();
+
+  const isScheduledWindowValid = () => {
+    if (!activeConfig || !activeConfig.settings) return { valid: true };
+    const now = new Date();
+    if (activeConfig.settings.start_time) {
+      const start = new Date(activeConfig.settings.start_time);
+      if (now < start) {
+        return { valid: false, reason: `This exam is scheduled to start on ${start.toLocaleString()}. Please try again then.` };
+      }
+    }
+    if (activeConfig.settings.end_time) {
+      const end = new Date(activeConfig.settings.end_time);
+      if (now > end) {
+        return { valid: false, reason: `This exam has already ended at ${end.toLocaleString()}. You can no longer write this exam.` };
+      }
+    }
+    return { valid: true };
+  };
+
   if (!examStarted) {
+    const scheduleCheck = isScheduledWindowValid();
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-center relative">
         <div className="absolute top-8 left-8 z-50">
@@ -541,9 +568,15 @@ const DailyExam = () => {
               {isLoadingQuestions ? "Fetching Configuration..." : `${questions.length} Questions • ${examDuration} Minutes`}
            </p>
 
+           {!scheduleCheck.valid ? (
+             <div className="p-4 mb-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold uppercase tracking-wide">
+               ⚠️ {scheduleCheck.reason}
+             </div>
+           ) : null}
+           
            <button 
             onClick={handleStartExam} 
-            disabled={isLoadingQuestions} 
+            disabled={isLoadingQuestions || !scheduleCheck.valid} 
             className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100"
            >
              Start Assessment

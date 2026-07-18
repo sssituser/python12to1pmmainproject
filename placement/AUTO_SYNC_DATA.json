@@ -500,7 +500,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-17 13:44:31.045858+00:00"
+            "updated_at": "2026-07-18 13:37:27.943511+00:00"
         },
         {
             "id": 5,
@@ -514,7 +514,21 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-17 13:44:31.063476+00:00"
+            "updated_at": "2026-07-18 13:37:27.965462+00:00"
+        },
+        {
+            "id": 9,
+            "exam_name": "Aptitude",
+            "course_name": "ALL COURSES::weekly::Aptitude",
+            "subjects": [
+                "APTITUDE"
+            ],
+            "duration": 45,
+            "passing_strategy": "marks",
+            "requirement": 15,
+            "question_count": 30,
+            "marks_per_question": 1,
+            "updated_at": "2026-07-18 14:36:32.947930+00:00"
         }
     ]
 }

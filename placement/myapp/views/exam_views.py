@@ -820,6 +820,9 @@ def import_exam_questions_file(request):
             import docx
             doc = docx.Document(io.BytesIO(file_bytes))
             full_text = "\n".join([p.text for p in doc.paragraphs])
+            # Save for inspection
+            with open('C:/SSSIT MAIN PROJECT/python12to1pmmainproject/parsed_text_debug.txt', 'w', encoding='utf-8') as f:
+                f.write(full_text)
             questions = parse_raw_text_to_questions(full_text)
 
         elif filename.endswith('.pdf'):
@@ -839,6 +842,9 @@ def import_exam_questions_file(request):
                     full_text += text + "\n"
             # Collapse multiple spaces (common PDF artifact)
             full_text = re.sub(r'[ \t]+', ' ', full_text)
+            # Save for inspection
+            with open('C:/SSSIT MAIN PROJECT/python12to1pmmainproject/parsed_text_debug.txt', 'w', encoding='utf-8') as f:
+                f.write(full_text)
             questions = parse_raw_text_to_questions(full_text)
 
         else:
@@ -851,85 +857,195 @@ def import_exam_questions_file(request):
 
     return Response({"status": "success", "questions": questions})
 
-
 def parse_raw_text_to_questions(text):
     """
     Parse structured Q&A text from PDF/DOCX into question dicts.
 
-    KEY FIX: Handles the common PDF layout where all 4 options appear on a
-    single line: "A) opt1 B) opt2 C) opt3 D) opt4"
-
-    Strategy:
-    1. Use re.finditer to locate every question number marker in the text.
-    2. Slice the text between consecutive markers to get each question's block.
-    3. Within each block, find all A/B/C/D options (even if on one line).
-    4. Extract question body and optional answer key.
+    Supported Answer Formats:
+    1. "Answer: B", "Ans: C", "Correct Answer: D", "Correct: A"
+    2. Starred/Bracketed Options: "*A) text", "B)* text", "[C] text"
+    3. End-of-document key tables: "1-B, 2-D, 3-A" or "1. B, 2. D"
+    4. Compact no-space options: "A)2752 B)2746 C)2734 D)2718"
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     questions = []
 
-    # Locate all question starters: "1.", "1)", "Q1.", "Question 1." etc.
-    q_start_re = re.compile(
-        r'(?:^|\n)\s*(?:Q(?:uestion)?\s*\.?\s*\d+|(\d+)\s*[\)\.:])\s+',
+    # ────────────────────────────────────────────────────────────────────────
+    # STEP 1: Find global answer key table (end-of-doc style: 1-B, 2-C ...)
+    # ────────────────────────────────────────────────────────────────────────
+    global_answers = {}
+    ans_key_re = re.compile(r'(?<!\d)(\d{1,3})\s*[-\u2013\u2014\.:\)]\s*([A-Da-d])(?!\w)')
+    all_pairs = list(ans_key_re.finditer(text))
+
+    if len(all_pairs) >= 3:
+        clusters = []
+        cur = [all_pairs[0]]
+        for j in range(1, len(all_pairs)):
+            if all_pairs[j].start() - all_pairs[j-1].start() < 300:
+                cur.append(all_pairs[j])
+            else:
+                clusters.append(cur)
+                cur = [all_pairs[j]]
+        clusters.append(cur)
+
+        largest = max(clusters, key=len)
+        if len(largest) >= 3:
+            for pair in largest:
+                global_answers[int(pair.group(1))] = ord(pair.group(2).upper()) - ord('A')
+            logger.info(f"Global answer key found: {global_answers}")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # STEP 2: Split text into per-question blocks
+    # ────────────────────────────────────────────────────────────────────────
+    q_re = re.compile(
+        r'(?:^|\n)\s*(?:Q(?:uestion)?\s*\.?\s*(\d+)\.?|(\d+)\s*[\)\.\-:])\s*',
         re.IGNORECASE
     )
-    matches = list(q_start_re.finditer(text))
-
+    matches = list(q_re.finditer(text))
     if not matches:
+        logger.warning("No question markers found in document.")
         return questions
 
+    logger.info(f"Found {len(matches)} question blocks")
+
     for i, m in enumerate(matches):
-        # Slice text for this question's block
+        q_num_str = m.group(1) or m.group(2)
+        q_num = int(q_num_str) if (q_num_str and q_num_str.isdigit()) else (i + 1)
+
         block_start = m.end()
         block_end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         block = text[block_start:block_end].strip()
-
         if not block:
             continue
 
-        # ── Extract the question body (everything before first option marker) ──
-        first_opt_re = re.compile(r'(?<!\w)[A-D]\s*[\)\.]\s', re.IGNORECASE)
-        first_opt = first_opt_re.search(block)
-        if first_opt:
-            question_body = block[:first_opt.start()].strip()
-            options_block = block[first_opt.start():]
+        # ──────────────────────────────────────────────────────────────────
+        # STEP 3: Extract inline answer indicator BEFORE parsing options
+        # Matches: "Answer: B", "Ans.B", "Answer=D", "Correct: C", "Key: A"
+        # ──────────────────────────────────────────────────────────────────
+        inline_ans_re = re.compile(
+            r'(?i)\b(?:ans(?:wer)?(?:\s*key)?|correct(?:\s*answer)?|key)\s*[=:\.\-\u2013\u2014]?\s*([A-Da-d])\b'
+        )
+        inline_m = inline_ans_re.search(block)
+        found_letter = None
+        clean_block = block
+
+        if inline_m:
+            found_letter = inline_m.group(1).upper()
+            clean_block = (block[:inline_m.start()] + block[inline_m.end():]).strip()
+            logger.debug(f"Q{q_num}: Inline answer '{found_letter}'")
+
+        # ──────────────────────────────────────────────────────────────────
+        # STEP 4: Parse options (handles both spaced and compact formats)
+        # ──────────────────────────────────────────────────────────────────
+        opt_marker_re = re.compile(r'([A-Da-d])\s*[\)\.\:]', re.MULTILINE)
+        raw_markers = list(opt_marker_re.finditer(clean_block))
+
+        valid_opts = []
+        expected = ['A', 'B', 'C', 'D']
+        ei = 0
+        for om in raw_markers:
+            lbl = om.group(1).upper()
+            if ei < len(expected) and lbl == expected[ei]:
+                valid_opts.append(om)
+                ei += 1
+                if ei == 4:
+                    break
+
+        options = []
+        question_body = clean_block
+
+        if len(valid_opts) >= 2:
+            question_body = clean_block[:valid_opts[0].start()].strip()
+            for k, om in enumerate(valid_opts):
+                s = om.end()
+                e = valid_opts[k + 1].start() if k + 1 < len(valid_opts) else len(clean_block)
+                opt_text = clean_block[s:e].strip()
+                opt_text = re.sub(r'\s+', ' ', opt_text).strip()
+                opt_text = re.sub(
+                    r'(?i)\s*\b(?:ans(?:wer)?|correct|key)\s*[=:\.\-\u2013\u2014]?\s*[A-Da-d]\b.*$',
+                    '', opt_text
+                ).strip()
+                options.append(opt_text)
         else:
-            question_body = block.strip()
-            options_block = ""
+            opt_line_re = re.compile(r'^([A-Da-d])\s*[\)\.\:]\s*(.+)$')
+            q_lines = []
+            for line in clean_block.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                lm = opt_line_re.match(line)
+                if lm:
+                    options.append(lm.group(2).strip())
+                else:
+                    q_lines.append(line)
+            question_body = ' '.join(q_lines).strip()
 
         if not question_body:
             continue
 
-        # ── Extract all options from the options block ──────────────────────
-        # Works for BOTH single-line ("A) text B) text") and multi-line formats
-        options = []
-        if options_block:
-            # Split on option markers: A), B), C), D) (case-insensitive)
-            # Using lookahead so the marker itself is kept with next group
-            parts = re.split(r'(?i)(?<!\w)([A-D])\s*[\)\.]\s*', options_block)
-            # parts layout: ['', 'A', 'text_a', 'B', 'text_b', 'C', 'text_c', 'D', 'text_d', ...]
-            for j in range(1, len(parts) - 1, 2):
-                label = parts[j].upper()
-                opt_text = parts[j + 1].strip() if j + 1 < len(parts) else ""
-                # Remove any trailing answer-key text ("Answer: B" etc.)
-                opt_text = re.sub(r'\s*(?:ans(?:wer)?|key)[\s\.:]+[A-D1-4].*$', '', opt_text, flags=re.IGNORECASE).strip()
-                if label in 'ABCD' and opt_text:
-                    options.append(opt_text)
+        # ──────────────────────────────────────────────────────────────────
+        # STEP 5: Determine correct answer index
+        # ──────────────────────────────────────────────────────────────────
+        correct_idx = None
 
-        # ── Find answer key if present ──────────────────────────────────────
-        correct_idx = 0
-        ans_match = re.search(r'(?i)(?:ans(?:wer)?|key)\s*[\s\.:]+([A-D])', block)
-        if ans_match:
-            correct_idx = ord(ans_match.group(1).upper()) - ord('A')
+        if found_letter is not None:
+            correct_idx = ord(found_letter) - ord('A')
 
-        # ── Only save if we have at least 2 options ─────────────────────────
+        if correct_idx is None:
+            star_re = re.compile(
+                r'(?i)[\*\[\u2713\u2714]\s*([A-Da-d])\s*[\)\]\*]'
+                r'|([A-Da-d])\s*[\)\.]?\s*[\*\[\u2713\u2714]'
+            )
+            sm = star_re.search(block)
+            if sm:
+                lbl = (sm.group(1) or sm.group(2) or '').upper()
+                if lbl in 'ABCD':
+                    correct_idx = ord(lbl) - ord('A')
+                    logger.debug(f"Q{q_num}: Star/bracket answer '{lbl}'")
+
+        if correct_idx is None and q_num in global_answers:
+            correct_idx = global_answers[q_num]
+            logger.debug(f"Q{q_num}: Global key -> {chr(ord('A') + correct_idx)}")
+
+        if correct_idx is None:
+            full_re = re.compile(
+                r'(?i)\b(?:ans(?:wer)?|correct)\s*[=:\.\-\u2013\u2014]?\s*(.+)$',
+                re.MULTILINE
+            )
+            fm = full_re.search(block)
+            if fm:
+                ans_text = fm.group(1).strip().rstrip('.')
+                for k, opt in enumerate(options):
+                    if opt and ans_text.lower() in opt.lower():
+                        correct_idx = k
+                        logger.debug(f"Q{q_num}: Answer text matched option {k}")
+                        break
+
+        if correct_idx is None:
+            logger.warning(f"Q{q_num}: No answer detected, defaulting to A. Block: {block[:100]!r}")
+            correct_idx = 0
+
+        if options:
+            correct_idx = max(0, min(correct_idx, len(options) - 1))
+
+        # ──────────────────────────────────────────────────────────────────
+        # STEP 6: Save question if valid
+        # ──────────────────────────────────────────────────────────────────
         if len(options) >= 2:
-            padded = (options + [""] * 4)[:4]
+            padded = (options + [''] * 4)[:4]
             questions.append({
-                "question": question_body,
-                "options": padded,
-                "correct": max(0, min(correct_idx, len(options) - 1)),
-                "difficulty": "medium",
-                "marks": 1
+                'question': question_body,
+                'options': padded,
+                'correct': correct_idx,
+                'difficulty': 'medium',
+                'marks': 1
             })
+            logger.debug(f"Q{q_num}: Saved. Ans={chr(ord('A') + correct_idx)}, opts={options}")
+        else:
+            logger.warning(f"Q{q_num}: Skipped — fewer than 2 options. Block: {block[:80]!r}")
 
+    logger.info(f"Total questions parsed: {len(questions)}")
     return questions
+

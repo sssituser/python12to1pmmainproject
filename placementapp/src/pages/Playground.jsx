@@ -5,8 +5,8 @@ import { Code2, BookOpen, ArrowRight, Sparkles, Shield, FlaskConical } from "luc
 
 function Playground() {
   useSEO(
-    "Techhub â€” Practice & Exams",
-    "Access the SSSIT Techhub â€” practice coding, take practice exams, or write faculty-uploaded exams."
+    "Techhub ” Practice & Exams",
+    "Access the SSSIT Techhub ” practice coding, take practice exams, or write faculty-uploaded exams."
   );
   const navigate = useNavigate();
 
