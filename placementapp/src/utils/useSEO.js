@@ -4,8 +4,8 @@ export function useSEO(title, description = "", canonicalUrl = "") {
   useEffect(() => {
     // Set document title
     document.title = title
-      ? `${title} | SSSIT Placement Portal`
-      : "SSSIT Placement Portal | Career & Assessment Hub";
+      ? `${title} | SSSIT Learning Management Portal`
+      : "SSSIT Learning Management Portal | Career, Exams & LMS";
 
     // Set meta description
     let metaDesc = document.querySelector('meta[name="description"]');
@@ -38,7 +38,7 @@ export function useSEO(title, description = "", canonicalUrl = "") {
 
     // Cleanup: restore defaults when component unmounts
     return () => {
-      document.title = "SSSIT Placement Portal | Career & Assessment Hub";
+      document.title = "SSSIT Learning Management Portal | Career, Exams & LMS";
       if (canonical && canonical.parentNode) {
         // Keep canonical but set back to window location or default base URL
         canonical.setAttribute("href", window.location.origin);

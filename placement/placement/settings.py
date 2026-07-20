@@ -175,7 +175,7 @@ DATABASES = {
 # Email configuration constants
 ADMIN_EMAIL = 'sssitprojectteam3@gmail.com'
 PLATFORM_NAME = 'SSSIT Placement Portal'
-PLATFORM_URL = os.environ.get('PLATFORM_URL', 'http://localhost')
+PLATFORM_URL = os.environ.get('PLATFORM_URL', 'http://40.192.98.128:5173').rstrip('/')
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

@@ -7,7 +7,7 @@ from myapp.throttles import LoginRateThrottle, OTPRateThrottle, RegisterRateThro
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from myapp.models import OTP, StudentProfile, Course
+from myapp.models import OTP, StudentProfile, Course, AdminNotification
 from myapp.email_utils import send_login_email, send_plain_email
 from django.conf import settings
 from django.utils import timezone
@@ -626,6 +626,58 @@ def register(request):
                 
             student_profile = StudentProfile.objects.create(**sp_kwargs)
             print(f"DEBUG: Created profile for {username} with SID: {sp_kwargs.get('student_id', 'None')}")
+
+            # 🔔 CREATE ADMIN NOTIFICATION (in-panel)
+            try:
+                AdminNotification.objects.create(
+                    notification_type='new_student',
+                    title=f'New Student Registered: {username}',
+                    message=(
+                        f'A new student has just registered on the SSSIT LMS portal.\n'
+                        f'Name: {username}\n'
+                        f'Email: {email or "Not provided"}\n'
+                        f'Student ID: {sp_kwargs.get("student_id", "Not provided")}\n'
+                        f'Course: {", ".join(course_titles) if course_titles else "Not specified"}'
+                    ),
+                    related_username=username,
+                    related_email=email or None,
+                )
+                print(f"DEBUG: Admin notification created for new student {username}")
+            except Exception as notif_err:
+                print(f"DEBUG: Failed to create admin notification: {notif_err}")
+
+            # 📧 SEND EMAIL TO ALL ADMIN USERS (async)
+            import threading
+            def _notify_admins_email():
+                try:
+                    admin_users = User.objects.filter(role='admin', is_active=True).values_list('email', flat=True)
+                    admin_emails = [e for e in admin_users if e]
+                    if not admin_emails:
+                        # Fallback to settings ADMIN_EMAIL if defined
+                        fallback = getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', None)
+                        if fallback:
+                            admin_emails = [fallback]
+                    for admin_email in admin_emails:
+                        subject = f"[SSSIT LMS] New Student Registration: {username}"
+                        message = (
+                            f"Hello Admin,\n\n"
+                            f"A new student has registered on the SSSIT Learning Management Portal.\n\n"
+                            f"Student Details:\n"
+                            f"  Name       : {username}\n"
+                            f"  Email      : {email or 'Not provided'}\n"
+                            f"  Student ID : {sp_kwargs.get('student_id', 'Not provided')}\n"
+                            f"  Course(s)  : {", ".join(course_titles) if course_titles else 'Not specified'}\n\n"
+                            f"Please log in to the Admin Panel to review and manage this student.\n\n"
+                            f"SSSIT LMS Team"
+                        )
+                        sent = send_plain_email(subject, message, admin_email)
+                        print(f"DEBUG: Admin notification email {'SENT' if sent else 'FAILED'} to {admin_email}")
+                except Exception as mail_err:
+                    print(f"DEBUG: Admin email notification error: {mail_err}")
+
+            admin_thread = threading.Thread(target=_notify_admins_email)
+            admin_thread.daemon = True
+            admin_thread.start()
 
     if role == 'faculty':
         # Generate & Send OTP for verification

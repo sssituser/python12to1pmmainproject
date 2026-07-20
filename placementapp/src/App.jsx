@@ -77,10 +77,63 @@ const VerifyFaculty = lazy(() => import("./pages/FacultyOtp"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 
+import axios from "axios";
+
 function App() {
 
   const location = useLocation();
   const preventBackInitialized = useRef(false);
+
+  // Global Axios Interceptors for JWT auth & recovery
+  useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+        if (token) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          try {
+            const refreshToken = localStorage.getItem("refresh")?.replace(/^"|"$/g, "");
+            if (refreshToken) {
+              const res = await axios.post(
+                `http://${window.location.hostname}:8000/api/jwt/refresh/`,
+                { refresh: refreshToken },
+                { _retry: true }
+              );
+              if (res.data?.access) {
+                localStorage.setItem("access", res.data.access);
+                originalRequest.headers["Authorization"] = `Bearer ${res.data.access}`;
+                return axios(originalRequest);
+              }
+            }
+          } catch (refreshError) {
+            console.error("Token refresh failed:", refreshError);
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+            localStorage.removeItem("user");
+            window.location.href = "/";
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
 
   // Disable browser back button only on exam pages and faculty course pages
   useEffect(() => {

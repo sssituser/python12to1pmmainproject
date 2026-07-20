@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 const API = `http://${window.location.hostname}:8000/api`;
 const getToken = () => localStorage.getItem("access")?.replace(/^"|"$/g, "");
@@ -16,6 +17,7 @@ const ScoreBadge = ({ score }) => {
 };
 
 export default function AICandidateRanker() {
+  useSEO("AI Candidate Ranker", "Search and rank candidates for recruiter positions with high accuracy machine learning models on the SSSIT Portal.");
   const [query, setQuery] = useState("");
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(false);

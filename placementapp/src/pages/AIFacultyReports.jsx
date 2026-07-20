@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 const API = `http://${window.location.hostname}:8000/api`;
 const getToken = () => localStorage.getItem("access")?.replace(/^"|"$/g, "");
@@ -23,6 +24,7 @@ const StatCard = ({ label, value, icon, color }) => {
 };
 
 export default function AIFacultyReports() {
+  useSEO("AI Faculty Reports", "Generate automated performance reports, score assessments, and student progress summaries with SSSIT AI.");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");

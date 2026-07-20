@@ -220,6 +220,62 @@ class EmailConfiguration(models.Model):
 
 
 # ===============================
+# Admin Notifications
+# ===============================
+
+class AdminNotification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('new_student', 'New Student Registration'),
+        ('new_faculty', 'New Faculty Registration'),
+        ('system', 'System Alert'),
+        ('leave', 'Leave Request'),
+    ]
+
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES, default='system')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    related_username = models.CharField(max_length=150, blank=True, null=True)
+    related_email = models.EmailField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        db_table = 'myapp_admin_notification'
+
+    def __str__(self):
+        return f"[{self.notification_type}] {self.title}"
+
+
+# ===============================
+# Student Job Notifications
+# ===============================
+
+class JobNotification(models.Model):
+    """
+    Created whenever a new job is posted.
+    Each student can mark it read independently via their own read receipt.
+    A single record per job is sufficient — the frontend fetches unread count
+    by comparing against the student's last-seen timestamp stored in localStorage.
+    """
+    job = models.ForeignKey('Job', on_delete=models.CASCADE, related_name='notifications')
+    job_title = models.CharField(max_length=200)
+    company = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, blank=True)
+    salary = models.CharField(max_length=100, blank=True)
+    deadline = models.DateField(null=True, blank=True)
+    posted_by = models.CharField(max_length=150, blank=True)  # faculty username
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        db_table = 'myapp_job_notification'
+
+    def __str__(self):
+        return f"Job Alert: {self.job_title} @ {self.company}"
+
+
+# ===============================
 # Multi-Subject Exam & Professional Proctoring System
 # ===============================
 

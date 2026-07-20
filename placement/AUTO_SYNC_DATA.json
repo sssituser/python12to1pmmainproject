@@ -500,7 +500,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 01:42:49.311521+00:00"
+            "updated_at": "2026-07-20 19:47:51.392826+00:00"
         },
         {
             "id": 5,
@@ -514,7 +514,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 01:42:49.328027+00:00"
+            "updated_at": "2026-07-20 19:47:51.412948+00:00"
         },
         {
             "id": 9,
@@ -528,7 +528,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 01:42:49.343300+00:00"
+            "updated_at": "2026-07-20 19:47:51.433456+00:00"
         }
     ]
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 const API = `http://${window.location.hostname}:8000/api`;
 const getToken = () => localStorage.getItem("access")?.replace(/^"|"$/g, "");
@@ -19,6 +20,7 @@ const SkillTag = ({ skill, variant = "match" }) => {
 };
 
 export default function AIJobRecommendations() {
+  useSEO("AI Job Recommendations", "Discover student jobs and career recommendations curated by SSSIT AI according to skill matches.");
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

@@ -8,10 +8,10 @@ function Register() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Student Registration | SSSIT Placement Portal";
+    document.title = "Student Registration | SSSIT Learning Management Portal";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "Register an account on the SSSIT Placement Portal to begin your career journey, access programs, mock assessments, and corporate placement resources.");
+      metaDesc.setAttribute("content", "Register an account on the SSSIT Learning Management Portal to begin your educational journey, access modules, exams, and academic resources.");
     }
   }, []);
 

@@ -1,10 +1,45 @@
-import { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Shield, Eye, EyeOff } from "lucide-react";
+import { Shield, Eye, EyeOff, Settings, ShieldCheck, Activity, Database } from "lucide-react";
 import { useSEO } from "../utils/useSEO";
+import { motion } from "framer-motion";
 
 function AdminLogin() {
-  useSEO("Admin Sign In", "Secure admin login for the SSSIT Placement Portal. Authorised administrators only.");
+  // ✅ SEO Hook Integration
+  useSEO(
+    "Admin Sign In",
+    "Secure administrator login page for the SSSIT Learning Management Portal. Authorized administrators only."
+  );
+
+  // ✅ Inject structured JSON-LD data dynamically for Search Engines
+  useEffect(() => {
+    const scriptId = "lms-admin-login-jsonld";
+    let script = document.getElementById(scriptId);
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
+      script.type = "application/ld+json";
+      script.innerHTML = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Admin Sign In - SSSIT Learning Management Portal",
+        "description": "Secure configuration and administrator portal login for SSSIT LMS system.",
+        "publisher": {
+          "@type": "EducationalOrganization",
+          "name": "SSSIT Computer Education",
+          "url": window.location.origin
+        }
+      });
+      document.head.appendChild(script);
+    }
+    return () => {
+      const existingScript = document.getElementById(scriptId);
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     username: "",
@@ -14,11 +49,16 @@ function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // ✅ Performance Optimized Handlers using useCallback
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const handleLogin = useCallback(async (e) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError("");
-
 
     try {
       const response = await fetch(`http://${window.location.hostname}:8000/api/login/`, {
@@ -32,7 +72,6 @@ function AdminLogin() {
       const data = await response.json();
 
       if (response.ok) {
-        // Check if user is admin
         if (data.user.role === 'admin') {
           localStorage.setItem("access", data.access);
           localStorage.setItem("refresh", data.refresh);
@@ -44,139 +83,179 @@ function AdminLogin() {
       } else {
         setError(data.error || data.detail || "Login failed. Please try again.");
       }
-    } catch (error) {
+    } catch (err) {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [credentials, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex items-center justify-center p-4 relative overflow-hidden font-sans text-white">
-      <style>{`
-        @keyframes float-pulse {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-8px) scale(1.03); }
-        }
-        @keyframes drift {
-          0% { transform: translate(0, 0) scale(1); opacity: 0.1; }
-          50% { transform: translate(-20px, 30px) scale(1.05); opacity: 0.25; }
-          100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
-        }
-        .animate-float-pulse {
-          animation: float-pulse 5s ease-in-out infinite;
-        }
-        .animate-drift-admin-1 {
-          animation: drift 10s ease-in-out infinite;
-        }
-        .animate-drift-admin-2 {
-          animation: drift 14s ease-in-out infinite reverse;
-        }
-      `}</style>
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white overflow-hidden relative font-sans">
+      {/* Violet/Indigo ambient glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-violet-500/5 blur-[130px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[130px] pointer-events-none animate-pulse" />
 
-      {/* Dynamic Security Matrix Overlay */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.12]">
-        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="sec-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <path d="M 0,200 L 2000,200 M 0,400 L 2000,400 M 0,600 L 2000,600 M 150,0 L 150,2000 M 450,0 L 450,2000 M 750,0 L 750,2000" stroke="#475569" strokeWidth="0.5" fill="none" />
-          <circle cx="300" cy="250" r="60" fill="url(#sec-glow)" className="animate-pulse" />
-          <circle cx="300" cy="250" r="3" fill="#a78bfa" />
-          <circle cx="700" cy="500" r="50" fill="url(#sec-glow)" className="animate-pulse" style={{ animationDelay: "1.5s" }} />
-          <circle cx="700" cy="500" r="3" fill="#818cf8" />
-        </svg>
-      </div>
-
-      {/* Decorative glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-violet-500/10 blur-[100px] pointer-events-none animate-drift-admin-1" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none animate-drift-admin-2" />
-
-      {/* Floating System Status Widgets (Interactive Desktop Preview) */}
-      <div className="absolute top-1/4 right-10 w-64 p-5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hidden xl:flex flex-col gap-3 animate-float-pulse select-none z-10">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Server Status</span>
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-bold">
-            <span className="h-1 w-1 rounded-full bg-emerald-400 animate-ping" />
-            ONLINE
-          </span>
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-extrabold text-white">99.98%</span>
-          <span className="text-[10px] text-slate-500">Uptime</span>
-        </div>
-        <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-indigo-500 h-full w-[95%] animate-pulse" />
-        </div>
-      </div>
-
-      <div className="absolute bottom-1/4 left-10 w-64 p-5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-slate-800/60 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hidden xl:flex flex-col gap-3 animate-float-pulse select-none z-10" style={{ animationDelay: "2.5s" }}>
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System Audits</span>
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-xs text-slate-300">
-            <span className="text-violet-400">🛡️</span>
-            <span className="truncate font-light">Firewall Rules: Shielded</span>
+      {/* LEFT SIDE - Info Panel (Split screen layout) */}
+      <div className="w-1/2 hidden md:flex items-center justify-center relative border-r border-slate-800/40">
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
+        
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 px-16 max-w-2xl"
+        >
+          {/* Brand Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold tracking-wider uppercase mb-6 shadow-[0_0_20px_rgba(139,92,246,0.08)]">
+            <Shield className="w-3.5 h-3.5" />
+            Admin Command
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="text-indigo-400">🔑</span>
-            <span className="truncate font-light">Token Cryptography: RSA 256</span>
-          </div>
-        </div>
-      </div>
+          
+          <h1 className="text-5xl font-extrabold tracking-tight leading-[1.15]">
+            SSSIT Control
+            <br />
+            <span className="bg-gradient-to-r from-violet-400 via-indigo-300 to-violet-500 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(139,92,246,0.15)]">
+              Panel Center
+            </span>
+          </h1>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <div className="mx-auto h-16 w-16 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.15)] mb-4 animate-float-pulse">
-            <Shield className="h-8 w-8 text-violet-400" />
-          </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">
-            Admin Panel
-          </h2>
-          <p className="text-slate-400 text-sm mt-2 font-light">
-            Secure admin access for placement platform configuration.
+          <p className="text-slate-400 mt-6 text-base max-w-md font-light leading-relaxed">
+            Configure Learning Management services, authorize database rules, audit portal access histories, and monitor server configurations.
           </p>
-        </div>
 
-        <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 shadow-[0_0_50px_-12px_rgba(139,92,246,0.15)]">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          {/* Premium UI Admin Operations Workflow Steps */}
+          <div className="mt-10 relative h-40 w-full max-w-md bg-slate-900/30 backdrop-blur-md rounded-2xl border border-slate-800/50 p-6 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)]">
+            <div className="relative flex justify-between items-center h-full z-10">
+              {/* Animated Progress connector */}
+              <div className="absolute left-6 right-6 top-[30%] h-[1px] bg-slate-800 -translate-y-1/2 overflow-hidden rounded">
+                <div 
+                  className="h-full w-1/3 bg-gradient-to-r from-transparent via-violet-400 to-transparent" 
+                  style={{
+                    animation: "flow-line 3s infinite linear"
+                  }}
+                />
+              </div>
+
+              {/* Step 1: Config */}
+              <div className="flex flex-col items-center gap-2 relative group cursor-help">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center shadow-lg group-hover:border-violet-500/50 transition-all duration-300">
+                  <Settings className="w-5 h-5 text-slate-400 group-hover:text-violet-400 transition-colors" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium group-hover:text-slate-200 transition-colors">Configuration</span>
+              </div>
+
+              {/* Step 2: Access */}
+              <div className="flex flex-col items-center gap-2 relative group cursor-help">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center shadow-lg group-hover:border-violet-500/50 transition-all duration-300">
+                  <ShieldCheck className="w-5 h-5 text-slate-400 group-hover:text-violet-400 transition-colors" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium group-hover:text-slate-200 transition-colors">Security Rules</span>
+              </div>
+
+              {/* Step 3: Auditing */}
+              <div className="flex flex-col items-center gap-2 relative group cursor-help">
+                <div className="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center shadow-lg group-hover:border-violet-500/50 transition-all duration-300">
+                  <Activity className="w-5 h-5 text-slate-400 group-hover:text-violet-400 transition-colors" />
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium group-hover:text-slate-200 transition-colors">Global Auditing</span>
+              </div>
+
+              {/* Step 4: DB Active */}
+              <div className="flex flex-col items-center gap-2 relative group cursor-help">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.15)] group-hover:border-violet-400 transition-all duration-300">
+                  <Database className="w-5 h-5 text-violet-400 animate-bounce" />
+                </div>
+                <span className="text-[10px] text-violet-400 font-semibold group-hover:text-violet-300 transition-colors">Database Active</span>
+              </div>
+            </div>
+            
+            <style>{`
+              @keyframes flow-line {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(300%); }
+              }
+            `}</style>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* RIGHT SIDE - Form Panel (Split screen layout) */}
+      <div className="flex-1 flex items-center justify-center px-6 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md p-8 md:p-10 rounded-3xl bg-slate-900/35 backdrop-blur-xl border border-slate-800/80 shadow-[0_0_60px_-15px_rgba(139,92,246,0.12)] flex flex-col"
+        >
+          {/* Logo / Badge Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30">
+              <Shield className="w-6 h-6 text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">SSSIT LMS</h2>
+              <p className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Admin Panel</p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold text-white mb-1.5">
+              Secure Sign In
+            </h3>
+            <p className="text-slate-400 text-xs font-light">
+              Access the administrative core for Learning Management configurations.
+            </p>
+          </div>
+
+          <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm font-light">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-xs font-light">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="username" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="username" className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Username
               </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={credentials.username}
-                onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition text-white placeholder-slate-600"
-                placeholder="Enter admin username"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={credentials.username}
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/60 border border-slate-800/80 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition text-white placeholder-slate-600 text-sm"
+                  placeholder="Enter admin username"
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label htmlFor="password" className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Password
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={credentials.password}
-                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950/60 border border-slate-800 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition text-white placeholder-slate-600 pr-12"
+                  onChange={handleInputChange}
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-slate-950/60 border border-slate-800/80 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition text-white placeholder-slate-600 text-sm"
                   placeholder="Enter password"
                 />
                 <button
@@ -185,9 +264,9 @@ function AdminLogin() {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
+                    <EyeOff className="h-4.5 w-4.5" />
                   ) : (
-                    <Eye className="h-5 w-5" />
+                    <Eye className="h-4.5 w-4.5" />
                   )}
                 </button>
               </div>
@@ -197,7 +276,7 @@ function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3.5 px-4 rounded-xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-4 flex justify-center py-3.5 px-4 rounded-xl font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-[0_4px_25px_-4px_rgba(139,92,246,0.25)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="flex items-center">
@@ -210,8 +289,8 @@ function AdminLogin() {
               </button>
             </div>
 
-            {/* DIVIDER & OTHER PORTALS */}
-            <div className="border-t border-slate-800/60 pt-6 flex items-center justify-between text-xs text-slate-500">
+            {/* PORTAL LINKS */}
+            <div className="border-t border-slate-800/60 pt-5 flex items-center justify-between text-xs text-slate-500">
               <span>Access other portals:</span>
               <div className="flex gap-3">
                 <Link to="/" className="text-slate-400 hover:text-emerald-400 font-medium transition">
@@ -224,10 +303,10 @@ function AdminLogin() {
               </div>
             </div>
           </form>
-        </div>
+        </motion.div>
 
         <div className="text-center text-xs text-slate-600 mt-8 space-y-1">
-          <p>© 2026 Placement Management System</p>
+          <p>© 2026 SSSIT Learning Management System</p>
           <p className="font-light">Authorized administrator access only</p>
         </div>
       </div>

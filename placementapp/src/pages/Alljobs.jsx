@@ -11,10 +11,10 @@ function AllJobs() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Career Job Openings | SSSIT Placement Portal";
+    document.title = "Career Job Openings | SSSIT Learning Management Portal";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", "Explore the latest career opportunities, jobs, and internships across top tech companies on the SSSIT Placement Portal.");
+      metaDesc.setAttribute("content", "Explore the latest career opportunities, jobs, and internships across top tech companies on the SSSIT Learning Management Portal.");
     }
   }, []);
 

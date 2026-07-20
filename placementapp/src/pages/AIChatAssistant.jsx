@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 const API = `http://${window.location.hostname}:8000/api`;
 const getToken = () => localStorage.getItem("access")?.replace(/^"|"$/g, "");
@@ -91,6 +92,7 @@ const TypingDot = () => (
 );
 
 export default function AIChatAssistant() {
+  useSEO("AI Placement Assistant", "Interact with the SSSIT AI assistant to discover job recommendations, plan placement strategies, and analyze curriculum assessments.");
   const user = getUser();
   const userRole = user?.role?.toLowerCase() || "student";
   const roleConfig = ROLE_CONFIG[userRole] || ROLE_CONFIG.student;

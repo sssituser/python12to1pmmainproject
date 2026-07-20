@@ -17,7 +17,7 @@ from .views.exam_views import (
     import_exam_questions_file, delete_placement_exam, delete_exam_session
 )
 from .views.playground_views import create_playground, get_playground, delete_playground
-from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet
+from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, job_notifications_list
 from .views.python_views import (
     playground_questions_api, run_code_api, exam_reports_api,
     exam_report_detail_api, save_exam_report_api, delete_exam_report_api,
@@ -27,6 +27,7 @@ from .views.python_views import (
 )
 from .views.stats_views import dashboard_stats_api, students_api, student_stats_api, student_detail
 from .views.admin_views import all_users_api, create_faculty_api, create_student_api, toggle_student_status_api, delete_user_api, update_faculty_api, update_student_api, toggle_faculty_status_api, database_backup_api, deduplicate_courses_api
+from .views.notification_views import list_notifications, unread_count, mark_read, mark_all_read, delete_notification
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
@@ -185,4 +186,14 @@ urlpatterns = [
     path('ai/rank-candidates/', rank_candidates_view, name='ai_rank_candidates'),
     path('ai/generate-report/', generate_report_view, name='ai_generate_report'),
     path('ai/chat/', chat_view, name='ai_chat'),
+
+    # ── Admin Notification URLs ───────────────────────────────────────────────
+    path('admin/notifications/', list_notifications, name='admin_notifications'),
+    path('admin/notifications/unread-count/', unread_count, name='admin_notifications_unread_count'),
+    path('admin/notifications/<int:notification_id>/read/', mark_read, name='admin_notification_mark_read'),
+    path('admin/notifications/mark-all-read/', mark_all_read, name='admin_notifications_mark_all_read'),
+    path('admin/notifications/<int:notification_id>/delete/', delete_notification, name='admin_notification_delete'),
+
+    # ── Student Job Notification URLs ─────────────────────────────────────────
+    path('job-notifications/', job_notifications_list, name='student_job_notifications'),
 ]

@@ -1,6 +1,8 @@
 import { Bell, ChevronDown, Key, LogOut, Menu, UserCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
+import JobNotificationBell from "./JobNotificationBell";
 
 function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
   const [openProfile, setOpenProfile] = useState(false);
@@ -278,50 +280,103 @@ function Navbar({ toggleSidebar, logoUrl = "/sssit-logo.png" }) {
       {/* RIGHT */}
       <div className="flex items-center gap-4">
         {/* NOTIFICATIONS */}
-        <div className="relative notification-area">
-          <button
-            onClick={() => {
-              setNotificationsOpen((prev) => !prev);
-              if (unreadCount > 0) markNotificationsRead();
-            }}
-            className="p-2 rounded-xl hover:bg-gray-200 transition relative"
-          >
-            <Bell size={20} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <span className="font-semibold text-sm">Notifications</span>
-                <button
-                  onClick={clearNotifications}
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Clear
-                </button>
-              </div>
-              <div className="max-h-72 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="px-4 py-5 text-sm text-gray-500">No notifications yet.</div>
-                ) : (
-                  notifications.map((note) => (
-                    <div
-                      key={note.id}
-                      className={`px-4 py-3 border-b border-gray-100 ${note.read ? "bg-gray-50" : "bg-white"}`}
-                    >
-                      <p className="text-sm font-semibold text-gray-800">{note.title}</p>
-                      <p className="text-xs text-gray-600 mt-1">{note.message}</p>
-                      <p className="text-[11px] text-gray-400 mt-2">{new Date(note.createdAt).toLocaleString()}</p>
-                    </div>
-                  ))
+        <div className="relative notification-area flex items-center gap-2">
+          {user.role === "admin" ? (
+            /* Real-time admin notification bell */
+            <NotificationBell />
+          ) : user.role === "student" ? (
+            /* Students: both the regular bell + job alert bell */
+            <>
+              {/* Regular notification bell */}
+              <button
+                onClick={() => {
+                  setNotificationsOpen((prev) => !prev);
+                  if (unreadCount > 0) markNotificationsRead();
+                }}
+                className="p-2 rounded-xl hover:bg-gray-200 transition relative"
+                title="Notifications"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                    {unreadCount}
+                  </span>
                 )}
-              </div>
-            </div>
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-12 top-10 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="font-semibold text-sm">Notifications</span>
+                    <button onClick={clearNotifications} className="text-xs text-blue-600 hover:underline">Clear</button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-5 text-sm text-gray-500">No notifications yet.</div>
+                    ) : (
+                      notifications.map((note) => (
+                        <div key={note.id} className={`px-4 py-3 border-b border-gray-100 ${note.read ? "bg-gray-50" : "bg-white"}`}>
+                          <p className="text-sm font-semibold text-gray-800">{note.title}</p>
+                          <p className="text-xs text-gray-600 mt-1">{note.message}</p>
+                          <p className="text-[11px] text-gray-400 mt-2">{new Date(note.createdAt).toLocaleString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Job alert bell */}
+              <JobNotificationBell onViewJobs={() => navigate("/dashboard/alljobs")} />
+            </>
+          ) : (
+            /* Faculty: simple localStorage bell */
+            <>
+              <button
+                onClick={() => {
+                  setNotificationsOpen((prev) => !prev);
+                  if (unreadCount > 0) markNotificationsRead();
+                }}
+                className="p-2 rounded-xl hover:bg-gray-200 transition relative"
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="font-semibold text-sm">Notifications</span>
+                    <button
+                      onClick={clearNotifications}
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-5 text-sm text-gray-500">No notifications yet.</div>
+                    ) : (
+                      notifications.map((note) => (
+                        <div
+                          key={note.id}
+                          className={`px-4 py-3 border-b border-gray-100 ${note.read ? "bg-gray-50" : "bg-white"}`}
+                        >
+                          <p className="text-sm font-semibold text-gray-800">{note.title}</p>
+                          <p className="text-xs text-gray-600 mt-1">{note.message}</p>
+                          <p className="text-[11px] text-gray-400 mt-2">{new Date(note.createdAt).toLocaleString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

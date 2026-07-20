@@ -16,7 +16,7 @@ import {
     Shield
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar"; // adjust path if needed
+import Navbar from "../components/Navbar";
 
 function AdminLayout() {
   const navigate = useNavigate();
@@ -204,9 +204,8 @@ function AdminLayout() {
       </div>
 
       {/* MAIN AREA */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-
         <div className="flex-1 bg-white p-6 overflow-y-auto">
           <Outlet />
         </div>
