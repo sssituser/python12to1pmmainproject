@@ -1,10 +1,6 @@
-/**
- * useSEO – Lightweight hook to set page <title> and meta description dynamically.
- * Usage: useSEO("Page Title | SSSIT", "Description here.")
- */
 import { useEffect } from "react";
 
-export function useSEO(title, description = "") {
+export function useSEO(title, description = "", canonicalUrl = "") {
   useEffect(() => {
     // Set document title
     document.title = title
@@ -30,11 +26,26 @@ export function useSEO(title, description = "") {
     let ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc && description) ogDesc.setAttribute("content", description);
 
+    // Set canonical link
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    const finalCanonical = canonicalUrl || window.location.href;
+    canonical.setAttribute("href", finalCanonical);
+
     // Cleanup: restore defaults when component unmounts
     return () => {
       document.title = "SSSIT Placement Portal | Career & Assessment Hub";
+      if (canonical && canonical.parentNode) {
+        // Keep canonical but set back to window location or default base URL
+        canonical.setAttribute("href", window.location.origin);
+      }
     };
-  }, [title, description]);
+  }, [title, description, canonicalUrl]);
 }
 
 export default useSEO;
+

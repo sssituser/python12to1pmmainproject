@@ -4,10 +4,16 @@ import Editor from "@monaco-editor/react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Play, ArrowLeft, Terminal, AlertCircle, CheckCircle2, Keyboard } from "lucide-react";
+import { useSEO } from "../utils/useSEO";
 
 function PlaygroundDetail() {
   const { language = "python" } = useParams();
   const navigate = useNavigate();
+
+  useSEO(
+    `${language.toUpperCase()} Compiler & Playground`,
+    `Run and compile ${language} code online instantly on the SSSIT Computer Education development playground.`
+  );
 
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
@@ -106,16 +112,19 @@ function PlaygroundDetail() {
           >
             <ArrowLeft size={20} />
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight leading-none flex items-center gap-2">
-              Code Compiler
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                {language}
-              </span>
-            </h1>
-            <p className="text-xs text-slate-500 font-medium mt-1 tracking-wide">
-              Practice playground & exam environment
-            </p>
+          <div className="flex items-center gap-3">
+            <img src="/sssit-logo.png" alt="SSSIT Logo" className="w-8 h-8 object-contain" />
+            <div>
+              <h1 className="text-base font-bold text-slate-800 tracking-tight leading-none flex items-center gap-2">
+                SSSIT Editor
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  {language}
+                </span>
+              </h1>
+              <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider mt-1">
+                SSSIT Computer Education
+              </p>
+            </div>
           </div>
         </div>
 
@@ -161,6 +170,7 @@ function PlaygroundDetail() {
           </button>
         </div>
       </header>
+
 
       {/* Main Workspace */}
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">

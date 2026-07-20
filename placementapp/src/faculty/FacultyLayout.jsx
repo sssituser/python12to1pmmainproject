@@ -174,6 +174,7 @@ function FacultyLayout() {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `${linkClass} ${
                       isActive

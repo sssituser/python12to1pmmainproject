@@ -14,11 +14,15 @@ import {
     Users,
     UserX,
     X,
-    XCircle
+    XCircle,
+    ArrowUpDown,
+    ChevronUp,
+    ChevronDown
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSEO } from "../utils/useSEO";
+import { toast } from "react-toastify";
 
 function AdminPanel() {
   useSEO("Admin Control Panel", "Manage students, faculty, and system configuration from the SSSIT Admin Control Panel.");
@@ -40,6 +44,7 @@ function AdminPanel() {
   const [activeTab, setActiveTab] = useState("faculty");
   const [faculty, setFaculty] = useState([]);
   const [students, setStudents] = useState([]);
+  const [studentSortOrder, setStudentSortOrder] = useState("asc");
   const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -321,9 +326,20 @@ function AdminPanel() {
       (filterStatus === "placed" && s.studentprofile?.is_placed);
 
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    const idA = Number(a.studentprofile?.student_id) || 0;
+    const idB = Number(b.studentprofile?.student_id) || 0;
+    return studentSortOrder === "asc" ? idA - idB : idB - idA;
   });
 
   const showMessage = (type, text) => {
+    if (type === 'success') {
+      toast.success(text);
+    } else if (type === 'error') {
+      toast.error(text);
+    } else {
+      toast.info(text);
+    }
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
   };
@@ -505,140 +521,137 @@ function AdminPanel() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading user data...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600 mx-auto mb-4"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+          <p className="text-gray-700 font-semibold">Loading user data...</p>
+          <p className="text-gray-400 text-sm mt-1">Please wait</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Message Alert */}
-      {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-            message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-              'bg-blue-50 text-blue-800 border border-blue-200'
-          }`}>
-          {message.type === 'success' ? <CheckCircle size={20} /> :
-            message.type === 'error' ? <XCircle size={20} /> :
-              <AlertCircle size={20} />}
-          <span>{message.text}</span>
-        </div>
-      )}
+    <div className="space-y-5">
 
-      {/* Header */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage faculty credentials and student accounts</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage faculty credentials and student accounts</p>
         </div>
         <button
           onClick={handleDatabaseBackup}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-all duration-200"
+          aria-label="Download database backup"
+          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all duration-200 text-sm whitespace-nowrap"
         >
-          <Download size={18} />
+          <Download size={16} />
           Backup Database
         </button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border-l-4 border-l-purple-500 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Faculty</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalFaculty}</p>
-              <p className="text-xs text-green-600 mt-1">{stats.activeFaculty} active</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Total Faculty</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalFaculty}</p>
+              <p className="text-xs text-purple-600 mt-1 font-medium">{stats.activeFaculty} active</p>
             </div>
-            <div className="bg-purple-100 rounded-full p-3">
-              <Users className="w-6 h-6 text-purple-600" />
+            <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl p-2.5 sm:p-3">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border-l-4 border-l-blue-500 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Students</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalStudents}</p>
-              <p className="text-xs text-green-600 mt-1">{stats.activeStudents} active</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Total Students</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalStudents}</p>
+              <p className="text-xs text-blue-600 mt-1 font-medium">{stats.activeStudents} active</p>
             </div>
-            <div className="bg-blue-100 rounded-full p-3">
-              <Shield className="w-6 h-6 text-blue-600" />
+            <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-2.5 sm:p-3">
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border-l-4 border-l-red-500 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Blocked Students</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.blockedStudents}</p>
-              <p className="text-xs text-red-600 mt-1">Need attention</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Blocked</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.blockedStudents}</p>
+              <p className="text-xs text-red-500 mt-1 font-medium">Need attention</p>
             </div>
-            <div className="bg-red-100 rounded-full p-3">
-              <XCircle className="w-6 h-6 text-red-600" />
+            <div className="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2.5 sm:p-3">
+              <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border-l-4 border-l-emerald-500 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Placed Students</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.placedStudents}</p>
-              <p className="text-xs text-green-600 mt-1">Successfully placed</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Placed</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.placedStudents}</p>
+              <p className="text-xs text-emerald-600 mt-1 font-medium">Successfully placed</p>
             </div>
-            <div className="bg-green-100 rounded-full p-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl p-2.5 sm:p-3">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 mb-6">
+      <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-fit shadow-sm border border-slate-200/50">
         <button
           onClick={() => setActiveTab("faculty")}
-          className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === "faculty"
-              ? "bg-white text-blue-600 border-t-2 border-l-2 border-r-2 border-blue-600"
-              : "bg-gray-200 text-gray-600"
-            }`}
+          aria-label="Switch to Faculty Management tab"
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+            activeTab === "faculty"
+              ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-100"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
         >
-          Faculty Management
+          Faculty
         </button>
         <button
           onClick={() => setActiveTab("students")}
-          className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === "students"
-              ? "bg-white text-blue-600 border-t-2 border-l-2 border-r-2 border-blue-600"
-              : "bg-gray-200 text-gray-600"
-            }`}
+          aria-label="Switch to Student Management tab"
+          className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+            activeTab === "students"
+              ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-100"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
         >
-          Student Management
+          Students
         </button>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder={`Search ${activeTab === 'faculty' ? 'faculty' : 'students'} by name, email, or ID...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-gray-100">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab === 'faculty' ? 'faculty' : 'students'} by name, email${activeTab === 'students' ? ', or ID' : ''}…`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 sm:flex-none px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -646,18 +659,12 @@ function AdminPanel() {
               {activeTab === 'students' && <option value="placed">Placed</option>}
             </select>
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <Filter size={16} />
-              Filters
-            </button>
-            <button
               onClick={fetchUsers}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              aria-label="Refresh user list"
+              className="flex items-center gap-1.5 px-3 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-600 transition-colors"
             >
-              <RefreshCw size={16} />
-              Refresh
+              <RefreshCw size={15} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
@@ -665,168 +672,152 @@ function AdminPanel() {
 
       {/* Faculty Management Tab */}
       {activeTab === "faculty" && (
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Faculty Accounts</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 sm:p-5 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Faculty Accounts</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{filteredFaculty.length} record{filteredFaculty.length !== 1 ? 's' : ''}</p>
+            </div>
             <button
               onClick={() => setShowFacultyForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              aria-label="Create new faculty account"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm shadow-sm transition-colors"
             >
-              Create Faculty
+              + Create Faculty
             </button>
           </div>
 
           {showFacultyForm && (
-            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-              <h3 className="text-lg font-medium mb-4">Create New Faculty</h3>
-              <form onSubmit={createFaculty} className="grid grid-cols-2 gap-4">
-                <div>
+            <div className="m-4 p-4 sm:p-5 border border-blue-100 rounded-xl bg-blue-50">
+              <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">+</span>
+                Create New Faculty Account
+              </h3>
+              <form onSubmit={createFaculty} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Username</label>
                   <input
                     type="text"
-                    placeholder="Username"
+                    placeholder="e.g. faculty_john"
                     value={facultyForm.username}
                     onChange={(e) => setFacultyForm({ ...facultyForm, username: e.target.value })}
-                    className={`w-full p-2 border rounded ${facultyFormErrors.username ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 ${facultyFormErrors.username ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}
                     required
                   />
-                  {facultyFormErrors.username && (
-                    <p className="text-red-500 text-xs mt-1">{facultyFormErrors.username}</p>
-                  )}
+                  {facultyFormErrors.username && <p className="text-red-500 text-xs">{facultyFormErrors.username}</p>}
                 </div>
-                <div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</label>
                   <input
                     type="email"
-                    placeholder="Email"
+                    placeholder="faculty@sssit.com"
                     value={facultyForm.email}
                     onChange={(e) => setFacultyForm({ ...facultyForm, email: e.target.value })}
-                    className={`w-full p-2 border rounded ${facultyFormErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 ${facultyFormErrors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}
                     required
                   />
-                  {facultyFormErrors.email && (
-                    <p className="text-red-500 text-xs mt-1">{facultyFormErrors.email}</p>
-                  )}
+                  {facultyFormErrors.email && <p className="text-red-500 text-xs">{facultyFormErrors.email}</p>}
                 </div>
-                <div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">First Name</label>
                   <input
                     type="text"
-                    placeholder="First Name"
+                    placeholder="First name"
                     value={facultyForm.first_name}
                     onChange={(e) => setFacultyForm({ ...facultyForm, first_name: e.target.value })}
-                    className={`w-full p-2 border rounded ${facultyFormErrors.first_name ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 ${facultyFormErrors.first_name ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}
                     required
                   />
-                  {facultyFormErrors.first_name && (
-                    <p className="text-red-500 text-xs mt-1">{facultyFormErrors.first_name}</p>
-                  )}
+                  {facultyFormErrors.first_name && <p className="text-red-500 text-xs">{facultyFormErrors.first_name}</p>}
                 </div>
-                <div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Last Name</label>
                   <input
                     type="text"
-                    placeholder="Last Name"
+                    placeholder="Last name"
                     value={facultyForm.last_name}
                     onChange={(e) => setFacultyForm({ ...facultyForm, last_name: e.target.value })}
-                    className={`w-full p-2 border rounded ${facultyFormErrors.last_name ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 ${facultyFormErrors.last_name ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}
                     required
                   />
-                  {facultyFormErrors.last_name && (
-                    <p className="text-red-500 text-xs mt-1">{facultyFormErrors.last_name}</p>
-                  )}
+                  {facultyFormErrors.last_name && <p className="text-red-500 text-xs">{facultyFormErrors.last_name}</p>}
                 </div>
-                <div className="relative">
+                <div className="space-y-1 relative">
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Password</label>
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Password"
+                    placeholder="Min 6 characters"
                     value={facultyForm.password}
                     onChange={(e) => setFacultyForm({ ...facultyForm, password: e.target.value })}
-                    className={`w-full p-2 border rounded pr-10 ${facultyFormErrors.password ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 pr-10 ${facultyFormErrors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-white'}`}
                     required
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-8 text-gray-400 hover:text-gray-600">
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
-                  {facultyFormErrors.password && (
-                    <p className="text-red-500 text-xs mt-1">{facultyFormErrors.password}</p>
-                  )}
+                  {facultyFormErrors.password && <p className="text-red-500 text-xs">{facultyFormErrors.password}</p>}
                 </div>
-                <div className="flex space-x-2">
-                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                    Create
+                <div className="flex items-end gap-2 sm:col-span-1">
+                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                    Create Faculty
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowFacultyForm(false);
-                      setFacultyFormErrors({});
-                    }}
-                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                    onClick={() => { setShowFacultyForm(false); setFacultyFormErrors({}); }}
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
-                {facultyFormErrors.submit && (
-                  <p className="text-red-500 text-sm col-span-2">{facultyFormErrors.submit}</p>
-                )}
+                {facultyFormErrors.submit && <p className="text-red-500 text-sm sm:col-span-2">{facultyFormErrors.submit}</p>}
               </form>
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-100">
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="p-3 font-medium">Username</th>
-                  <th className="p-3 font-medium">Name</th>
-                  <th className="p-3 font-medium">Email</th>
-                  <th className="p-3 font-medium">Status</th>
-                  <th className="p-3 font-medium">Actions</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Username</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Name</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Email</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Status</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50">
                 {filteredFaculty.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-gray-500">
-                      {searchTerm || filterStatus !== "all" ? "No faculty found matching your criteria" : "No faculty accounts found"}
+                    <td colSpan="5" className="px-5 py-12 text-center text-gray-400">
+                      <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p className="font-medium">{searchTerm || filterStatus !== 'all' ? 'No faculty match your search' : 'No faculty accounts yet'}</p>
                     </td>
                   </tr>
                 ) : (
                   filteredFaculty.map((u) => (
-                    <tr key={u.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">{u.username}</td>
-                      <td className="p-3">{u.first_name} {u.last_name}</td>
-                      <td className="p-3">{u.email}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3.5 font-semibold text-gray-800">{u.username}</td>
+                      <td className="px-5 py-3.5 text-gray-700">{u.first_name} {u.last_name}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{u.email}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          u.is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-red-50 text-red-600 ring-1 ring-red-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${u.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => startEditUser(u)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                            title="Edit"
-                          >
-                            <Edit size={16} />
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEditUser(u)} aria-label="Edit faculty" className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit">
+                            <Edit size={15} />
                           </button>
-                          <button
-                            onClick={() => toggleUserStatus(u)}
-                            className={`p-1 rounded transition-colors ${u.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
-                              }`}
-                            title={u.is_active ? 'Block' : 'Unblock'}
-                          >
-                            {u.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                          <button onClick={() => toggleUserStatus(u)} aria-label={u.is_active ? 'Block faculty' : 'Unblock faculty'} className={`p-1.5 rounded-lg transition-colors ${u.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`} title={u.is_active ? 'Block' : 'Unblock'}>
+                            {u.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
                           </button>
-                          <button
-                            onClick={() => deleteUser(u.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
+                          <button onClick={() => deleteUser(u.id)} aria-label="Delete faculty" className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
@@ -836,61 +827,77 @@ function AdminPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="block sm:hidden divide-y divide-gray-100">
+            {filteredFaculty.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-medium">{searchTerm || filterStatus !== 'all' ? 'No faculty match your search' : 'No faculty accounts yet'}</p>
+              </div>
+            ) : (
+              filteredFaculty.map((u) => (
+                <div key={u.id} className="p-4 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      {u.first_name?.[0]}{u.last_name?.[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{u.first_name} {u.last_name}</p>
+                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      <span className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                      }`}>{u.is_active ? 'Active' : 'Inactive'}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEditUser(u)} aria-label="Edit" className="p-2 rounded-lg text-blue-600 hover:bg-blue-50"><Edit size={15} /></button>
+                    <button onClick={() => toggleUserStatus(u)} aria-label={u.is_active ? 'Block' : 'Unblock'} className={`p-2 rounded-lg ${u.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}>{u.is_active ? <UserX size={15} /> : <UserCheck size={15} />}</button>
+                    <button onClick={() => deleteUser(u.id)} aria-label="Delete" className="p-2 rounded-lg text-red-500 hover:bg-red-50"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
       {/* Student Management Tab */}
       {activeTab === "students" && (
-        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Student Accounts</h2>
-            <div className="flex items-center gap-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 sm:p-5 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Student Accounts</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{filteredStudents.length} record{filteredStudents.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => {
-                  setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "" });
+                  setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "" });
                   setShowFacultyForm(true);
                 }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm shadow-sm transition-colors"
               >
-                Create Student
-              </button>
-              <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
-                Import
+                + Create Student
               </button>
             </div>
           </div>
 
           {showFacultyForm && activeTab === 'students' && (
-            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-              <h3 className="text-lg font-medium mb-4">Create New Student</h3>
+            <div className="m-4 p-4 sm:p-5 border border-blue-100 rounded-xl bg-blue-50">
+              <h3 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">+</span>
+                Create New Student Account
+              </h3>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 try {
-                  // Validate required fields
-                  if (!facultyForm.username?.trim()) {
-                    showMessage('error', 'Username is required');
-                    return;
-                  }
-                  if (!facultyForm.email?.trim()) {
-                    showMessage('error', 'Email is required');
-                    return;
-                  }
-                  if (!facultyForm.password?.trim()) {
-                    showMessage('error', 'Password is required');
-                    return;
-                  }
-                  if (!facultyForm.first_name?.trim()) {
-                    showMessage('error', 'First name is required');
-                    return;
-                  }
-                  if (!facultyForm.last_name?.trim()) {
-                    showMessage('error', 'Last name is required');
-                    return;
-                  }
-                  if (!facultyForm.course_id || facultyForm.course_id === '') {
-                    showMessage('error', 'Please select a course');
-                    return;
-                  }
+                  if (!facultyForm.username?.trim()) { showMessage('error', 'Username is required'); return; }
+                  if (!facultyForm.email?.trim()) { showMessage('error', 'Email is required'); return; }
+                  if (!facultyForm.password?.trim()) { showMessage('error', 'Password is required'); return; }
+                  if (!facultyForm.first_name?.trim()) { showMessage('error', 'First name is required'); return; }
+                  if (!facultyForm.last_name?.trim()) { showMessage('error', 'Last name is required'); return; }
+                  if (!facultyForm.course_id || facultyForm.course_id === '') { showMessage('error', 'Please select a course'); return; }
 
                   const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/create-student/`, {
                     method: "POST",
@@ -906,17 +913,17 @@ function AdminPanel() {
                   } else {
                     showMessage('error', data.error || 'Failed to create student');
                   }
-                } catch (err) { 
+                } catch (err) {
                   console.error("Student creation error:", err);
-                  showMessage('error', 'Network error or invalid response'); 
+                  showMessage('error', 'Network error or invalid response');
                 }
-              }} className="grid grid-cols-2 gap-4">
+              }} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
                   type="text"
                   placeholder="Username"
                   value={facultyForm.username}
                   onChange={(e) => setFacultyForm({ ...facultyForm, username: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <input
@@ -924,7 +931,7 @@ function AdminPanel() {
                   placeholder="Student ID (Number)"
                   value={facultyForm.student_id || ''}
                   onChange={(e) => setFacultyForm({ ...facultyForm, student_id: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <input
@@ -932,7 +939,7 @@ function AdminPanel() {
                   placeholder="Email"
                   value={facultyForm.email}
                   onChange={(e) => setFacultyForm({ ...facultyForm, email: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <input
@@ -940,7 +947,7 @@ function AdminPanel() {
                   placeholder="First Name"
                   value={facultyForm.first_name}
                   onChange={(e) => setFacultyForm({ ...facultyForm, first_name: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <input
@@ -948,7 +955,7 @@ function AdminPanel() {
                   placeholder="Last Name"
                   value={facultyForm.last_name}
                   onChange={(e) => setFacultyForm({ ...facultyForm, last_name: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <input
@@ -956,13 +963,13 @@ function AdminPanel() {
                   placeholder="Password"
                   value={facultyForm.password}
                   onChange={(e) => setFacultyForm({ ...facultyForm, password: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
                 <select
                   value={facultyForm.course_id || ''}
                   onChange={(e) => setFacultyForm({ ...facultyForm, course_id: e.target.value })}
-                  className="p-2 border rounded"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
                   required
                 >
                   <option value="">Select Course</option>
@@ -970,14 +977,14 @@ function AdminPanel() {
                     <option key={course.id} value={course.id}>{course.title}</option>
                   ))}
                 </select>
-                <div className="flex space-x-2">
-                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                    Create
+                <div className="flex gap-2 sm:col-span-1">
+                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">
+                    Create Student
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowFacultyForm(false)}
-                    className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -986,61 +993,64 @@ function AdminPanel() {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-100">
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="p-3 font-medium">Student ID</th>
-                  <th className="p-3 font-medium">Name</th>
-                  <th className="p-3 font-medium">Email</th>
-                  <th className="p-3 font-medium">Course</th>
-                  <th className="p-3 font-medium">Status</th>
-                  <th className="p-3 font-medium">Actions</th>
+                  <th 
+                    className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide cursor-pointer hover:bg-gray-100 select-none transition-colors"
+                    onClick={() => setStudentSortOrder(prev => prev === "asc" ? "desc" : "asc")}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      Student ID
+                      {studentSortOrder === "asc" ? (
+                        <ChevronUp size={14} className="text-gray-500" />
+                      ) : (
+                        <ChevronDown size={14} className="text-gray-500" />
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Name</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Email</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Course</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Status</th>
+                  <th className="px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-gray-500">
-                      {searchTerm || filterStatus !== "all" ? "No students found matching your criteria" : "No student accounts found"}
+                    <td colSpan="6" className="px-5 py-12 text-center text-gray-400">
+                      <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p className="font-medium">{searchTerm || filterStatus !== 'all' ? 'No students match your search' : 'No student accounts yet'}</p>
                     </td>
                   </tr>
                 ) : (
                   filteredStudents.map((s) => (
-                    <tr key={s.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-medium">{s.studentprofile?.student_id || `STU${s.id}`}</td>
-                      <td className="p-3">{s.first_name} {s.last_name}</td>
-                      <td className="p-3">{s.email}</td>
-                      <td className="p-3">{s.studentprofile?.course?.title || 'Not assigned'}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${s.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-5 py-3.5 font-semibold text-gray-800">{s.studentprofile?.student_id || `STU${s.id}`}</td>
+                      <td className="px-5 py-3.5 text-gray-700 font-medium">{s.first_name} {s.last_name}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{s.email}</td>
+                      <td className="px-5 py-3.5 text-gray-600 text-xs">{s.studentprofile?.course?.title || 'Not assigned'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          s.is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-red-50 text-red-600 ring-1 ring-red-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${s.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                           {s.is_active ? 'Active' : 'Blocked'}
                         </span>
                       </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => startEditUser(s)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                            title="Edit"
-                          >
-                            <Edit size={16} />
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEditUser(s)} aria-label="Edit student" className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Edit">
+                            <Edit size={15} />
                           </button>
-                          <button
-                            onClick={() => toggleUserStatus(s)}
-                            className={`p-1 rounded transition-colors ${s.is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'
-                              }`}
-                            title={s.is_active ? 'Block' : 'Unblock'}
-                          >
-                            {s.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                          <button onClick={() => toggleUserStatus(s)} aria-label={s.is_active ? 'Block student' : 'Unblock student'} className={`p-1.5 rounded-lg transition-colors ${s.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`} title={s.is_active ? 'Block' : 'Unblock'}>
+                            {s.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
                           </button>
-                          <button
-                            onClick={() => deleteUser(s.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
+                          <button onClick={() => deleteUser(s.id)} aria-label="Delete student" className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                            <Trash2 size={15} />
                           </button>
                         </div>
                       </td>
@@ -1050,88 +1060,125 @@ function AdminPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <div className="block sm:hidden divide-y divide-gray-100">
+            {filteredStudents.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-medium">{searchTerm || filterStatus !== 'all' ? 'No students match your search' : 'No student accounts yet'}</p>
+              </div>
+            ) : (
+              filteredStudents.map((s) => (
+                <div key={s.id} className="p-4 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      {s.first_name?.[0]}{s.last_name?.[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{s.first_name} {s.last_name}</p>
+                      <p className="text-xs text-gray-500 truncate">{s.email}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{s.studentprofile?.course?.title || 'No course'}</p>
+                      <div className="flex gap-1.5 mt-1 items-center">
+                        <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">ID: {s.studentprofile?.student_id || s.id}</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          s.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                        }`}>{s.is_active ? 'Active' : 'Blocked'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEditUser(s)} aria-label="Edit" className="p-2 rounded-lg text-blue-600 hover:bg-blue-50"><Edit size={15} /></button>
+                    <button onClick={() => toggleUserStatus(s)} aria-label={s.is_active ? 'Block' : 'Unblock'} className={`p-2 rounded-lg ${s.is_active ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}>{s.is_active ? <UserX size={15} /> : <UserCheck size={15} />}</button>
+                    <button onClick={() => deleteUser(s.id)} aria-label="Delete" className="p-2 rounded-lg text-red-500 hover:bg-red-50"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
       {/* Edit User Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
-              <h3 className="text-lg font-bold">Edit {editUser?.role?.charAt(0).toUpperCase() + editUser?.role?.slice(1)}</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white flex justify-between items-center">
+              <h3 className="text-base sm:text-lg font-bold">Edit {editUser?.role?.charAt(0).toUpperCase() + editUser?.role?.slice(1)} Profile</h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="hover:bg-blue-700 p-1 rounded-full transition"
+                className="hover:bg-white/20 p-1.5 rounded-full transition-colors"
+                aria-label="Close modal"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleUpdateUser} className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">First Name</label>
+                  <label className="text-xs font-semibold text-gray-600">First Name</label>
                   <input
                     type="text"
                     value={editFormData.first_name}
                     onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Last Name</label>
+                  <label className="text-xs font-semibold text-gray-600">Last Name</label>
                   <input
                     type="text"
                     value={editFormData.last_name}
                     onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Username / Login ID</label>
+                  <label className="text-xs font-semibold text-gray-600">Username / Login ID</label>
                   <input
                     type="text"
                     value={editFormData.username}
                     onChange={(e) => setEditFormData({ ...editFormData, username: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Email Address</label>
+                  <label className="text-xs font-semibold text-gray-600">Email Address</label>
                   <input
                     type="email"
                     value={editFormData.email}
                     onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     required
                   />
                 </div>
               </div>
 
               {editUser?.role === 'student' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Student ID (Numeric)</label>
+                    <label className="text-xs font-semibold text-gray-600">Student ID (Numeric)</label>
                     <input
                       type="text"
                       value={editFormData.student_id}
                       onChange={(e) => setEditFormData({ ...editFormData, student_id: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       placeholder="e.g. 46732"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Enrolled Course</label>
+                    <label className="text-xs font-semibold text-gray-600">Enrolled Course</label>
                     <select
                       value={editFormData.course_id}
                       onChange={(e) => setEditFormData({ ...editFormData, course_id: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                     >
                       <option value="">Select Course</option>
                       {availableCourses.map(course => (
@@ -1143,21 +1190,21 @@ function AdminPanel() {
               )}
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">New Password (leave blank to keep current)</label>
+                <label className="text-xs font-semibold text-gray-600">New Password (leave blank to keep current)</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={editFormData.password}
                     onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                    className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none pr-10"
                     placeholder="Enter new password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -1170,20 +1217,20 @@ function AdminPanel() {
                   onChange={(e) => setEditFormData({ ...editFormData, is_active: e.target.checked })}
                   className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="edit_active" className="text-sm font-medium text-gray-700">Account Active</label>
+                <label htmlFor="edit_active" className="text-sm font-semibold text-gray-700 select-none">Account Active</label>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition"
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 font-semibold text-sm transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md shadow-blue-100 transition"
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-md shadow-blue-100 transition-colors"
                 >
                   Save Changes
                 </button>

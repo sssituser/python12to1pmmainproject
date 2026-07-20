@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 const API = `http://${window.location.hostname}:8000/api`;
 
@@ -40,6 +41,10 @@ const Tag = ({ text, color = "indigo" }) => {
 };
 
 export default function AIResumeAnalyzer() {
+  useSEO(
+    "AI Resume Analyzer",
+    "Analyze your resume using SSSIT AI services. Get score feedback, keyword recommendations, and alignment suggestions."
+  );
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);

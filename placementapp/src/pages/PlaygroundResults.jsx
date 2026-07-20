@@ -13,13 +13,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSEO } from "../utils/useSEO";
 
 const PlaygroundResults = () => {
+  useSEO(
+    "Playground Performance & Results",
+    "View your playground coding challenge results and practice history at SSSIT Computer Education."
+  );
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const navigate = useNavigate();
+
 
   const userStr = localStorage.getItem("user");
   const user = userStr && userStr !== "undefined" ? JSON.parse(userStr) : {};
@@ -136,19 +142,21 @@ const PlaygroundResults = () => {
       });
     } catch (e) { return dateStr || "N/A"; }
   };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8">
       {/* Header Section */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-              Performance <span className="text-blue-600">Analytics</span>
-            </h1>
-            <p className="text-slate-500 font-medium text-sm">
-              Detailed history of your programming assessments and exams.
-            </p>
+          <div className="flex items-center gap-4">
+            <img src="/sssit-logo.png" alt="SSSIT Logo" className="w-12 h-12 object-contain" />
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">
+                SSSIT <span className="text-blue-600">Analytics</span>
+              </h1>
+              <p className="text-slate-500 font-medium text-xs uppercase tracking-wider">
+                SSSIT Computer Education — Playground Performance & Exam History
+              </p>
+            </div>
           </div>
           <button 
             onClick={() => navigate("/dashboard/playground")}
@@ -159,6 +167,7 @@ const PlaygroundResults = () => {
           </button>
         </div>
       </div>
+
 
       {/* Stats Overview */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">

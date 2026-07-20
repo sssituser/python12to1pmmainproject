@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BarChart3, TrendingUp, Users, Activity, Calendar, Download, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
+import { useSEO } from "../utils/useSEO";
 
 const AdminAnalytics = () => {
+  useSEO("Admin Analytics Dashboard", "Monitor and analyze student performance, placement statistics, and user registration history on the SSSIT Admin Panel.");
+
   const [stats, setStats] = useState({
     total_users: 0,
     total_students: 0,

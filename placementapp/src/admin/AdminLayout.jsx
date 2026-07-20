@@ -135,8 +135,9 @@ function AdminLayout() {
       >
         {/* TOP SECTION (Header + Menu) */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="h-16 flex items-center px-4 text-white font-semibold border-b border-slate-700 shrink-0">
-            {open ? "Admin Panel" : "AP"}
+          <div className="h-16 flex items-center gap-3 px-4 text-white font-semibold border-b border-slate-700 shrink-0">
+            <img src="/sssit-logo.png" alt="SSSIT Logo" className="w-8 h-8 object-contain" />
+            {open && <span className="tracking-tight text-sm uppercase font-black text-blue-400">SSSIT Admin</span>}
           </div>
 
           {/* MENU (Scrollable) */}
@@ -145,6 +146,7 @@ function AdminLayout() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `${linkClass} ${
                     isActive

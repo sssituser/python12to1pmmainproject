@@ -131,6 +131,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* PROFILE */}
           <NavLink
             to="/dashboard/profile"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -146,6 +147,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* EXAMS HUB */}
           <NavLink
             to="/dashboard/exams"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -182,6 +184,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/alljobs"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <Folder size={14} />
@@ -190,6 +193,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/appliedjobs"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-800 hover:text-white"
                 >
                   <CheckCircle size={14} />
@@ -203,6 +207,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* COURSE */}
           <NavLink
             to="/dashboard/course"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -218,6 +223,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* REPORTS */}
           <NavLink
             to="/dashboard/exam-reports"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -233,6 +239,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* LEADERBOARD */}
           <NavLink
             to="/dashboard/exam-leaderboard"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive
@@ -269,6 +276,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/playground"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive
@@ -283,6 +291,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/exams"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive
@@ -297,6 +306,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/playground-results"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive
@@ -335,6 +345,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
               <div className="ml-6 mt-2 space-y-1 text-sm">
                 <NavLink
                   to="/dashboard/ai/resume"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
@@ -347,6 +358,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/ai/jobs"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
@@ -359,6 +371,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
                 <NavLink
                   to="/dashboard/ai/chat"
+                  onClick={() => setSidebarOpen && setSidebarOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-2 px-2 py-1 rounded transition ${
                       isActive ? "bg-indigo-600 text-white" : "hover:bg-slate-800 hover:text-white"
@@ -375,6 +388,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* LEAVE */}
           <NavLink
             to="/dashboard/leave-request"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
             className={({ isActive }) =>
               `${linkClass} ${
                 isActive

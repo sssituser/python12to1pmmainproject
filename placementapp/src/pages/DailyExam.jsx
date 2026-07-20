@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CodeCompiler from "../components/CodeCompiler";
 import axios from "axios";
+import { useSEO } from "../utils/useSEO";
 
 
 
@@ -17,6 +18,12 @@ const DailyExam = () => {
   const subjectKey = (subject || "python").toLowerCase();
   const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1).replace(/_/g, " ") : "Assessment";
   const navigate = useNavigate();
+
+  useSEO(
+    `${subjectName} Daily Exam`,
+    `Take your online assessment for ${subjectName} at SSSIT Computer Education. Challenge yourself and track your performance.`
+  );
+
 
   const violationStartTimeRef = useRef(null);
   const cleanTimeoutRef = useRef(null);

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Settings, Shield, Bell, Database, Globe, Users, Lock, Mail, Smartphone, Save, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { useSEO } from "../utils/useSEO";
 
 const AdminSettings = () => {
+  useSEO("Admin Settings", "Configure application options, SMTP details, backup frequency, and safety options inside the SSSIT Admin Panel.");
+
   const [settings, setSettings] = useState({
     system: {
       siteName: "Placement Portal",
