@@ -86,17 +86,32 @@ function AdminPanel() {
     last_name: "",
     password: "",
     student_id: "",
-    course_id: ""
+    course_id: "",
+    batch_id: ""
   });
 
   const [showFacultyForm, setShowFacultyForm] = useState(false);
   const [facultyFormErrors, setFacultyFormErrors] = useState({});
   const [editingFaculty, setEditingFaculty] = useState(null);
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
     fetchUsers();
     fetchCourses();
+    fetchBatches();
   }, []);
+
+  const fetchBatches = async () => {
+    try {
+      const response = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/batches/`);
+      if (response.ok) {
+        const data = await response.json();
+        setBatches(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch batches:", error);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -873,7 +888,7 @@ function AdminPanel() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => {
-                  setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "" });
+                  setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "", batch_id: "" });
                   setShowFacultyForm(true);
                 }}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-sm shadow-sm transition-colors"
@@ -907,7 +922,7 @@ function AdminPanel() {
                   const data = await response.json();
                   if (response.ok) {
                     setShowFacultyForm(false);
-                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "" });
+                    setFacultyForm({ username: "", email: "", first_name: "", last_name: "", password: "", student_id: "", course_id: "", batch_id: "" });
                     fetchUsers();
                     showMessage('success', 'Student created successfully!');
                   } else {
@@ -968,7 +983,7 @@ function AdminPanel() {
                 />
                 <select
                   value={facultyForm.course_id || ''}
-                  onChange={(e) => setFacultyForm({ ...facultyForm, course_id: e.target.value })}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, course_id: e.target.value, batch_id: "" })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
                   required
                 >
@@ -976,6 +991,19 @@ function AdminPanel() {
                   {availableCourses.map(course => (
                     <option key={course.id} value={course.id}>{course.title}</option>
                   ))}
+                </select>
+                <select
+                  value={facultyForm.batch_id || ''}
+                  onChange={(e) => setFacultyForm({ ...facultyForm, batch_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                >
+                  <option value="">Select Batch (Optional)</option>
+                  {batches
+                    .filter(b => b.course_id === parseInt(facultyForm.course_id))
+                    .map(b => (
+                      <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                    ))
+                  }
                 </select>
                 <div className="flex gap-2 sm:col-span-1">
                   <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors">

@@ -144,6 +144,261 @@ function CoursesPage() {
 
   const [newCourseName, setNewCourseName] = useState('');
 
+  const [batches, setBatches] = useState([]);
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [batchResources, setBatchResources] = useState([]);
+  const [activeTab, setActiveTab] = useState("curriculum");
+  const [resTitle, setResTitle] = useState("");
+  const [resType, setResType] = useState("video");
+  const [resUrl, setResUrl] = useState("");
+
+  const [studentsList, setStudentsList] = useState([]);
+  const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [reportData, setReportData] = useState(null);
+  
+  // Assignment Creator form states
+  const [assignTitle, setAssignTitle] = useState("");
+  const [assignDesc, setAssignDesc] = useState("");
+  const [assignFileUrl, setAssignFileUrl] = useState("");
+  const [assignDueDate, setAssignDueDate] = useState("");
+
+  // Assignment Evaluation Form states
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState("");
+  const [evalGrade, setEvalGrade] = useState("");
+  const [evalFeedback, setEvalFeedback] = useState("");
+
+  const getStoredToken = (key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? raw.replace(/^"|\"$/g, "") : null;
+  };
+
+  // Fetch students in selected batch
+  useEffect(() => {
+    if (!selectedBatchId) {
+      setStudentsList([]);
+      return;
+    }
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/batches/${selectedBatchId}/students/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data) {
+        setStudentsList(res.data.students || res.data.data || (Array.isArray(res.data) ? res.data : []));
+      }
+    })
+    .catch(err => console.error("Error loading students:", err));
+  }, [selectedBatchId]);
+
+  // Fetch attendance records for selected batch and date
+  const fetchAttendance = () => {
+    if (!selectedBatchId) return;
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/attendance/${selectedBatchId}/?date=${attendanceDate}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.records) {
+        setAttendanceRecords(res.data.records);
+      }
+    })
+    .catch(err => console.error("Error fetching attendance:", err));
+  };
+
+  useEffect(() => {
+    fetchAttendance();
+  }, [selectedBatchId, attendanceDate]);
+
+  // Save/mark bulk attendance
+  const handleMarkAttendance = () => {
+    if (!selectedBatchId || attendanceRecords.length === 0) return;
+    const token = getStoredToken("access");
+    const payload = {
+      batch_id: selectedBatchId,
+      date: attendanceDate,
+      records: attendanceRecords.map(r => ({
+        student_id: r.student_id,
+        status: r.status,
+        remarks: r.remarks || ""
+      }))
+    };
+    axios.post(`http://${window.location.hostname}:8000/api/attendance/mark/`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        fetchAttendance();
+      }
+    })
+    .catch(err => console.error("Error marking attendance:", err));
+  };
+
+  // Fetch assignments
+  const fetchAssignments = () => {
+    if (!selectedBatchId) return;
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${selectedBatchId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        setAssignments(res.data.data);
+      }
+    })
+    .catch(err => console.error("Error fetching assignments:", err));
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [selectedBatchId]);
+
+  // Create Assignment
+  const handleCreateAssignment = () => {
+    if (!selectedBatchId || !assignTitle.trim() || !assignDueDate) return;
+    const token = getStoredToken("access");
+    const payload = {
+      batch: selectedBatchId,
+      title: assignTitle,
+      description: assignDesc,
+      file_url: assignFileUrl,
+      due_date: assignDueDate
+    };
+    axios.post(`http://${window.location.hostname}:8000/api/assignments/create/`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        setAssignments(prev => [res.data.data, ...prev]);
+        setAssignTitle("");
+        setAssignDesc("");
+        setAssignFileUrl("");
+        setAssignDueDate("");
+      }
+    })
+    .catch(err => console.error("Error creating assignment:", err));
+  };
+
+  // Submit evaluation/grading
+  const handleEvaluateSubmission = () => {
+    if (!selectedSubmissionId || !evalGrade.trim()) return;
+    const token = getStoredToken("access");
+    const payload = {
+      submission_id: selectedSubmissionId,
+      grade: evalGrade,
+      feedback: evalFeedback
+    };
+    axios.post(`http://${window.location.hostname}:8000/api/assignments/evaluate/`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        fetchAssignments(); // Reload assignments and their submissions
+        setSelectedSubmissionId("");
+        setEvalGrade("");
+        setEvalFeedback("");
+      }
+    })
+    .catch(err => console.error("Error evaluating submission:", err));
+  };
+
+  // Fetch batch report data
+  useEffect(() => {
+    if (!selectedBatchId) {
+      setReportData(null);
+      return;
+    }
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/batches/${selectedBatchId}/report/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        setReportData(res.data.data);
+      }
+    })
+    .catch(err => console.error("Error loading batch report:", err));
+  }, [selectedBatchId, activeTab]);
+
+  useEffect(() => {
+    if (!selectedCourse) {
+      setBatches([]);
+      setSelectedBatchId("");
+      setBatchResources([]);
+      return;
+    }
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/batches/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data) {
+        const data = res.data.data || res.data;
+        const filtered = Array.isArray(data) ? data.filter(b => b.course_id === selectedCourse.id) : [];
+        setBatches(filtered);
+        if (filtered.length > 0) {
+          setSelectedBatchId(filtered[0].id);
+        }
+      }
+    })
+    .catch(err => console.error("Error loading batches:", err));
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    if (!selectedBatchId) {
+      setBatchResources([]);
+      return;
+    }
+    const token = getStoredToken("access");
+    axios.get(`http://${window.location.hostname}:8000/api/batches/${selectedBatchId}/resources/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.data) {
+        setBatchResources(res.data.data);
+      }
+    })
+    .catch(err => console.error("Error fetching batch resources:", err));
+  }, [selectedBatchId]);
+
+  const handleCreateResource = () => {
+    if (!selectedBatchId || !resTitle.trim() || !resUrl.trim()) return;
+    const token = getStoredToken("access");
+    const payload = {
+      batch: selectedBatchId,
+      title: resTitle,
+      resource_type: resType,
+      file_url: resType !== 'video' ? resUrl : null,
+      video_url: resType === 'video' ? resUrl : null,
+    };
+    axios.post(`http://${window.location.hostname}:8000/api/batches/resources/create/`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        setBatchResources(prev => [res.data.data, ...prev]);
+        setResTitle("");
+        setResUrl("");
+      }
+    })
+    .catch(err => console.error("Error adding resource:", err));
+  };
+
+  const handleDeleteResource = (resourceId) => {
+    const token = getStoredToken("access");
+    axios.delete(`http://${window.location.hostname}:8000/api/batches/resources/${resourceId}/delete/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        setBatchResources(prev => prev.filter(r => r.id !== resourceId));
+      }
+    })
+    .catch(err => console.error("Error deleting resource:", err));
+  };
+
   // Disable auto-generation preview
 
   useEffect(() => {
@@ -1736,16 +1991,59 @@ function CoursesPage() {
             {!playingTopic ? (
                /* MAIN DASHBOARD SCREENS */
                <>
-                 <div className="flex justify-end items-center px-8 py-6 bg-white border-b border-gray-100">
-                   <button
-                     onClick={handleBackToTopics}
-                     className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold text-lg transition-all active:scale-95 group"
-                   >
-                     <span className="text-xl transition-transform group-hover:-translate-x-1">←</span> Back to Course Dashboard
-                   </button>
-                 </div>
+                  <div className="flex flex-col gap-4 p-6 bg-white border-b border-gray-100">
+                    <div className="flex justify-between items-center w-full">
+                      {/* Batch Selector Dropdown */}
+                      <div className="flex items-center gap-3">
+                        <label className="text-xs font-black uppercase tracking-wider text-slate-500">Batch:</label>
+                        <select
+                          value={selectedBatchId}
+                          onChange={e => setSelectedBatchId(e.target.value)}
+                          className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-slate-800 font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        >
+                          {batches.map(b => (
+                            <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                          ))}
+                        </select>
+                      </div>
 
-                 {!selectedSubject ? (
+                      <button
+                        onClick={handleBackToTopics}
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold text-sm transition-all active:scale-95 group"
+                      >
+                        <span className="text-base transition-transform group-hover:-translate-x-1">←</span> Back to Courses
+                      </button>
+                    </div>
+
+                    {/* Tab Navigation buttons */}
+                    {!selectedSubject && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {[
+                          { id: "curriculum", label: "📖 Curriculum" },
+                          { id: "students", label: "👥 Students" },
+                          { id: "attendance", label: "📅 Attendance" },
+                          { id: "assignments", label: "📝 Assignments" },
+                          { id: "batch-resources", label: "📂 Upload Notes" },
+                          { id: "leaderboard", label: "🏆 Leaderboard" },
+                          { id: "reports", label: "📊 Reports" }
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id)}
+                            className={`py-2 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                              activeTab === t.id
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {!selectedSubject && activeTab === "curriculum" ? (
               /* SCREEN 1: ADD SUBJECT PAGE */
               <div className="bg-white min-h-[calc(100vh-84px)] w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="bg-blue-600 text-white px-8 py-6 shadow-sm">
@@ -1818,6 +2116,487 @@ function CoursesPage() {
                     </div>
                   </div>
                 </div>
+              ) : !selectedSubject && activeTab === "students" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="border-b border-gray-100 pb-4">
+                      <h2 className="text-xl font-bold text-slate-800">Enrolled Students ({studentsList.length})</h2>
+                      <p className="text-xs text-gray-400 mt-1">List of all active students assigned to this batch.</p>
+                    </div>
+
+                    {studentsList.length === 0 ? (
+                      <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                        <p className="text-base font-bold">No students registered in this batch yet.</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden border border-gray-100 rounded-2xl shadow-sm">
+                        <table className="w-full text-left border-collapse bg-white">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                              <th className="px-6 py-4">Username</th>
+                              <th className="px-6 py-4">Email</th>
+                              <th className="px-6 py-4">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+                            {studentsList.map(st => (
+                              <tr key={st.user_id || st.id} className="hover:bg-gray-50/50">
+                                <td className="px-6 py-4 font-bold">{st.username}</td>
+                                <td className="px-6 py-4">{st.email}</td>
+                                <td className="px-6 py-4">
+                                  <span className="bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold uppercase">Active</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+              ) : !selectedSubject && activeTab === "attendance" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 pb-4 gap-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-800">Proctored Batch Attendance</h2>
+                        <p className="text-xs text-gray-400 mt-1">Mark daily present or absent status for batch members.</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Select Date:</label>
+                        <input
+                          type="date"
+                          value={attendanceDate}
+                          onChange={e => setAttendanceDate(e.target.value)}
+                          className="border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {attendanceRecords.length === 0 ? (
+                      <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                        <p className="text-base font-bold">No attendance records found or no students in this batch.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="overflow-hidden border border-gray-100 rounded-2xl shadow-sm">
+                          <table className="w-full text-left border-collapse bg-white">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-4">Student</th>
+                                <th className="px-6 py-4">Status</th>
+                                <th className="px-6 py-4">Remarks</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+                              {attendanceRecords.map((r, idx) => (
+                                <tr key={r.student_id} className="hover:bg-gray-50/50">
+                                  <td className="px-6 py-4 font-bold">{r.username}</td>
+                                  <td className="px-6 py-4">
+                                    <select
+                                      value={r.status}
+                                      onChange={e => {
+                                        const updated = [...attendanceRecords];
+                                        updated[idx].status = e.target.value;
+                                        setAttendanceRecords(updated);
+                                      }}
+                                      className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-bold cursor-pointer outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                      <option value="Present">✅ Present</option>
+                                      <option value="Absent">❌ Absent</option>
+                                      <option value="Late">⏰ Late</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <input
+                                      type="text"
+                                      value={r.remarks || ""}
+                                      onChange={e => {
+                                        const updated = [...attendanceRecords];
+                                        updated[idx].remarks = e.target.value;
+                                        setAttendanceRecords(updated);
+                                      }}
+                                      placeholder="Add remarks..."
+                                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            onClick={handleMarkAttendance}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition shadow-md active:scale-95"
+                          >
+                            Save Attendance Sheet
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+              ) : !selectedSubject && activeTab === "assignments" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="border-b border-gray-100 pb-4">
+                      <h2 className="text-xl font-bold text-slate-800">Assignments & Evaluation</h2>
+                      <p className="text-xs text-gray-400 mt-1">Deploy batch assignments and evaluate student submissions.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Assignment Creator Form */}
+                      <div className="bg-gray-50/50 border border-gray-200 rounded-3xl p-6 space-y-4 h-fit">
+                        <h3 className="font-extrabold text-slate-800 text-base border-b border-gray-200 pb-2">➕ New Assignment</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              value={assignTitle}
+                              onChange={e => setAssignTitle(e.target.value)}
+                              placeholder="Assignment Title"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                            <textarea
+                              className="w-full px-4 py-2 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
+                              value={assignDesc}
+                              onChange={e => setAssignDesc(e.target.value)}
+                              placeholder="Describe assignment criteria..."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date</label>
+                            <input
+                              type="datetime-local"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              value={assignDueDate}
+                              onChange={e => setAssignDueDate(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Reference File URL</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              value={assignFileUrl}
+                              onChange={e => setAssignFileUrl(e.target.value)}
+                              placeholder="https://drive.google.com/...pdf"
+                            />
+                          </div>
+                          <button
+                            onClick={handleCreateAssignment}
+                            disabled={!assignTitle.trim() || !assignDueDate}
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition shadow"
+                          >
+                            Publish Assignment
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* List & Evaluations */}
+                      <div className="lg:col-span-2 space-y-6">
+                        {/* List of Assignments */}
+                        <div className="bg-white border border-gray-200 rounded-3xl p-6 space-y-4">
+                          <h3 className="font-extrabold text-slate-800 text-base border-b border-gray-200 pb-2">Active Assignments ({assignments.length})</h3>
+                          {assignments.length === 0 ? (
+                            <p className="text-sm text-gray-400 py-4 text-center">No assignments published yet.</p>
+                          ) : (
+                            <div className="space-y-4">
+                              {assignments.map(asg => (
+                                <div key={asg.id} className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-2">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h4 className="font-bold text-gray-900 text-sm">{asg.title}</h4>
+                                      <p className="text-xs text-gray-500 mt-0.5">{asg.description}</p>
+                                      <p className="text-[10px] text-red-500 font-bold mt-1">Due: {new Date(asg.due_date).toLocaleString()}</p>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedAssignmentId(asg.id);
+                                      }}
+                                      className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-xl font-bold transition"
+                                    >
+                                      View Submissions ({asg.submissions ? asg.submissions.length : 0})
+                                    </button>
+                                  </div>
+
+                                  {/* Submissions list for selected assignment */}
+                                  {selectedAssignmentId === asg.id && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                                      <h5 className="font-extrabold text-xs text-gray-600">Student Submissions</h5>
+                                      {(!asg.submissions || asg.submissions.length === 0) ? (
+                                        <p className="text-xs text-gray-400">No submissions uploaded yet.</p>
+                                      ) : (
+                                        <div className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100 p-3 space-y-2">
+                                          {asg.submissions.map(sub => (
+                                            <div key={sub.id} className="py-2.5 flex justify-between items-center text-xs">
+                                              <div>
+                                                <p className="font-bold text-gray-800">{sub.student_name}</p>
+                                                <p className="text-[10px] text-gray-400">Submitted: {new Date(sub.submitted_at).toLocaleString()}</p>
+                                                <a href={sub.submitted_file_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline mt-1 block">Open Solution File</a>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                {sub.grade ? (
+                                                  <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-lg font-bold border border-green-200">Grade: {sub.grade}</span>
+                                                ) : (
+                                                  <button
+                                                    onClick={() => {
+                                                      setSelectedSubmissionId(sub.id);
+                                                    }}
+                                                    className="bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-xl font-bold border border-yellow-200 hover:bg-yellow-100 transition"
+                                                  >
+                                                    Evaluate Grade
+                                                  </button>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Evaluation Modal/Form */}
+                        {selectedSubmissionId && (
+                          <div className="bg-yellow-50/50 border border-yellow-200 rounded-3xl p-6 space-y-4">
+                            <h3 className="font-extrabold text-yellow-800 text-base">📝 Grade Submission</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-bold text-yellow-700 uppercase mb-1">Grade (A/B/C/Marks)</label>
+                                <input
+                                  type="text"
+                                  className="w-full px-4 py-2 border border-yellow-300 rounded-xl text-xs focus:outline-none bg-white"
+                                  value={evalGrade}
+                                  onChange={e => setEvalGrade(e.target.value)}
+                                  placeholder="Ex: A+, 85/100"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-yellow-700 uppercase mb-1">Feedback Remarks</label>
+                                <textarea
+                                  className="w-full px-4 py-2 border border-yellow-300 rounded-xl text-xs focus:outline-none bg-white h-16 resize-none"
+                                  value={evalFeedback}
+                                  onChange={e => setEvalFeedback(e.target.value)}
+                                  placeholder="Add constructive comments..."
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleEvaluateSubmission}
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-xl transition"
+                                >
+                                  Submit Grade
+                                </button>
+                                <button
+                                  onClick={() => setSelectedSubmissionId("")}
+                                  className="bg-white text-gray-500 border border-gray-300 px-4 py-2.5 rounded-xl text-xs transition"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+              ) : !selectedSubject && activeTab === "batch-resources" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-xl font-bold uppercase tracking-wider">Manage Batch Recordings & Handouts</h2>
+                        <p className="text-xs text-blue-100 mt-1">Upload study materials, notes, and recorded lectures scoped to specific course batches.</p>
+                      </div>
+                    </div>
+
+                    {/* Add Resource Form & List Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Left: Add Resource Form */}
+                      <div className="bg-gray-50/50 border border-gray-200 rounded-3xl p-6 space-y-4">
+                        <h3 className="font-extrabold text-slate-800 text-base border-b border-gray-200 pb-2">➕ Upload New Resource</h3>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Resource Title</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              value={resTitle}
+                              onChange={e => setResTitle(e.target.value)}
+                              placeholder="Ex: Session 1 Python Basics"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Resource Type</label>
+                            <select
+                              value={resType}
+                              onChange={e => setResType(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"
+                            >
+                              <option value="video">🎥 Video Recording</option>
+                              <option value="material">📂 Study Material / PDF</option>
+                              <option value="notes">📝 Class Notes / Slides</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Resource Link / URL</label>
+                            <input
+                              type="text"
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              value={resUrl}
+                              onChange={e => setResUrl(e.target.value)}
+                              placeholder={resType === 'video' ? "Paste Zoom/YouTube recording link" : "Paste PDF file URL"}
+                            />
+                          </div>
+
+                          <button
+                            onClick={handleCreateResource}
+                            disabled={!resTitle.trim() || !resUrl.trim()}
+                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-md active:scale-95"
+                          >
+                            Add Resource
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right: Uploaded resources list */}
+                      <div className="lg:col-span-2 bg-white border border-gray-200 rounded-3xl p-6 space-y-4">
+                        <h3 className="font-extrabold text-slate-800 text-base border-b border-gray-200 pb-2">📂 Uploaded Resources ({batchResources.length})</h3>
+
+                        {batchResources.length === 0 ? (
+                          <p className="text-sm text-gray-400 py-8 text-center border border-dashed border-gray-100 rounded-2xl">No resources uploaded for this batch yet.</p>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            {batchResources.map(res => (
+                              <div key={res.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-gray-800 text-sm">{res.title}</span>
+                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                                      res.resource_type === 'video' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {res.resource_type}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-400 mt-1 truncate max-w-sm md:max-w-md">
+                                    Link: <a href={res.resource_type === 'video' ? res.video_url : res.file_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">{res.resource_type === 'video' ? res.video_url : res.file_url}</a>
+                                  </p>
+                                </div>
+
+                                <button
+                                  onClick={() => handleDeleteResource(res.id)}
+                                  className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition"
+                                >
+                                  <FaTrash className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+              ) : !selectedSubject && activeTab === "leaderboard" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="border-b border-gray-100 pb-4">
+                      <h2 className="text-xl font-bold text-slate-800">🏆 Batch Leaderboard</h2>
+                      <p className="text-xs text-gray-400 mt-1">Leaderboard based on cumulative marks from all batch exams.</p>
+                    </div>
+
+                    {!reportData || !reportData.top_students || reportData.top_students.length === 0 ? (
+                      <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                        <p className="text-base font-bold">No exam attempts recorded in this batch yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 max-w-3xl">
+                        {reportData.top_students.map((st, idx) => (
+                          <div key={st.id} className="p-4 bg-gray-50/50 hover:bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm transition">
+                            <div className="flex items-center gap-4">
+                              <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                idx === 0 ? 'bg-yellow-400 text-white shadow' :
+                                idx === 1 ? 'bg-slate-300 text-white shadow' :
+                                idx === 2 ? 'bg-amber-600 text-white shadow' : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {idx + 1}
+                              </span>
+                              <div>
+                                <h4 className="font-bold text-gray-800 text-sm">{st.username}</h4>
+                                <p className="text-[10px] text-gray-400">{st.email}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-blue-600 font-extrabold text-sm">{st.total_score} Pts</span>
+                              <p className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">Total Score</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+              ) : !selectedSubject && activeTab === "reports" ? (
+                  <div className="bg-white min-h-[calc(100vh-84px)] w-full p-8 animate-fadeIn space-y-6">
+                    <div className="border-b border-gray-100 pb-4">
+                      <h2 className="text-xl font-bold text-slate-800">📊 Batch Performance Report</h2>
+                      <p className="text-xs text-gray-400 mt-1">Consolidated batch analytics including attendance rates, grades, and score distribution.</p>
+                    </div>
+
+                    {!reportData ? (
+                      <p className="text-sm text-gray-400">Loading batch report data...</p>
+                    ) : (
+                      <div className="space-y-8">
+                        {/* Stats Metrics Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Average Score</span>
+                            <h3 className="text-3xl font-black text-blue-600 mt-2">{reportData.average_marks} Pts</h3>
+                            <p className="text-[10px] text-gray-400 mt-1">Across all exams in batch</p>
+                          </div>
+                          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Passing Rate</span>
+                            <h3 className="text-3xl font-black text-green-600 mt-2">{reportData.pass_percentage}%</h3>
+                            <p className="text-[10px] text-gray-400 mt-1">Students scoring &ge; 40%</p>
+                          </div>
+                          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Attendance Rate</span>
+                            <h3 className="text-3xl font-black text-purple-600 mt-2">{reportData.attendance_percentage}%</h3>
+                            <p className="text-[10px] text-gray-400 mt-1">Average daily attendance</p>
+                          </div>
+                          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Highest Score</span>
+                            <h3 className="text-3xl font-black text-slate-800 mt-2">{reportData.highest_score} Pts</h3>
+                            <p className="text-[10px] text-gray-400 mt-1">Highest recorded grade</p>
+                          </div>
+                        </div>
+
+                        {/* Top Performers Breakdown */}
+                        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+                          <h3 className="text-base font-extrabold text-slate-800 border-b border-gray-100 pb-2">Top 10 Performers</h3>
+                          {reportData.top_students && reportData.top_students.length === 0 ? (
+                            <p className="text-sm text-gray-400 py-4">No scores calculated yet.</p>
+                          ) : (
+                            <div className="divide-y divide-gray-100">
+                              {reportData.top_students && reportData.top_students.map((st, idx) => (
+                                <div key={st.id} className="py-3 flex justify-between items-center text-sm">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-bold text-slate-400 w-5">#{idx + 1}</span>
+                                    <span className="font-bold text-slate-800">{st.username}</span>
+                                  </div>
+                                  <span className="text-blue-600 font-extrabold">{st.total_score} Pts</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
               ) : (
                 /* SCREEN 2: ADD TOPICS PAGE */
                 <div className="bg-white min-h-[calc(100vh-84px)] w-full animate-in fade-in slide-in-from-right-4 duration-500">
@@ -2347,39 +3126,6 @@ function CoursesPage() {
                 </button>
               )}
             </div>
-
-
-            <button 
-
-              type="button"
-
-              onClick={() => setIsSelectionMode(!isSelectionMode)} 
-
-              className="py-2 px-4 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-colors duration-200 cursor-pointer pointer-events-auto"
-
-              style={{ pointerEvents: 'auto', zIndex: 10 }}
-
-            >
-
-              {isSelectionMode ? 'Stop Selection' : 'Select for Removal'}
-
-            </button>
-
-            <button 
-
-              type="button"
-
-              className="py-2 px-4 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-colors duration-200 cursor-pointer pointer-events-auto" 
-
-              onClick={() => setShowAddCourse(true)}
-
-              style={{ pointerEvents: 'auto', zIndex: 10 }}
-
-            >
-
-              + Add Course
-
-            </button>
 
           </div>
 

@@ -30,6 +30,10 @@ from myapp.models import (
     FacultyResearch,
     FacultyCourseHistory,
     AutomatedExamConfig,
+    Batch,
+    BatchResource,
+    Assignment,
+    AssignmentSubmission,
 )
 
 
@@ -610,3 +614,30 @@ class FacultyProfileMinimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacultyProfile
         fields = ['id', 'full_name', 'designation', 'department']
+
+
+class BatchResourceSerializer(serializers.ModelSerializer):
+    batch_name = serializers.CharField(source='batch.name', read_only=True)
+
+    class Meta:
+        model = BatchResource
+        fields = '__all__'
+
+
+class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.username', read_only=True)
+    evaluated_by_name = serializers.CharField(source='evaluated_by.username', read_only=True)
+
+    class Meta:
+        model = AssignmentSubmission
+        fields = '__all__'
+
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    batch_name = serializers.CharField(source='batch.name', read_only=True)
+    faculty_name = serializers.CharField(source='faculty.username', read_only=True)
+    submissions = AssignmentSubmissionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Assignment
+        fields = '__all__'

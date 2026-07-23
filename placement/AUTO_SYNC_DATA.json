@@ -302,174 +302,16 @@
             "created_at": "2026-05-31 13:59:44.885421+00:00"
         },
         {
-            "id": 31,
-            "title": "IOS SWIFT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.888919+00:00"
-        },
-        {
-            "id": 32,
-            "title": "ANDROID DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.892482+00:00"
-        },
-        {
-            "id": 33,
-            "title": "FLUTTER DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.896623+00:00"
-        },
-        {
-            "id": 34,
-            "title": "JAVA DEVELOPER",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.900686+00:00"
-        },
-        {
-            "id": 35,
-            "title": "PYTHON DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.904434+00:00"
-        },
-        {
-            "id": 36,
-            "title": "ORACLE DATABASE",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.907951+00:00"
-        },
-        {
-            "id": 37,
-            "title": "NODE JS DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.911754+00:00"
-        },
-        {
-            "id": 38,
-            "title": "REACT JS DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.916279+00:00"
-        },
-        {
-            "id": 39,
-            "title": "AWS SOLUTIONS ARCHITECT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.919975+00:00"
-        },
-        {
-            "id": 40,
-            "title": "MICROSOFT AZURE",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.923442+00:00"
-        },
-        {
-            "id": 41,
-            "title": "GOOGLE CLOUD PLATFORM",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.927113+00:00"
-        },
-        {
-            "id": 42,
-            "title": "SAP DEVELOPER",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.931648+00:00"
-        },
-        {
-            "id": 43,
-            "title": "C AND DATA STRUCTURES",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.935460+00:00"
-        },
-        {
-            "id": 44,
-            "title": "Aptitude and Reasoning",
+            "id": 46,
+            "title": "React",
             "level": "Beginner",
             "duration": "Self-paced",
             "progress": 0,
             "locked": false,
-            "topics": [
-                "Introduction to Aptitude and Reasoning"
-            ],
+            "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-06-13 07:26:25.703922+00:00"
+            "created_at": "2026-07-23 11:39:40.400223+00:00"
         }
     ],
     "configs": [
@@ -500,7 +342,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 19:47:51.392826+00:00"
+            "updated_at": "2026-07-23 13:08:53.361986+00:00"
         },
         {
             "id": 5,
@@ -514,7 +356,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 19:47:51.412948+00:00"
+            "updated_at": "2026-07-23 13:08:53.381485+00:00"
         },
         {
             "id": 9,
@@ -528,7 +370,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-20 19:47:51.433456+00:00"
+            "updated_at": "2026-07-23 13:08:53.400653+00:00"
         }
     ]
 }

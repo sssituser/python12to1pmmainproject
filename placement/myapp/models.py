@@ -57,6 +57,10 @@ class StudentProfile(models.Model):
     profile_image = models.ImageField(upload_to="profile_images/", blank=True, null=True)
     resume = models.FileField(upload_to="resumes/", blank=True, null=True)
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='student_profiles')
+    approval_status = models.CharField(max_length=20, default='pending', choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')], db_index=True)
+    approved_by = models.ForeignKey('myapp.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_students')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(null=True, blank=True)
 
     def enrolled_courses_titles(self):
         from myapp.models import CourseEnrollment
@@ -496,6 +500,7 @@ class Exam(models.Model):
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exams')
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams')
+    batch = models.ForeignKey('Batch', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams')
     title = models.CharField(max_length=200)
     start_date = models.DateField()
     start_time = models.TimeField()
@@ -630,14 +635,144 @@ class CourseTopic(models.Model):
 class CourseEnrollment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    batch = models.ForeignKey('Batch', on_delete=models.SET_NULL, null=True, blank=True, related_name='enrollments')
     is_locked = models.BooleanField(default=False)
     enrolled_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default='Active')
+    progress = models.IntegerField(default=0)
+    completion_percentage = models.FloatField(default=0.0)
+    is_eligible_for_certificate = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.username} - {self.course.title}"
+        return f"{self.user.username} - {self.course.title} ({self.batch.name if self.batch else 'No Batch'})"
 
     class Meta:
         unique_together = ('user', 'course')
+
+
+# ===============================
+# BATCH & MODULE ARCHITECTURE
+# ===============================
+
+class Batch(models.Model):
+    STATUS_CHOICES = [
+        ('Upcoming', 'Upcoming'),
+        ('Running', 'Running'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='batches')
+    faculty = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'role': 'faculty'}, related_name='batches')
+    timing = models.CharField(max_length=100, blank=True)
+    expected_start_date = models.DateField(null=True, blank=True)
+    expected_end_date = models.DateField(null=True, blank=True)
+    actual_start_date = models.DateField(null=True, blank=True)
+    actual_end_date = models.DateField(null=True, blank=True)
+    max_students = models.IntegerField(default=30)
+    current_students = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Upcoming', db_index=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def compute_status(self):
+        from django.utils import timezone
+        today = timezone.now().date()
+        if self.actual_end_date and today >= self.actual_end_date:
+            return 'Completed'
+        if self.actual_start_date and today >= self.actual_start_date:
+            return 'Running'
+        if self.expected_start_date and today >= self.expected_start_date and not self.actual_end_date:
+            return 'Running'
+        return self.status
+
+    def __str__(self):
+        return f"{self.course.title} - {self.name} ({self.code})"
+
+
+class CourseModule(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='technology_modules')
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, blank=True)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.course.title} - {self.name}"
+
+
+class FacultyAssignment(models.Model):
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, related_name='faculty_assignments', limit_choices_to={'role': 'faculty'})
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='faculty_assignments')
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='faculty_assignments')
+    module = models.ForeignKey(CourseModule, on_delete=models.CASCADE, related_name='faculty_assignments', null=True, blank=True)
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('faculty', 'batch', 'module')
+
+    def __str__(self):
+        return f"{self.faculty.username} -> {self.batch.name} ({self.module.name if self.module else 'All Modules'})"
+
+
+class Attendance(models.Model):
+    STATUS_CHOICES = [
+        ('Present', 'Present'),
+        ('Absent', 'Absent'),
+        ('Late', 'Late'),
+        ('Excused', 'Excused'),
+    ]
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attendance_records')
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='attendance_records')
+    date = models.DateField(db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Present')
+    remarks = models.CharField(max_length=255, blank=True)
+    marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='marked_attendances')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'batch', 'date')
+
+    def __str__(self):
+        return f"{self.student.username} - {self.batch.name} - {self.date}: {self.status}"
+
+
+class LiveClassSession(models.Model):
+    STATUS_CHOICES = [
+        ('Scheduled', 'Scheduled'),
+        ('Live', 'Live'),
+        ('Ended', 'Ended'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    title = models.CharField(max_length=200)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='live_classes')
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='live_classes')
+    module = models.ForeignKey(CourseModule, on_delete=models.SET_NULL, null=True, blank=True, related_name='live_classes')
+    topic = models.CharField(max_length=200, blank=True)
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conducted_live_classes')
+    meeting_link = models.URLField(max_length=500)
+    meeting_id = models.CharField(max_length=100, blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Scheduled')
+    recording_url = models.URLField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_time']
+
+    def __str__(self):
+        return f"{self.title} - {self.batch.name} ({self.status})"
 
 
 class StudentTopicProgress(models.Model):
@@ -1207,6 +1342,51 @@ class ResumeAnalysis(models.Model):
 
     def __str__(self):
         return f"Resume Analysis - {self.student.user.username}"
+
+
+class BatchResource(models.Model):
+    RESOURCE_TYPES = [
+        ('video', 'Video Lecture'),
+        ('material', 'Study Material / PDF'),
+        ('notes', 'Class Notes'),
+    ]
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='resources')
+    title = models.CharField(max_length=200)
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPES, default='material')
+    file_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to PDF / Material")
+    video_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to recorded lecture")
+    is_active = models.BooleanField(default=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.resource_type.upper()}] {self.title} - {self.batch.name}"
+
+
+class Assignment(models.Model):
+    batch = models.ForeignKey('Batch', on_delete=models.CASCADE, related_name='assignments')
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'faculty'}, related_name='created_assignments')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file_url = models.URLField(max_length=500, blank=True, null=True)
+    due_date = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.batch.name}"
+
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'student'}, related_name='assignment_submissions')
+    submitted_file_url = models.URLField(max_length=500)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    grade = models.CharField(max_length=10, blank=True, null=True)
+    feedback = models.TextField(blank=True, null=True)
+    evaluated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='evaluated_submissions')
+
+    def __str__(self):
+        return f"{self.student.username} - {self.assignment.title}"
+
 
 
     

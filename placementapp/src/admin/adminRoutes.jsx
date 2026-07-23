@@ -1,12 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Navigate, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Users, ShieldCheck, BarChart3, Settings, UserCheck, Activity } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, BarChart3, Settings, UserCheck, Activity, BookOpen, Layers, UserPlus, Video, CalendarDays } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import AdminDashboard from "./AdminDashboard";
 import AdminPanel from "./AdminPanel";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminSettings from "./AdminSettings";
+import StudentApproval from "./StudentApproval";
+import ManageStudentCourses from "./ManageStudentCourses";
+import BatchManagement from "./BatchManagement";
+import FacultyAssignment from "./FacultyAssignment";
+import AttendanceManagement from "./AttendanceManagement";
+import LiveClasses from "../faculty/LiveClasses";
 import Navbar from "../components/Navbar";
 
 // Working Admin Dashboard with Layout
@@ -190,6 +196,84 @@ const WorkingAdminDashboard = () => {
             >
               <ShieldCheck size={18} />
               {open && "Student Management"}
+            </NavLink>
+            <NavLink
+              to="/admin/student-approvals"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <UserCheck size={18} />
+              {open && "Student Approvals"}
+            </NavLink>
+            <NavLink
+              to="/admin/student-courses"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <BookOpen size={18} />
+              {open && "Student Courses"}
+            </NavLink>
+            <NavLink
+              to="/admin/batches"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <Layers size={18} />
+              {open && "Batches"}
+            </NavLink>
+            <NavLink
+              to="/admin/faculty-assignments"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <UserPlus size={18} />
+              {open && "Faculty Assignments"}
+            </NavLink>
+            <NavLink
+              to="/admin/live-classes"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <Video size={18} />
+              {open && "Live Classes"}
+            </NavLink>
+            <NavLink
+              to="/admin/attendance"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "hover:bg-slate-800 hover:text-white"
+                }`
+              }
+            >
+              <CalendarDays size={18} />
+              {open && "Attendance"}
             </NavLink>
             <NavLink
               to="/admin/analytics"
@@ -430,6 +514,54 @@ const adminRoutes = [
         element: (
           <AdminProtectedRoute>
             <AdminAnalytics />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "student-approvals",
+        element: (
+          <AdminProtectedRoute>
+            <StudentApproval />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "student-courses",
+        element: (
+          <AdminProtectedRoute>
+            <ManageStudentCourses />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "batches",
+        element: (
+          <AdminProtectedRoute>
+            <BatchManagement />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "faculty-assignments",
+        element: (
+          <AdminProtectedRoute>
+            <FacultyAssignment />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "live-classes",
+        element: (
+          <AdminProtectedRoute>
+            <LiveClasses />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "attendance",
+        element: (
+          <AdminProtectedRoute>
+            <AttendanceManagement />
           </AdminProtectedRoute>
         )
       },

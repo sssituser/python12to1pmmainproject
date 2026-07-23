@@ -29,6 +29,8 @@ from .views.stats_views import dashboard_stats_api, students_api, student_stats_
 from .views.admin_views import all_users_api, create_faculty_api, create_student_api, toggle_student_status_api, delete_user_api, update_faculty_api, update_student_api, toggle_faculty_status_api, database_backup_api, deduplicate_courses_api
 from .views.notification_views import list_notifications, unread_count, mark_read, mark_all_read, delete_notification
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
+from .views.student_approval_views import list_student_approvals, approve_student, reject_student
+from .views.student_courses_views import get_student_courses, assign_course, remove_course, view_available_courses, get_course_progress, update_enrollment_batch
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
 from .views.marks_views import get_students_and_marks, upload_exam_marks, get_course_exams
@@ -39,6 +41,13 @@ from .views.ai_views import (
     generate_interview_view, rank_candidates_view,
     generate_report_view, chat_view,
 )
+from .views.batch_views import list_batches, create_batch, update_batch, get_batch_students, delete_batch
+from .views.faculty_assignment_views import list_faculty_assignments, assign_faculty_module, remove_faculty_assignment
+from .views.batch_resource_views import list_batch_resources, create_batch_resource, delete_batch_resource
+from .views.attendance_views import get_batch_attendance, mark_batch_attendance
+from .views.live_class_views import list_live_classes, create_live_class, update_live_class
+from .views import assignment_views, batch_report_views
+
 
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
@@ -196,4 +205,49 @@ urlpatterns = [
 
     # ── Student Job Notification URLs ─────────────────────────────────────────
     path('job-notifications/', job_notifications_list, name='student_job_notifications'),
+
+    # ── Student Approval Panel URLs ───────────────────────────────────────────
+    path('admin/student-approvals/', list_student_approvals, name='list_student_approvals'),
+    path('admin/student-approvals/<int:profile_id>/approve/', approve_student, name='approve_student'),
+    path('admin/student-approvals/<int:profile_id>/reject/', reject_student, name='reject_student'),
+
+    # ── Multiple Course Registration URLs ─────────────────────────────────────
+    path('student/my-courses/', get_student_courses, name='get_student_courses'),
+    path('student/<int:student_id>/courses/', get_student_courses, name='get_student_courses_admin'),
+    path('student/courses/assign/', assign_course, name='assign_course'),
+    path('student/courses/remove/', remove_course, name='remove_course'),
+    path('student/courses/available/', view_available_courses, name='view_available_courses'),
+    path('student/courses/<int:course_id>/progress/', get_course_progress, name='get_course_progress'),
+    path('student/courses/update-batch/', update_enrollment_batch, name='update_enrollment_batch'),
+
+    # ── Batch Management URLs ──────────────────────────────────────────────────
+    path('batches/', list_batches, name='list_batches'),
+    path('batches/create/', create_batch, name='create_batch'),
+    path('batches/<int:batch_id>/update/', update_batch, name='update_batch'),
+    path('batches/<int:batch_id>/delete/', delete_batch, name='delete_batch'),
+    path('batches/<int:batch_id>/students/', get_batch_students, name='get_batch_students'),
+    path('batches/<int:batch_id>/resources/', list_batch_resources, name='list_batch_resources'),
+    path('batches/resources/create/', create_batch_resource, name='create_batch_resource'),
+    path('batches/resources/<int:resource_id>/delete/', delete_batch_resource, name='delete_batch_resource'),
+
+    # ── Faculty Assignment URLs ───────────────────────────────────────────────
+    path('faculty-assignments/', list_faculty_assignments, name='list_faculty_assignments'),
+    path('faculty-assignments/assign/', assign_faculty_module, name='assign_faculty_module'),
+    path('faculty-assignments/<int:assignment_id>/remove/', remove_faculty_assignment, name='remove_faculty_assignment'),
+
+    # ── Attendance Management URLs ────────────────────────────────────────────
+    path('attendance/<int:batch_id>/', get_batch_attendance, name='get_batch_attendance'),
+    path('attendance/mark/', mark_batch_attendance, name='mark_batch_attendance'),
+
+    # ── Live Class URLs ────────────────────────────────────────────────────────
+    path('live-classes/', list_live_classes, name='list_live_classes'),
+    path('live-classes/create/', create_live_class, name='create_live_class'),
+    path('live-classes/<int:session_id>/update/', update_live_class, name='update_live_class'),
+
+    # ── Assignment & Batch Report URLs ──────────────────────────────────────────
+    path('assignments/', assignment_views.list_assignments, name='list_assignments'),
+    path('assignments/create/', assignment_views.create_assignment, name='create_assignment'),
+    path('assignments/submit/', assignment_views.submit_assignment, name='submit_assignment'),
+    path('assignments/evaluate/', assignment_views.evaluate_submission, name='evaluate_submission'),
+    path('batches/<int:batch_id>/report/', batch_report_views.get_batch_report, name='get_batch_report'),
 ]

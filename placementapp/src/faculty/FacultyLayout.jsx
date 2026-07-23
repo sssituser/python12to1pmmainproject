@@ -16,6 +16,9 @@ import {
     Users2,
     MessageSquare,
     ScrollText,
+    Shield,
+    Layers,
+    Video
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar"; // adjust path if needed
@@ -56,6 +59,11 @@ function FacultyLayout() {
     { name: "Profile", path: "/faculty/profile", icon: <User size={18}/> },
     { name: "Dashboard", path: "/faculty/dashboard", icon: <LayoutDashboard size={18}/> },
     { name: "Courses", path: "/faculty/course", icon: <BookOpen size={18}/> },
+    { name: "Batches", path: "/faculty/batches", icon: <Layers size={18}/> },
+    { name: "Live Classes", path: "/faculty/live-classes", icon: <Video size={18}/> },
+    { name: "Student Approvals", path: "/faculty/student-approvals", icon: <Shield size={18}/> },
+    { name: "Student Courses", path: "/faculty/student-courses", icon: <BookOpen size={18}/> },
+    { name: "Attendance", path: "/faculty/attendance", icon: <CalendarDays size={18}/> },
     { name: "Statistics", path: "/faculty/stats", icon: <BarChart3 size={18}/> },
     { name: "Jobs", path: "/faculty/jobs", icon: <Briefcase size={18}/> },
     { name: "Applications", path: "/faculty/applications", icon: <FileText size={18}/> },

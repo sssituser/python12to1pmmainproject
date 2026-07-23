@@ -35,6 +35,7 @@ def all_users_api(request):
         profile = StudentProfile.objects.filter(user=user).select_related('course').first()
         
         if profile:
+            user_data['student_id'] = profile.student_id
             user_data['studentprofile'] = {
                 'student_id': profile.student_id,
                 'course': {
@@ -42,6 +43,8 @@ def all_users_api(request):
                     'id': profile.course.id if profile.course else None
                 } if profile.course else None
             }
+        else:
+            user_data['student_id'] = None
         
         users_data.append(user_data)
     
@@ -303,13 +306,31 @@ def create_student_api(request):
             student_id=processed_student_id
         )
 
-        # Handle course linking
+        # Handle course and batch linking
         if course_id and str(course_id).strip() != "":
-            from myapp.models import Course
+            from myapp.models import Course, CourseEnrollment, Batch
             try:
                 course = Course.objects.get(id=course_id)
                 profile.course = course
                 profile.save()
+
+                # Fetch batch if batch_id provided
+                batch_id = data.get('batch_id')
+                batch_obj = None
+                if batch_id:
+                    batch_obj = Batch.objects.filter(id=batch_id).first()
+
+                # Create course enrollment
+                CourseEnrollment.objects.get_or_create(
+                    user=student,
+                    course=course,
+                    defaults={
+                        'batch': batch_obj,
+                        'status': 'Active',
+                        'progress': 0,
+                        'completion_percentage': 0.0
+                    }
+                )
             except (Course.DoesNotExist, ValueError):
                 pass
         

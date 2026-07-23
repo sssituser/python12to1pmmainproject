@@ -83,3 +83,6 @@ from . import web_apis_views
 from . import springboot_views
 from . import aptitude_views
 from . import reasoning_views
+from . import assignment_views
+from . import batch_report_views
+

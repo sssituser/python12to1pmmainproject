@@ -73,6 +73,18 @@ function CoursesPage() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [studentCourse, setStudentCourse] = useState("");
   const [isValidating, setIsValidating] = useState(true);
+  const [enrollments, setEnrollments] = useState([]);
+  const [batchResources, setBatchResources] = useState([]);
+  const [activeTab, setActiveTab] = useState("curriculum");
+
+  // Student specific dashboard states
+  const [assignments, setAssignments] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [attendanceRate, setAttendanceRate] = useState(0);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [examsList, setExamsList] = useState([]);
+  const [submitAssignmentId, setSubmitAssignmentId] = useState("");
+  const [submitFileUrl, setSubmitFileUrl] = useState("");
 
   useEffect(() => {
     document.title = selectedCourse 
@@ -88,7 +100,92 @@ function CoursesPage() {
       }
     }
   }, [selectedCourse]);
-  
+
+  // Load batch resources when course is selected
+  useEffect(() => {
+    if (!selectedCourse) {
+      setBatchResources([]);
+      setAssignments([]);
+      setAttendanceRecords([]);
+      setAttendanceRate(0);
+      setLeaderboard([]);
+      setExamsList([]);
+      return;
+    }
+    const enrollment = enrollments.find(e => e.course_id === selectedCourse.id);
+    if (enrollment && enrollment.batch_id) {
+      const token = getStoredToken("access");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // 1. Fetch resources
+      axios.get(`http://${window.location.hostname}:8000/api/batches/${enrollment.batch_id}/resources/`, { headers })
+      .then(res => {
+        if (res.data && res.data.data) setBatchResources(res.data.data);
+      })
+      .catch(err => console.error("Error fetching batch resources:", err));
+
+      // 2. Fetch assignments
+      axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${enrollment.batch_id}`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) setAssignments(res.data.data);
+      })
+      .catch(err => console.error("Error fetching assignments:", err));
+
+      // 3. Fetch attendance rate
+      axios.get(`http://${window.location.hostname}:8000/api/attendance/logs/?batch_id=${enrollment.batch_id}`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) {
+          setAttendanceRecords(res.data.data);
+          setAttendanceRate(res.data.attendance_percentage || 0);
+        }
+      })
+      .catch(err => console.error("Error fetching attendance rate:", err));
+
+      // 4. Fetch leaderboard / batch report
+      axios.get(`http://${window.location.hostname}:8000/api/batches/${enrollment.batch_id}/report/`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) {
+          setLeaderboard(res.data.data.top_students || []);
+        }
+      })
+      .catch(err => console.error("Error loading batch report:", err));
+
+      // 5. Fetch exams
+      axios.get(`http://${window.location.hostname}:8000/api/exams/placement/?batch_id=${enrollment.batch_id}`, { headers })
+      .then(res => {
+        if (res.data) setExamsList(res.data.exams || res.data.data || res.data);
+      })
+      .catch(err => console.error("Error loading exams:", err));
+    }
+  }, [selectedCourse, enrollments]);
+
+  const handleSubmission = (assignmentId) => {
+    if (!submitFileUrl.trim()) return;
+    const token = getStoredToken("access");
+    axios.post(`http://${window.location.hostname}:8000/api/assignments/submit/`, {
+      assignment: assignmentId,
+      submitted_file_url: submitFileUrl
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      if (res.data && res.data.success) {
+        // Refresh assignments list
+        const enrollment = enrollments.find(e => e.course_id === selectedCourse?.id);
+        if (enrollment && enrollment.batch_id) {
+          axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${enrollment.batch_id}`, {
+            headers: { Authorization: `Bearer ${getStoredToken("access")}` }
+          })
+          .then(r => setAssignments(r.data.data))
+          .catch(e => console.error(e));
+        }
+        setSubmitAssignmentId("");
+        setSubmitFileUrl("");
+      }
+    })
+    .catch(err => console.error("Error submitting assignment:", err));
+  };
+
   // Icon and course state initialization (with deduplication)
   const [courses, setCourses] = useState(() => {
     const facultySaved = localStorage.getItem('facultyCourses');
@@ -215,18 +312,19 @@ function CoursesPage() {
       }
 
       try {
-        const response = await axios.get(`http://${window.location.hostname}:8000/api/profile/`, {
+        const response = await axios.get(`http://${window.location.hostname}:8000/api/student/my-courses/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        let enrollments = [];
-        if (response.data && response.data.enrolled_courses) {
-          enrollments = response.data.enrolled_courses;
-        } else if (response.data && response.data.course_title) {
-          enrollments = [response.data.course_title];
+        let enrollList = [];
+        let titles = [];
+        if (response.data && response.data.data) {
+          enrollList = response.data.data;
+          titles = response.data.data.map(e => e.title);
         }
         
-        setStudentCourse(enrollments);
+        setEnrollments(enrollList);
+        setStudentCourse(titles);
         
         // GLOBAL SYNC: Ensuring the main user object matches the API
         try {
@@ -321,8 +419,34 @@ function CoursesPage() {
           </button>
         </div>
 
-        {/* Subjects View (Module List - Line by Line) */}
+        {/* Tab switcher - only show if not viewing a specific subject */}
         {!selectedSubject && (
+          <div className="flex flex-wrap border-b border-gray-200 mb-8 max-w-5xl mx-auto gap-2">
+            {[
+              { id: "curriculum", label: "📖 Curriculum" },
+              { id: "batch-resources", label: "🎥 Recordings & Notes" },
+              { id: "assignments", label: "📝 Assignments" },
+              { id: "exams", label: "📋 Exams Hub" },
+              { id: "attendance", label: "📅 Attendance" },
+              { id: "leaderboard", label: "🏆 Leaderboard" }
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`py-3 px-6 font-bold text-sm uppercase tracking-wider border-b-2 transition-all ${
+                  activeTab === t.id
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Subjects View (Module List - Line by Line) */}
+        {!selectedSubject && activeTab === "curriculum" && (
           <div className="space-y-4 max-w-5xl mx-auto">
             {selectedCourse.modules && selectedCourse.modules.length > 0 ? (
               selectedCourse.modules.map((module, idx) => (
@@ -359,6 +483,266 @@ function CoursesPage() {
             )}
             
 
+          </div>
+        )}
+
+        {/* Batch Resources View */}
+        {!selectedSubject && activeTab === "batch-resources" && (
+          <div className="max-w-5xl mx-auto space-y-8 animate-fadeIn">
+            {batchResources.length === 0 ? (
+              <div className="py-20 text-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                <p className="text-xl font-bold">No batch recordings or handouts uploaded for your batch yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 🎥 Video Lectures Column */}
+                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+                  <h3 className="text-lg font-black text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                    🎥 Video Lectures &amp; Recordings
+                  </h3>
+                  <div className="space-y-3">
+                    {batchResources.filter(r => r.resource_type === 'video').length === 0 ? (
+                      <p className="text-sm text-gray-400 py-4">No video lectures recorded for this batch yet.</p>
+                    ) : (
+                      batchResources.filter(r => r.resource_type === 'video').map((res, idx) => (
+                        <div key={res.id} className="p-4 rounded-2xl border border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">{res.title}</h4>
+                            <p className="text-xs text-gray-400 mt-0.5">Uploaded {new Date(res.uploaded_at).toLocaleDateString()}</p>
+                          </div>
+                          <a
+                            href={res.video_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
+                          >
+                            Play Video
+                          </a>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* 📂 Handouts & Materials Column */}
+                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+                  <h3 className="text-lg font-black text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                    📂 Handouts, Notes &amp; Slides
+                  </h3>
+                  <div className="space-y-3">
+                    {batchResources.filter(r => r.resource_type !== 'video').length === 0 ? (
+                      <p className="text-sm text-gray-400 py-4">No study materials uploaded for this batch yet.</p>
+                    ) : (
+                      batchResources.filter(r => r.resource_type !== 'video').map((res, idx) => (
+                        <div key={res.id} className="p-4 rounded-2xl border border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">{res.title}</h4>
+                            <p className="text-xs text-gray-400 mt-0.5">Uploaded {new Date(res.uploaded_at).toLocaleDateString()}</p>
+                          </div>
+                          <a
+                            href={res.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-slate-200"
+                          >
+                            Open File
+                          </a>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Assignments View */}
+        {!selectedSubject && activeTab === "assignments" && (
+          <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+              <h3 className="text-lg font-black text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                📝 Course Assignments
+              </h3>
+              {assignments.length === 0 ? (
+                <p className="text-sm text-gray-400 py-8 text-center">No assignments published for your batch yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {assignments.map(asg => {
+                    const mySub = asg.submissions && asg.submissions.find(s => s.student_name === JSON.parse(localStorage.getItem("user") || "{}").username);
+                    return (
+                      <div key={asg.id} className="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="space-y-1 flex-1">
+                          <h4 className="font-bold text-gray-900 text-sm">{asg.title}</h4>
+                          <p className="text-xs text-gray-500">{asg.description}</p>
+                          <p className="text-[10px] text-red-500 font-bold">Due: {new Date(asg.due_date).toLocaleString()}</p>
+                          {asg.file_url && (
+                            <a href={asg.file_url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline mt-1 inline-block">📁 Download Reference File</a>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-2">
+                          {mySub ? (
+                            <div className="text-right">
+                              <span className="bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold uppercase">Submitted</span>
+                              {mySub.grade ? (
+                                <div className="mt-1.5 text-xs">
+                                  <span className="font-bold text-slate-700">Grade: {mySub.grade}</span>
+                                  {mySub.feedback && <p className="text-[10px] text-gray-500 italic mt-0.5">"{mySub.feedback}"</p>}
+                                </div>
+                              ) : (
+                                <p className="text-[10px] text-gray-400 mt-1">Pending evaluation</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {submitAssignmentId === asg.id ? (
+                                <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200">
+                                  <input
+                                    type="text"
+                                    placeholder="Paste Solution URL"
+                                    value={submitFileUrl}
+                                    onChange={e => setSubmitFileUrl(e.target.value)}
+                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 w-48"
+                                  />
+                                  <button
+                                    onClick={() => handleSubmission(asg.id)}
+                                    disabled={!submitFileUrl.trim()}
+                                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                                  >
+                                    Submit
+                                  </button>
+                                  <button
+                                    onClick={() => setSubmitAssignmentId("")}
+                                    className="text-xs text-gray-400 hover:underline"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setSubmitAssignmentId(asg.id)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                                >
+                                  Submit Assignment
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Exams View */}
+        {!selectedSubject && activeTab === "exams" && (
+          <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+              <h3 className="text-lg font-black text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                📋 Batch Exams
+              </h3>
+              {examsList.length === 0 ? (
+                <p className="text-sm text-gray-400 py-8 text-center">No exams scheduled for your batch.</p>
+              ) : (
+                <div className="space-y-4">
+                  {examsList.map(ex => (
+                    <div key={ex.id} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm">{ex.title}</h4>
+                        <p className="text-xs text-gray-400 mt-0.5">Duration: {ex.duration_minutes || ex.duration} mins • Questions: {ex.total_questions || (ex.questions ? ex.questions.length : 0)}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/exam/${ex.id}`)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                      >
+                        Start Exam
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Attendance View */}
+        {!selectedSubject && activeTab === "attendance" && (
+          <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Overall Attendance Stat Card */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between h-fit">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Attendance Percentage</span>
+                <h3 className="text-4xl font-black text-blue-600 mt-2">{attendanceRate}%</h3>
+                <p className="text-[10px] text-gray-400 mt-1">Average daily attendance rate in current batch</p>
+              </div>
+
+              {/* Attendance Log Table */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm md:col-span-2 space-y-4">
+                <h3 className="text-base font-extrabold text-slate-800 border-b border-gray-100 pb-2">Recent Attendance Sheet</h3>
+                {attendanceRecords.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-4 text-center">No attendance logged yet.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-2">
+                    {attendanceRecords.map((r, idx) => (
+                      <div key={idx} className="py-2.5 flex justify-between items-center text-xs">
+                        <span className="font-bold text-gray-700">{r.date}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase ${
+                            r.status === 'Present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {r.status}
+                          </span>
+                          {r.remarks && <span className="text-gray-400 italic">({r.remarks})</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard View */}
+        {!selectedSubject && activeTab === "leaderboard" && (
+          <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+              <h3 className="text-lg font-black text-slate-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                🏆 Batch Leaderboard
+              </h3>
+              {leaderboard.length === 0 ? (
+                <p className="text-sm text-gray-400 py-8 text-center">No scores calculated for this batch yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 max-w-3xl">
+                  {leaderboard.map((st, idx) => (
+                    <div key={st.id} className="p-4 bg-gray-50/50 hover:bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm transition">
+                      <div className="flex items-center gap-4">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          idx === 0 ? 'bg-yellow-400 text-white shadow' :
+                          idx === 1 ? 'bg-slate-300 text-white shadow' :
+                          idx === 2 ? 'bg-amber-600 text-white shadow' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <h4 className="font-bold text-gray-800 text-sm">{st.username}</h4>
+                          <p className="text-[10px] text-gray-400">{st.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-blue-600 font-extrabold text-sm">{st.total_score} Pts</span>
+                        <p className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">Total Score</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

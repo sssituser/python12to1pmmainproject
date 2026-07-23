@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   Briefcase,
@@ -18,6 +18,9 @@ import {
   FileSearch,
   Lightbulb,
   MessageSquare,
+  Video,
+  CalendarDays,
+  LayoutDashboard
 } from "lucide-react";
 
 function Sidebar({ sidebarOpen, setSidebarOpen }) {
@@ -128,6 +131,22 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* MENU (Scrollable) */}
           <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
 
+          {/* DASHBOARD */}
+          <NavLink
+            to="/dashboard/overview"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <LayoutDashboard size={18} />
+            {open && "Dashboard"}
+          </NavLink>
+
           {/* PROFILE */}
           <NavLink
             to="/dashboard/profile"
@@ -218,6 +237,38 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           >
             <Book size={18} />
             {open && "Course"}
+          </NavLink>
+
+          {/* LIVE CLASSES */}
+          <NavLink
+            to="/dashboard/live-classes"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <Video size={18} />
+            {open && "Live Classes"}
+          </NavLink>
+
+          {/* ATTENDANCE */}
+          <NavLink
+            to="/dashboard/attendance"
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? "bg-slate-800 text-white"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`
+            }
+          >
+            <CalendarDays size={18} />
+            {open && "Attendance"}
           </NavLink>
 
           {/* REPORTS */}

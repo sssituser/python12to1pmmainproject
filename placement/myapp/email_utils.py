@@ -337,3 +337,59 @@ def send_course_update_email(user_email, username, course_title, update_type, up
     """
     
     return _send_rich_email(subject, user_email, _build_html(content, "Curriculum Notification"))
+
+def send_student_approval_email(user_email, username):
+    """Sends an email notification to the student when their account is approved."""
+    subject = "🎉 Account Approved - SSSIT Learning Management Portal"
+    content = f"""
+        <h3 style="color:#16a34a;margin-top:0;font-size:18px;">Congratulations {username}!</h3>
+        <p>Your student registration account has been verified and <strong>Approved</strong> by the SSSIT Faculty/Administrator team.</p>
+        
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a;">
+            <p style="margin:0;color:#15803d;font-weight:600;">Status: Approved &amp; Active</p>
+            <p style="margin:6px 0 0;color:#374151;font-size:14px;">You can now log in to access your course materials, assignments, daily assessments, and placement portal.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{PLATFORM_URL}/login" style="{BUTTON_STYLE}">Log In to Portal</a>
+        </div>
+    """
+    return _send_rich_email(subject, user_email, _build_html(content, "Account Verification Approved"))
+
+def send_student_rejection_email(user_email, username, reason=None):
+    """Sends an email notification to the student when their account is rejected."""
+    subject = "⚠️ Account Status Update - SSSIT Learning Portal"
+    reason_html = f'<p style="margin:8px 0 0;color:#991b1b;font-style:italic;"><strong>Reason:</strong> {reason}</p>' if reason else ''
+    content = f"""
+        <h3 style="color:#dc2626;margin-top:0;font-size:18px;">Hello {username},</h3>
+        <p>We regret to inform you that your student account registration request has been <strong>Rejected</strong> by the administration team.</p>
+        
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #fecaca; border-left: 4px solid #dc2626;">
+            <p style="margin:0;color:#991b1b;font-weight:600;">Status: Registration Rejected</p>
+            {reason_html}
+        </div>
+        
+        <p style="font-size:14px;color:#64748b;">If you believe this is an error or need clarification, please reach out directly to SSSIT support or your course faculty manager.</p>
+    """
+    return _send_rich_email(subject, user_email, _build_html(content, "Registration Status Update"))
+
+def send_course_enrollment_email(user_email, username, course_title):
+    """Sends an email notification to the student when a new course is assigned to them."""
+    subject = f"🎓 New Course Assigned: {course_title}"
+    content = f"""
+        <h3 style="color:#1a3a9c;margin-top:0;font-size:18px;">New Course Enrollment!</h3>
+        <p>Hello <strong>{username}</strong>, you have been successfully enrolled into a new course on the SSSIT Portal:</p>
+        
+        <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #bfdbfe; border-left: 4px solid #1a3a9c;">
+            <h4 style="margin:0 0 6px;font-size:16px;color:#1e3a8a;">📘 Course: {course_title}</h4>
+            <p style="margin:0;color:#3b82f6;font-size:13px;font-weight:600;">Enrolled Program Active</p>
+        </div>
+        
+        <p style="font-size:14px;color:#475569;">You can now view learning materials, progress metrics, and examinations for this course from your Student Dashboard.</p>
+        
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{PLATFORM_URL}/dashboard/course" style="{BUTTON_STYLE}">View Enrolled Courses</a>
+        </div>
+    """
+    return _send_rich_email(subject, user_email, _build_html(content, "Course Assignment"))
+

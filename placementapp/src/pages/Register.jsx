@@ -29,12 +29,29 @@ function Register() {
     role: "Student",
     course: [],
     phone_number: "",
+    batch_id: "",
   });
 
   const [errors, setErrors] = useState({});
   const [courses, setCourses] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      try {
+        const res = await fetch(`http://${window.location.hostname}:8000/api/batches/`);
+        if (res.ok) {
+          const data = await res.json();
+          setBatches(data.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching batches:", err);
+      }
+    };
+    fetchBatches();
+  }, []);
 
   // 🛡️ 1000% AUTOMATIC SYNCHRONICITY ENGINE
   // This effect ensures the Student Registration page is ALWAYS a perfect mirror 
@@ -127,7 +144,9 @@ function Register() {
         localStorage.removeItem("allExamResults");
         localStorage.removeItem("recentExam");
         
-        toast.success("Account created! Please login.");
+        toast.success(data.message || "Registration successful. Your account has been created successfully. Please wait until the Faculty or Admin verifies your account.", {
+          duration: 6000
+        });
         navigate("/");
       }
 
@@ -343,6 +362,28 @@ function Register() {
               
               {errors.course && (
                 <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold uppercase">{errors.course}</p>
+              )}
+
+              {/* 🎓 DYNAMIC BATCH DROPDOWN */}
+              {formData.course.length > 0 && (
+                <div className="mt-4">
+                  <label className="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2 ml-1">
+                    Select Batch (Optional)
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm"
+                    value={formData.batch_id}
+                    onChange={(e) => setFormData({ ...formData, batch_id: e.target.value })}
+                  >
+                    <option value="">Choose your batch</option>
+                    {batches
+                      .filter(b => formData.course.some(title => b.course_title.toUpperCase() === title.toUpperCase()))
+                      .map(b => (
+                        <option key={b.id} value={b.id}>{b.name} ({b.code}) - {b.course_title}</option>
+                      ))
+                    }
+                  </select>
+                </div>
               )}
               
               {/* PHONE NUMBER */}

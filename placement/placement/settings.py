@@ -115,6 +115,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Global Exception Handling Middleware
     'myapp.middleware.ExceptionMiddleware',
+    'myapp.middleware.StudentApprovalMiddleware',
 ]
 
 ROOT_URLCONF = 'placement.urls'

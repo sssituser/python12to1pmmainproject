@@ -13,7 +13,9 @@ import {
     Users,
     UserPlus,
     Settings,
-    Shield
+    Shield,
+    Layers,
+    Video
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -54,6 +56,12 @@ function AdminLayout() {
     { name: "Dashboard", path: "/admin", icon: <LayoutDashboard size={18}/> },
     { name: "Faculty Management", path: "/admin/faculty", icon: <Users size={18}/> },
     { name: "Student Management", path: "/admin/students", icon: <ShieldCheck size={18}/> },
+    { name: "Student Approvals", path: "/admin/student-approvals", icon: <Shield size={18}/> },
+    { name: "Student Courses", path: "/admin/student-courses", icon: <BookOpen size={18}/> },
+    { name: "Batches", path: "/admin/batches", icon: <Layers size={18}/> },
+    { name: "Faculty Assignments", path: "/admin/faculty-assignments", icon: <UserPlus size={18}/> },
+    { name: "Live Classes", path: "/admin/live-classes", icon: <Video size={18}/> },
+    { name: "Attendance", path: "/admin/attendance", icon: <CalendarDays size={18}/> },
     { name: "Analytics", path: "/admin/analytics", icon: <BarChart3 size={18}/> },
     { name: "Settings", path: "/admin/settings", icon: <Settings size={18}/> },
   ];

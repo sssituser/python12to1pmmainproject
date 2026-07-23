@@ -18,10 +18,7 @@ function Dashboard() {
   
   const handleExportAllPerformance = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://${window.location.hostname}:8000/api/exam-reports/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/exam-reports/`);
       if (!res.ok) throw new Error("Failed to fetch reports");
       const json = await res.json();
       const reports = json.data || [];
@@ -271,9 +268,7 @@ function Dashboard() {
       
       if (token && user.role === "faculty") {
         try {
-          const res = await fetch(`http://${window.location.hostname}:8000/api/dashboard-stats/`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/dashboard-stats/`);
 
           if (res.ok) {
             const data = await res.json();

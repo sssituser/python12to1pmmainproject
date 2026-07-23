@@ -39,6 +39,7 @@ const Playground = lazy(() => import("./pages/Playground"));
 const PlaygroundDetail = lazy(() => import("./pages/PlaygroundDetail"));
 const PlaygroundResults = lazy(() => import("./pages/PlaygroundResults"));
 const Profile = lazy(() => import("./pages/Profile"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
 const TopicVideo = lazy(() => import("./pages/TopicVideo"));
 const VideoPlayer = lazy(() => import("./pages/VideoPlayer"));
 const WeeklyExam = lazy(() => import("./pages/WeeklyExam"));
@@ -71,6 +72,11 @@ const Stats = lazy(() => import("./faculty/Stats"));
 const FacultyProfile = lazy(() => import("./faculty/Profile"));
 const StudentReport = lazy(() => import("./faculty/StudentReport"));
 const MarksUpload = lazy(() => import("./faculty/MarksUpload"));
+import LiveClasses from "./faculty/LiveClasses";
+import StudentApproval from "./admin/StudentApproval";
+import ManageStudentCourses from "./admin/ManageStudentCourses";
+import BatchManagement from "./admin/BatchManagement";
+import AttendanceManagement from "./admin/AttendanceManagement";
 
 /* 🔹 AUTH (LAZY) */
 const VerifyFaculty = lazy(() => import("./pages/FacultyOtp"));
@@ -235,7 +241,8 @@ function App() {
               token && isStudent ? <StudentLayout /> : <Navigate to="/" />
             }
           >
-            <Route index element={<Profile />} />
+            <Route index element={<StudentDashboard />} />
+            <Route path="overview" element={<StudentDashboard />} />
             <Route path="profile" element={<Profile />} />
             <Route path="change-password" element={<ChangePassword />} />
 
@@ -274,6 +281,10 @@ function App() {
             {/* Logout */}
             <Route path="logout" element={<Logout />} />
 
+            {/* Live Classes & Attendance */}
+            <Route path="live-classes" element={<LiveClasses />} />
+            <Route path="attendance" element={<AttendanceManagement />} />
+
             {/* 🤖 AI MODULE — Student Routes */}
             <Route path="ai/resume" element={<AIResumeAnalyzer />} />
             <Route path="ai/jobs" element={<AIJobRecommendations />} />
@@ -301,6 +312,11 @@ function App() {
             <Route path="leaves" element={<Leaves />} />
             <Route path="Course" element={<FacultyCourse />} />
             <Route path="Course/:courseId" element={<FacultyCourse />} />
+            <Route path="batches" element={<BatchManagement />} />
+            <Route path="student-approvals" element={<StudentApproval />} />
+            <Route path="student-courses" element={<ManageStudentCourses />} />
+            <Route path="attendance" element={<AttendanceManagement />} />
+            <Route path="live-classes" element={<LiveClasses />} />
 
             {/* 🤖 AI MODULE — Faculty Routes */}
             <Route path="ai/reports" element={<AIFacultyReports />} />

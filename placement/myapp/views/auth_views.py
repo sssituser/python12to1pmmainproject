@@ -137,22 +137,27 @@ def login(request):
                 print(f"DEBUG: Role mismatch (403) - Found {user_role}")
                 return Response({"detail": "This portal is for faculty and admins only. Students must use the Student Portal."}, status=403)
         
-        # 🔒 Lock check
+        # 🔒 Lock & Approval check
         if user.role == 'student':
             profile = StudentProfile.objects.filter(user=user).first()
-            if profile and hasattr(profile, 'is_locked') and profile.is_locked:
-                 return Response({"detail": "Your account is locked. Please contact support."}, status=403)
+            if profile:
+                if hasattr(profile, 'is_locked') and profile.is_locked:
+                    return Response({"detail": "Your account is locked. Please contact support."}, status=403)
+                if profile.approval_status == 'pending':
+                    return Response({"detail": "Your account is pending approval. Please wait until Faculty/Admin approves your account."}, status=403)
+                elif profile.approval_status == 'rejected':
+                    return Response({"detail": "Your registration has been rejected. Please contact the administrator."}, status=403)
 
-        # ⚡ AUTO-ACTIVATE FACULTY ON CORRECT LOGIN (Fix for stuck accounts)
-        if user.role == 'faculty' and not user.is_active:
-            print(f"DEBUG: Auto-activating faculty account for {user.username}")
+        # ⚡ AUTO-ACTIVATE FACULTY & ADMIN ON CORRECT LOGIN (Fix for stuck/inactive accounts)
+        if user.role in ['faculty', 'admin'] and not user.is_active:
+            print(f"DEBUG: Auto-activating {user.role} account for {user.username}")
             user.is_active = True
             # We will save after updating last_login below
         
-        # 🛡️ ADMINS ARE ALWAYS ALLOWED (no activation needed)
+        # 🛡️ ADMINS ARE ALWAYS ALLOWED
         elif user.role == 'admin':
             print(f"DEBUG: Admin login detected for {user.username}")
-            # Admins don't need activation checks
+            user.is_active = True
         
         # 🛑 Still block inactive students
         elif user.role == 'student' and not user.is_active:
@@ -592,6 +597,12 @@ def register(request):
             
             primary_course_obj = None
             
+            batch_id = request.data.get("batch_id")
+            batch_obj = None
+            if batch_id:
+                from myapp.models import Batch
+                batch_obj = Batch.objects.filter(id=batch_id).first()
+
             for title in course_titles:
                 # Create course if it doesn't exist
                 course_obj, created = Course.objects.get_or_create(
@@ -611,7 +622,10 @@ def register(request):
                         primary_course_obj = course_obj
                 
                 # Also create enrollment for each course
-                CourseEnrollment.objects.get_or_create(user=user, course=course_obj)
+                enrollment, _ = CourseEnrollment.objects.get_or_create(user=user, course=course_obj)
+                if batch_obj and batch_obj.course_id == course_obj.id:
+                    enrollment.batch = batch_obj
+                    enrollment.save(update_fields=['batch'])
             
             # 🛡️ ROBUST SYNC: Save studentId to profile and link courses
             sp_kwargs = {"user": user, "course": primary_course_obj}
@@ -705,19 +719,18 @@ def register(request):
             "verification_required": True
         })
 
-    # Student flow (immediate login)
-    tokens = get_tokens(user)
+    # Student flow (immediate login blocked, status is pending)
     student_profile = StudentProfile.objects.filter(user=user).select_related('course').first()
     course_title = student_profile.course.title if student_profile and student_profile.course else course
     
     return Response({
-        **tokens,
+        "message": "Registration successful. Your account has been created successfully. Please wait until the Faculty or Admin verifies your account.",
+        "approval_required": True,
         "user": {
             "username": user.username,
             "email": user.email,
             "role": user.role,
             "course": course_title if user.role == 'student' else "",
             "enrolled_courses": student_profile.enrolled_courses_titles() if (user.role.lower().strip() == 'student' if user.role else False) and student_profile else ([course] if isinstance(course, str) else course)
-        },
-        "message": "Registration successful"
+        }
     })

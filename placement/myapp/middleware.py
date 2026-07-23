@@ -184,4 +184,58 @@ class LoggingMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         """Log outgoing responses"""
         logger.info(f"Response: {request.method} {request.path} - {getattr(response, 'status_code', 'N/A')}")
+        return response
+
+
+class StudentApprovalMiddleware(MiddlewareMixin):
+    """
+    Middleware to restrict access for pending or rejected student accounts
+    """
+    def process_request(self, request):
+        # Allow checking paths that should be public or login/register
+        exempt_paths = [
+            '/api/login/',
+            '/api/register/',
+            '/api/send_otp/',
+            '/api/verify_otp/',
+            '/api/forgot-password/',
+            '/api/jwt/',
+            '/api/test-',
+            '/media/',
+            '/static/',
+        ]
+        
+        # Don't restrict if path is exempt
+        if any(request.path.startswith(path) for path in exempt_paths):
+            return None
+
+        user = getattr(request, 'user', None)
+        if not user or not user.is_authenticated:
+            from rest_framework_simplejwt.authentication import JWTAuthentication
+            try:
+                authenticator = JWTAuthentication()
+                header = authenticator.get_header(request)
+                if header is not None:
+                    raw_token = authenticator.get_raw_token(header)
+                    if raw_token is not None:
+                        validated_token = authenticator.get_validated_token(raw_token)
+                        user = authenticator.get_user(validated_token)
+            except Exception:
+                user = None
+
+        if user and user.is_authenticated and getattr(user, 'role', '') == 'student':
+            from myapp.models import StudentProfile
+            profile = StudentProfile.objects.filter(user=user).first()
+            if profile:
+                if profile.approval_status == 'pending':
+                    return JsonResponse({
+                        "detail": "Your account is pending approval. Please wait until Faculty/Admin approves your account.",
+                        "approval_status": "pending"
+                    }, status=403)
+                elif profile.approval_status == 'rejected':
+                    return JsonResponse({
+                        "detail": "Your registration has been rejected. Please contact the administrator.",
+                        "approval_status": "rejected"
+                    }, status=403)
+
         return None
