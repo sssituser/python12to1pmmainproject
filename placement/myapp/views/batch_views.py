@@ -131,6 +131,14 @@ def update_batch(request, batch_id):
     if 'max_students' in data: batch.max_students = data['max_students']
     if 'status' in data: batch.status = data['status']
     if 'description' in data: batch.description = data['description']
+    if 'code' in data:
+        new_code = data['code']
+        if new_code != batch.code and Batch.objects.filter(code=new_code).exists():
+            return Response({"detail": f"Batch code '{new_code}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        batch.code = new_code
+    if 'course_id' in data:
+        course = get_object_or_404(Course, id=data['course_id'])
+        batch.course = course
 
     batch.save()
 

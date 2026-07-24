@@ -32,9 +32,26 @@
             "duration": "Self-paced",
             "progress": 0,
             "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
+            "topics": [
+                "oops"
+            ],
+            "modules": [
+                {
+                    "title": "Java",
+                    "topics": [
+                        {
+                            "title": "oops",
+                            "video": "https://youtu.be/s7UgQ7_1KQY?si=1-nFUl5lHwf3s_vt"
+                        }
+                    ]
+                }
+            ],
+            "custom_videos": {
+                "oops": {
+                    "url": "https://youtu.be/s7UgQ7_1KQY?si=1-nFUl5lHwf3s_vt",
+                    "type": "link"
+                }
+            },
             "created_at": "2026-05-31 13:59:44.793362+00:00"
         },
         {
@@ -364,7 +381,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-24 09:35:24.811795+00:00"
+            "updated_at": "2026-07-24 13:38:16.829133+00:00"
         },
         {
             "id": 5,
@@ -378,7 +395,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-24 09:35:24.828294+00:00"
+            "updated_at": "2026-07-24 13:38:16.847373+00:00"
         },
         {
             "id": 9,
@@ -392,7 +409,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-24 09:35:24.842321+00:00"
+            "updated_at": "2026-07-24 13:38:16.864366+00:00"
         }
     ]
 }

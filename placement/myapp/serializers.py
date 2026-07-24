@@ -416,6 +416,8 @@ class CourseFacultySerializer(serializers.ModelSerializer):
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating courses"""
+    level = serializers.CharField(required=False, default='Beginner')
+    duration = serializers.CharField(required=False, default='Self-paced')
 
     class Meta:
         model = Course

@@ -30,6 +30,8 @@ function Register() {
     course: [],
     phone_number: "",
     batch_id: "",
+    first_name: "",
+    last_name: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -97,7 +99,8 @@ function Register() {
     if (!formData.studentId) err.studentId = "Student ID required";
     if (!formData.email.includes("@")) err.email = "Enter valid email";
     if (!formData.phone_number) err.phone_number = "Phone number required";
-    if (formData.course.length === 0) err.course = "Please select at least one course";
+    if (!formData.first_name.trim()) err.first_name = "First name required";
+    if (!formData.last_name.trim()) err.last_name = "Last name required";
     return err;
   };
 
@@ -266,125 +269,42 @@ function Register() {
                   {errors.email && (
                     <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.email}</p>
                   )}
-                </div>
-              </div>
+                 </div>
 
-              {/* 🎓 MULTI-SELECT COURSE DROPDOWN */}
-              <div className="mt-4 relative">
-                <label className="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2 ml-1">
-                  Select Courses (Multiple allowed)
-                </label>
-                
-                <div 
-                  onClick={() => setIsCourseDropdownOpen(!isCourseDropdownOpen)}
-                  className={`w-full px-4 py-3 bg-white border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isCourseDropdownOpen ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'}`}
-                >
-                  <span className={`text-sm ${formData.course.length > 0 ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
-                    {formData.course.length > 0 
-                      ? `${formData.course.length} Course${formData.course.length > 1 ? 's' : ''} Selected` 
-                      : "Choose your courses"}
-                  </span>
-                  <svg 
-                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isCourseDropdownOpen ? 'rotate-180 text-blue-500' : ''}`} 
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-
-                {isCourseDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="max-h-60 overflow-y-auto p-2 space-y-1">
-                      {loadingCourses ? (
-                        <div className="py-8 flex flex-col items-center gap-2">
-                           <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                           <p className="text-[10px] text-gray-400 font-bold uppercase">Fetching Curriculum...</p>
-                        </div>
-                      ) : courses.length > 0 ? (
-                        courses.map((c) => {
-                          const courseTitle = (typeof c === 'string' ? c : (c.title || String(c))).toUpperCase();
-                          const isSelected = formData.course.includes(courseTitle);
-                          return (
-                            <label 
-                              key={courseTitle} 
-                              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${isSelected ? 'bg-blue-50 border-blue-100' : 'hover:bg-gray-50'}`}
-                            >
-                              <div className="relative flex items-center">
-                                <input
-                                  type="checkbox"
-                                  className="peer sr-only"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    const updated = e.target.checked
-                                      ? [...formData.course, courseTitle]
-                                      : formData.course.filter(item => item !== courseTitle);
-                                    setFormData({ ...formData, course: updated });
-                                  }}
-                                />
-                                <div className={`w-5 h-5 border-2 rounded-md transition-all flex items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                                  {isSelected && (
-                                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                              <span className={`text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
-                                {courseTitle}
-                              </span>
-                            </label>
-                          );
-                        })
-                      ) : (
-                        <div className="py-4 text-center text-xs text-orange-500 font-bold uppercase">No courses found</div>
-                      )}
-                    </div>
-                    
-                    {formData.course.length > 0 && (
-                      <div className="p-2 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
-                        <button 
-                          onClick={() => setFormData({ ...formData, course: [] })}
-                          className="text-[9px] text-red-500 font-bold uppercase hover:underline p-1"
-                        >
-                          Clear Selection
-                        </button>
-                        <button 
-                          onClick={() => setIsCourseDropdownOpen(false)}
-                          className="px-3 py-1 bg-blue-600 text-white text-[9px] font-bold uppercase rounded-md shadow-sm"
-                        >
-                          Apply
-                        </button>
-                      </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="First Name"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 text-sm font-medium"
+                      value={formData.first_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, first_name: e.target.value })
+                      }
+                    />
+                    {errors.first_name && (
+                      <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.first_name}</p>
                     )}
                   </div>
-                )}
-              </div>
-              
-              {errors.course && (
-                <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold uppercase">{errors.course}</p>
-              )}
 
-              {/* 🎓 DYNAMIC BATCH DROPDOWN */}
-              {formData.course.length > 0 && (
-                <div className="mt-4">
-                  <label className="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2 ml-1">
-                    Select Batch (Optional)
-                  </label>
-                  <select
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm"
-                    value={formData.batch_id}
-                    onChange={(e) => setFormData({ ...formData, batch_id: e.target.value })}
-                  >
-                    <option value="">Choose your batch</option>
-                    {batches
-                      .filter(b => formData.course.some(title => b.course_title.toUpperCase() === title.toUpperCase()))
-                      .map(b => (
-                        <option key={b.id} value={b.id}>{b.name} ({b.code}) - {b.course_title}</option>
-                      ))
-                    }
-                  </select>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Last Name"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 text-sm font-medium"
+                      value={formData.last_name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, last_name: e.target.value })
+                      }
+                    />
+                    {errors.last_name && (
+                      <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{errors.last_name}</p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+
+
               
               {/* PHONE NUMBER */}
               <div className="mt-4">

@@ -71,7 +71,7 @@ def get_student_courses(request, student_id=None):
 @permission_classes([IsAuthenticated])
 def assign_course(request):
     """
-    Assign a course to a student.
+    Assign one or more courses to a student.
     Only accessible by Admin and Faculty.
     """
     user = request.user
@@ -79,39 +79,54 @@ def assign_course(request):
         return Response({"detail": "Only Admin or Faculty can assign courses."}, status=status.HTTP_403_FORBIDDEN)
         
     student_id = request.data.get('student_id')
+    course_ids = request.data.get('course_ids', [])
     course_id = request.data.get('course_id')
     
-    if not student_id or not course_id:
-        return Response({"detail": "student_id and course_id are required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not course_ids and course_id:
+        course_ids = [course_id]
+        
+    if not student_id or not course_ids:
+        return Response({"detail": "student_id and course_ids are required."}, status=status.HTTP_400_BAD_REQUEST)
         
     student_user = get_object_or_404(User, id=student_id)
-    course_obj = get_object_or_404(Course, id=course_id)
     
-    # Check if already enrolled
-    if CourseEnrollment.objects.filter(user=student_user, course=course_obj).exists():
-        return Response({"detail": "Student is already enrolled in this course."}, status=status.HTTP_400_BAD_REQUEST)
-        
     batch_id = request.data.get('batch_id')
     batch_obj = None
     if batch_id:
         from myapp.models import Batch
         batch_obj = Batch.objects.filter(id=batch_id).first()
 
-    try:
+    assigned_titles = []
+    already_enrolled = []
+    
+    from myapp.models import StudentProfile, Course, CourseEnrollment
+
+    for c_id in course_ids:
+        course_obj = Course.objects.filter(id=c_id).first()
+        if not course_obj:
+            continue
+        
+        # Check if already enrolled
+        if CourseEnrollment.objects.filter(user=student_user, course=course_obj).exists():
+            already_enrolled.append(course_obj.title)
+            continue
+            
         enrollment = CourseEnrollment.objects.create(
             user=student_user,
             course=course_obj,
-            batch=batch_obj,
+            batch=batch_obj if (batch_obj and batch_obj.course_id == course_obj.id) else None,
             status='Active',
             progress=0,
             completion_percentage=0.0
         )
         
-        # Unconditionally sync/update StudentProfile.course to keep overview, profile and course active course dynamic
+        # Update StudentProfile.course to keep overview, profile and course active course dynamic
         profile = StudentProfile.objects.filter(user=student_user).first()
         if profile:
             profile.course = course_obj
             profile.save(update_fields=['course'])
+
+        assigned_titles.append(course_obj.title)
 
         # Trigger course enrollment notification email in background thread
         if student_user.email:
@@ -124,18 +139,17 @@ def assign_course(request):
                 ).start()
             except Exception as email_err:
                 print(f"Error triggering course enrollment email thread: {email_err}")
-            
-        return Response({
-            "success": True,
-            "message": f"Course '{course_obj.title}' assigned successfully.",
-            "data": {
-                "enrollment_id": enrollment.id,
-                "course_id": course_obj.id,
-                "title": course_obj.title
-            }
-        })
-    except IntegrityError:
-        return Response({"detail": "Enrollment already exists or database constraint failed."}, status=status.HTTP_400_BAD_REQUEST)
+
+    msg = ""
+    if assigned_titles:
+        msg += f"Courses {', '.join(assigned_titles)} assigned successfully. "
+    if already_enrolled:
+        msg += f"Student was already enrolled in: {', '.join(already_enrolled)}."
+
+    return Response({
+        "success": True,
+        "message": msg.strip()
+    })
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

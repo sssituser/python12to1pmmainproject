@@ -48,7 +48,7 @@ export default function StudentDashboard() {
           fetch(`http://${window.location.hostname}:8000/api/profile/`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`http://${window.location.hostname}:8000/api/student/my-courses/`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`http://${window.location.hostname}:8000/api/live-classes/`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`http://${window.location.hostname}:8000/api/exams/placement/`, { headers: { Authorization: `Bearer ${token}` } })
+          fetch(`http://${window.location.hostname}:8000/api/exams/list/`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
 
         if (profileRes.ok) {

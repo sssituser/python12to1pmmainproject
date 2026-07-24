@@ -550,6 +550,8 @@ def register(request):
     role = request.data.get("role", "student").strip().lower()
     course = request.data.get("course", "")
     phone_number = request.data.get("phone_number", "")
+    first_name = request.data.get("first_name", "").strip()
+    last_name = request.data.get("last_name", "").strip()
 
     print(f"DEBUG REGISTER: username={username}, studentId={studentId}, role={role}")
 
@@ -575,6 +577,8 @@ def register(request):
             username=username,
             password=password,
             email=email,
+            first_name=first_name,
+            last_name=last_name,
             is_active=is_active
         )
         user.role = role

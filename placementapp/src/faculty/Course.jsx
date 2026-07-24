@@ -1806,12 +1806,12 @@ function CoursesPage() {
       if (token && (typeof courseToSync.id === 'number' || isUnsyncedCourse)) {
         const payload = {
           title: courseToSync.title,
-          level: courseToSync.level,
-          duration: courseToSync.duration,
-          topics: courseToSync.topics,
-          modules: courseToSync.modules,
+          level: courseToSync.level || "Beginner",
+          duration: courseToSync.duration || "Self-paced",
+          topics: courseToSync.topics || [],
+          modules: courseToSync.modules || [],
           custom_videos: courseToSync.customVideos || {},
-          progress: courseToSync.progress
+          progress: courseToSync.progress || 0
         };
 
         const endpoint = isUnsyncedCourse ? `http://${window.location.hostname}:8000/api/courses/` : `http://${window.location.hostname}:8000/api/courses/${courseToSync.id}/`;
