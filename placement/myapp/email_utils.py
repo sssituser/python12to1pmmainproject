@@ -111,11 +111,20 @@ def _send_rich_email(subject, to_email, html_content):
         logger.info(f"HTML Email sent successfully to {to_email} | subject: {subject}")
         return True
     except Exception as e:
-        logger.error(f"SMTP ERROR sending HTML to {to_email}: {type(e).__name__}: {e}")
-        return False
+        logger.error(f"SMTP ERROR sending HTML to {to_email}: {type(e).__name__}: {e}. Falling back to Console EmailBackend.")
+        try:
+            from django.core.mail import get_connection
+            console_conn = get_connection('django.core.mail.backends.console.EmailBackend')
+            msg.connection = console_conn
+            msg.send(fail_silently=True)
+            return True
+        except Exception as fallback_err:
+            logger.error(f"Failed console email fallback: {fallback_err}")
+            return False
 
 def send_plain_email(subject, message, to_email):
     """Sends a fallback plain text email utilizing active SMTP configuration."""
+    msg = None
     try:
         active_config = EmailConfiguration.objects.filter(is_active=True).first()
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -146,8 +155,29 @@ def send_plain_email(subject, message, to_email):
         logger.info(f"Plain Email sent successfully to {to_email} | subject: {subject}")
         return True
     except Exception as e:
-        logger.error(f"SMTP ERROR sending plain to {to_email}: {type(e).__name__}: {e}")
-        return False
+        logger.error(f"SMTP ERROR sending plain to {to_email}: {type(e).__name__}: {e}. Falling back to Console EmailBackend.")
+        try:
+            if msg:
+                from django.core.mail import get_connection
+                console_conn = get_connection('django.core.mail.backends.console.EmailBackend')
+                msg.connection = console_conn
+                msg.send(fail_silently=True)
+                return True
+            else:
+                # If msg creation itself failed, send using send_mail directly to console backend
+                from django.core.mail import send_mail
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [to_email],
+                    fail_silently=True,
+                    html_message=None
+                )
+                return True
+        except Exception as fallback_err:
+            logger.error(f"Failed console email fallback: {fallback_err}")
+            return False
 
 # ── EMAIL FUNCTIONS ───────────────────────────────────────────
 

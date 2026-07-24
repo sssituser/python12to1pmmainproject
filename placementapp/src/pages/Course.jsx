@@ -750,7 +750,6 @@ function CoursesPage() {
         {selectedSubject && (
           <div className="w-full animate-fadeIn max-w-6xl mx-auto">
             <div className="relative">
-              {/* Vertical Timeline Guide - hidden if only 1 topic */}
               {selectedCourse.modules.find(m => m.title === selectedSubject)?.topics.length > 1 && (
                 <div className="absolute left-7 top-10 bottom-10 w-0.5 border-l-2 border-dashed border-blue-100 z-0"></div>
               )}
@@ -758,6 +757,26 @@ function CoursesPage() {
               <div className="space-y-6 relative z-10">
                 {selectedCourse.modules.find(m => m.title === selectedSubject)?.topics.map((topic, idx) => {
                   const topicTitle = typeof topic === 'string' ? topic : topic.title;
+                  const watched = JSON.parse(localStorage.getItem('watchedTopics') || '{}');
+                  const watchedKey = `${selectedCourse.id}_${topicTitle}`;
+                  const isCompleted = !!watched[watchedKey];
+
+                  // Get all topics count for course
+                  const getAllTopics = (course) => {
+                    let list = [];
+                    if (course && course.modules) {
+                      course.modules.forEach(m => {
+                        if (m.topics) {
+                          m.topics.forEach(t => {
+                            const title = typeof t === 'string' ? t : t.title;
+                            if (title) list.push(title);
+                          });
+                        }
+                      });
+                    }
+                    return list;
+                  };
+
                   return (
                     <div 
                       key={idx} 
@@ -765,32 +784,97 @@ function CoursesPage() {
                       onClick={() => handleWatchClick(selectedCourse.title, topic)}
                     >
                       <div className="flex items-center gap-6">
+                        {/* Completion Checkbox */}
+                        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isCompleted}
+                            title="Mark as completed"
+                            onChange={async (e) => {
+                              const isChecked = e.target.checked;
+                              const updatedWatched = JSON.parse(localStorage.getItem('watchedTopics') || '{}');
+                              if (isChecked) {
+                                updatedWatched[watchedKey] = true;
+                              } else {
+                                delete updatedWatched[watchedKey];
+                              }
+                              localStorage.setItem('watchedTopics', JSON.stringify(updatedWatched));
+                              
+                              // Re-calculate progress dynamically
+                              const allCourseTopics = getAllTopics(selectedCourse);
+                              let completedCount = 0;
+                              allCourseTopics.forEach(t => {
+                                if (updatedWatched[`${selectedCourse.id}_${t}`]) {
+                                  completedCount++;
+                                }
+                              });
+                              
+                              const newProgress = allCourseTopics.length > 0 ? Math.round((completedCount / allCourseTopics.length) * 100) : 0;
+                              
+                              // Update course state to reflect in real-time
+                              setSelectedCourse({
+                                ...selectedCourse,
+                                progress: newProgress
+                              });
+                              
+                              // Call backend API to sync progress
+                              try {
+                                const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+                                await fetch(`http://${window.location.hostname}:8000/api/student/courses/update-progress/`, {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({
+                                    course_id: selectedCourse.id,
+                                    progress: newProgress
+                                  })
+                                });
+                              } catch (err) {
+                                console.error("Failed to sync progress to database", err);
+                              }
+                            }}
+                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer transition-all"
+                          />
+                        </div>
+
                         {/* Status/Index Circle */}
                         <div className="relative">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-blue-100 shadow-md group-hover:scale-105 transition-transform duration-300">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform duration-300 ${
+                            isCompleted 
+                              ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-green-100'
+                              : 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-blue-100'
+                          }`}>
                             {idx + 1}
                           </div>
                         </div>
 
                         <div>
-                          <h4 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
+                          <h4 className={`text-lg font-bold uppercase tracking-tight transition-colors ${
+                            isCompleted ? 'text-slate-400 line-through' : 'text-slate-800 group-hover:text-blue-600'
+                          }`}>
                             {topicTitle}
                           </h4>
                           <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
-                            Ready to Watch
+                            {isCompleted ? 'Completed' : 'Ready to Watch'}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner group-hover:shadow-lg">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-inner group-hover:shadow-lg ${
+                          isCompleted
+                            ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
+                            : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                        }`}>
                           <FaPlay className="text-sm ml-0.5 group-hover:animate-pulse" />
                         </div>
                       </div>
                     </div>
-                  );
                 })}
+              </div>
 
                 {selectedCourse.modules.find(m => m.title === selectedSubject)?.topics.length === 0 && (
                   <div className="py-24 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">

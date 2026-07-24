@@ -30,7 +30,11 @@ from .views.admin_views import all_users_api, create_faculty_api, create_student
 from .views.notification_views import list_notifications, unread_count, mark_read, mark_all_read, delete_notification
 from .views.course_views import CourseViewSet, student_courses, faculty_courses, create_course, get_course_details, get_course_topics
 from .views.student_approval_views import list_student_approvals, approve_student, reject_student
-from .views.student_courses_views import get_student_courses, assign_course, remove_course, view_available_courses, get_course_progress, update_enrollment_batch
+from .views.student_courses_views import (
+    get_student_courses, assign_course, remove_course, 
+    view_available_courses, get_course_progress, update_enrollment_batch,
+    update_student_course_progress
+)
 from .views.monitoring_views import get_login_email_status, get_login_email_history, get_auto_deletion_info
 from .views.playground_dispatcher import playground_questions_dispatcher
 from .views.marks_views import get_students_and_marks, upload_exam_marks, get_course_exams
@@ -219,6 +223,7 @@ urlpatterns = [
     path('student/courses/available/', view_available_courses, name='view_available_courses'),
     path('student/courses/<int:course_id>/progress/', get_course_progress, name='get_course_progress'),
     path('student/courses/update-batch/', update_enrollment_batch, name='update_enrollment_batch'),
+    path('student/courses/update-progress/', update_student_course_progress, name='update_student_course_progress'),
 
     # ── Batch Management URLs ──────────────────────────────────────────────────
     path('batches/', list_batches, name='list_batches'),

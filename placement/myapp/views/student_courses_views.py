@@ -297,3 +297,43 @@ def update_enrollment_batch(request):
             "batch_code": batch_obj.code if batch_obj else None
         }
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_student_course_progress(request):
+    """
+    Update the course progress percentage for the authenticated student.
+    """
+    user = request.user
+    if user.role != 'student':
+        return Response({"detail": "Only students can update course progress."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    course_id = request.data.get('course_id')
+    progress = request.data.get('progress')
+    
+    if course_id is None or progress is None:
+        return Response({"detail": "course_id and progress are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    course_obj = get_object_or_404(Course, id=course_id)
+    enrollment = get_object_or_404(CourseEnrollment, user=user, course=course_obj)
+    
+    try:
+        progress_val = int(progress)
+        if progress_val < 0 or progress_val > 100:
+            return Response({"detail": "Progress must be between 0 and 100."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        enrollment.progress = progress_val
+        enrollment.completion_percentage = float(progress_val)
+        enrollment.is_eligible_for_certificate = progress_val >= 80
+        enrollment.save(update_fields=['progress', 'completion_percentage', 'is_eligible_for_certificate'])
+        
+        return Response({
+            "success": True,
+            "message": f"Course progress updated to {progress_val}%.",
+            "data": {
+                "course_id": course_id,
+                "progress": progress_val
+            }
+        })
+    except ValueError:
+        return Response({"detail": "Invalid progress value."}, status=status.HTTP_400_BAD_REQUEST)

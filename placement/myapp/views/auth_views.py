@@ -697,6 +697,19 @@ def register(request):
             admin_thread.daemon = True
             admin_thread.start()
 
+            # 📧 Send Welcome / Account Creation email to the student (async)
+            if email:
+                try:
+                    from myapp.email_utils import send_account_creation_email
+                    student_welcome_thread = threading.Thread(
+                        target=send_account_creation_email,
+                        args=(email, username, password, 'student')
+                    )
+                    student_welcome_thread.daemon = True
+                    student_welcome_thread.start()
+                except Exception as student_email_err:
+                    print(f"DEBUG: Failed to initiate student welcome email: {student_email_err}")
+
     if role == 'faculty':
         # Generate & Send OTP for verification
         otp = str(random.randint(100000, 999999))
