@@ -834,7 +834,7 @@ function CoursesPage() {
                               } catch (err) {
                                 console.error("Failed to sync progress to database", err);
                               }
-                            }}}
+                            }}
                             className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer transition-all"
                           />
                         </div>
@@ -873,6 +873,7 @@ function CoursesPage() {
                         </div>
                       </div>
                     </div>
+                  );
                 })}
               </div>
 
@@ -885,8 +886,7 @@ function CoursesPage() {
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     );
   }
