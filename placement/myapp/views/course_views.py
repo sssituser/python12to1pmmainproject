@@ -29,8 +29,18 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        # Retrieve all courses and filter duplicates/empty titles dynamically
         queryset = Course.objects.all().order_by('id')
+        
+        # Filter by faculty's assigned courses if role is 'faculty'
+        user = self.request.user
+        if user and user.is_authenticated and hasattr(user, 'role') and user.role and user.role.lower().strip() == 'faculty':
+            from myapp.models import FacultyAssignment, Batch
+            assigned_ids = list(FacultyAssignment.objects.filter(faculty=user).values_list('course_id', flat=True))
+            batch_ids = list(Batch.objects.filter(faculty=user).values_list('course_id', flat=True))
+            allowed_ids = list(set(assigned_ids + batch_ids))
+            queryset = queryset.filter(id__in=allowed_ids)
+
+        # Retrieve all courses and filter duplicates/empty titles dynamically
         seen_titles = set()
         unique_ids = []
         for course in queryset:
@@ -98,7 +108,17 @@ def student_courses(request):
 def faculty_courses(request):
     """API endpoint for faculty courses - Live DB Mirror"""
     try:
+        user = request.user
         courses = Course.objects.all().order_by('id')
+        
+        # If user is a faculty member, filter only courses they teach/are assigned to
+        if user and user.is_authenticated and hasattr(user, 'role') and user.role and user.role.lower().strip() == 'faculty':
+            from myapp.models import FacultyAssignment, Batch
+            assigned_ids = list(FacultyAssignment.objects.filter(faculty=user).values_list('course_id', flat=True))
+            batch_ids = list(Batch.objects.filter(faculty=user).values_list('course_id', flat=True))
+            allowed_ids = list(set(assigned_ids + batch_ids))
+            courses = courses.filter(id__in=allowed_ids)
+
         result = []
         seen_titles = set()
         for course in courses:

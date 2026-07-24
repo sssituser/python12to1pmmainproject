@@ -56,6 +56,7 @@ def get_student_courses(request, student_id=None):
             "completion_percentage": enrollment.completion_percentage,
             "batch_id": enrollment.batch.id if enrollment.batch else None,
             "batch_name": enrollment.batch.name if enrollment.batch else "Unassigned",
+            "batch_code": enrollment.batch.code if enrollment.batch else "Unassigned",
             "is_eligible_for_certificate": enrollment.is_eligible_for_certificate,
             "is_locked": enrollment.is_locked
         })
@@ -106,9 +107,9 @@ def assign_course(request):
             completion_percentage=0.0
         )
         
-        # Sync to StudentProfile.course if none is set
+        # Unconditionally sync/update StudentProfile.course to keep overview, profile and course active course dynamic
         profile = StudentProfile.objects.filter(user=student_user).first()
-        if profile and not profile.course:
+        if profile:
             profile.course = course_obj
             profile.save(update_fields=['course'])
 
@@ -278,6 +279,7 @@ def update_enrollment_batch(request):
             "enrollment_id": enrollment.id,
             "course_id": course_obj.id,
             "batch_id": batch_id,
-            "batch_name": batch_obj.name if batch_obj else None
+            "batch_name": batch_obj.name if batch_obj else None,
+            "batch_code": batch_obj.code if batch_obj else None
         }
     })

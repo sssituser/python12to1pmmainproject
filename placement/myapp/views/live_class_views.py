@@ -35,7 +35,14 @@ def list_live_classes(request):
         queryset = queryset.filter(status=status_filter)
 
     data = []
+    now = timezone.now()
     for session in queryset:
+        is_future = session.start_time > now
+        has_started = session.status == 'Live'
+        meeting_link = session.meeting_link
+        if user.role == 'student' and is_future and not has_started:
+            meeting_link = ""
+
         data.append({
             "id": session.id,
             "title": session.title,
@@ -47,13 +54,14 @@ def list_live_classes(request):
             "module_name": session.module.name if session.module else "All Modules",
             "topic": session.topic,
             "faculty_name": session.faculty.get_full_name() or session.faculty.username,
-            "meeting_link": session.meeting_link,
+            "meeting_link": meeting_link,
             "meeting_id": session.meeting_id,
-            "start_time": session.start_time.strftime("%Y-%m-%d %H:%M"),
-            "end_time": session.end_time.strftime("%Y-%m-%d %H:%M") if session.end_time else None,
+            "start_time": timezone.localtime(session.start_time).strftime("%Y-%m-%d %H:%M"),
+            "end_time": timezone.localtime(session.end_time).strftime("%Y-%m-%d %H:%M") if session.end_time else None,
             "status": session.status,
             "recording_url": session.recording_url,
-            "created_at": session.created_at.strftime("%Y-%m-%d")
+            "created_at": session.created_at.strftime("%Y-%m-%d"),
+            "is_future": is_future
         })
 
     return Response({
@@ -111,7 +119,7 @@ def create_live_class(request):
 @permission_classes([IsAuthenticated])
 def update_live_class(request, session_id):
     """
-    Update live class status or attach recording URL.
+    Update live class details, status, or attach recording URL.
     """
     user = request.user
     if user.role not in ['admin', 'faculty']:
@@ -120,14 +128,51 @@ def update_live_class(request, session_id):
     session = get_object_or_404(LiveClassSession, id=session_id)
     data = request.data
 
+    # Validate scheduled start time before starting class live
+    if 'status' in data and data['status'] == 'Live':
+        if session.start_time > timezone.now():
+            scheduled_str = timezone.localtime(session.start_time).strftime("%Y-%m-%d %H:%M")
+            return Response(
+                {"detail": f"This class is scheduled for {scheduled_str} and cannot be started yet."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    if 'title' in data: session.title = data['title']
+    if 'course_id' in data:
+        session.course = get_object_or_404(Course, id=data['course_id'])
+    if 'batch_id' in data:
+        session.batch = get_object_or_404(Batch, id=data['batch_id'])
+    if 'module_id' in data:
+        session.module = get_object_or_404(CourseModule, id=data['module_id']) if data['module_id'] else None
+    if 'topic' in data: session.topic = data['topic']
+    if 'meeting_link' in data: session.meeting_link = data['meeting_link']
+    if 'meeting_id' in data: session.meeting_id = data['meeting_id']
+    if 'start_time' in data: session.start_time = data['start_time']
+    if 'end_time' in data: session.end_time = data['end_time']
     if 'status' in data: session.status = data['status']
     if 'recording_url' in data: session.recording_url = data['recording_url']
-    if 'meeting_link' in data: session.meeting_link = data['meeting_link']
-    if 'end_time' in data: session.end_time = data['end_time']
 
     session.save()
 
     return Response({
         "success": True,
         "message": f"Live class '{session.title}' updated successfully."
+    })
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_live_class(request, session_id):
+    """
+    Delete a live class session.
+    """
+    user = request.user
+    if user.role not in ['admin', 'faculty']:
+        return Response({"detail": "Only Admin or Faculty can delete live classes."}, status=status.HTTP_403_FORBIDDEN)
+
+    session = get_object_or_404(LiveClassSession, id=session_id)
+    session.delete()
+
+    return Response({
+        "success": True,
+        "message": "Live class session deleted successfully."
     })

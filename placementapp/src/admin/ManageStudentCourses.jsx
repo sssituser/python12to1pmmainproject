@@ -160,6 +160,12 @@ function ManageStudentCourses() {
       toast.warn("Please select a course to assign.");
       return;
     }
+
+    const courseObj = availableCourses.find(c => c.id === parseInt(selectedCourseToAssign));
+    const courseTitle = courseObj ? courseObj.title : "this course";
+    if (!window.confirm(`Are you sure you want to assign '${courseTitle}' to ${selectedStudent?.name || selectedStudent?.username || "this student"}?`)) {
+      return;
+    }
     
     try {
       const res = await makeRequest(`http://${window.location.hostname}:8000/api/student/courses/assign/`, {
@@ -375,36 +381,38 @@ function ManageStudentCourses() {
                   {availableCourses.length === 0 ? (
                     <p className="text-xs text-green-700 italic">This student is already enrolled in all available courses.</p>
                   ) : (
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <select
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-                        value={selectedCourseToAssign}
-                        onChange={(e) => setSelectedCourseToAssign(e.target.value)}
-                      >
-                        {availableCourses.map(course => (
-                          <option key={course.id} value={course.id}>{course.title} ({course.level})</option>
-                        ))}
-                      </select>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white w-full"
+                          value={selectedCourseToAssign}
+                          onChange={(e) => setSelectedCourseToAssign(e.target.value)}
+                        >
+                          {availableCourses.map(course => (
+                            <option key={course.id} value={course.id}>{course.title} ({course.level})</option>
+                          ))}
+                        </select>
 
-                      <select
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-                        value={selectedBatchToAssign}
-                        onChange={(e) => setSelectedBatchToAssign(e.target.value)}
-                      >
-                        <option value="">-- Batch (Optional) --</option>
-                        {batches
-                          .filter(b => b.course_id === parseInt(selectedCourseToAssign))
-                          .map(b => (
-                            <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
-                          ))
-                        }
-                      </select>
+                        <select
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white w-full"
+                          value={selectedBatchToAssign}
+                          onChange={(e) => setSelectedBatchToAssign(e.target.value)}
+                        >
+                          <option value="">-- Batch (Optional) --</option>
+                          {batches
+                            .filter(b => b.course_id === parseInt(selectedCourseToAssign))
+                            .map(b => (
+                              <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                            ))
+                          }
+                        </select>
+                      </div>
 
                       <button
                         onClick={handleAssignCourse}
-                        className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                        className="w-full flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition"
                       >
-                        <Plus className="w-4 h-4" /> Assign
+                        <Plus className="w-4 h-4" /> Confirm &amp; Assign Course
                       </button>
                     </div>
                   )}

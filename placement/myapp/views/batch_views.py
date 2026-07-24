@@ -1,13 +1,13 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from myapp.models import Batch, Course, CourseEnrollment, User, StudentProfile
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_batches(request):
     """
     List all batches or filter by course.
@@ -32,10 +32,14 @@ def list_batches(request):
         )
 
     # Scoping for Faculty: only batches assigned to them
-    if user.role == 'faculty':
+    if user.is_authenticated and user.role == 'faculty':
         from myapp.models import FacultyAssignment
         assigned_batch_ids = FacultyAssignment.objects.filter(faculty=user).values_list('batch_id', flat=True)
         queryset = queryset.filter(id__in=assigned_batch_ids)
+    elif user.is_authenticated and user.role == 'student':
+        # ONLY return batches the student is enrolled in
+        enrolled_batch_ids = CourseEnrollment.objects.filter(user=user, batch__isnull=False).values_list('batch_id', flat=True)
+        queryset = queryset.filter(id__in=enrolled_batch_ids)
 
     data = []
     for b in queryset:

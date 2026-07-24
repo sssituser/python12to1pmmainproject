@@ -36,6 +36,8 @@ def get_batch_attendance(request, batch_id):
 
     # Fetch all students in batch
     enrollments = CourseEnrollment.objects.filter(batch=batch).select_related('user')
+    if user.role == 'student':
+        enrollments = enrollments.filter(user=user)
 
     data = []
     for e in enrollments:

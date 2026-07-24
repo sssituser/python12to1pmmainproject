@@ -20,7 +20,8 @@ def get_batch_report(request, batch_id):
     
     # 2. Exam metrics
     exams = Exam.objects.filter(batch=batch)
-    attempts = ExamAttempt.objects.filter(exam__in=exams, user_id__in=students)
+    exam_titles = list(exams.values_list('title', flat=True))
+    attempts = ExamAttempt.objects.filter(exam_title__in=exam_titles, user_id__in=students)
     
     avg_marks = attempts.aggregate(Avg('score'))['score__avg'] or 0
     highest_score = attempts.aggregate(Max('score'))['score__max'] or 0
@@ -29,8 +30,10 @@ def get_batch_report(request, batch_id):
     # Pass Percentage (passing score is >= 40% of total marks)
     total_attempts = attempts.count()
     passed_attempts = 0
+    exam_map = {e.title: e for e in exams}
     for att in attempts:
-        total_m = att.exam.total_marks or 100
+        exam_obj = exam_map.get(att.exam_title)
+        total_m = exam_obj.total_marks if exam_obj else 100
         if att.score >= (0.4 * total_m):
             passed_attempts += 1
     pass_percent = (passed_attempts / total_attempts * 100) if total_attempts > 0 else 0

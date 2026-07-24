@@ -54,6 +54,13 @@ export default function StudentDashboard() {
         if (profileRes.ok) {
           const pData = await profileRes.json();
           setProfile(pData.profile || pData.data || pData);
+          try {
+            const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+            const enrolled = pData.enrolled_courses || (pData.course_title ? [pData.course_title] : []);
+            userObj.enrolledCourses = enrolled;
+            userObj.course = pData.course_title || enrolled[0] || "";
+            localStorage.setItem("user", JSON.stringify(userObj));
+          } catch (e) {}
         }
 
         if (courseRes.ok) {
@@ -80,7 +87,10 @@ export default function StudentDashboard() {
     fetchData();
   }, []);
 
-  const activeBatchName = courses.find(c => c.batch_name && c.batch_name !== "Unassigned")?.batch_name || "Assigned Batch";
+  const activeBatch = courses.find(c => c.batch_name && c.batch_name !== "Unassigned");
+  const activeBatchDisplay = activeBatch 
+    ? `${activeBatch.batch_name} (${activeBatch.batch_code || "N/A"})`
+    : "";
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
@@ -94,9 +104,9 @@ export default function StudentDashboard() {
               <span className="bg-purple-500/30 text-purple-200 text-xs font-bold px-3 py-1 rounded-full border border-purple-400/30 backdrop-blur-md">
                 Student Portal
               </span>
-              {activeBatchName && (
+              {activeBatchDisplay && (
                 <span className="bg-indigo-500/30 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 backdrop-blur-md">
-                  {activeBatchName}
+                  {activeBatchDisplay}
                 </span>
               )}
             </div>
@@ -129,7 +139,10 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+        <NavLink
+          to="/dashboard/live-classes"
+          className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4 hover:shadow-md transition cursor-pointer"
+        >
           <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
             <Video className="w-6 h-6" />
           </div>
@@ -137,7 +150,7 @@ export default function StudentDashboard() {
             <p className="text-xs font-bold text-gray-400 uppercase">Live Sessions</p>
             <h3 className="text-2xl font-extrabold text-gray-900">{liveClasses.length}</h3>
           </div>
-        </div>
+        </NavLink>
 
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
@@ -198,14 +211,23 @@ export default function StudentDashboard() {
                       <p className="text-xs text-gray-500">{lc.course_title} • {lc.start_time}</p>
                     </div>
 
-                    <a
-                      href={lc.meeting_link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"
-                    >
-                      Join Meeting
-                    </a>
+                    {lc.is_future && lc.status !== 'Live' ? (
+                      <span 
+                        className="bg-slate-100 border border-slate-200 text-slate-400 px-3 py-1.5 rounded-xl text-[10px] font-bold italic cursor-not-allowed" 
+                        title={`Starts at ${lc.start_time}`}
+                      >
+                        Join Locked
+                      </span>
+                    ) : (
+                      <a
+                        href={lc.meeting_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+                      >
+                        Join Meeting
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>
@@ -232,8 +254,10 @@ export default function StudentDashboard() {
                 {courses.map(c => (
                   <div key={c.enrollment_id} className="p-4 rounded-2xl border border-gray-200 bg-white hover:shadow-md transition">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
-                        {c.batch_name || "Assigned Batch"}
+                       <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
+                        {c.batch_name && c.batch_code && c.batch_name !== "Unassigned" 
+                          ? `${c.batch_name} (${c.batch_code})` 
+                          : c.batch_name || "Assigned Batch"}
                       </span>
                       <span className="text-xs text-gray-400 font-semibold">{c.progress}% Progress</span>
                     </div>

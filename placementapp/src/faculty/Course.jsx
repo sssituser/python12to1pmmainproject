@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-
 import axios from "axios";
+import toast from "react-hot-toast";
 
 import {
 
@@ -79,6 +78,47 @@ import {
 import { defaultCourses, getIconForCourse, generateTopicsForCourse, generateModulesForCourse, industryCourses } from '../components/CourseData.jsx';
 
 
+
+const pruneOversizedData = (data) => {
+  if (!data) return data;
+  try {
+    return JSON.parse(JSON.stringify(data, (key, value) => {
+      if (typeof value === 'string' && value.length > 2 * 1024 * 1024) {
+        return "base64_pruned_due_to_size_limit";
+      }
+      return value;
+    }));
+  } catch (e) {
+    if (Array.isArray(data)) {
+      return data.map(course => {
+        const c = { ...course };
+        if (c.customVideos) {
+          c.customVideos = Object.fromEntries(
+            Object.entries(c.customVideos).map(([k, v]) => {
+              if (v && v.url && v.url.length > 2 * 1024 * 1024) {
+                return [k, { ...v, url: "base64_pruned_due_to_size_limit" }];
+              }
+              return [k, v];
+            })
+          );
+        }
+        if (c.modules) {
+          c.modules = c.modules.map(m => ({
+            ...m,
+            topics: (m.topics || []).map(t => {
+              if (typeof t === 'object' && t.video && t.video.length > 2 * 1024 * 1024) {
+                return { ...t, video: "base64_pruned_due_to_size_limit" };
+              }
+              return t;
+            })
+          }));
+        }
+        return c;
+      });
+    }
+    return data;
+  }
+};
 
 function CoursesPage() {
 
@@ -430,18 +470,32 @@ function CoursesPage() {
   // Initialize courses state from localStorage to prevent flickering on refresh
 
   const [courses, setCourses] = useState(() => {
+    let isFac = false;
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "null");
+      isFac = u?.role?.toString().toLowerCase() === "faculty";
+    } catch(e){}
 
     const facultySaved = localStorage.getItem('facultyCourses');
-
     const genericSaved = localStorage.getItem('courses');
-
     const saved = facultySaved || genericSaved;
 
-    
+    if (isFac) {
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return parsed.map(c => {
+            const title = typeof c === "string" ? c : (c.title || "");
+            return {
+              ...(typeof c === "string" ? { title: c } : c),
+              icon: getIconForCourse(title)
+            };
+          });
+        } catch(e){}
+      }
+      return [];
+    }
 
-    // 🚀 UNIFIED 1000% FORCE SYNC SYSTEM
-
-    // 🛡️ 1000% Absolute Force Sync with Industrial Curriculum
     const finalMerge = [...defaultCourses];
     if (saved) {
       try {
@@ -523,6 +577,9 @@ function CoursesPage() {
   const [newTopicVidFile, setNewTopicVidFile] = useState('');
 
   const [newTopicVidLink, setNewTopicVidLink] = useState('');
+  const [selectedVideoFileObj, setSelectedVideoFileObj] = useState(null);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState('');
+  const [newTopicVidData, setNewTopicVidData] = useState('');
   
   // PDF upload/link support for topics
   const [showTopicPdfOptions, setShowTopicPdfOptions] = useState(false);
@@ -550,12 +607,9 @@ function CoursesPage() {
 
   useEffect(() => {
 
-    // 🧹 One-time purge of stale localStorage to force fresh deduped data
-    if (!sessionStorage.getItem('cache_cleared')) {
-      localStorage.removeItem('courses');
-      localStorage.removeItem('facultyCourses');
-      sessionStorage.setItem('cache_cleared', '1');
-    }
+    // 🧹 Purge stale course cache on mount to ensure fresh role-based/assigned courses are loaded correctly
+    localStorage.removeItem('courses');
+    localStorage.removeItem('facultyCourses');
 
     const fetchCoursesFromAPI = async () => {
 
@@ -621,8 +675,14 @@ function CoursesPage() {
                return t && !apiTitles.has(t) && !standardTitles.has(t);
             });
 
-            // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS
-            const finalCurriculumRaw = [...localCustomRepos, ...rawCourses, ...standardCourseObjects];
+            let isFacultyMember = false;
+            try {
+              const u = JSON.parse(localStorage.getItem("user") || "null");
+              isFacultyMember = u?.role?.toString().toLowerCase() === "faculty";
+            } catch(e){}
+
+            // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS (If faculty, ONLY show their assigned API courses)
+            const finalCurriculumRaw = isFacultyMember ? rawCourses : [...localCustomRepos, ...rawCourses, ...standardCourseObjects];
 
             const coursesWithIcons = finalCurriculumRaw.map(item => {
               const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
@@ -794,9 +854,13 @@ function CoursesPage() {
 
     }
 
-    localStorage.setItem('courses', JSON.stringify(courses));
-
-    localStorage.setItem('facultyCourses', JSON.stringify(courses)); // Sync with student view
+    const pruned = pruneOversizedData(courses);
+    try {
+      localStorage.setItem('courses', JSON.stringify(pruned));
+      localStorage.setItem('facultyCourses', JSON.stringify(pruned)); // Sync with student view
+    } catch (e) {
+      console.error("Local storage stringify error skipped safely:", e);
+    }
 
   }, [courses]);
 
@@ -1393,7 +1457,7 @@ function CoursesPage() {
       
 
       if (moduleIndex !== -1) {
-        const videoUrl = newTopicVidOpt === 'upload' ? newTopicVidFile : newTopicVidLink;
+        const videoUrl = newTopicVidOpt === 'upload' ? newTopicVidData : newTopicVidLink;
         if (editingTopicId) {
           // UPDATE MODE
           const topicIdx = updatedCourses[courseIndex].modules[moduleIndex].topics.findIndex(t => 
@@ -1467,6 +1531,8 @@ function CoursesPage() {
     setNewTopicVidFile('');
 
     setNewTopicVidLink('');
+    setNewTopicVidData('');
+    setSelectedVideoFileObj(null);
     setIsVideoSubmitted(false);
     setEditingTopicId(null);
     // Clear PDF states
@@ -1762,7 +1828,7 @@ function CoursesPage() {
 
           },
 
-          body: JSON.stringify(payload)
+          body: JSON.stringify(pruneOversizedData(payload))
 
         });
 
@@ -2691,8 +2757,23 @@ function CoursesPage() {
                                   <input 
                                     type="file" 
                                     className="hidden" 
+                                    accept="video/*"
                                     onChange={(e) => {
-                                      if(e.target.files?.[0]) setNewTopicVidFile(e.target.files[0].name);
+                                      const file = e.target.files?.[0];
+                                      if(file) {
+                                        if (file.size > 2 * 1024 * 1024) {
+                                          toast.error("Physical video files are limited to 2MB to prevent browser storage crashes. Please use a YouTube or external video link for larger videos.");
+                                          e.target.value = "";
+                                          return;
+                                        }
+                                        setNewTopicVidFile(file.name);
+                                        setSelectedVideoFileObj(file);
+                                        const reader = new FileReader();
+                                        reader.onload = function(ev) {
+                                          setNewTopicVidData(ev.target.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
                                     }} 
                                   />
                                 </label>
@@ -2816,7 +2897,24 @@ function CoursesPage() {
                                   {newTopicVidOpt === 'upload' ? newTopicVidFile : newTopicVidLink}
                                 </p>
                               </div>
-                              <button onClick={() => setIsVideoSubmitted(false)} className="text-[8px] text-red-500 font-bold uppercase hover:underline">Edit</button>
+                              <div className="flex gap-2">
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    if (newTopicVidOpt === 'upload' && selectedVideoFileObj) {
+                                      setPreviewVideoUrl(URL.createObjectURL(selectedVideoFileObj));
+                                    } else if (newTopicVidOpt === 'link' && newTopicVidLink) {
+                                      setPreviewVideoUrl(newTopicVidLink);
+                                    } else {
+                                      toast.error("No video file or link available to preview.");
+                                    }
+                                  }} 
+                                  className="text-[8px] text-blue-600 font-bold uppercase hover:underline"
+                                >
+                                  Preview
+                                </button>
+                                <button onClick={() => { setIsVideoSubmitted(false); setSelectedVideoFileObj(null); }} className="text-[8px] text-red-500 font-bold uppercase hover:underline">Edit</button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -3266,6 +3364,50 @@ function CoursesPage() {
       </div>
     </div>
   )}
+      {/* 🎥 Video Preview Modal */}
+      {previewVideoUrl && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-3xl w-full border border-slate-100 flex flex-col relative animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider">Video Preview</h3>
+              <button 
+                onClick={() => {
+                  if (previewVideoUrl.startsWith("blob:")) {
+                    URL.revokeObjectURL(previewVideoUrl);
+                  }
+                  setPreviewVideoUrl('');
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            {/* Video Player */}
+            <div className="bg-black aspect-video flex items-center justify-center">
+              {previewVideoUrl.includes("youtube.com") || previewVideoUrl.includes("youtu.be") ? (
+                <iframe
+                  className="w-full h-full"
+                  src={previewVideoUrl.replace("watch?v=", "embed/")}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <video 
+                  className="w-full h-full" 
+                  controls 
+                  autoPlay 
+                  src={previewVideoUrl}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 </div>
   );
 }

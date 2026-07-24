@@ -45,7 +45,7 @@ from .views.batch_views import list_batches, create_batch, update_batch, get_bat
 from .views.faculty_assignment_views import list_faculty_assignments, assign_faculty_module, remove_faculty_assignment
 from .views.batch_resource_views import list_batch_resources, create_batch_resource, delete_batch_resource
 from .views.attendance_views import get_batch_attendance, mark_batch_attendance
-from .views.live_class_views import list_live_classes, create_live_class, update_live_class
+from .views.live_class_views import list_live_classes, create_live_class, update_live_class, delete_live_class
 from .views import assignment_views, batch_report_views
 
 
@@ -243,6 +243,7 @@ urlpatterns = [
     path('live-classes/', list_live_classes, name='list_live_classes'),
     path('live-classes/create/', create_live_class, name='create_live_class'),
     path('live-classes/<int:session_id>/update/', update_live_class, name='update_live_class'),
+    path('live-classes/<int:session_id>/delete/', delete_live_class, name='delete_live_class'),
 
     # ── Assignment & Batch Report URLs ──────────────────────────────────────────
     path('assignments/', assignment_views.list_assignments, name='list_assignments'),
