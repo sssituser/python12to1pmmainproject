@@ -322,6 +322,18 @@
                 }
             },
             "created_at": "2026-07-23 11:39:40.400223+00:00"
+        },
+        {
+            "id": 47,
+            "title": "ALL BATCHES",
+            "level": "Beginner",
+            "duration": "0",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "created_at": "2026-07-24 09:35:52.929528+00:00"
         }
     ],
     "configs": [
@@ -352,7 +364,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-23 20:46:32.498777+00:00"
+            "updated_at": "2026-07-24 09:35:24.811795+00:00"
         },
         {
             "id": 5,
@@ -366,7 +378,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-23 20:46:32.515527+00:00"
+            "updated_at": "2026-07-24 09:35:24.828294+00:00"
         },
         {
             "id": 9,
@@ -380,7 +392,7 @@
             "requirement": 15,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-23 20:46:32.534828+00:00"
+            "updated_at": "2026-07-24 09:35:24.842321+00:00"
         }
     ]
 }
