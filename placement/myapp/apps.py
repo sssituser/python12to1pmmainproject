@@ -12,6 +12,26 @@ class MyappConfig(AppConfig):
         # Import models to register signals
         import myapp.models  # noqa
         
+        # Monkey patch JWTAuthentication to validate login_session_key
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        from rest_framework.exceptions import AuthenticationFailed
+
+        original_authenticate = JWTAuthentication.authenticate
+
+        def custom_authenticate(self, request):
+            res = original_authenticate(self, request)
+            if res is None:
+                return None
+            user, validated_token = res
+            if user and user.is_authenticated and user.role in ['student', 'faculty']:
+                token_session_key = validated_token.get('login_session_key')
+                db_session_key = getattr(user, 'login_session_key', None)
+                if not db_session_key or token_session_key != db_session_key:
+                    raise AuthenticationFailed('This session has been terminated because this account logged in from another device/browser.')
+            return user, validated_token
+
+        JWTAuthentication.authenticate = custom_authenticate
+
         # Trigger on migrations
         post_migrate.connect(on_post_migrate, sender=self)
         

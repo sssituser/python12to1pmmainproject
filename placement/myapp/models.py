@@ -12,6 +12,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student', db_index=True)
     is_verified = models.BooleanField(default=False)
     email_password_encrypted = models.TextField(null=True, blank=True)
+    login_session_key = models.CharField(max_length=255, null=True, blank=True)
     class Meta:
         db_table='myapp_user'
 

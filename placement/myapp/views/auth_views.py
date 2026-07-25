@@ -42,7 +42,13 @@ def find_user_by_identifier(identifier):
 
 # 🔐 Generate JWT Tokens
 def get_tokens(user):
+    import uuid
+    if user.role in ['student', 'faculty']:
+        user.login_session_key = uuid.uuid4().hex
+        user.save(update_fields=['login_session_key'])
     refresh = RefreshToken.for_user(user)
+    if hasattr(user, 'login_session_key') and user.login_session_key:
+        refresh['login_session_key'] = user.login_session_key
     return {
         "access": str(refresh.access_token),
         "refresh": str(refresh),
@@ -751,3 +757,29 @@ def register(request):
             "enrolled_courses": student_profile.enrolled_courses_titles() if (user.role.lower().strip() == 'student' if user.role else False) and student_profile else ([course] if isinstance(course, str) else course)
         }
     })
+
+
+# 🔄 Custom Token Refresh Serializer & View to block concurrent logins
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework.exceptions import AuthenticationFailed
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken(attrs['refresh'])
+        user_id = refresh.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+            if user.role in ['student', 'faculty']:
+                token_session_key = refresh.get('login_session_key')
+                db_session_key = getattr(user, 'login_session_key', None)
+                if not db_session_key or token_session_key != db_session_key:
+                    raise AuthenticationFailed('This session has been terminated because this account logged in from another device/browser.')
+        except User.DoesNotExist:
+            pass
+        return data
+
+class CustomTokenRefreshView(TokenRefreshView):
+    serializer_class = CustomTokenRefreshSerializer

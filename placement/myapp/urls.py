@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from rest_framework import routers
 
 # IMPORT VIEWS - ESSENTIAL ONLY
-from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp, forgot_password_send_otp, forgot_password_verify_otp_reset
+from .views.auth_views import login, register, reset_password, change_password, send_otp, verify_otp, forgot_password_send_otp, forgot_password_verify_otp_reset, CustomTokenRefreshView
 from .views.profile_views import profile_view, update_profile, upload_resume, faculty_profile_view, faculty_profile_update, faculty_avatar_upload, faculty_avatar_delete, faculty_profile_public, faculty_list_minimal, faculty_stats, faculty_profile_minimal_test
 from .views.leave_views import get_all_leave_requests, create_leave_request, get_leave_request, approve_leave_request, reject_leave_request, delete_leave_request, my_leave_requests
 from .views.exam_views import (
@@ -68,7 +68,7 @@ urlpatterns = [
     path('login/', login, name='api_login'),
     path('register/', register, name='api_register'),
     path('jwt/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('jwt/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('reset-password/', reset_password),
     path('change-password/', change_password),
     path('send_otp/', send_otp),
