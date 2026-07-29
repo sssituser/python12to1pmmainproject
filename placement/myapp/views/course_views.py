@@ -29,11 +29,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        # Auto-create "ALL BATCHES" course if it doesn't exist
-        Course.objects.get_or_create(
-            title="ALL BATCHES",
-            defaults={"level": "Beginner", "duration": "0"}
-        )
         queryset = Course.objects.all().order_by('id')
         
         # Filter by faculty's assigned courses if role is 'faculty'
@@ -134,16 +129,12 @@ def faculty_courses(request):
             if title_upper in seen_titles:
                 continue
             seen_titles.add(title_upper)
+            result.append(course)
             
-            result.append({
-                "id": course.id,
-                "title": title,
-                "level": course.level,
-                "duration": course.duration,
-            })
+        serializer = CourseFacultySerializer(result, many=True)
         return Response({
             "success": True,
-            "data": result,
+            "data": serializer.data,
             "message": "Faculty courses retrieved successfully"
         })
     except Exception as e:

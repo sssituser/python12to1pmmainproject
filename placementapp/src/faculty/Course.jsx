@@ -603,8 +603,23 @@ function CoursesPage() {
 
 
 
-  // Sync courses with backend on mount to ensure all devices see the same curriculum
+  // Real-time Event Sync for Course & Curriculum Updates
+  useEffect(() => {
+    const handleCourseSync = () => {
+      fetchCoursesFromAPI();
+    };
+    window.addEventListener("courseDataUpdated", handleCourseSync);
+    const handleStorageChange = (e) => {
+      if (e.key === "courseDataUpdated") handleCourseSync();
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("courseDataUpdated", handleCourseSync);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
+  // Sync courses with backend on mount to ensure all devices see the same curriculum
   useEffect(() => {
 
     // 🧹 Purge stale course cache on mount to ensure fresh role-based/assigned courses are loaded correctly
@@ -612,24 +627,34 @@ function CoursesPage() {
     localStorage.removeItem('facultyCourses');
 
     const fetchCoursesFromAPI = async () => {
-
-      const token = localStorage.getItem('access');
-
-      if (!token) return;
-
-
+      let cleanToken = localStorage.getItem('access')?.replace(/^"|"$/g, "");
+      if (!cleanToken) return;
 
       try {
-
-        const response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
-
+        let response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
           headers: {
-
-            'Authorization': `Bearer ${token.replace(/^"|"$/g, "")}`
-
+            'Authorization': `Bearer ${cleanToken}`
           }
-
         });
+
+        if (response.status === 401) {
+          const refreshToken = localStorage.getItem("refresh")?.replace(/^"|"$/g, "");
+          if (refreshToken) {
+            const refreshRes = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refresh: refreshToken }),
+            });
+            if (refreshRes.ok) {
+              const rData = await refreshRes.json();
+              localStorage.setItem("access", rData.access);
+              cleanToken = rData.access;
+              response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
+                headers: { 'Authorization': `Bearer ${cleanToken}` }
+              });
+            }
+          }
+        }
 
         
 
@@ -660,7 +685,8 @@ function CoursesPage() {
               localStorage.setItem('courses', JSON.stringify(localData));
             }
 
-            const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()));
+            const deletedTitles = new Set((JSON.parse(localStorage.getItem('deletedCourseTitles') || '[]')).map(t => String(t).toUpperCase()));
+            const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()) && !deletedTitles.has(title.toUpperCase()));
 
             const standardCourseObjects = missingStandards.map((title, idx) => ({
               id: `std-${Date.now()}-${idx}`, 
@@ -672,7 +698,7 @@ function CoursesPage() {
 
             const localCustomRepos = localData.filter(lc => {
                const t = (lc.title || "").toUpperCase();
-               return t && !apiTitles.has(t) && !standardTitles.has(t);
+               return t && !apiTitles.has(t) && !standardTitles.has(t) && !deletedTitles.has(t);
             });
 
             let isFacultyMember = false;
@@ -682,7 +708,11 @@ function CoursesPage() {
             } catch(e){}
 
             // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS (If faculty, ONLY show their assigned API courses)
-            const finalCurriculumRaw = isFacultyMember ? rawCourses : [...localCustomRepos, ...rawCourses, ...standardCourseObjects];
+            const finalCurriculumRaw = (isFacultyMember ? rawCourses : [...localCustomRepos, ...rawCourses, ...standardCourseObjects])
+              .filter(c => {
+                const title = (typeof c === 'string' ? c : (c.title || "")).toUpperCase();
+                return title && !deletedTitles.has(title);
+              });
 
             const coursesWithIcons = finalCurriculumRaw.map(item => {
               const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
@@ -696,11 +726,22 @@ function CoursesPage() {
                 ? localVersion.modules 
                 : (apiItem.modules || []);
 
+              const apiTopics = Array.isArray(apiItem.topics) ? apiItem.topics : [];
+              const localTopics = Array.isArray(localVersion?.topics) ? localVersion.topics : [];
+              const mergedTopics = Array.from(new Set([...apiTopics, ...localTopics]));
+
+              const mergedCustomVideos = {
+                ...(apiItem.custom_videos || apiItem.customVideos || {}),
+                ...(localVersion?.customVideos || {})
+              };
+
               return {
                 ...apiItem,
                 title: titleValue,
+                topics: mergedTopics.length > 0 ? mergedTopics : apiTopics,
                 modules: mergedModules,
-                customVideos: localVersion?.customVideos || apiItem.customVideos || apiItem.custom_videos || {},
+                custom_videos: mergedCustomVideos,
+                customVideos: mergedCustomVideos,
                 icon: getIconForCourse(titleValue)
               };
             }).filter(c => c.title && c.title.trim() !== '');
@@ -1375,51 +1416,34 @@ function CoursesPage() {
       if (!subjectExists) {
 
         updatedCourses[courseIndex].modules.push({
-
           title: newSubject.trim(),
-
           topics: []
-
         });
-
-        
+        if (!updatedCourses[courseIndex].topics) updatedCourses[courseIndex].topics = [];
+        if (!updatedCourses[courseIndex].topics.includes(newSubject.trim())) {
+          updatedCourses[courseIndex].topics.push(newSubject.trim());
+        }
 
         const recalculatedCourses = calculateCourseProgress(updatedCourses);
-
         setCourses(recalculatedCourses);
-
         setSelectedCourse({...recalculatedCourses[courseIndex]});
-
         localStorage.setItem('courses', JSON.stringify(recalculatedCourses));
-
         localStorage.setItem('facultyCourses', JSON.stringify(recalculatedCourses));
-
         syncCourseToBackend(recalculatedCourses[courseIndex].id, recalculatedCourses);
-
       }
-
     }
-
     setNewSubject("");
-
   };
 
-
-
   // Remove Subject
-
   const removeSubject = (subjectTitle) => {
-
     const courseIndex = courses.findIndex(c => c.id === selectedCourse.id);
-
     if (courseIndex !== -1) {
-
       const updatedCourses = [...courses];
-
       updatedCourses[courseIndex].modules = updatedCourses[courseIndex].modules.filter(m => m.title !== subjectTitle);
-
-      
-
+      if (updatedCourses[courseIndex].topics) {
+        updatedCourses[courseIndex].topics = updatedCourses[courseIndex].topics.filter(t => (typeof t === 'string' ? t : t.title) !== subjectTitle);
+      }
       const recalculatedCourses = calculateCourseProgress(updatedCourses);
 
       setCourses(recalculatedCourses);
@@ -1844,6 +1868,8 @@ function CoursesPage() {
             localStorage.setItem('facultyCourses', JSON.stringify(reTagged));
             localStorage.setItem('courses', JSON.stringify(reTagged));
           }
+          window.dispatchEvent(new Event("courseDataUpdated"));
+          localStorage.setItem("courseDataUpdated", Date.now().toString());
 
         } else {
 
@@ -2142,44 +2168,70 @@ function CoursesPage() {
                   </div>
 
                   {/* List of Existing Subjects */}
-                  <div>
-                    <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-4">Existing Subjects</h3>
-                    {(selectedCourse.modules || []).length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedCourse.modules.map((module, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border-2 border-transparent hover:border-blue-100 group">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-blue-600 font-bold border border-gray-100">
-                                {idx + 1}
-                              </div>
-                              <span className="font-bold text-gray-700 text-lg">{module.title}</span>
+                    <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-4">Existing Subjects & Curriculum Topics</h3>
+                    {(() => {
+                      const modulesList = selectedCourse.modules || [];
+                      const topicsList = selectedCourse.topics || [];
+                      
+                      const seenTitles = new Set();
+                      let displaySubjects = [];
+
+                      modulesList.forEach(m => {
+                        const title = typeof m === 'string' ? m : (m.title || '');
+                        if (title && !seenTitles.has(title.toUpperCase())) {
+                          seenTitles.add(title.toUpperCase());
+                          displaySubjects.push(typeof m === 'string' ? { title: m, topics: [] } : m);
+                        }
+                      });
+
+                      topicsList.forEach(t => {
+                        const title = typeof t === 'string' ? t : (t.title || '');
+                        if (title && !seenTitles.has(title.toUpperCase())) {
+                          seenTitles.add(title.toUpperCase());
+                          displaySubjects.push(typeof t === 'string' ? { title: t, topics: [] } : t);
+                        }
+                      });
+                      
+                      if (displaySubjects.length > 0) {
+                        return (
+                          <div className="space-y-3">
+                            {displaySubjects.map((module, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border-2 border-transparent hover:border-blue-100 group">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 bg-white shadow-sm rounded-xl flex items-center justify-center text-blue-600 font-bold border border-gray-100">
+                                    {idx + 1}
+                                  </div>
+                                  <span className="font-bold text-gray-700 text-lg">{module.title || module}</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                      onClick={() => {
+                                        setSelectedSubject(module.title || module);
+                                        navigate(`?subject=${encodeURIComponent(module.title || module)}`);
+                                      }}
+                                      className="bg-white border-2 border-blue-500 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-500 hover:text-white transition-all shadow-sm text-sm"
+                                    >
+                                      Go to Topics
+                                    </button>
+                                    <button
+                                      onClick={() => removeSubject(module.title || module)}
+                                      className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="flex gap-2">
-                              <button
-                                  onClick={() => {
-                                    setSelectedSubject(module.title);
-                                    navigate(`?subject=${encodeURIComponent(module.title)}`);
-                                  }}
-                                  className="bg-white border-2 border-blue-500 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                                >
-                                  Go to Topics
-                                </button>
-                                <button
-                                  onClick={() => removeSubject(module.title)}
-                                  className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                >
-                                  <FaTrash />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-10 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                          <p className="text-gray-400 font-medium">No subjects found. Add your first subject to start building topics.</p>
-                        </div>
-                      )}
-                    </div>
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-10 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <p className="text-gray-400 font-medium">No subjects found. Add your first subject to start building topics.</p>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
               ) : !selectedSubject && activeTab === "students" ? (
@@ -2942,103 +2994,110 @@ function CoursesPage() {
                     </div>
                   </div>
 
-                  {/* List of Existing Topics - Custom Designed to match Screenshot */}
+                  {/* List of Existing Topics - Dynamic Admin & Faculty Sync */}
                   <div className="mt-8">
-                    {(selectedCourse.modules.find(m => m.title === selectedSubject)?.topics || []).length > 0 ? (
-                      <div className="flex flex-col">
-                        {selectedCourse.modules.find(m => m.title === selectedSubject).topics.map((topic, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-6 px-4 hover:bg-gray-50/50 transition-all border-b border-gray-50 last:border-0">
-                            {/* Topic Title */}
-                            <div className="flex-1 flex items-center gap-4">
-                              <span className="text-gray-400 font-bold text-lg min-w-[1.5rem]">{idx + 1}.</span>
-                              <span className="text-xl font-medium text-gray-800 tracking-tight">
-                                {typeof topic === 'string' ? topic : topic.title}
-                              </span>
-                            </div>
+                    {(() => {
+                      const modObj = (selectedCourse.modules || []).find(m => m.title === selectedSubject);
+                      let displayTopics = (selectedCourse.topics && selectedCourse.topics.length > 0) ? selectedCourse.topics : (modObj?.topics || []);
 
-                            {/* Action Icons Panel */}
-                            <div className="flex items-center gap-10">
-                              {
-                                (() => {
-                                  const topicTitle = typeof topic === 'string' ? topic : topic.title;
-                                  const cPdf = (selectedCourse.customMaterials && selectedCourse.customMaterials[topicTitle]);
-                                  const hasPdf = cPdf && cPdf.type === 'pdf';
-                                  if (hasPdf) {
-                                    return (
-                                      <button
-                                        onClick={() => setPlayingTopic(topic)}
-                                        className="text-rose-600 hover:scale-125 transition-all cursor-pointer"
-                                        title="View PDF"
-                                      >
-                                        <FaFilePdf className="text-xl" />
-                                      </button>
-                                    );
-                                  }
+                      if (!displayTopics || displayTopics.length === 0) {
+                        const rawTopics = selectedCourse.topics || [];
+                        if (rawTopics.length > 0) {
+                          displayTopics = rawTopics;
+                        }
+                      }
 
-                                  return (
-                                    <>
-                                      {/* Play Icon (Blue) */}
-                                      <button 
-                                        onClick={() => setPlayingTopic(topic)}
-                                        className="text-blue-600 hover:scale-125 transition-all cursor-pointer"
-                                      >
-                                        <FaPlay className="text-xl" />
-                                      </button>
+                      const cVideos = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+                      if ((!displayTopics || displayTopics.length === 0) && Object.keys(cVideos).length > 0) {
+                        displayTopics = Object.keys(cVideos).map(k => ({ title: typeof cVideos[k] === 'object' && cVideos[k].title ? cVideos[k].title : k, url: typeof cVideos[k] === 'object' ? cVideos[k].url : cVideos[k] }));
+                      }
 
-                                      {/* Edit Icon (Purple) - Change Video */}
-                                      <button 
-                                        onClick={() => {
-                                          const topicTitleInner = typeof topic === 'string' ? topic : topic.title;
-                                          setNewTopic(topicTitleInner);
-                                          setEditingTopicId(topicTitleInner);
-                                          const cVideo = (selectedCourse.customVideos && selectedCourse.customVideos[topicTitleInner]);
-                                          if (cVideo) {
-                                            setNewTopicVidOpt(cVideo.type);
-                                            if (cVideo.type === 'upload') setNewTopicVidFile(cVideo.url);
-                                            else setNewTopicVidLink(cVideo.url);
-                                            setIsVideoSubmitted(true);
-                                          } else {
-                                            setIsVideoSubmitted(false);
-                                          }
-                                          const cPdfInner = (selectedCourse.customMaterials && selectedCourse.customMaterials[topicTitleInner]);
-                                          if (cPdfInner && cPdfInner.type === 'pdf') {
-                                            setNewTopicPdfOpt(cPdfInner.method || 'upload');
-                                            if ((cPdfInner.method || 'upload') === 'upload') {
-                                              setNewTopicPdfFileName(cPdfInner.name || 'uploaded.pdf');
-                                              setNewTopicPdfFileData(cPdfInner.url || '');
-                                            } else {
-                                              setNewTopicPdfLink(cPdfInner.url || '');
-                                            }
-                                            setIsPdfSubmitted(true);
-                                          }
-                                          setShowTopicVideoOptions(true);
-                                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }}
-                                        className="text-purple-600 hover:scale-125 transition-all cursor-pointer"
-                                      >
-                                        <FaEdit className="text-xl" />
-                                      </button>
+                      if (displayTopics && displayTopics.length > 0) {
+                        return (
+                          <div className="flex flex-col">
+                            {displayTopics.map((topic, idx) => {
+                              const topicTitle = typeof topic === 'string' ? topic : (topic.title || String(topic));
+                              return (
+                                <div key={idx} className="flex items-center justify-between py-6 px-4 hover:bg-gray-50/50 transition-all border-b border-gray-50 last:border-0">
+                                  {/* Topic Title */}
+                                  <div className="flex-1 flex items-center gap-4">
+                                    <span className="text-gray-400 font-bold text-lg min-w-[1.5rem]">{idx + 1}.</span>
+                                    <span className="text-xl font-medium text-gray-800 tracking-tight">
+                                      {topicTitle}
+                                    </span>
+                                  </div>
 
-                                      {/* Trash Icon (Red) */}
-                                      <button 
-                                        onClick={() => removeTopic(typeof topic === 'string' ? topic : topic.title)}
-                                        className="text-red-500 hover:scale-125 transition-all cursor-pointer"
-                                      >
-                                        <FaTrash className="text-xl" />
-                                      </button>
-                                    </>
-                                  );
-                                })()
-                              }
-                            </div>
+                                  {/* Action Icons Panel */}
+                                  <div className="flex items-center gap-10">
+                                    {(() => {
+                                      const cPdf = (selectedCourse.customMaterials && selectedCourse.customMaterials[topicTitle]) || (selectedCourse.study_materials && selectedCourse.study_materials[topicTitle]);
+                                      const hasPdf = cPdf && (cPdf.type === 'pdf' || (typeof cPdf === 'string' && cPdf.toLowerCase().includes('.pdf')));
+                                      
+                                      return (
+                                        <>
+                                          {/* Play / Preview Video Icon */}
+                                          <button 
+                                            onClick={() => {
+                                              const videoObj = cVideos[topicTitle] || cVideos[selectedSubject] || (typeof topic === 'object' ? topic : null);
+                                              const videoUrl = videoObj ? (typeof videoObj === 'string' ? videoObj : videoObj.url) : null;
+                                              if (videoUrl) {
+                                                setPreviewVideoUrl(videoUrl);
+                                              } else {
+                                                setPlayingTopic(topic);
+                                              }
+                                            }}
+                                            className="text-blue-600 hover:scale-125 transition-all cursor-pointer"
+                                            title="Play Video Lesson"
+                                          >
+                                            <FaPlay className="text-xl" />
+                                          </button>
+
+                                          {/* Edit Icon */}
+                                          <button 
+                                            onClick={() => {
+                                              setNewTopic(topicTitle);
+                                              setEditingTopicId(topicTitle);
+                                              const cVideo = cVideos[topicTitle] || cVideos[selectedSubject];
+                                              if (cVideo) {
+                                                const vUrl = typeof cVideo === 'string' ? cVideo : cVideo.url;
+                                                setNewTopicVidOpt('link');
+                                                setNewTopicVidLink(vUrl);
+                                                setIsVideoSubmitted(true);
+                                              }
+                                              setShowTopicVideoOptions(true);
+                                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}
+                                            className="text-purple-600 hover:scale-125 transition-all cursor-pointer"
+                                            title="Edit Topic & Video"
+                                          >
+                                            <FaEdit className="text-xl" />
+                                          </button>
+
+                                          {/* Trash Icon */}
+                                          <button 
+                                            onClick={() => removeTopic(topicTitle)}
+                                            className="text-red-500 hover:scale-125 transition-all cursor-pointer"
+                                            title="Delete Topic"
+                                          >
+                                            <FaTrash className="text-xl" />
+                                          </button>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-20 bg-gray-50/20 rounded-3xl border-2 border-dashed border-gray-100">
-                        <p className="text-gray-400 text-base font-medium italic">Empty curriculum. Your topics will appear here in the style shown.</p>
-                      </div>
-                    )}
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-20 bg-gray-50/20 rounded-3xl border-2 border-dashed border-gray-100">
+                            <p className="text-gray-400 text-base font-medium italic">Empty curriculum. Your topics will appear here in the style shown.</p>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
@@ -3084,12 +3143,110 @@ function CoursesPage() {
                         
                         <div className="bg-[#050505] rounded-[3.2rem] overflow-hidden aspect-video relative border-[6px] border-black/20">
                             {(() => {
-                                const pdfMaterial = (selectedCourse.customMaterials && selectedCourse.customMaterials[playingTopic.title]);
-                                const vUrl = (playingTopic.video || (selectedCourse.customVideos && selectedCourse.customVideos[playingTopic.title]?.url) || (pdfMaterial && pdfMaterial.url));
+                                const playingTopicTitle = typeof playingTopic === 'string' ? playingTopic : (playingTopic?.title || String(playingTopic || ''));
+                                const cVideos = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+                                const cMaterials = selectedCourse.study_materials || selectedCourse.studyMaterials || selectedCourse.customMaterials || {};
+
+                                let vUrl = null;
+
+                                // 1. Direct object video/url check
+                                if (playingTopic && typeof playingTopic === 'object') {
+                                  vUrl = playingTopic.video || playingTopic.url;
+                                }
+
+                                // 2. Robust lookup in cVideos (Admin attached course video lessons)
+                                if (!vUrl && cVideos) {
+                                  if (Array.isArray(cVideos)) {
+                                    const match = cVideos.find(v => {
+                                      if (!v) return false;
+                                      const vTitle = typeof v === 'string' ? v : (v.title || v.topic || '');
+                                      return vTitle.toLowerCase() === playingTopicTitle.toLowerCase() ||
+                                             vTitle.toLowerCase().includes(playingTopicTitle.toLowerCase()) ||
+                                             playingTopicTitle.toLowerCase().includes(vTitle.toLowerCase());
+                                    }) || cVideos[0];
+                                    if (match) {
+                                      vUrl = typeof match === 'string' ? match : (match.url || match.video);
+                                    }
+                                  } else if (typeof cVideos === 'object') {
+                                    const getUrlFromVal = (val) => {
+                                      if (!val) return null;
+                                      if (typeof val === 'string') return val;
+                                      if (Array.isArray(val) && val.length > 0) {
+                                        const first = val[0];
+                                        return typeof first === 'string' ? first : (first?.url || first?.video || first?.link);
+                                      }
+                                      if (typeof val === 'object') return val.url || val.video || val.link;
+                                      return null;
+                                    };
+
+                                    if (cVideos[playingTopicTitle]) {
+                                      vUrl = getUrlFromVal(cVideos[playingTopicTitle]);
+                                    }
+                                    if (!vUrl && selectedSubject && cVideos[selectedSubject]) {
+                                      vUrl = getUrlFromVal(cVideos[selectedSubject]);
+                                    }
+                                    if (!vUrl) {
+                                      const entries = Object.entries(cVideos);
+                                      for (const [key, val] of entries) {
+                                        if (!val) continue;
+                                        const valUrl = getUrlFromVal(val);
+                                        const valTitle = (typeof val === 'object' && !Array.isArray(val)) ? (val.title || val.topic || key) : key;
+                                        if (valUrl) {
+                                          if (
+                                            entries.length === 1 ||
+                                            key.toLowerCase() === playingTopicTitle.toLowerCase() ||
+                                            valTitle.toLowerCase() === playingTopicTitle.toLowerCase() ||
+                                            playingTopicTitle.toLowerCase().includes(key.toLowerCase()) ||
+                                            playingTopicTitle.toLowerCase().includes(valTitle.toLowerCase()) ||
+                                            key.toLowerCase() === (selectedSubject || '').toLowerCase()
+                                          ) {
+                                            vUrl = valUrl;
+                                            break;
+                                          }
+                                        }
+                                      }
+                                    }
+                                    if (!vUrl && Object.keys(cVideos).length > 0) {
+                                      vUrl = getUrlFromVal(Object.values(cVideos)[0]);
+                                    }
+                                  }
+                                }
+
+                                // 3. Check batchResources (uploaded videos by admin/faculty)
+                                if (!vUrl && Array.isArray(batchResources) && batchResources.length > 0) {
+                                  const videoRes = batchResources.filter(r => r && (r.resource_type === 'video' || r.video_url));
+                                  if (videoRes.length > 0) {
+                                    const match = videoRes.find(r => {
+                                      const rTitle = (r.title || '').toLowerCase();
+                                      const tTitle = (playingTopicTitle || '').toLowerCase();
+                                      const sTitle = (selectedSubject || '').toLowerCase();
+                                      return rTitle === tTitle || rTitle.includes(tTitle) || tTitle.includes(rTitle) ||
+                                             rTitle === sTitle || rTitle.includes(sTitle) || sTitle.includes(rTitle);
+                                    }) || videoRes[0];
+                                    if (match) {
+                                      vUrl = match.video_url || match.file_url;
+                                    }
+                                  }
+                                }
+
+                                // 4. Material fallback for PDFs
+                                const pdfMaterial = cMaterials[playingTopicTitle] || cMaterials[selectedSubject];
+                                if (!vUrl && pdfMaterial) {
+                                  vUrl = typeof pdfMaterial === 'string' ? pdfMaterial : (pdfMaterial.url || pdfMaterial.pdf);
+                                }
+
+                                // 5. Fallback video URL if no specific link found
+                                if (!vUrl) {
+                                  const cTitle = (selectedCourse?.title || selectedCourse?.name || '').toLowerCase();
+                                  vUrl = cTitle.includes('python') 
+                                    ? "https://www.youtube.com/watch?v=_uQrJ0TkZlc" 
+                                    : "https://www.youtube.com/watch?v=N4t_hN0V9sY";
+                                }
+
                                 if (!vUrl) return (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 text-zinc-800 gap-6">
-                                        <div className="w-24 h-24 rounded-full border-4 border-dashed border-zinc-800 animate-spin"></div>
-                                        <p className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Signal...</p>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 text-zinc-300 gap-6">
+                                        <div className="w-24 h-24 rounded-full border-4 border-dashed border-cyan-500 animate-spin"></div>
+                                        <p className="font-black uppercase tracking-[0.3em] text-xs text-white">Video Lesson Loading...</p>
                                     </div>
                                 );
                                 // If the material is a PDF, render an embed for view-only
@@ -3105,32 +3262,99 @@ function CoursesPage() {
                                   );
                                 }
 
-                                const isYoutube = vUrl.includes('youtube.com') || vUrl.includes('youtu.be');
-                                const embedUrl = isYoutube
-                                  ? vUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/').split('&')[0]
-                                  : vUrl;
+                                const lowerUrl = (vUrl || "").toLowerCase();
 
-                                if (isYoutube) {
-                                    return (
-                                        <iframe 
-                                            className="w-full h-full"
-                                            src={`${embedUrl}?autoplay=1&rel=0&modestbranding=1&showinfo=0`}
-                                            title="Video Player"
-                                            frameBorder="0"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        ></iframe>
-                                    );
-                                } else {
-                                    return (
-                                        <video 
-                                            className="w-full h-full object-contain"
-                                            controls
-                                            autoPlay
-                                            src={embedUrl}
-                                        />
-                                    );
+                                // 1. YouTube
+                                if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
+                                  let embedSrc = vUrl;
+                                  const ytRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i;
+                                  const match = vUrl.match(ytRegex);
+                                  if (match && match[1]) {
+                                    embedSrc = `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
+                                  } else if (vUrl.includes("youtube.com/embed/")) {
+                                    embedSrc = `${vUrl.split("?")[0]}?autoplay=1&rel=0`;
+                                  }
+                                  return (
+                                    <iframe 
+                                      className="w-full h-full border-0"
+                                      src={embedSrc}
+                                      title="Video Player"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  );
                                 }
+
+                                // 2. Google Drive / Google Meet recordings
+                                if (lowerUrl.includes("drive.google.com")) {
+                                  let driveEmbed = vUrl;
+                                  if (driveEmbed.includes("/view")) {
+                                    driveEmbed = driveEmbed.replace(/\/view.*$/, "/preview");
+                                  } else if (!driveEmbed.includes("/preview")) {
+                                    driveEmbed = driveEmbed.endsWith("/") ? `${driveEmbed}preview` : `${driveEmbed}/preview`;
+                                  }
+                                  return (
+                                    <iframe 
+                                      src={driveEmbed} 
+                                      title="Google Drive / Meet Recording"
+                                      className="w-full h-full border-0"
+                                      allow="autoplay; encrypted-media"
+                                      allowFullScreen
+                                    />
+                                  );
+                                }
+
+                                // 3. Vimeo
+                                if (lowerUrl.includes("vimeo.com")) {
+                                  const vId = vUrl.split("vimeo.com/")[1]?.split("?")[0]?.split("#")[0];
+                                  if (vId && !isNaN(vId)) {
+                                    return (
+                                      <iframe 
+                                        src={`https://player.vimeo.com/video/${vId}?autoplay=1`} 
+                                        title="Vimeo Player"
+                                        className="w-full h-full border-0"
+                                        allow="autoplay; fullscreen; picture-in-picture"
+                                        allowFullScreen
+                                      />
+                                    );
+                                  }
+                                }
+
+                                // 4. Direct video file (.mp4, .webm, .ogg, blob:, data:video)
+                                if (lowerUrl.endsWith(".mp4") || lowerUrl.endsWith(".webm") || lowerUrl.endsWith(".ogg") || lowerUrl.startsWith("blob:") || lowerUrl.startsWith("data:video/")) {
+                                  return (
+                                    <video 
+                                      className="w-full h-full object-contain"
+                                      controls
+                                      autoPlay
+                                      src={vUrl}
+                                    />
+                                  );
+                                }
+
+                                // 5. Zoom, Teams, OneDrive, SharePoint, or generic links
+                                return (
+                                  <div className="w-full h-full flex flex-col relative">
+                                    <div className="bg-slate-900 px-4 py-2 flex items-center justify-between text-xs text-slate-300 border-b border-slate-800">
+                                      <span className="font-semibold truncate max-w-md">Recording: {vUrl}</span>
+                                      <a 
+                                        href={vUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1 rounded-md text-[11px] transition-all shrink-0"
+                                      >
+                                        Open Link in New Tab ↗
+                                      </a>
+                                    </div>
+                                    <iframe 
+                                      src={vUrl} 
+                                      title="External Video Player"
+                                      className="w-full flex-1 border-0"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                );
                             })()}
                         </div>
                     </div>
@@ -3388,7 +3612,18 @@ function CoursesPage() {
               {previewVideoUrl.includes("youtube.com") || previewVideoUrl.includes("youtu.be") ? (
                 <iframe
                   className="w-full h-full"
-                  src={previewVideoUrl.replace("watch?v=", "embed/")}
+                  src={(() => {
+                    let cleanUrl = previewVideoUrl.trim();
+                    const ytRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i;
+                    const match = cleanUrl.match(ytRegex);
+                    if (match && match[1]) {
+                      return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
+                    }
+                    if (cleanUrl.includes("youtube.com/embed/")) {
+                      return `${cleanUrl.split("?")[0]}?autoplay=1&rel=0`;
+                    }
+                    return cleanUrl.replace("watch?v=", "embed/");
+                  })()}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

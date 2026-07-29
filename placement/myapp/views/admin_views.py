@@ -13,42 +13,172 @@ User = get_user_model()
 @permission_classes([IsAuthenticated])
 def all_users_api(request):
     """Get all users with their profiles"""
-    users = User.objects.all()
-    users_data = []
-    
-    for user in users:
-        user_data = {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'role': user.role,
-            'is_active': user.is_active,
-            'is_staff': user.is_staff,
-            'date_joined': user.date_joined,
-            'last_login': user.last_login
-        }
+    try:
+        users = User.objects.all()
+        users_data = []
         
-        # Fetch student profile explicitly
-        from myapp.models import StudentProfile
-        profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+        for user in users:
+            try:
+                role_val = getattr(user, 'role', 'student') or 'student'
+                
+                user_data = {
+                    'id': user.id,
+                    'username': user.username or '',
+                    'email': user.email or '',
+                    'first_name': user.first_name or '',
+                    'last_name': user.last_name or '',
+                    'role': str(role_val).lower(),
+                    'is_active': bool(user.is_active),
+                    'is_staff': bool(user.is_staff),
+                    'date_joined': user.date_joined,
+                    'last_login': user.last_login
+                }
+                
+                from myapp.models import StudentProfile, CourseEnrollment
+                
+                # Fetch student profile safely (auto-create if student role)
+                profile = None
+                try:
+                    profile = StudentProfile.objects.filter(user=user).exclude(student_id__isnull=True).select_related('course').first()
+                    if not profile:
+                        profile = StudentProfile.objects.filter(user=user).select_related('course').first()
+                    if not profile and (str(role_val).lower() == 'student'):
+                        profile, _ = StudentProfile.objects.get_or_create(user=user)
+                except Exception as p_err:
+                    print(f"DEBUG all_users_api error fetching profile for user {user.id}: {p_err}")
+
+                # Fetch course enrollments safely
+                all_enrollments = []
+                try:
+                    all_enrollments = list(CourseEnrollment.objects.filter(user=user).select_related('batch', 'course'))
+                except Exception:
+                    pass
+
+                enrolled_courses = []
+                for e in all_enrollments:
+                    try:
+                        if e.course:
+                            b_id = None
+                            b_name = None
+                            try:
+                                if e.batch:
+                                    b_id = e.batch.id
+                                    b_name = getattr(e.batch, 'batch_name', None) or getattr(e.batch, 'name', None) or f"Batch #{e.batch.id}"
+                            except Exception:
+                                pass
+                            
+                            enrolled_courses.append({
+                                'id': e.course.id,
+                                'title': getattr(e.course, 'title', None) or getattr(e.course, 'name', 'Course'),
+                                'batch_id': b_id,
+                                'batch_name': b_name
+                            })
+                    except Exception:
+                        pass
+                
+                # Collect all assigned batch IDs across profile and enrollments
+                batch_ids_list = []
+                try:
+                    if profile and profile.batch_id:
+                        batch_ids_list.append(profile.batch_id)
+                except Exception:
+                    pass
+
+                for e in all_enrollments:
+                    try:
+                        if e.batch_id and e.batch_id not in batch_ids_list:
+                            batch_ids_list.append(e.batch_id)
+                    except Exception:
+                        pass
+
+                if profile:
+                    # Auto-generation commented out: Student ID is assigned manually by admin
+
+                    user_data['student_id'] = getattr(profile, 'student_id', None)
+                    user_data['studentId'] = getattr(profile, 'student_id', None)
+                    print(f"DEBUG all_users_api: user={user.username}({user.id}) profile_id={profile.id} student_id={profile.student_id}")
+                    enrollment = all_enrollments[0] if len(all_enrollments) > 0 else None
+                    
+                    course_obj = None
+                    try:
+                        course_obj = profile.course
+                    except Exception:
+                        pass
+                    if not course_obj and enrollment:
+                        try:
+                            course_obj = enrollment.course
+                        except Exception:
+                            pass
+                            
+                    course_title = getattr(course_obj, 'title', None) if course_obj else None
+                    course_id = getattr(course_obj, 'id', None) if course_obj else None
+                    
+                    batch_id = None
+                    batch_name = None
+                    try:
+                        p_batch = getattr(profile, 'batch', None)
+                        if p_batch:
+                            batch_id = p_batch.id
+                            batch_name = getattr(p_batch, 'batch_name', None) or getattr(p_batch, 'name', None)
+                    except Exception:
+                        pass
+
+                    if not batch_id and enrollment:
+                        try:
+                            if enrollment.batch:
+                                batch_id = enrollment.batch.id
+                                batch_name = getattr(enrollment.batch, 'batch_name', None) or getattr(enrollment.batch, 'name', None)
+                        except Exception:
+                            pass
+                    
+                    user_data['studentprofile'] = {
+                        'student_id': getattr(profile, 'student_id', None),
+                        'studentId': getattr(profile, 'student_id', None),
+                        'course': {
+                            'title': course_title,
+                            'id': course_id
+                        } if course_obj else None,
+                        'course_name': course_title,
+                        'batch': batch_id,
+                        'batch_name': batch_name,
+                        'assigned_batches': batch_ids_list,
+                        'enrolled_courses': enrolled_courses
+                    }
+                else:
+                    user_data['student_id'] = None
+                    user_data['studentId'] = None
+                    user_data['studentprofile'] = None
+                
+                user_data['enrolled_courses'] = enrolled_courses
+                users_data.append(user_data)
+            except Exception as user_err:
+                print(f"Error processing user {getattr(user, 'id', 'unknown')}: {user_err}")
+                try:
+                    users_data.append({
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'role': getattr(user, 'role', 'student') or 'student',
+                        'is_active': user.is_active,
+                        'is_staff': user.is_staff,
+                        'date_joined': user.date_joined,
+                        'last_login': user.last_login,
+                        'student_id': None,
+                        'studentprofile': None,
+                        'assigned_batches': [],
+                        'enrolled_courses': []
+                    })
+                except Exception:
+                    pass
         
-        if profile:
-            user_data['student_id'] = profile.student_id
-            user_data['studentprofile'] = {
-                'student_id': profile.student_id,
-                'course': {
-                    'title': profile.course.title if profile.course else None,
-                    'id': profile.course.id if profile.course else None
-                } if profile.course else None
-            }
-        else:
-            user_data['student_id'] = None
-        
-        users_data.append(user_data)
-    
-    return Response(users_data)
+        return Response(users_data)
+    except Exception as e:
+        print("Error in all_users_api:", e)
+        return Response({'error': str(e)}, status=500)
+        print(f"Error in all_users_api: {e}")
+        return Response([], status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -90,23 +220,29 @@ def create_faculty_api(request):
         'faculty_id': faculty.id
     })
 
-@api_view(['PATCH'])
+@api_view(['PATCH', 'PUT', 'POST'])
 @permission_classes([IsAuthenticated])
 def toggle_student_status_api(request, student_id):
     """Toggle student active/blocked status"""
     try:
-        student = User.objects.get(id=student_id, role='student')
-        student.is_active = not student.is_active
+        student = User.objects.filter(id=student_id).first()
+        if not student:
+            return Response({'error': 'User not found'}, status=404)
+
+        if 'is_active' in request.data:
+            student.is_active = bool(request.data['is_active'])
+        else:
+            student.is_active = not student.is_active
         student.save()
         
         return Response({
             'success': True,
-            'message': f'Student {"unblocked" if student.is_active else "blocked"} successfully',
+            'message': f'User {"unblocked" if student.is_active else "blocked"} successfully',
             'is_active': student.is_active
         })
         
-    except User.DoesNotExist:
-        return Response({'error': 'Student not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -114,6 +250,17 @@ def delete_user_api(request, user_id):
     """Delete a user (faculty or student)"""
     try:
         user = User.objects.get(id=user_id)
+        if getattr(user, 'role', '') == 'student':
+            from myapp.views.student_approval_views import log_student_audit
+            log_student_audit(
+                student_name=user.get_full_name() or user.username,
+                action_type='deleted',
+                action_title='Student Account Deleted',
+                performed_by=request.user.username if (request.user and request.user.is_authenticated) else 'Admin',
+                student_email=user.email,
+                user_id=user.id,
+                details='Student record deleted by admin'
+            )
         user.delete()
         
         return Response({
@@ -194,47 +341,104 @@ def update_student_api(request, student_id):
             
         student.save()
         
-        # Ensure profile exists
-        profile, created = StudentProfile.objects.get_or_create(user=student)
-        
-        # Update profile fields
-        profile_updated = False
+        # Get the profile that already has a student_id set, or create one
+        profile = StudentProfile.objects.filter(user=student).order_by('-student_id').first()
+        if not profile:
+            profile = StudentProfile.objects.create(user=student)
+
+        # ── Handle student_id assignment ──────────────────────────────────────
+        final_student_id = profile.student_id  # preserve existing by default
         if 'student_id' in data:
             student_id_val = data['student_id']
+            print(f"DEBUG update_student_api: student_id incoming={student_id_val!r} for user={student.username}({student.id})")
             if student_id_val is not None and str(student_id_val).strip() != "":
-                try:
-                    profile.student_id = int(student_id_val)
-                    profile_updated = True
-                except (ValueError, TypeError):
-                    return Response({'error': 'Student ID must be a valid number'}, status=400)
+                import re
+                digits = re.sub(r'\D', '', str(student_id_val).strip())
+                if digits:
+                    target_num = int(digits)
+                    if StudentProfile.objects.filter(student_id=target_num).exclude(user=student).exists():
+                        return Response({'error': f'Student ID {target_num} is already assigned to another student. Student ID must be unique.'}, status=400)
+                    final_student_id = target_num
             else:
-                profile.student_id = None
-                profile_updated = True
-        
+                final_student_id = None
+
+        # ── Handle course ─────────────────────────────────────────────────────
         if 'course_id' in data:
             course_id_val = data['course_id']
             if course_id_val and str(course_id_val).strip() != "":
                 from myapp.models import Course
                 try:
                     profile.course = Course.objects.get(id=course_id_val)
-                    profile_updated = True
                 except (Course.DoesNotExist, ValueError):
                     profile.course = None
-                    profile_updated = True
             else:
                 profile.course = None
-                profile_updated = True
-                
-        if profile_updated or created:
-            profile.save()
+
+        # ── Handle batch ──────────────────────────────────────────────────────
+        if 'batch_id' in data or 'assigned_batches' in data:
+            batch_id_val = data.get('batch_id')
+            assigned_batches = data.get('assigned_batches', [])
+            target_batch_id = None
+            if batch_id_val and str(batch_id_val).strip() != "":
+                target_batch_id = batch_id_val
+            elif isinstance(assigned_batches, list) and len(assigned_batches) > 0:
+                target_batch_id = assigned_batches[0]
+
+            if target_batch_id:
+                from myapp.models import Batch, CourseEnrollment
+                try:
+                    batch_obj = Batch.objects.get(id=target_batch_id)
+                    profile.batch = batch_obj
+                    enrollments = CourseEnrollment.objects.filter(user=student)
+                    for en in enrollments:
+                        en.batch = batch_obj
+                        en.save()
+                    if profile.course and not enrollments.exists():
+                        CourseEnrollment.objects.get_or_create(
+                            user=student,
+                            course=profile.course,
+                            defaults={'batch': batch_obj}
+                        )
+                except Exception as batch_err:
+                    print("Error updating student batch:", batch_err)
+            else:
+                profile.batch = None
+
+        # ── Persist all profile changes atomically ────────────────────────────
+        # Only update fields that were explicitly sent in this request
+        update_fields = {'student_id': final_student_id}
+        if 'course_id' in data:
+            update_fields['course'] = profile.course
+        
+        StudentProfile.objects.filter(user=student).update(**update_fields)
+
+        print(f"DEBUG update_student_api: FINAL student_id saved = {final_student_id}")
+        # Reload profile for response
+        profile.refresh_from_db()
+
+        from myapp.views.student_approval_views import log_student_audit
+        log_student_audit(
+            student_name=student.get_full_name() or student.username,
+            action_type='updated',
+            action_title='Profile / Student ID Updated',
+            performed_by=request.user.username if (request.user and request.user.is_authenticated) else 'Admin',
+            student_email=student.email,
+            student_id_val=final_student_id or student.id,
+            user_id=student.id,
+            details=f"Updated Student ID to {final_student_id or 'N/A'}"
+        )
             
         return Response({
             'success': True,
-            'message': 'Student updated successfully'
+            'message': 'Student updated successfully',
+            'student_id': profile.student_id
         })
         
     except User.DoesNotExist:
         return Response({'error': 'Student not found'}, status=404)
+    except Exception as general_err:
+        print("Error updating student:", general_err)
+        return Response({'error': f'Failed to update student: {str(general_err)}'}, status=400)
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
@@ -291,14 +495,25 @@ def create_student_api(request):
             is_staff=False
         )
         
-        # Handle student_id (convert empty string to None)
+        # Handle student_id (validate uniqueness or assign manually)
         processed_student_id = None
         if student_id_val is not None and str(student_id_val).strip() != "":
-            try:
-                processed_student_id = int(student_id_val)
-            except (ValueError, TypeError):
-                student.delete()
-                return Response({'error': 'Student ID must be a valid number'}, status=400)
+            cleaned_val = str(student_id_val).strip()
+            import re
+            digits = re.sub(r'\D', '', cleaned_val)
+            if digits:
+                candidate_id = int(digits)
+                if StudentProfile.objects.filter(student_id=candidate_id).exists():
+                    student.delete()
+                    return Response({'error': f'Student ID {candidate_id} is already in use. Student ID must be unique.'}, status=400)
+                processed_student_id = candidate_id
+
+        # Auto-generation commented out: assigned manually by admin
+        # if not processed_student_id:
+        #     candidate_id = 900000 + student.id
+        #     while StudentProfile.objects.filter(student_id=candidate_id).exists():
+        #         candidate_id += 1
+        #     processed_student_id = candidate_id
         
         # Create student profile
         profile = StudentProfile.objects.create(
@@ -342,6 +557,18 @@ def create_student_api(request):
             ).start()
         except Exception as e:
             print(f"Error starting email thread: {e}")
+
+        from myapp.views.student_approval_views import log_student_audit
+        log_student_audit(
+            student_name=student.get_full_name() or student.username,
+            action_type='created',
+            action_title='Student Account Created',
+            performed_by=request.user.username if (request.user and request.user.is_authenticated) else 'Admin',
+            student_email=student.email,
+            student_id_val=processed_student_id or student.id,
+            user_id=student.id,
+            details=f"Created with Student ID: {processed_student_id or 'Auto'}"
+        )
 
         return Response({
             'success': True,

@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -11,6 +11,7 @@ User = get_user_model()
 
 # DASHBOARD STATS API
 @api_view(['GET'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def dashboard_stats_api(request):
     """Get overall dashboard statistics"""
@@ -92,6 +93,7 @@ def students_api(request):
         
         students_list.append({
             'id': user.id,
+            'student_id': profile.student_id if profile and profile.student_id else user.id,
             'studentId': profile.student_id if profile and profile.student_id else user.id,
             'name': display_name,
             'username': user.username,
@@ -169,6 +171,7 @@ def student_stats(request):
             students.append({
                 "id": user.id,
                 "name": user.username,
+                "student_id": profile.student_id if profile and profile.student_id else user.id,
                 "studentId": profile.student_id if profile and profile.student_id else user.id,
                 "cgpa": profile.cgpa if profile and hasattr(profile, 'cgpa') else 0,
                 "college": profile.college if profile and hasattr(profile, 'college') else "N/A",

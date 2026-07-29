@@ -17,7 +17,9 @@ def get_student_courses(request, student_id=None):
     
     # Identify target user
     if student_id:
-        if user.role not in ['admin', 'faculty']:
+        role_val = (getattr(user, 'role', '') or '').lower()
+        is_admin_or_faculty = role_val in ['admin', 'faculty'] or user.is_staff or user.is_superuser
+        if not is_admin_or_faculty:
             return Response({"detail": "You do not have permission to view other students' courses."}, status=status.HTTP_403_FORBIDDEN)
         target_user = get_object_or_404(User, id=student_id)
     else:
@@ -75,7 +77,9 @@ def assign_course(request):
     Only accessible by Admin and Faculty.
     """
     user = request.user
-    if user.role not in ['admin', 'faculty']:
+    role_val = (getattr(user, 'role', '') or '').lower()
+    is_admin_or_faculty = role_val in ['admin', 'faculty'] or user.is_staff or user.is_superuser
+    if not is_admin_or_faculty:
         return Response({"detail": "Only Admin or Faculty can assign courses."}, status=status.HTTP_403_FORBIDDEN)
         
     student_id = request.data.get('student_id')
@@ -91,45 +95,46 @@ def assign_course(request):
     student_user = get_object_or_404(User, id=student_id)
     
     batch_id = request.data.get('batch_id')
-    batch_obj = None
-    if batch_id:
-        from myapp.models import Batch
-        batch_obj = Batch.objects.filter(id=batch_id).first()
+    batch_map = request.data.get('batch_map', {}) # { course_id: batch_id }
+    
+    from myapp.models import StudentProfile, Course, CourseEnrollment, Batch
+
+    # 1. Un-enroll courses that were unchecked by admin
+    CourseEnrollment.objects.filter(user=student_user).exclude(course_id__in=course_ids).delete()
 
     assigned_titles = []
     already_enrolled = []
-    
-    from myapp.models import StudentProfile, Course, CourseEnrollment
 
+    # 2. Add / update selected course enrollments
     for c_id in course_ids:
         course_obj = Course.objects.filter(id=c_id).first()
         if not course_obj:
             continue
         
-        # Check if already enrolled
-        if CourseEnrollment.objects.filter(user=student_user, course=course_obj).exists():
-            already_enrolled.append(course_obj.title)
-            continue
-            
-        enrollment = CourseEnrollment.objects.create(
+        target_batch_id = batch_map.get(str(c_id)) if batch_map else batch_id
+        batch_obj = Batch.objects.filter(id=target_batch_id).first() if target_batch_id else None
+        
+        enrollment, created = CourseEnrollment.objects.get_or_create(
             user=student_user,
             course=course_obj,
-            batch=batch_obj if (batch_obj and batch_obj.course_id == course_obj.id) else None,
-            status='Active',
-            progress=0,
-            completion_percentage=0.0
+            defaults={
+                'batch': batch_obj if (batch_obj and batch_obj.course_id == course_obj.id) else None,
+                'status': 'Active',
+                'progress': 0,
+                'completion_percentage': 0.0
+            }
         )
-        
-        # Update StudentProfile.course to keep overview, profile and course active course dynamic
-        profile = StudentProfile.objects.filter(user=student_user).first()
-        if profile:
-            profile.course = course_obj
-            profile.save(update_fields=['course'])
-
-        assigned_titles.append(course_obj.title)
+        if not created and target_batch_id is not None:
+            enrollment.batch = batch_obj if (batch_obj and batch_obj.course_id == course_obj.id) else None
+            enrollment.save(update_fields=['batch'])
+            
+        if created:
+            assigned_titles.append(course_obj.title)
+        else:
+            already_enrolled.append(course_obj.title)
 
         # Trigger course enrollment notification email in background thread
-        if student_user.email:
+        if created and student_user.email:
             try:
                 import threading
                 from myapp.email_utils import send_course_enrollment_email
@@ -140,15 +145,16 @@ def assign_course(request):
             except Exception as email_err:
                 print(f"Error triggering course enrollment email thread: {email_err}")
 
-    msg = ""
-    if assigned_titles:
-        msg += f"Courses {', '.join(assigned_titles)} assigned successfully. "
-    if already_enrolled:
-        msg += f"Student was already enrolled in: {', '.join(already_enrolled)}."
+    # 3. Keep StudentProfile.course updated to active enrollment
+    latest_enrollment = CourseEnrollment.objects.filter(user=student_user).first()
+    profile = StudentProfile.objects.filter(user=student_user).first()
+    if profile:
+        profile.course = latest_enrollment.course if latest_enrollment else None
+        profile.save(update_fields=['course'])
 
     return Response({
         "success": True,
-        "message": msg.strip()
+        "message": f"Student courses updated successfully ({len(course_ids)} course(s) assigned)."
     })
 
 @api_view(['POST'])
@@ -159,7 +165,9 @@ def remove_course(request):
     Only accessible by Admin and Faculty.
     """
     user = request.user
-    if user.role not in ['admin', 'faculty']:
+    role_val = (getattr(user, 'role', '') or '').lower()
+    is_admin_or_faculty = role_val in ['admin', 'faculty'] or user.is_staff or user.is_superuser
+    if not is_admin_or_faculty:
         return Response({"detail": "Only Admin or Faculty can remove courses."}, status=status.HTTP_403_FORBIDDEN)
         
     student_id = request.data.get('student_id')

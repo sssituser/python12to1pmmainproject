@@ -8,7 +8,10 @@ import AdminPanel from "./AdminPanel";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminSettings from "./AdminSettings";
 import StudentApproval from "./StudentApproval";
+import StudentHub from "./StudentHub";
 import ManageStudentCourses from "./ManageStudentCourses";
+import CourseManagement from "./CourseManagement";
+import CourseDetailsManagement from "./CourseDetailsManagement";
 import BatchManagement from "./BatchManagement";
 import FacultyAssignment from "./FacultyAssignment";
 import AttendanceManagement from "./AttendanceManagement";
@@ -196,19 +199,6 @@ const WorkingAdminDashboard = () => {
             >
               <ShieldCheck size={18} />
               {open && "Student Management"}
-            </NavLink>
-            <NavLink
-              to="/admin/student-approvals"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-slate-800 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
-                }`
-              }
-            >
-              <UserCheck size={18} />
-              {open && "Student Approvals"}
             </NavLink>
             <NavLink
               to="/admin/student-courses"
@@ -505,7 +495,7 @@ const adminRoutes = [
         path: "students",
         element: (
           <AdminProtectedRoute>
-            <AdminPanel />
+            <StudentHub />
           </AdminProtectedRoute>
         )
       },
@@ -521,7 +511,23 @@ const adminRoutes = [
         path: "student-approvals",
         element: (
           <AdminProtectedRoute>
-            <StudentApproval />
+            <StudentHub defaultTab="approvals" />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "courses",
+        element: (
+          <AdminProtectedRoute>
+            <CourseManagement />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "courses/:courseId",
+        element: (
+          <AdminProtectedRoute>
+            <CourseDetailsManagement />
           </AdminProtectedRoute>
         )
       },
@@ -529,7 +535,7 @@ const adminRoutes = [
         path: "student-courses",
         element: (
           <AdminProtectedRoute>
-            <ManageStudentCourses />
+            <CourseManagement />
           </AdminProtectedRoute>
         )
       },

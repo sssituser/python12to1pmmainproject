@@ -609,6 +609,7 @@ class Course(models.Model):
     topics = models.JSONField(default=list)  # Store topics as JSON array
     modules = models.JSONField(null=True, blank=True, default=list)  # Added for hierarchical subjects/topics
     custom_videos = models.JSONField(default=dict, blank=True)  # Store custom videos
+    study_materials = models.JSONField(default=dict, blank=True)  # Store study materials (PDFs, notes)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -1387,6 +1388,39 @@ class AssignmentSubmission(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.assignment.title}"
+
+
+# ===============================
+# Student Approval & CRUD Audit Log
+# ===============================
+class StudentAuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('registration', 'Registration'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('created', 'Account Created'),
+        ('updated', 'Profile Updated'),
+        ('course_assigned', 'Course Assigned'),
+        ('status_toggled', 'Status Toggled'),
+        ('deleted', 'Account Deleted'),
+    )
+    user_id = models.IntegerField(null=True, blank=True)
+    student_name = models.CharField(max_length=255)
+    student_email = models.CharField(max_length=255, blank=True, null=True)
+    student_id_val = models.CharField(max_length=100, blank=True, null=True)
+    action_type = models.CharField(max_length=50, choices=ACTION_CHOICES, default='updated')
+    action_title = models.CharField(max_length=255)
+    performed_by = models.CharField(max_length=255, default='System')
+    details = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'myapp_student_audit_log'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.student_name} - {self.action_title} ({self.created_at})"
+
 
 
 

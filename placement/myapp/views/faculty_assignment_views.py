@@ -77,6 +77,9 @@ def assign_faculty_module(request):
         module=module_obj
     )
 
+    batch_obj.faculty = faculty_user
+    batch_obj.save(update_fields=['faculty'])
+
     return Response({
         "success": True,
         "message": f"Faculty '{faculty_user.username}' assigned to batch '{batch_obj.name}'.",

@@ -213,6 +213,18 @@ def update_profile(request):
 
     if serializer.is_valid():
         serializer.save()
+
+        # Ensure student_id is updated across all profiles for this user if provided
+        if "student_id" in data:
+            sid_val = data["student_id"]
+            if sid_val is not None and str(sid_val).strip() != "":
+                import re
+                digits = re.sub(r'\D', '', str(sid_val).strip())
+                if digits:
+                    target_num = int(digits)
+                    StudentProfile.objects.filter(user=request.user).update(student_id=target_num)
+            else:
+                StudentProfile.objects.filter(user=request.user).update(student_id=None)
         
         if raw_education is not None and education_data is not None:
             profile.education = education_data

@@ -388,13 +388,19 @@ class CourseStudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics', 'modules', 'custom_videos', 'created_at']
+        fields = ['id', 'title', 'level', 'duration', 'progress', 'locked', 'topics', 'modules', 'custom_videos', 'study_materials', 'created_at']
 
     def get_modules(self, obj):
         return obj.modules if isinstance(obj.modules, list) else []
 
     def get_topics(self, obj):
-        return obj.topics if isinstance(obj.topics, list) else []
+        topics_json = obj.topics if isinstance(obj.topics, list) else []
+        db_topics = list(obj.topic_records.all().order_by('order').values_list('topic_text', flat=True))
+        combined = []
+        for t in (topics_json + db_topics):
+            if t and str(t).strip() and str(t).strip() not in combined:
+                combined.append(str(t).strip())
+        return combined
 
 
 class CourseFacultySerializer(serializers.ModelSerializer):
@@ -405,13 +411,19 @@ class CourseFacultySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'topics', 'modules', 'custom_videos', 'created_at']
+        fields = ['id', 'title', 'level', 'duration', 'topics', 'modules', 'custom_videos', 'study_materials', 'created_at']
 
     def get_modules(self, obj):
         return obj.modules if isinstance(obj.modules, list) else []
 
     def get_topics(self, obj):
-        return obj.topics if isinstance(obj.topics, list) else []
+        topics_json = obj.topics if isinstance(obj.topics, list) else []
+        db_topics = list(obj.topic_records.all().order_by('order').values_list('topic_text', flat=True))
+        combined = []
+        for t in (topics_json + db_topics):
+            if t and str(t).strip() and str(t).strip() not in combined:
+                combined.append(str(t).strip())
+        return combined
 
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
@@ -421,7 +433,7 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'modules', 'custom_videos', 'progress']
+        fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'modules', 'custom_videos', 'study_materials', 'progress']
 
     def validate_modules(self, value):
         """Ensure modules is always a list"""
@@ -431,13 +443,26 @@ class CourseCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Modules must be a list or dict")
         return value
 
-    def validate_topics(self, value):
-        """Ensure topics is always a list"""
-        if value is None:
-            return []
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Topics must be a list")
-        return value
+    def create(self, validated_data):
+        topics = validated_data.get('topics', [])
+        instance = super().create(validated_data)
+        if topics and isinstance(topics, list):
+            from myapp.models import CourseTopic
+            for idx, t in enumerate(topics):
+                if t and str(t).strip():
+                    CourseTopic.objects.create(course=instance, topic_text=str(t).strip(), order=idx + 1)
+        return instance
+
+    def update(self, instance, validated_data):
+        topics = validated_data.get('topics', None)
+        instance = super().update(instance, validated_data)
+        if topics is not None and isinstance(topics, list):
+            from myapp.models import CourseTopic
+            CourseTopic.objects.filter(course=instance).delete()
+            for idx, t in enumerate(topics):
+                if t and str(t).strip():
+                    CourseTopic.objects.create(course=instance, topic_text=str(t).strip(), order=idx + 1)
+        return instance
 
 
 # ===============================

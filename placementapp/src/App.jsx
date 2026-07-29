@@ -74,6 +74,7 @@ const StudentReport = lazy(() => import("./faculty/StudentReport"));
 const MarksUpload = lazy(() => import("./faculty/MarksUpload"));
 import LiveClasses from "./faculty/LiveClasses";
 import StudentApproval from "./admin/StudentApproval";
+import StudentHub from "./admin/StudentHub";
 import ManageStudentCourses from "./admin/ManageStudentCourses";
 import BatchManagement from "./admin/BatchManagement";
 import AttendanceManagement from "./admin/AttendanceManagement";
@@ -313,7 +314,8 @@ function App() {
             <Route path="Course" element={<FacultyCourse />} />
             <Route path="Course/:courseId" element={<FacultyCourse />} />
             <Route path="batches" element={<BatchManagement />} />
-            <Route path="student-approvals" element={<StudentApproval />} />
+            <Route path="student-approvals" element={<StudentHub defaultTab="approvals" />} />
+            <Route path="students" element={<StudentHub />} />
             <Route path="student-courses" element={<ManageStudentCourses />} />
             <Route path="attendance" element={<AttendanceManagement />} />
             <Route path="live-classes" element={<LiveClasses />} />

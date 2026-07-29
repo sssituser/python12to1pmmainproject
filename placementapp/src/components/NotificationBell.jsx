@@ -58,33 +58,57 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const bellRef = useRef(null);
 
-  const getHeaders = useCallback(() => {
-    const token = localStorage.getItem("access");
-    return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const fetchWithAuth = useCallback(async (url, options = {}) => {
+    let rawToken = localStorage.getItem("access");
+    let token = rawToken ? rawToken.replace(/^"|"$/g, "") : null;
+    if (!token || token === "null" || token === "undefined") return null;
+
+    let headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...options.headers };
+    try {
+      let res = await fetch(url, { ...options, headers });
+      if (res.status === 401) {
+        const refreshToken = localStorage.getItem("refresh")?.replace(/^"|"$/g, "");
+        if (refreshToken) {
+          const refreshRes = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: refreshToken }),
+          });
+          if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            localStorage.setItem("access", data.access);
+            headers["Authorization"] = `Bearer ${data.access}`;
+            res = await fetch(url, { ...options, headers });
+          }
+        }
+      }
+      return res;
+    } catch(e) {
+      return null;
+    }
   }, []);
 
   const fetchUnread = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/admin/notifications/unread-count/`, { headers: getHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setUnreadCount(data.unread_count || 0);
-      }
-    } catch (_) {}
-  }, [getHeaders]);
+    const res = await fetchWithAuth(`${API}/admin/notifications/unread-count/`);
+    if (res && res.ok) {
+      const data = await res.json();
+      setUnreadCount(data.unread_count || 0);
+    }
+  }, [fetchWithAuth]);
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/admin/notifications/?limit=30`, { headers: getHeaders() });
-      if (res.ok) {
+      const res = await fetchWithAuth(`${API}/admin/notifications/?limit=30`);
+      if (res && res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
         setUnreadCount(data.unread_count || 0);
       }
-    } catch (_) {}
-    setLoading(false);
-  }, [getHeaders]);
+    } catch (_) {} finally {
+      setLoading(false);
+    }
+  }, [fetchWithAuth]);
 
   // Poll unread count every 30 seconds
   useEffect(() => {
@@ -114,34 +138,34 @@ export default function NotificationBell() {
 
   const handleMarkRead = useCallback(async (id) => {
     try {
-      await fetch(`${API}/admin/notifications/${id}/read/`, { method: "POST", headers: getHeaders() });
+      await fetchWithAuth(`${API}/admin/notifications/${id}/read/`, { method: "POST" });
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch (_) {}
-  }, [getHeaders]);
+  }, [fetchWithAuth]);
 
   const handleMarkAllRead = useCallback(async () => {
     setMarkingAll(true);
     try {
-      await fetch(`${API}/admin/notifications/mark-all-read/`, { method: "POST", headers: getHeaders() });
+      await fetchWithAuth(`${API}/admin/notifications/mark-all-read/`, { method: "POST" });
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
     } catch (_) {}
     setMarkingAll(false);
-  }, [getHeaders]);
+  }, [fetchWithAuth]);
 
   const handleDelete = useCallback(async (id) => {
     try {
-      await fetch(`${API}/admin/notifications/${id}/delete/`, { method: "DELETE", headers: getHeaders() });
+      await fetchWithAuth(`${API}/admin/notifications/${id}/delete/`, { method: "DELETE" });
       setNotifications((prev) => {
         const removed = prev.find((n) => n.id === id);
         if (removed && !removed.is_read) setUnreadCount((c) => Math.max(0, c - 1));
         return prev.filter((n) => n.id !== id);
       });
     } catch (_) {}
-  }, [getHeaders]);
+  }, [fetchWithAuth]);
 
   const style = (type) => typeStyles[type] || typeStyles.system;
 

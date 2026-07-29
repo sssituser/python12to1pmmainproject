@@ -74,11 +74,14 @@ function Register() {
 
         // 2. 1000% ROBUST PRIORITY MERGE
         // We prioritize Database Additions (displayed at the TOP) followed by the 37+ Standards
-        const apiTitles = new Set(apiCourses.map(c => (typeof c === 'string' ? c : (c.title || "")).toUpperCase()));
-        const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()));
+        const deletedTitles = new Set((JSON.parse(localStorage.getItem('deletedCourseTitles') || '[]')).map(t => String(t).toUpperCase()));
+        const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()) && !deletedTitles.has(title.toUpperCase()));
         
         // Priority merged list: [Dynamic Database Courses] -> [Standard Curriculum]
-        const mergedList = [...apiCourses, ...missingStandards];
+        const mergedList = [...apiCourses, ...missingStandards].filter(c => {
+          const t = (typeof c === 'string' ? c : (c.title || '')).toUpperCase();
+          return t && !deletedTitles.has(t);
+        });
         setCourses(mergedList);
 
         console.log(`✅ Registration Sync Complete: ${mergedList.length} total options (Live: ${apiCourses.length}, Standards: ${missingStandards.length})`);

@@ -1,378 +1,53 @@
 {
     "courses": [
         {
-            "id": 7,
-            "title": "PYTHON FULL STACK",
-            "level": "Beginner",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "Introduction to PYTHON FULL STACK",
-                "Resume Template"
-            ],
-            "modules": [
-                {
-                    "title": "OOPS",
-                    "topics": [
-                        {
-                            "title": "Resume Template",
-                            "video": ""
-                        }
-                    ]
-                }
-            ],
-            "custom_videos": {},
-            "created_at": "2026-04-28 12:12:19.940754+00:00"
-        },
-        {
-            "id": 8,
-            "title": "JAVA FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [
-                "oops"
-            ],
-            "modules": [
-                {
-                    "title": "Java",
-                    "topics": [
-                        {
-                            "title": "oops",
-                            "video": "https://youtu.be/s7UgQ7_1KQY?si=1-nFUl5lHwf3s_vt"
-                        }
-                    ]
-                }
-            ],
-            "custom_videos": {
-                "oops": {
-                    "url": "https://youtu.be/s7UgQ7_1KQY?si=1-nFUl5lHwf3s_vt",
-                    "type": "link"
-                }
-            },
-            "created_at": "2026-05-31 13:59:44.793362+00:00"
-        },
-        {
-            "id": 9,
-            "title": ".NET FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.799759+00:00"
-        },
-        {
-            "id": 10,
-            "title": "MERN FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.804011+00:00"
-        },
-        {
-            "id": 11,
-            "title": "UI FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.808117+00:00"
-        },
-        {
-            "id": 12,
-            "title": "FULL STACK DEVELOPMENT",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.812040+00:00"
-        },
-        {
-            "id": 13,
-            "title": "DATA SCIENCE AND AGENTIC AI",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.815670+00:00"
-        },
-        {
-            "id": 14,
-            "title": "ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.820357+00:00"
-        },
-        {
-            "id": 15,
-            "title": "ADVANCED MACHINE LEARNING",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.824786+00:00"
-        },
-        {
-            "id": 16,
-            "title": "DATA SCIENCE WITH AI",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.828310+00:00"
-        },
-        {
-            "id": 17,
-            "title": "AGENTIC AI",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.832192+00:00"
-        },
-        {
-            "id": 18,
-            "title": "DATA ANALYTICS",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.836630+00:00"
-        },
-        {
-            "id": 19,
-            "title": "CLOUD COMPUTING",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.841432+00:00"
-        },
-        {
-            "id": 20,
-            "title": "DEVOPS",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.845442+00:00"
-        },
-        {
-            "id": 21,
-            "title": "CYBER SECURITY",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.849113+00:00"
-        },
-        {
-            "id": 22,
-            "title": "POWER BI",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.853128+00:00"
-        },
-        {
-            "id": 23,
-            "title": "MICROSOFT TECHNOLOGIES",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.856729+00:00"
-        },
-        {
-            "id": 24,
-            "title": "MOBILE FULL STACK",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.860447+00:00"
-        },
-        {
-            "id": 25,
-            "title": "MONGODB",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.864739+00:00"
-        },
-        {
-            "id": 26,
-            "title": "DCA",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.869383+00:00"
-        },
-        {
-            "id": 27,
-            "title": "PGDCA",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.873235+00:00"
-        },
-        {
             "id": 28,
-            "title": "DOA",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.876839+00:00"
-        },
-        {
-            "id": 29,
-            "title": "FRONTEND",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.880566+00:00"
-        },
-        {
-            "id": 30,
-            "title": "BACKEND",
-            "level": "Professional",
-            "duration": "Self-paced",
-            "progress": 0,
-            "locked": false,
-            "topics": [],
-            "modules": [],
-            "custom_videos": {},
-            "created_at": "2026-05-31 13:59:44.885421+00:00"
-        },
-        {
-            "id": 46,
-            "title": "React",
+            "title": "Aptitude and Reasoning",
             "level": "Beginner",
             "duration": "Self-paced",
             "progress": 0,
             "locked": false,
-            "topics": [],
+            "topics": [
+                "Profit and Loss",
+                "Percentages",
+                "Introduction to Aptitude and Reasoning"
+            ],
             "modules": [
                 {
-                    "title": "Hooks",
+                    "title": "Percentages",
                     "topics": []
                 }
             ],
             "custom_videos": {
-                "AWS": {
-                    "url": "AWS_Permanent IP address setting.mp4",
-                    "type": "upload"
-                }
+                "Introduction to Aptitude and Reasoning": [
+                    {
+                        "url": "https://youtu.be/2cRRdgVsD2o?si=i_o5bojOzJ1Kht02",
+                        "title": "Aptitude"
+                    }
+                ]
             },
-            "created_at": "2026-07-23 11:39:40.400223+00:00"
+            "study_materials": {},
+            "created_at": "2026-07-28 09:58:40.714656+00:00"
         },
         {
-            "id": 47,
-            "title": "ALL BATCHES",
-            "level": "Beginner",
-            "duration": "0",
+            "id": 29,
+            "title": "Python Full Stack",
+            "level": "Advanced",
+            "duration": "4 Months",
             "progress": 0,
             "locked": false,
             "topics": [],
             "modules": [],
             "custom_videos": {},
-            "created_at": "2026-07-24 09:35:52.929528+00:00"
+            "study_materials": {},
+            "created_at": "2026-07-28 12:01:01.044884+00:00"
         }
     ],
     "configs": [
         {
             "id": 1,
-            "exam_name": "Weekly Assessment",
-            "course_name": "",
-            "subjects": [
-                "java full stack",
-                "JAVA FULL STACK"
-            ],
-            "duration": 75,
-            "passing_strategy": "correct_answers",
-            "requirement": 13,
-            "question_count": 25,
-            "marks_per_question": 2,
-            "updated_at": "2026-04-28 12:07:17.561929+00:00"
-        },
-        {
-            "id": 3,
             "exam_name": "Daily Assessment",
-            "course_name": "PYTHON FULL STACK",
+            "course_name": "",
             "subjects": [
                 "Aptitude"
             ],
@@ -381,35 +56,7 @@
             "requirement": 40,
             "question_count": 30,
             "marks_per_question": 1,
-            "updated_at": "2026-07-25 05:35:19.179955+00:00"
-        },
-        {
-            "id": 5,
-            "exam_name": "Aptitude exam 13-06-2026",
-            "course_name": "ALL COURSES::weekly::Aptitude exam 13-06-2026",
-            "subjects": [
-                "APTITUDE"
-            ],
-            "duration": 45,
-            "passing_strategy": "marks",
-            "requirement": 15,
-            "question_count": 30,
-            "marks_per_question": 1,
-            "updated_at": "2026-07-25 05:35:19.197353+00:00"
-        },
-        {
-            "id": 9,
-            "exam_name": "Aptitude",
-            "course_name": "ALL COURSES::weekly::Aptitude",
-            "subjects": [
-                "APTITUDE"
-            ],
-            "duration": 45,
-            "passing_strategy": "marks",
-            "requirement": 15,
-            "question_count": 30,
-            "marks_per_question": 1,
-            "updated_at": "2026-07-25 05:35:19.212210+00:00"
+            "updated_at": "2026-07-28 09:47:03.999238+00:00"
         }
     ]
 }

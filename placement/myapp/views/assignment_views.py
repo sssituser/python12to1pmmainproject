@@ -17,11 +17,13 @@ def list_assignments(request):
     """
     user = request.user
     if user.role == 'student':
-        # Get active enrollments to find batch
-        enrollment = CourseEnrollment.objects.filter(student=user).first()
-        if not enrollment or not enrollment.batch:
-            return Response({"success": False, "message": "You are not enrolled in any batch."}, status=status.HTTP_400_BAD_REQUEST)
-        assignments = Assignment.objects.filter(batch=enrollment.batch).order_by('-created_at')
+        batch_id = request.GET.get('batch_id')
+        if batch_id:
+            assignments = Assignment.objects.filter(batch_id=batch_id).order_by('-created_at')
+        else:
+            enrollments = CourseEnrollment.objects.filter(student=user)
+            batch_ids = [e.batch_id for e in enrollments if e.batch_id]
+            assignments = Assignment.objects.filter(batch_id__in=batch_ids).order_by('-created_at')
         serializer = AssignmentSerializer(assignments, many=True)
         return Response({"success": True, "data": serializer.data})
         

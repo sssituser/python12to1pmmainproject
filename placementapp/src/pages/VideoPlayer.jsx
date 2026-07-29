@@ -143,6 +143,15 @@ const VideoPlayer = () => {
     'Dependency Injection': 'BPGtVpu81ek',
     'Authentication': 'V-S5JZJUvvU',
     'Web API Development': '6YIRKBsRWVI',
+
+    // Aptitude and Reasoning Topics
+    'Introduction to Aptitude and Reasoning': 'N4t_hN0V9sY',
+    'Aptitude and Reasoning': 'N4t_hN0V9sY',
+    'Quantitative Aptitude': 'N4t_hN0V9sY',
+    'Logical Reasoning': 'N4t_hN0V9sY',
+    'Data Interpretation': 'N4t_hN0V9sY',
+    'Speed Math & Calculations': 'N4t_hN0V9sY',
+    'Aptitude Basics': 'N4t_hN0V9sY',
   };
 
   useEffect(() => {
@@ -169,6 +178,46 @@ const VideoPlayer = () => {
           }
         } catch(e) { console.error('Failed processing isolated custom video parameters.'); }
       }
+
+      // 0.5 Check backend API for custom_videos attached by Admin or Faculty
+      try {
+        const token = localStorage.getItem('access')?.replace(/^"|"$/g, "");
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const cRes = await fetch(`http://${window.location.hostname}:8000/api/courses/`, { headers });
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          const coursesList = cData.data || cData.results || (Array.isArray(cData) ? cData : []);
+          const matchCourse = coursesList.find(c => {
+            const t = (c.title || '').toLowerCase();
+            const ct = (courseTitle || '').toLowerCase();
+            return t === ct || t.includes(ct) || ct.includes(t);
+          });
+          if (matchCourse && matchCourse.custom_videos) {
+            const cv = matchCourse.custom_videos;
+            let targetVal = cv[topicName] || cv[Object.keys(cv).find(k => k && k.toLowerCase() === (topicName || '').toLowerCase())];
+            if (!targetVal && Object.keys(cv).length > 0) targetVal = Object.values(cv)[0];
+            let foundUrl = null;
+            if (typeof targetVal === 'string') foundUrl = targetVal;
+            else if (Array.isArray(targetVal) && targetVal.length > 0) {
+              const f = targetVal[0];
+              foundUrl = typeof f === 'string' ? f : (f?.url || f?.video || f?.link);
+            } else if (typeof targetVal === 'object' && targetVal) {
+              foundUrl = targetVal.url || targetVal.video || targetVal.link;
+            }
+            if (foundUrl) {
+              const ytRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i;
+              const match = foundUrl.match(ytRegex);
+              if (match && match[1]) {
+                setVideoId(match[1]);
+              } else {
+                setCustomVideoSrc({ url: foundUrl, isNativeVideo: false });
+              }
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (e) {}
 
       // 1. Check if the topic has a predefined mapped video
       if (topicVideos[topicName]) {

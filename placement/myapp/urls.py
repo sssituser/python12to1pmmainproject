@@ -158,6 +158,8 @@ urlpatterns = [
     path('delete-user/<int:user_id>/', delete_user_api),
     path('update-faculty/<int:faculty_id>/', update_faculty_api),
     path('update-student/<int:student_id>/', update_student_api),
+    path('edit-user/<int:student_id>/', update_student_api),
+    path('update-user-status/<int:student_id>/', toggle_student_status_api),
 
     # ── Playground URLs ───────────────────────────────────────────────────────
     path('playground-questions/', playground_questions_api, name='playground-questions'),

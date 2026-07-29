@@ -36,6 +36,21 @@ function ManageStudentCourses() {
     fetchBatches();
   }, []);
 
+  useEffect(() => {
+    const handleStudentDataUpdated = () => {
+      fetchStudents();
+    };
+    window.addEventListener("studentDataUpdated", handleStudentDataUpdated);
+    const handleStorageChange = (e) => {
+      if (e.key === "studentDataUpdated") handleStudentDataUpdated();
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("studentDataUpdated", handleStudentDataUpdated);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const fetchBatches = async () => {
     try {
       const res = await makeRequest(`http://${window.location.hostname}:8000/api/batches/`);
@@ -293,21 +308,14 @@ function ManageStudentCourses() {
         </div>
       </div>
 
-      {/* STUDENT CARDS GRID */}
+      {/* STUDENT TABLE */}
       {loadingStudents ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, idx) => (
-            <div key={idx} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm animate-pulse">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-slate-100 rounded-full"></div>
-                <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-slate-100 rounded w-2/3"></div>
-                  <div className="h-3 bg-slate-100 rounded w-1/2"></div>
-                </div>
-              </div>
-              <div className="h-10 bg-slate-100 rounded-2xl w-full"></div>
-            </div>
-          ))}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6 animate-pulse">
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div key={idx} className="h-12 bg-slate-100 rounded-xl w-full"></div>
+            ))}
+          </div>
         </div>
       ) : filteredStudents.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-16 text-center shadow-sm max-w-md mx-auto">
@@ -318,46 +326,55 @@ function ManageStudentCourses() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStudents.map((student) => (
-            <div key={student.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-[0_10px_30px_rgba(99,102,241,0.06)] hover:border-indigo-100 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
-              <div className="absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r from-indigo-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 flex items-center justify-center rounded-2xl font-extrabold text-lg border border-indigo-100/50 shadow-sm">
-                    {student.username[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{student.username}</h3>
-                    <p className="text-xs text-slate-400 font-medium truncate max-w-[180px]">{student.email || "No email provided"}</p>
-                  </div>
-                </div>
-                
-                <div className="border-t border-slate-50 pt-4 mb-5 space-y-2.5 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">Student ID</span>
-                    <span className="font-bold text-slate-700 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-xl shadow-2xs">
-                      {student.student_id || student.studentprofile?.student_id || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">Account Status</span>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${student.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
-                      {student.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleOpenManageModal(student)}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3 rounded-2xl text-sm transition-all duration-300 shadow-sm hover:shadow-[0_4px_12px_rgba(99,102,241,0.2)]"
-              >
-                Manage Courses <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          ))}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <th className="py-4 px-6">Student Details</th>
+                  <th className="py-4 px-6">Student ID</th>
+                  <th className="py-4 px-6">Account Status</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-slate-50/60 transition-colors group">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 flex items-center justify-center rounded-xl font-extrabold text-base border border-indigo-100/50 shadow-sm shrink-0">
+                          {student.username ? student.username[0].toUpperCase() : "S"}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{student.username}</h3>
+                          <p className="text-xs text-slate-400 font-medium">{student.email || "No email provided"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="inline-block font-bold text-slate-700 bg-slate-50 border border-slate-100 px-3 py-1 rounded-xl text-xs">
+                        {student.student_id || student.studentprofile?.student_id || "N/A"}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${student.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${student.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                        {student.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        onClick={() => handleOpenManageModal(student)}
+                        className="inline-flex items-center gap-2 bg-slate-900 hover:bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all duration-300 shadow-sm hover:shadow-[0_4px_12px_rgba(99,102,241,0.2)]"
+                      >
+                        Manage Courses <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
