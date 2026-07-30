@@ -68,6 +68,11 @@ function Jobs() {
       ? `http://${window.location.hostname}:8000/api/admin/jobs/${form.id}/`
       : `http://${window.location.hostname}:8000/api/admin/jobs/`;
     
+    // Clean payload: remove empty strings for optional fields and sanitize payload
+    const payload = { ...form };
+    if (!payload.deadline) delete payload.deadline;
+    if (!payload.external_application_link) delete payload.external_application_link;
+
     try {
       const res = await fetch(url, {
         method: form.id ? "PATCH" : "POST",
@@ -75,9 +80,10 @@ function Jobs() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
+        toast.success(form.id ? "Job drive updated successfully!" : "New job drive posted successfully!");
         setShowForm(false);
         setForm({
           job_title: "", company: "", location: "", job_type: "", 
@@ -86,9 +92,14 @@ function Jobs() {
           passout: ""
         });
         fetchJobs();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = Object.entries(errData).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ');
+        toast.error(errMsg || "Failed to save job posting. Please check required fields (Company, Job Title, Deadline).");
       }
     } catch (err) {
       console.error("Submit job error", err);
+      toast.error("Network error saving job drive.");
     }
   };
 

@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSEO } from "../utils/useSEO";
+import AttendanceManagement from "./AttendanceManagement";
 
 // Helper functions to safely extract string titles from primitive values or objects
 const getCourseDisplayName = (courseObj) => {
@@ -1042,10 +1043,10 @@ function StudentHub({ defaultTab }) {
 
       const matchesSearch = 
         !searchLower ||
-        s.username.toLowerCase().includes(searchLower) ||
-        s.email.toLowerCase().includes(searchLower) ||
+        String(s.username || '').toLowerCase().includes(searchLower) ||
+        String(s.email || '').toLowerCase().includes(searchLower) ||
         fullName.includes(searchLower) ||
-        (s.studentprofile?.student_id || '').toLowerCase().includes(searchLower) ||
+        String(s.student_id || s.studentprofile?.student_id || '').toLowerCase().includes(searchLower) ||
         enrolledTitles.includes(searchLower) ||
         batchNameStr.includes(searchLower);
 
@@ -1143,12 +1144,12 @@ function StudentHub({ defaultTab }) {
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100/60 shadow-sm">
+          <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100/60 shadow-sm">
             <GraduationCap className="w-8 h-8" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dynamic Student Hub</h1>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">SSSIT Student Hub</h1>
               <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500" /> Live Dynamic
               </span>
@@ -1186,16 +1187,6 @@ function StudentHub({ defaultTab }) {
           >
             <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin text-indigo-600" : ""}`} />
             {isSyncing ? "Syncing..." : "Refresh"}
-          </button>
-
-          {/* Assign Multiple Courses Link */}
-          <button 
-            onClick={() => navigate("/admin/student-courses")}
-            className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-semibold rounded-xl transition text-sm"
-            title="Go to dedicated multi-course assignment suite"
-          >
-            <BookOpen className="w-4 h-4 text-purple-600" />
-            Assign Multiple Courses
           </button>
 
           <button 
@@ -1336,6 +1327,18 @@ function StudentHub({ defaultTab }) {
             >
               <ShieldCheck className="w-4 h-4" />
               Approval Audit Trail
+            </button>
+
+            <button
+              onClick={() => setActiveTab("attendance")}
+              className={`px-4 py-3 font-semibold text-sm rounded-t-xl transition-all border-b-2 flex items-center gap-2 ${
+                activeTab === "attendance"
+                  ? "bg-white text-indigo-600 border-indigo-600 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 border-transparent"
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              Batch Attendance Tracker
             </button>
           </div>
 
@@ -1864,6 +1867,13 @@ function StudentHub({ defaultTab }) {
             </div>
           </div>
         )}
+
+        {/* TAB 4: BATCH ATTENDANCE TRACKER */}
+        {activeTab === "attendance" && (
+          <div className="p-6">
+            <AttendanceManagement />
+          </div>
+        )}
       </div>
 
       {/* --- MODAL 1: VIEW STUDENT DETAILS --- */}
@@ -2081,33 +2091,15 @@ function StudentHub({ defaultTab }) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700">Student ID</label>
-                  <input 
-                    type="text" 
-                    value={editFormData.student_id}
-                    onChange={(e) => setEditFormData({...editFormData, student_id: e.target.value})}
-                    className="w-full p-2.5 mt-1 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-                    placeholder="Enter unique Student ID"
-                  />
-                </div>
-
-                {/* Enrolled Courses (Multi-Select Dropdown with Checkboxes) */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Enrolled Courses</label>
-                  <MultiCourseSelectDropdown
-                    selectedCourseIds={editFormData.course_ids || []}
-                    availableCourses={availableCourses}
-                    onChange={(updatedIds) => {
-                      setEditFormData({
-                        ...editFormData,
-                        course_ids: updatedIds,
-                        course_id: updatedIds[0] || ""
-                      });
-                    }}
-                  />
-                </div>
+              <div className="text-sm">
+                <label className="text-xs font-semibold text-slate-700">Student ID</label>
+                <input 
+                  type="text" 
+                  value={editFormData.student_id}
+                  onChange={(e) => setEditFormData({...editFormData, student_id: e.target.value})}
+                  className="w-full p-2.5 mt-1 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  placeholder="Enter unique Student ID"
+                />
               </div>
             </div>
 
@@ -2205,33 +2197,15 @@ function StudentHub({ defaultTab }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Student ID</label>
-                <input 
-                  type="text" 
-                  placeholder="SSSIT2026-001"
-                  value={addFormData.student_id}
-                  onChange={(e) => setAddFormData({...addFormData, student_id: e.target.value})}
-                  className="w-full p-2.5 mt-1 border border-slate-200 rounded-xl text-sm"
-                />
-              </div>
-
-              {/* Select Courses (Multi-Select Dropdown with Checkboxes) */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600">Select Courses</label>
-                <MultiCourseSelectDropdown
-                  selectedCourseIds={addFormData.course_ids || []}
-                  availableCourses={availableCourses}
-                  onChange={(updatedIds) => {
-                    setAddFormData({
-                      ...addFormData,
-                      course_ids: updatedIds,
-                      course_id: updatedIds[0] || ""
-                    });
-                  }}
-                />
-              </div>
+            <div className="text-sm">
+              <label className="text-xs font-semibold text-slate-600">Student ID</label>
+              <input 
+                type="text" 
+                placeholder="SSSIT2026-001"
+                value={addFormData.student_id}
+                onChange={(e) => setAddFormData({...addFormData, student_id: e.target.value})}
+                className="w-full p-2.5 mt-1 border border-slate-200 rounded-xl text-sm"
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-3">

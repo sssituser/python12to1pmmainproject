@@ -227,45 +227,6 @@ const WorkingAdminDashboard = () => {
               {open && "Batches"}
             </NavLink>
             <NavLink
-              to="/admin/faculty-assignments"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-slate-800 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
-                }`
-              }
-            >
-              <UserPlus size={18} />
-              {open && "Faculty Assignments"}
-            </NavLink>
-            <NavLink
-              to="/admin/live-classes"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-slate-800 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
-                }`
-              }
-            >
-              <Video size={18} />
-              {open && "Live Classes"}
-            </NavLink>
-            <NavLink
-              to="/admin/attendance"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-slate-800 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
-                }`
-              }
-            >
-              <CalendarDays size={18} />
-              {open && "Attendance"}
-            </NavLink>
-            <NavLink
               to="/admin/analytics"
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
@@ -277,19 +238,6 @@ const WorkingAdminDashboard = () => {
             >
               <BarChart3 size={18} />
               {open && "Analytics"}
-            </NavLink>
-            <NavLink
-              to="/admin/settings"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-slate-800 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
-                }`
-              }
-            >
-              <Settings size={18} />
-              {open && "Settings"}
             </NavLink>
           </div>
         </div>
@@ -549,6 +497,14 @@ const adminRoutes = [
       },
       {
         path: "faculty-assignments",
+        element: (
+          <AdminProtectedRoute>
+            <FacultyAssignment />
+          </AdminProtectedRoute>
+        )
+      },
+      {
+        path: "faculty-assignment",
         element: (
           <AdminProtectedRoute>
             <FacultyAssignment />

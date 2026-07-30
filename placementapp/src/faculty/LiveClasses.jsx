@@ -170,34 +170,25 @@ export default function LiveClasses() {
   const isStudent = currentUser?.role?.toString().toLowerCase() === "student";
 
   return (
-    <div className="p-6 bg-slate-50/50 min-h-screen font-sans">
-      {/* BACK BUTTON */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-6 inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-xs font-bold uppercase tracking-wider transition-all group"
-      >
-        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-        Back
-      </button>
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center shadow-inner">
-              <Video className="w-5 h-5" />
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+              <Video className="w-4 h-4" />
             </div>
-            Live Classes &amp; Recordings
-          </h1>
-          <p className="text-sm text-slate-500 mt-2 max-w-xl">
+            Live Classes &amp; Session Recordings
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
             {isStudent 
               ? "View live meeting sessions and class recordings for your batch" 
-              : "Schedule live meeting sessions and attach recordings scoped to assigned course batches"}
+              : "Schedule live meeting sessions and attach recordings scoped to assigned course batches dynamically"}
           </p>
         </div>
         {!isStudent && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-5 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-purple-500/20 transition-all active:scale-95 shrink-0"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-purple-500/20 transition-all active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4" /> Schedule Live Class
           </button>

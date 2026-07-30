@@ -71,14 +71,38 @@ function Dashboard() {
     getStats();
   }, [students]);
 
+  const [batches, setBatches] = useState([]);
+  const [batchesLoading, setBatchesLoading] = useState(true);
+
+  const getBatches = async () => {
+    try {
+      setBatchesLoading(true);
+      const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/batches/`);
+      if (res.ok) {
+        const json = await res.json();
+        const batchList = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : (json?.results || []));
+        setBatches(batchList);
+      } else {
+        setBatches([]);
+      }
+    } catch (e) {
+      console.error("Failed fetching dynamic batches:", e);
+      setBatches([]);
+    } finally {
+      setBatchesLoading(false);
+    }
+  };
+
   useEffect(() => {
     getExamReports();
     getStudents();
+    getBatches();
 
     // Auto-refresh data every 10 seconds
     const interval = setInterval(() => {
       getExamReports();
       getStudents(false);
+      getBatches();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -263,44 +287,53 @@ function Dashboard() {
 
   const getStats = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
-      if (token && user.role === "faculty") {
-        try {
-          const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/dashboard-stats/`);
+      let fetchedCoursesCount = 0;
+      let fetchedJobsCount = 0;
 
-          if (res.ok) {
-            const data = await res.json();
-            // FORCIBLY OVERRIDE with current students list to ensure logic consistency
-            setStats({
-              ...data,
-              // Only override students count if we have them, otherwise trust backend
-              total_students: (students.length > 0) ? students.length : (data.total_students || 0),
-              active_students: (students.length > 0) ? students.filter(s => s.is_active).length : (data.active_students || 0),
-            });
-            setLoading(false);
-            return;
-          }
-        } catch (error) { console.log("Dashboard stats failed"); }
+      // 1. Dynamic Courses Fetch
+      try {
+        const cRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/courses/`);
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          const cList = Array.isArray(cData) ? cData : (cData.results || cData.data || []);
+          fetchedCoursesCount = cList.length;
+        }
+      } catch (e) {
+        console.log("Dynamic courses fetch error", e);
       }
 
-      // Set default stats if API calls fail
+      // 2. Dynamic Jobs Fetch
+      try {
+        const jRes = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/admin/jobs/`);
+        if (jRes.ok) {
+          const jData = await jRes.json();
+          const jList = Array.isArray(jData) ? jData : (jData.results || jData.data || []);
+          fetchedJobsCount = jList.length;
+        }
+      } catch (e) {
+        console.log("Dynamic jobs fetch error", e);
+      }
+
+      // 3. Fallback/Primary dashboard-stats endpoint
+      let apiStats = {};
+      try {
+        const res = await makeAuthenticatedRequest(`http://${window.location.hostname}:8000/api/dashboard-stats/`);
+        if (res.ok) {
+          apiStats = await res.json();
+        }
+      } catch (error) {
+        console.log("Dashboard stats endpoint error", error);
+      }
+
       setStats({
-        total_students: 0,
-        total_courses: 0,
-        total_jobs: 0,
-        active_students: 0
+        total_students: students.length > 0 ? students.length : (apiStats.total_students || 0),
+        active_students: students.length > 0 ? students.filter(s => s.is_active).length : (apiStats.active_students || 0),
+        total_courses: fetchedCoursesCount || apiStats.total_courses || 0,
+        total_jobs: fetchedJobsCount || apiStats.total_jobs || 0
       });
+
     } catch (err) {
-      console.log("Error fetching stats:", err);
-      // Set default stats on error
-      setStats({
-        total_students: 0,
-        total_courses: 0,
-        total_jobs: 0,
-        active_students: 0
-      });
+      console.log("Error computing stats:", err);
     } finally {
       setLoading(false);
     }
@@ -381,105 +414,191 @@ function Dashboard() {
   );
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h4 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h4>
+      <div className="mb-6">
+        <h4 className="text-2xl font-bold text-gray-800 m-0">Faculty Dashboard</h4>
+        <p className="text-sm text-gray-500 mt-1">Overview of student performance, assigned batches, and campus recruitment drives.</p>
+      </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Students</p>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Total Students</p>
               <p className="text-2xl font-bold text-gray-800">{stats?.total_students || 0}</p>
             </div>
-            <div className="bg-blue-100 rounded-full p-3">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-blue-100 rounded-xl p-3">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        {/* Assigned Batches Card */}
+        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl shadow-sm p-5 border border-indigo-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Courses</p>
+              <p className="text-xs font-bold text-indigo-600 mb-1 uppercase tracking-wider">Assigned Batches</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-extrabold text-indigo-950">{batchesLoading ? "..." : (Array.isArray(batches) ? batches.length : 0)}</p>
+                <span className="text-xs font-semibold text-indigo-600">Active</span>
+              </div>
+            </div>
+            <div className="bg-indigo-600 rounded-xl p-3 text-white shadow-md">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Total Courses</p>
               <p className="text-2xl font-bold text-gray-800">{stats?.total_courses || 0}</p>
             </div>
-            <div className="bg-green-100 rounded-full p-3">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-green-100 rounded-xl p-3">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Total Jobs</p>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Total Jobs</p>
               <p className="text-2xl font-bold text-gray-800">{stats?.total_jobs || 0}</p>
             </div>
-            <div className="bg-purple-100 rounded-full p-3">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-purple-100 rounded-xl p-3">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Active Students</p>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Active Students</p>
               <p className="text-2xl font-bold text-gray-800">{stats?.active_students || 0}</p>
             </div>
-            <div className="bg-orange-100 rounded-full p-3">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-orange-100 rounded-xl p-3">
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
           </div>
         </div>
       </div>
-      {/* Chart Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-        <h6 className="text-lg font-semibold text-gray-800 mb-6">Placement Overview</h6>
 
-        <div className="h-[300px] w-full min-h-[300px]">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={[
-                { name: "Total Students", value: stats?.total_students || 0, fill: "#3B82F6" },
-                { name: "Placed Students", value: stats?.placed_students || 0, fill: "#10B981" },
-                { name: "Active Jobs", value: stats?.total_jobs || 0, fill: "#8B5CF6" },
-                { name: "Pending Reviews", value: stats?.pending_reviews || 0, fill: "#F59E0B" },
-              ]}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fill: '#6B7280', fontSize: 12 }}
-                axisLine={{ stroke: '#E5E7EB' }}
-              />
-              <YAxis 
-                tick={{ fill: '#6B7280', fontSize: 12 }}
-                axisLine={{ stroke: '#E5E7EB' }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '8px'
-                }}
-              />
-              <Bar 
-                dataKey="value" 
-                radius={[8, 8, 0, 0]}
-                fill="#3B82F6"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* DYNAMIC BATCHES GRID SECTION */}
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h6 className="text-lg font-bold text-gray-900 m-0">My Dynamic Batches Grid</h6>
+            <p className="text-xs text-gray-500 mt-0.5">Live view of current active and upcoming student batches</p>
+          </div>
+          <button
+            onClick={() => navigate("/faculty/batches")}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+          >
+            <span>Manage All Batches</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {batchesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-32 bg-slate-100 animate-pulse rounded-xl"></div>
+            ))}
+          </div>
+        ) : !Array.isArray(batches) || batches.length === 0 ? (
+          <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <svg className="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <p className="text-sm font-semibold text-slate-700">No Batches Assigned Yet</p>
+            <p className="text-xs text-slate-500 mt-1">Check back once administrator assigns course batches to your profile.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {batches.slice(0, 6).map((batch) => (
+              <div
+                key={batch.id || batch.code}
+                onClick={() => navigate("/faculty/batches")}
+                className="bg-slate-50 hover:bg-indigo-50/50 p-5 rounded-xl border border-slate-200/80 hover:border-indigo-200 transition-all duration-200 cursor-pointer group"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-100 text-indigo-700 mb-1">
+                      {batch.code || "BATCH"}
+                    </span>
+                    <h5 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-1">
+                      {batch.name || "Batch Group"}
+                    </h5>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    (batch.status || "").toLowerCase() === "ongoing" || (batch.status || "").toLowerCase() === "active"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {batch.status || "Ongoing"}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{batch.timing || "Morning Batch (10:00 AM - 12:00 PM)"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Capacity: {batch.student_count || batch.max_students || 30} Students</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Placement Overview Banner Button */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-2xl shadow-lg p-6 md:p-8 border border-blue-500/20 text-white mb-8 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Recruitment Analytics
+            </div>
+            <h5 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+              Placement Overview & Student Statistics
+            </h5>
+            <p className="text-blue-100 text-sm leading-relaxed">
+              Access comprehensive placement metrics, view placed vs seeking candidates, export reports, and analyze company drive details.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/faculty/placement-stats")}
+            className="inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-blue-700 font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0 cursor-pointer"
+          >
+            <span>View Placement Stats</span>
+            <svg className="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
         </div>
       </div>
       {/* Student Reports Section */}

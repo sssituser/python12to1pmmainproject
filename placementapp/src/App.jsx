@@ -72,6 +72,7 @@ const Stats = lazy(() => import("./faculty/Stats"));
 const FacultyProfile = lazy(() => import("./faculty/Profile"));
 const StudentReport = lazy(() => import("./faculty/StudentReport"));
 const MarksUpload = lazy(() => import("./faculty/MarksUpload"));
+const PlacementStats = lazy(() => import("./faculty/PlacementStats"));
 import LiveClasses from "./faculty/LiveClasses";
 import StudentApproval from "./admin/StudentApproval";
 import StudentHub from "./admin/StudentHub";
@@ -301,6 +302,7 @@ function App() {
           >
             <Route index element={<FacultyDashboard />} />
             <Route path="dashboard" element={<FacultyDashboard />} />
+            <Route path="placement-stats" element={<PlacementStats />} />
             <Route path="change-password" element={<ChangePassword />} />
             <Route path="exam-failure" element={<ExamFailureDashboard />} />
             <Route path="stats" element={<Stats />} />
@@ -336,6 +338,7 @@ function App() {
                   <Route key={childIndex} path={child.path} element={child.element} />
                 )
               ))}
+              <Route path="student-report/:username" element={<StudentReport />} />
             </Route>
           ))}
 

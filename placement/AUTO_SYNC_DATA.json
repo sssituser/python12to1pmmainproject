@@ -41,6 +41,45 @@
             "custom_videos": {},
             "study_materials": {},
             "created_at": "2026-07-28 12:01:01.044884+00:00"
+        },
+        {
+            "id": 36,
+            "title": "Java Full Stack",
+            "level": "Advanced",
+            "duration": "4 months",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "study_materials": {},
+            "created_at": "2026-07-30 18:46:21.878421+00:00"
+        },
+        {
+            "id": 37,
+            "title": ".Net Full Stack",
+            "level": "Advanced",
+            "duration": "4 months",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "study_materials": {},
+            "created_at": "2026-07-30 18:46:51.628366+00:00"
+        },
+        {
+            "id": 38,
+            "title": "UI Full Stack",
+            "level": "Advanced",
+            "duration": "4 months",
+            "progress": 0,
+            "locked": false,
+            "topics": [],
+            "modules": [],
+            "custom_videos": {},
+            "study_materials": {},
+            "created_at": "2026-07-30 18:47:54.338412+00:00"
         }
     ],
     "configs": [

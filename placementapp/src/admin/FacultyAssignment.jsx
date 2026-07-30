@@ -115,18 +115,23 @@ export default function FacultyAssignment() {
     : batches;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Faculty Module Assignments</h1>
-        <p className="text-sm text-gray-500 mt-1">Assign faculty members per Course → Batch → Technology Module with RBAC scoping</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-gray-100">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Faculty Module & Batch Assignments</h2>
+          <p className="text-xs text-slate-500 mt-1">Assign faculty members dynamically to Course → Batch with role-based access scoping</p>
+        </div>
+        <span className="px-3 py-1 bg-indigo-50 text-indigo-700 font-semibold text-xs rounded-full border border-indigo-100">
+          {assignments.length} Active Assignment{assignments.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ASSIGNMENT FORM */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm h-fit">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-blue-600" /> New Faculty Assignment
-          </h2>
+        <div className="bg-gradient-to-b from-slate-50 to-white rounded-2xl p-6 border border-slate-200/80 shadow-sm h-fit">
+          <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-indigo-600" /> New Faculty Assignment
+          </h3>
 
           <form onSubmit={handleAssign} className="space-y-4">
             <div>

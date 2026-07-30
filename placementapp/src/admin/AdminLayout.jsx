@@ -59,11 +59,7 @@ function AdminLayout() {
     { name: "Student Management", path: "/admin/students", icon: <ShieldCheck size={18}/> },
     { name: "Course Management", path: "/admin/courses", icon: <BookOpen size={18}/> },
     { name: "Batches", path: "/admin/batches", icon: <Layers size={18}/> },
-    { name: "Faculty Assignments", path: "/admin/faculty-assignments", icon: <UserPlus size={18}/> },
-    { name: "Live Classes", path: "/admin/live-classes", icon: <Video size={18}/> },
-    { name: "Attendance", path: "/admin/attendance", icon: <CalendarDays size={18}/> },
     { name: "Analytics", path: "/admin/analytics", icon: <BarChart3 size={18}/> },
-    { name: "Settings", path: "/admin/settings", icon: <Settings size={18}/> },
   ];
 
   const linkClass =

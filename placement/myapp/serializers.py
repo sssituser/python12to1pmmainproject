@@ -213,6 +213,9 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = "__all__"
+        extra_kwargs = {
+            'deadline': {'required': False, 'allow_null': True}
+        }
 
     def get_status(self, obj):
         request = self.context.get('request')
