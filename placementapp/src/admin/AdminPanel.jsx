@@ -170,7 +170,7 @@ function AdminPanel() {
         role: "faculty"
       };
 
-      const res = await fetch(`http://${window.location.hostname}:8000/api/create-user/`, {
+      const res = await fetch(`http://${window.location.hostname}:8000/api/create-faculty/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

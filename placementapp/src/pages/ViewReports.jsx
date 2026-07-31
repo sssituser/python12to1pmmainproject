@@ -111,7 +111,7 @@ function ViewReports() {
       setLoading(true);
       setError(null);
       
-      axios.get(`http://${window.location.hostname}:8000/api/report/${id}/`)
+      axios.get(`http://${window.location.hostname}:8000/api/exam-reports/${id}/`)
         .then(res => {
           setSelected(res.data);
           setLoading(false);

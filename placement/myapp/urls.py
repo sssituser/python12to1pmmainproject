@@ -152,6 +152,7 @@ urlpatterns = [
     path('admin/deduplicate-courses/', deduplicate_courses_api, name='deduplicate_courses'),
     path('all-users/', all_users_api),
     path('create-faculty/', create_faculty_api),
+    path('create-user/', create_faculty_api),
     path('create-student/', create_student_api),
     path('toggle-student-status/<int:student_id>/', toggle_student_status_api),
     path('toggle-faculty-status/<int:faculty_id>/', toggle_faculty_status_api),

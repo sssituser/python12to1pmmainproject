@@ -15,7 +15,7 @@ const Reports = () => {
   }, []);
 
   const deleteReport = (id) => {
-    fetch(`http://${window.location.hostname}:8000/api/exam/${id}/delete/`, {
+    fetch(`http://${window.location.hostname}:8000/api/exam-reports/delete/${id}/`, {
       method: "DELETE"
     }).then(() => {
       setReports(reports.filter(r => r.id !== id));
