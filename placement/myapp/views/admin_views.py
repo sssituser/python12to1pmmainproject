@@ -244,6 +244,33 @@ def toggle_student_status_api(request, student_id):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+@api_view(['PATCH', 'PUT', 'POST'])
+@permission_classes([IsAuthenticated])
+def toggle_faculty_status_api(request, faculty_id):
+    """Toggle faculty active/blocked status"""
+    try:
+        faculty = User.objects.filter(id=faculty_id, role='faculty').first()
+        if not faculty:
+            # Fallback check by id
+            faculty = User.objects.filter(id=faculty_id).first()
+        if not faculty:
+            return Response({'error': 'Faculty user not found'}, status=404)
+
+        if 'is_active' in request.data:
+            faculty.is_active = bool(request.data['is_active'])
+        else:
+            faculty.is_active = not faculty.is_active
+        faculty.save()
+        
+        return Response({
+            'success': True,
+            'message': f'Faculty {"activated" if faculty.is_active else "deactivated"} successfully',
+            'is_active': faculty.is_active
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_user_api(request, user_id):

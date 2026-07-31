@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -83,7 +83,7 @@ const pruneOversizedData = (data) => {
   if (!data) return data;
   try {
     return JSON.parse(JSON.stringify(data, (key, value) => {
-      if (typeof value === 'string' && value.length > 2 * 1024 * 1024) {
+      if (typeof value === 'string' && value.length > 500 * 1024 * 1024) {
         return "base64_pruned_due_to_size_limit";
       }
       return value;
@@ -95,7 +95,7 @@ const pruneOversizedData = (data) => {
         if (c.customVideos) {
           c.customVideos = Object.fromEntries(
             Object.entries(c.customVideos).map(([k, v]) => {
-              if (v && v.url && v.url.length > 2 * 1024 * 1024) {
+              if (v && v.url && v.url.length > 500 * 1024 * 1024) {
                 return [k, { ...v, url: "base64_pruned_due_to_size_limit" }];
               }
               return [k, v];
@@ -106,7 +106,7 @@ const pruneOversizedData = (data) => {
           c.modules = c.modules.map(m => ({
             ...m,
             topics: (m.topics || []).map(t => {
-              if (typeof t === 'object' && t.video && t.video.length > 2 * 1024 * 1024) {
+              if (typeof t === 'object' && t.video && t.video.length > 500 * 1024 * 1024) {
                 return { ...t, video: "base64_pruned_due_to_size_limit" };
               }
               return t;
@@ -191,6 +191,8 @@ function CoursesPage() {
   const [resTitle, setResTitle] = useState("");
   const [resType, setResType] = useState("video");
   const [resUrl, setResUrl] = useState("");
+  const [resFileName, setResFileName] = useState("");
+  const [resInputMode, setResInputMode] = useState("file"); // 'file' or 'link'
 
   const [studentsList, setStudentsList] = useState([]);
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -242,7 +244,12 @@ function CoursesPage() {
     })
     .then(res => {
       if (res.data && res.data.records) {
-        setAttendanceRecords(res.data.records);
+        // Map any Unmarked records to 'Present' so select dropdown works seamlessly
+        const formatted = res.data.records.map(r => ({
+          ...r,
+          status: (r.status && r.status !== "Unmarked") ? r.status : "Present"
+        }));
+        setAttendanceRecords(formatted);
       }
     })
     .catch(err => console.error("Error fetching attendance:", err));
@@ -270,10 +277,16 @@ function CoursesPage() {
     })
     .then(res => {
       if (res.data && res.data.success) {
+        toast.success("Attendance sheet saved successfully!");
         fetchAttendance();
+      } else {
+        toast.error(res.data?.detail || "Failed to save attendance.");
       }
     })
-    .catch(err => console.error("Error marking attendance:", err));
+    .catch(err => {
+      console.error("Error marking attendance:", err);
+      toast.error(err.response?.data?.detail || "Error saving attendance sheet.");
+    });
   };
 
   // Fetch assignments
@@ -418,12 +431,17 @@ function CoursesPage() {
     })
     .then(res => {
       if (res.data && res.data.success) {
+        toast.success("Batch resource added successfully!");
         setBatchResources(prev => [res.data.data, ...prev]);
         setResTitle("");
         setResUrl("");
+        setResFileName("");
       }
     })
-    .catch(err => console.error("Error adding resource:", err));
+    .catch(err => {
+      console.error("Error adding resource:", err);
+      toast.error("Failed to add resource");
+    });
   };
 
   const handleDeleteResource = (resourceId) => {
@@ -603,6 +621,143 @@ function CoursesPage() {
 
 
 
+  const fetchCoursesFromAPI = useCallback(async () => {
+    let cleanToken = localStorage.getItem('access')?.replace(/^"|"$/g, "");
+    if (!cleanToken) return;
+
+    try {
+      let response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
+        headers: {
+          'Authorization': `Bearer ${cleanToken}`
+        }
+      });
+
+      if (response.status === 401) {
+        const refreshToken = localStorage.getItem("refresh")?.replace(/^"|"$/g, "");
+        if (refreshToken) {
+          const refreshRes = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: refreshToken }),
+          });
+          if (refreshRes.ok) {
+            const rData = await refreshRes.json();
+            localStorage.setItem("access", rData.access);
+            cleanToken = rData.access;
+            response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
+              headers: { 'Authorization': `Bearer ${cleanToken}` }
+            });
+          }
+        }
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Handle DRF ViewSet variations: paginated (.results), wrapped (.data.success), or raw array
+        const rawCourses = data.data || data.results || (Array.isArray(data) ? data : []);
+
+        if (rawCourses !== null) {
+          const localSaved = localStorage.getItem('facultyCourses') || localStorage.getItem('courses');
+          let localData = [];
+          try { if(localSaved) localData = JSON.parse(localSaved); } catch(e){}
+
+          // 🛡️ 1000% ROBUST SYNC LOGIC
+          const apiTitles = new Set(rawCourses.map(c => (typeof c === 'string' ? c : (c.title || "")).toUpperCase()));
+          const standardTitles = new Set(industryCourses.map(t => t.toUpperCase()));
+          
+          // 🛡️ PERMANENT PURGE: Remove 'hi' from local cache if found
+          if (localData.some(lc => (lc.title || "").toUpperCase() === "HI")) {
+            localData = localData.filter(lc => (lc.title || "").toUpperCase() !== "HI");
+            localStorage.setItem('facultyCourses', JSON.stringify(localData));
+            localStorage.setItem('courses', JSON.stringify(localData));
+          }
+
+          const deletedTitles = new Set((JSON.parse(localStorage.getItem('deletedCourseTitles') || '[]')).map(t => String(t).toUpperCase()));
+          const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()) && !deletedTitles.has(title.toUpperCase()));
+
+          const standardCourseObjects = missingStandards.map((title, idx) => ({
+            id: `std-${Date.now()}-${idx}`, 
+            title: title,
+            modules: [],
+            topics: [],
+            icon: getIconForCourse(title)
+          }));
+
+          const localCustomRepos = localData.filter(lc => {
+             const t = (lc.title || "").toUpperCase();
+             return t && !apiTitles.has(t) && !standardTitles.has(t) && !deletedTitles.has(t);
+          });
+
+          let isFacultyMember = false;
+          try {
+            const u = JSON.parse(localStorage.getItem("user") || "null");
+            isFacultyMember = u?.role?.toString().toLowerCase() === "faculty";
+          } catch(e){}
+
+          // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS (If faculty, ONLY show their assigned API courses)
+          const finalCurriculumRaw = (isFacultyMember ? rawCourses : [...localCustomRepos, ...rawCourses, ...standardCourseObjects])
+            .filter(c => {
+              const title = (typeof c === 'string' ? c : (c.title || "")).toUpperCase();
+              return title && !deletedTitles.has(title);
+            });
+
+          const coursesWithIcons = finalCurriculumRaw.map(item => {
+            const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
+            const titleValue = (apiItem.title || "").trim();
+            const localVersion = Array.isArray(localData) ? localData.find(lc => 
+              lc.id === apiItem.id || 
+              (lc.title && titleValue && lc.title.toUpperCase() === titleValue.toUpperCase())
+            ) : null;
+
+            const mergedModules = (localVersion && localVersion.modules && localVersion.modules.length > (apiItem.modules?.length || 0)) 
+              ? localVersion.modules 
+              : (apiItem.modules || []);
+
+            const apiTopics = Array.isArray(apiItem.topics) ? apiItem.topics : [];
+            const localTopics = Array.isArray(localVersion?.topics) ? localVersion.topics : [];
+            const mergedTopics = Array.from(new Set([...apiTopics, ...localTopics]));
+
+            const mergedCustomVideos = {
+              ...(apiItem.custom_videos || apiItem.customVideos || {}),
+              ...(localVersion?.customVideos || {})
+            };
+
+            return {
+              ...apiItem,
+              title: titleValue,
+              topics: mergedTopics.length > 0 ? mergedTopics : apiTopics,
+              modules: mergedModules,
+              custom_videos: mergedCustomVideos,
+              customVideos: mergedCustomVideos,
+              icon: getIconForCourse(titleValue)
+            };
+          }).filter(c => c.title && c.title.trim() !== '');
+
+          // ✅ DEDUPLICATE BY TITLE — prevents any duplicate courses from appearing
+          const seenTitles = new Map();
+          const uniqueCoursesWithIcons = [];
+          for (const course of coursesWithIcons) {
+            const titleKey = course.title.toUpperCase();
+            if (!seenTitles.has(titleKey)) {
+              seenTitles.set(titleKey, true);
+              uniqueCoursesWithIcons.push(course);
+            }
+          }
+
+          setCourses(uniqueCoursesWithIcons);
+          localStorage.setItem('courses', JSON.stringify(uniqueCoursesWithIcons));
+          localStorage.setItem('facultyCourses', JSON.stringify(uniqueCoursesWithIcons));
+          console.log(`✅ Faculty curriculum synced (deduplicated): ${uniqueCoursesWithIcons.length} unique courses.`);
+        }
+
+      }
+
+    } catch (error) {
+      console.error("Failed to sync faculty dashboard with API:", error);
+    }
+  }, []);
+
   // Real-time Event Sync for Course & Curriculum Updates
   useEffect(() => {
     const handleCourseSync = () => {
@@ -617,161 +772,13 @@ function CoursesPage() {
       window.removeEventListener("courseDataUpdated", handleCourseSync);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []);
+  }, [fetchCoursesFromAPI]);
 
   // Sync courses with backend on mount to ensure all devices see the same curriculum
   useEffect(() => {
-
     // 🧹 Purge stale course cache on mount to ensure fresh role-based/assigned courses are loaded correctly
     localStorage.removeItem('courses');
     localStorage.removeItem('facultyCourses');
-
-    const fetchCoursesFromAPI = async () => {
-      let cleanToken = localStorage.getItem('access')?.replace(/^"|"$/g, "");
-      if (!cleanToken) return;
-
-      try {
-        let response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
-          headers: {
-            'Authorization': `Bearer ${cleanToken}`
-          }
-        });
-
-        if (response.status === 401) {
-          const refreshToken = localStorage.getItem("refresh")?.replace(/^"|"$/g, "");
-          if (refreshToken) {
-            const refreshRes = await fetch(`http://${window.location.hostname}:8000/api/jwt/refresh/`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ refresh: refreshToken }),
-            });
-            if (refreshRes.ok) {
-              const rData = await refreshRes.json();
-              localStorage.setItem("access", rData.access);
-              cleanToken = rData.access;
-              response = await fetch(`http://${window.location.hostname}:8000/api/courses/`, {
-                headers: { 'Authorization': `Bearer ${cleanToken}` }
-              });
-            }
-          }
-        }
-
-        
-
-        if (response.ok) {
-
-          const data = await response.json();
-
-          // Handle DRF ViewSet variations: paginated (.results), wrapped (.data.success), or raw array
-
-          // 🚀 1000% ROBUST PARSING (Matches Registration page exactly)
-          const rawCourses = data.data || data.results || (Array.isArray(data) ? data : []);
-
-          
-
-          if (rawCourses !== null) {
-            const localSaved = localStorage.getItem('facultyCourses') || localStorage.getItem('courses');
-            let localData = [];
-            try { if(localSaved) localData = JSON.parse(localSaved); } catch(e){}
-
-            // 🛡️ 1000% ROBUST SYNC LOGIC
-            const apiTitles = new Set(rawCourses.map(c => (typeof c === 'string' ? c : (c.title || "")).toUpperCase()));
-            const standardTitles = new Set(industryCourses.map(t => t.toUpperCase()));
-            
-            // 🛡️ PERMANENT PURGE: Remove 'hi' from local cache if found
-            if (localData.some(lc => (lc.title || "").toUpperCase() === "HI")) {
-              localData = localData.filter(lc => (lc.title || "").toUpperCase() !== "HI");
-              localStorage.setItem('facultyCourses', JSON.stringify(localData));
-              localStorage.setItem('courses', JSON.stringify(localData));
-            }
-
-            const deletedTitles = new Set((JSON.parse(localStorage.getItem('deletedCourseTitles') || '[]')).map(t => String(t).toUpperCase()));
-            const missingStandards = industryCourses.filter(title => !apiTitles.has(title.toUpperCase()) && !deletedTitles.has(title.toUpperCase()));
-
-            const standardCourseObjects = missingStandards.map((title, idx) => ({
-              id: `std-${Date.now()}-${idx}`, 
-              title: title,
-              modules: [],
-              topics: [],
-              icon: getIconForCourse(title)
-            }));
-
-            const localCustomRepos = localData.filter(lc => {
-               const t = (lc.title || "").toUpperCase();
-               return t && !apiTitles.has(t) && !standardTitles.has(t) && !deletedTitles.has(t);
-            });
-
-            let isFacultyMember = false;
-            try {
-              const u = JSON.parse(localStorage.getItem("user") || "null");
-              isFacultyMember = u?.role?.toString().toLowerCase() === "faculty";
-            } catch(e){}
-
-            // 🚀 PRIORITY SORT: CUSTOM -> API -> STANDARDS (If faculty, ONLY show their assigned API courses)
-            const finalCurriculumRaw = (isFacultyMember ? rawCourses : [...localCustomRepos, ...rawCourses, ...standardCourseObjects])
-              .filter(c => {
-                const title = (typeof c === 'string' ? c : (c.title || "")).toUpperCase();
-                return title && !deletedTitles.has(title);
-              });
-
-            const coursesWithIcons = finalCurriculumRaw.map(item => {
-              const apiItem = typeof item === 'string' ? { title: item, id: `api-${item}` } : item;
-              const titleValue = (apiItem.title || "").trim();
-              const localVersion = Array.isArray(localData) ? localData.find(lc => 
-                lc.id === apiItem.id || 
-                (lc.title && titleValue && lc.title.toUpperCase() === titleValue.toUpperCase())
-              ) : null;
-
-              const mergedModules = (localVersion && localVersion.modules && localVersion.modules.length > (apiItem.modules?.length || 0)) 
-                ? localVersion.modules 
-                : (apiItem.modules || []);
-
-              const apiTopics = Array.isArray(apiItem.topics) ? apiItem.topics : [];
-              const localTopics = Array.isArray(localVersion?.topics) ? localVersion.topics : [];
-              const mergedTopics = Array.from(new Set([...apiTopics, ...localTopics]));
-
-              const mergedCustomVideos = {
-                ...(apiItem.custom_videos || apiItem.customVideos || {}),
-                ...(localVersion?.customVideos || {})
-              };
-
-              return {
-                ...apiItem,
-                title: titleValue,
-                topics: mergedTopics.length > 0 ? mergedTopics : apiTopics,
-                modules: mergedModules,
-                custom_videos: mergedCustomVideos,
-                customVideos: mergedCustomVideos,
-                icon: getIconForCourse(titleValue)
-              };
-            }).filter(c => c.title && c.title.trim() !== '');
-
-            // ✅ DEDUPLICATE BY TITLE — prevents any duplicate courses from appearing
-            const seenTitles = new Map();
-            const uniqueCoursesWithIcons = [];
-            for (const course of coursesWithIcons) {
-              const titleKey = course.title.toUpperCase();
-              if (!seenTitles.has(titleKey)) {
-                seenTitles.set(titleKey, true);
-                uniqueCoursesWithIcons.push(course);
-              }
-            }
-
-            setCourses(uniqueCoursesWithIcons);
-            localStorage.setItem('courses', JSON.stringify(uniqueCoursesWithIcons));
-            localStorage.setItem('facultyCourses', JSON.stringify(uniqueCoursesWithIcons));
-            console.log(`✅ Faculty curriculum synced (deduplicated): ${uniqueCoursesWithIcons.length} unique courses.`);
-          }
-
-        }
-
-      } catch (error) {
-
-        console.error("Failed to sync faculty dashboard with API:", error);
-
-      }
-
-    };
 
 
 
@@ -799,7 +806,7 @@ function CoursesPage() {
     fetchCoursesFromAPI();
     autoDeduplicateDB();
 
-  }, []);
+  }, [fetchCoursesFromAPI]);
 
 
 
@@ -1419,10 +1426,6 @@ function CoursesPage() {
           title: newSubject.trim(),
           topics: []
         });
-        if (!updatedCourses[courseIndex].topics) updatedCourses[courseIndex].topics = [];
-        if (!updatedCourses[courseIndex].topics.includes(newSubject.trim())) {
-          updatedCourses[courseIndex].topics.push(newSubject.trim());
-        }
 
         const recalculatedCourses = calculateCourseProgress(updatedCourses);
         setCourses(recalculatedCourses);
@@ -1513,7 +1516,12 @@ function CoursesPage() {
           };
           updatedCourses[courseIndex].modules[moduleIndex].topics.push(topicObj);
           if (!updatedCourses[courseIndex].topics) updatedCourses[courseIndex].topics = [];
-          updatedCourses[courseIndex].topics.push(newTopic);
+          // Filter out module titles from global topics list
+          const moduleTitles = updatedCourses[courseIndex].modules.map(m => (m.title || '').toLowerCase());
+          updatedCourses[courseIndex].topics = updatedCourses[courseIndex].topics.filter(t => !moduleTitles.includes((typeof t === 'string' ? t : t.title).toLowerCase()));
+          if (!updatedCourses[courseIndex].topics.includes(newTopic)) {
+            updatedCourses[courseIndex].topics.push(newTopic);
+          }
           if (videoUrl) {
             if (!updatedCourses[courseIndex].customVideos) updatedCourses[courseIndex].customVideos = {};
             updatedCourses[courseIndex].customVideos[newTopic] = { type: newTopicVidOpt, url: videoUrl };
@@ -2113,7 +2121,6 @@ function CoursesPage() {
                         {[
                           { id: "curriculum", label: "📖 Curriculum" },
                           { id: "students", label: "👥 Students" },
-                          { id: "attendance", label: "📅 Attendance" },
                           { id: "assignments", label: "📝 Assignments" },
                           { id: "batch-resources", label: "📂 Upload Notes" },
                           { id: "leaderboard", label: "🏆 Leaderboard" },
@@ -2171,11 +2178,12 @@ function CoursesPage() {
                     <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-4">Existing Subjects & Curriculum Topics</h3>
                     {(() => {
                       const modulesList = selectedCourse.modules || [];
-                      const topicsList = selectedCourse.topics || [];
+                      const rawTopics = selectedCourse.topics || [];
                       
                       const seenTitles = new Set();
                       let displaySubjects = [];
 
+                      // Only display actual subject modules
                       modulesList.forEach(m => {
                         const title = typeof m === 'string' ? m : (m.title || '');
                         if (title && !seenTitles.has(title.toUpperCase())) {
@@ -2184,13 +2192,13 @@ function CoursesPage() {
                         }
                       });
 
-                      topicsList.forEach(t => {
-                        const title = typeof t === 'string' ? t : (t.title || '');
-                        if (title && !seenTitles.has(title.toUpperCase())) {
-                          seenTitles.add(title.toUpperCase());
-                          displaySubjects.push(typeof t === 'string' ? { title: t, topics: [] } : t);
-                        }
-                      });
+                      // Fallback for course without modules
+                      if (displaySubjects.length === 0 && rawTopics.length > 0) {
+                        displaySubjects.push({
+                          title: selectedCourse.title || "Core Subject Module",
+                          topics: rawTopics
+                        });
+                      }
                       
                       if (displaySubjects.length > 0) {
                         return (
@@ -2306,7 +2314,7 @@ function CoursesPage() {
                             <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                               {attendanceRecords.map((r, idx) => (
                                 <tr key={r.student_id} className="hover:bg-gray-50/50">
-                                  <td className="px-6 py-4 font-bold">{r.username}</td>
+                                  <td className="px-6 py-4 font-bold">{r.name || r.username}</td>
                                   <td className="px-6 py-4">
                                     <select
                                       value={r.status}
@@ -2564,14 +2572,58 @@ function CoursesPage() {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Resource Link / URL</label>
-                            <input
-                              type="text"
-                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                              value={resUrl}
-                              onChange={e => setResUrl(e.target.value)}
-                              placeholder={resType === 'video' ? "Paste Zoom/YouTube recording link" : "Paste PDF file URL"}
-                            />
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-xs font-bold text-gray-500 uppercase">Resource Source</label>
+                              <div className="flex gap-1 bg-gray-200 p-0.5 rounded-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => { setResInputMode("file"); setResUrl(""); setResFileName(""); }}
+                                  className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition ${resInputMode === 'file' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                                >
+                                  📁 PC File
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setResInputMode("link"); setResUrl(""); setResFileName(""); }}
+                                  className={`px-2.5 py-1 text-[9px] font-black uppercase rounded-md transition ${resInputMode === 'link' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                                >
+                                  🔗 Link / URL
+                                </button>
+                              </div>
+                            </div>
+
+                            {resInputMode === 'file' ? (
+                              <label className="flex flex-col items-center justify-center border-2 border-dashed border-blue-200 hover:border-blue-400 bg-white p-3 rounded-xl cursor-pointer transition text-xs font-bold text-blue-600 text-center">
+                                <span className="truncate max-w-[200px]">{resFileName || "Choose Notes / Recording File..."}</span>
+                                <span className="text-[9px] text-gray-400 font-normal mt-0.5">Supports PDF, MP4, PPT, DOCX</span>
+                                <input 
+                                  type="file" 
+                                  className="hidden" 
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      setResFileName(file.name);
+                                      if (!resTitle.trim()) {
+                                        setResTitle(file.name.replace(/\.[^/.]+$/, ""));
+                                      }
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        setResUrl(ev.target.result);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }} 
+                                />
+                              </label>
+                            ) : (
+                              <input
+                                type="text"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                value={resUrl}
+                                onChange={e => setResUrl(e.target.value)}
+                                placeholder={resType === 'video' ? "Paste Zoom/YouTube recording link" : "Paste PDF / Notes file URL"}
+                              />
+                            )}
                           </div>
 
                           <button
@@ -2813,8 +2865,8 @@ function CoursesPage() {
                                     onChange={(e) => {
                                       const file = e.target.files?.[0];
                                       if(file) {
-                                        if (file.size > 2 * 1024 * 1024) {
-                                          toast.error("Physical video files are limited to 2MB to prevent browser storage crashes. Please use a YouTube or external video link for larger videos.");
+                                        if (file.size > 500 * 1024 * 1024) {
+                                          toast.error("Video file exceeds 500MB maximum limit.");
                                           e.target.value = "";
                                           return;
                                         }
@@ -2998,18 +3050,13 @@ function CoursesPage() {
                   <div className="mt-8">
                     {(() => {
                       const modObj = (selectedCourse.modules || []).find(m => m.title === selectedSubject);
-                      let displayTopics = (selectedCourse.topics && selectedCourse.topics.length > 0) ? selectedCourse.topics : (modObj?.topics || []);
+                      let displayTopics = modObj?.topics && modObj.topics.length > 0 ? modObj.topics : (selectedCourse.topics || []);
 
                       if (!displayTopics || displayTopics.length === 0) {
-                        const rawTopics = selectedCourse.topics || [];
-                        if (rawTopics.length > 0) {
-                          displayTopics = rawTopics;
+                        const cVideos = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+                        if (Object.keys(cVideos).length > 0) {
+                          displayTopics = Object.keys(cVideos).map(k => ({ title: typeof cVideos[k] === 'object' && cVideos[k].title ? cVideos[k].title : k, url: typeof cVideos[k] === 'object' ? cVideos[k].url : cVideos[k] }));
                         }
-                      }
-
-                      const cVideos = selectedCourse.custom_videos || selectedCourse.customVideos || {};
-                      if ((!displayTopics || displayTopics.length === 0) && Object.keys(cVideos).length > 0) {
-                        displayTopics = Object.keys(cVideos).map(k => ({ title: typeof cVideos[k] === 'object' && cVideos[k].title ? cVideos[k].title : k, url: typeof cVideos[k] === 'object' ? cVideos[k].url : cVideos[k] }));
                       }
 
                       if (displayTopics && displayTopics.length > 0) {
@@ -3038,7 +3085,8 @@ function CoursesPage() {
                                           {/* Play / Preview Video Icon */}
                                           <button 
                                             onClick={() => {
-                                              const videoObj = cVideos[topicTitle] || cVideos[selectedSubject] || (typeof topic === 'object' ? topic : null);
+                                              const customVidMap = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+                                              const videoObj = customVidMap[topicTitle] || customVidMap[selectedSubject] || (typeof topic === 'object' ? topic : null);
                                               const videoUrl = videoObj ? (typeof videoObj === 'string' ? videoObj : videoObj.url) : null;
                                               if (videoUrl) {
                                                 setPreviewVideoUrl(videoUrl);

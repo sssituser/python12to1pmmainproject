@@ -53,12 +53,30 @@ def get_batch_attendance(request, batch_id):
             "marked_by": rec.marked_by.username if rec and rec.marked_by else None
         })
 
+    # Calculate overall attendance percentage & history for student
+    all_student_records = Attendance.objects.filter(batch=batch, student=user if user.role == 'student' else None).order_by('-date') if user.role == 'student' else Attendance.objects.filter(batch=batch).order_by('-date')
+    
+    total_days = all_student_records.count()
+    present_days = all_student_records.filter(status='Present').count()
+    att_percentage = round((present_days / total_days * 100), 1) if total_days > 0 else 100.0
+
+    history_data = []
+    for r in all_student_records:
+        history_data.append({
+            "id": r.id,
+            "date": r.date.strftime('%Y-%m-%d'),
+            "status": r.status,
+            "remarks": r.remarks or ""
+        })
+
     return Response({
         "success": True,
         "batch_id": batch.id,
         "batch_name": batch.name,
         "date": date_str,
-        "records": data
+        "records": data,
+        "attendance_percentage": att_percentage,
+        "data": history_data
     })
 
 @api_view(['POST'])

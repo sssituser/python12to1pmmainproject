@@ -105,6 +105,8 @@ function CoursesPage() {
   const [examsList, setExamsList] = useState([]);
   const [submitAssignmentId, setSubmitAssignmentId] = useState("");
   const [submitFileUrl, setSubmitFileUrl] = useState("");
+  const [submitFileName, setSubmitFileName] = useState("");
+  const [submitMode, setSubmitMode] = useState("file"); // 'file' or 'link'
 
   useEffect(() => {
     document.title = selectedCourse 
@@ -134,10 +136,57 @@ function CoursesPage() {
     const token = getStoredToken("access");
     const headers = { Authorization: `Bearer ${token}` };
 
-    // 1. Fetch batch resources
+    // 1. Fetch batch resources & merge dynamic course resources
     axios.get(`http://${window.location.hostname}:8000/api/batches/${currentBatchId}/resources/`, { headers })
     .then(res => {
-      if (res.data && res.data.data) setBatchResources(res.data.data);
+      let apiResources = (res.data && res.data.data) ? res.data.data : [];
+      
+      // Dynamic fallback merging from selectedCourse
+      if (selectedCourse) {
+        const cVids = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+        const cMats = selectedCourse.customMaterials || selectedCourse.study_materials || {};
+
+        const extraVideos = Object.keys(cVids).map((key, i) => {
+          const vObj = cVids[key];
+          const url = typeof vObj === 'string' ? vObj : (vObj?.url || vObj?.video || '');
+          return {
+            id: `course-vid-${i}`,
+            title: typeof vObj === 'object' && vObj.title ? vObj.title : key,
+            resource_type: 'video',
+            video_url: url,
+            uploaded_at: new Date().toISOString()
+          };
+        }).filter(v => v.video_url);
+
+        const extraMats = Object.keys(cMats).map((key, i) => {
+          const mObj = cMats[key];
+          const url = typeof mObj === 'string' ? mObj : (mObj?.url || '');
+          return {
+            id: `course-mat-${i}`,
+            title: typeof mObj === 'object' && mObj.title ? mObj.title : key,
+            resource_type: 'document',
+            file_url: url,
+            uploaded_at: new Date().toISOString()
+          };
+        }).filter(m => m.file_url);
+
+        // Deduplicate resources by title
+        const existingTitles = new Set(apiResources.map(r => r.title.toLowerCase()));
+        extraVideos.forEach(v => {
+          if (!existingTitles.has(v.title.toLowerCase())) {
+            apiResources.push(v);
+            existingTitles.add(v.title.toLowerCase());
+          }
+        });
+        extraMats.forEach(m => {
+          if (!existingTitles.has(m.title.toLowerCase())) {
+            apiResources.push(m);
+            existingTitles.add(m.title.toLowerCase());
+          }
+        });
+      }
+
+      setBatchResources(apiResources);
     })
     .catch(() => setBatchResources([]));
 
@@ -152,7 +201,7 @@ function CoursesPage() {
     axios.get(`http://${window.location.hostname}:8000/api/attendance/${currentBatchId}/`, { headers })
     .then(res => {
       if (res.data && res.data.success) {
-        setAttendanceRecords(res.data.data || []);
+        setAttendanceRecords(res.data.data && res.data.data.length > 0 ? res.data.data : (res.data.records || []));
         setAttendanceRate(res.data.attendance_percentage || 0);
       }
     })
@@ -179,17 +228,19 @@ function CoursesPage() {
 
   }, [currentBatchId]);
 
-  const handleSubmission = (assignmentId) => {
-    if (!submitFileUrl.trim()) return;
+  const handleSubmission = (assignmentId, fileDataOverride) => {
+    const filePayload = fileDataOverride || submitFileUrl;
+    if (!filePayload.trim()) return;
     const token = getStoredToken("access");
     axios.post(`http://${window.location.hostname}:8000/api/assignments/submit/`, {
       assignment: assignmentId,
-      submitted_file_url: submitFileUrl
+      submitted_file_url: filePayload
     }, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
       if (res.data && res.data.success) {
+        toast.success("Assignment submitted successfully!");
         if (currentBatchId) {
           axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${currentBatchId}`, {
             headers: { Authorization: `Bearer ${getStoredToken("access")}` }
@@ -199,9 +250,13 @@ function CoursesPage() {
         }
         setSubmitAssignmentId("");
         setSubmitFileUrl("");
+        setSubmitFileName("");
       }
     })
-    .catch(err => console.error("Error submitting assignment:", err));
+    .catch(err => {
+      console.error("Error submitting assignment:", err);
+      toast.error("Failed to submit assignment.");
+    });
   };
 
   // Dynamic Course State Initialization
@@ -557,7 +612,6 @@ function CoursesPage() {
                 { id: "batch-resources", label: "Recordings & Notes", icon: FaVideo },
                 { id: "assignments", label: "Assignments", icon: FaFileAlt },
                 { id: "exams", label: "Exams Hub", icon: FaClipboardList },
-                { id: "attendance", label: "Attendance", icon: FaCalendarCheck },
                 { id: "leaderboard", label: "Leaderboard", icon: FaTrophy }
               ].map(t => {
                 const IconComp = t.icon;
@@ -587,11 +641,12 @@ function CoursesPage() {
           <section aria-labelledby="selected-course-title" className="space-y-4 max-w-7xl mx-auto animate-fadeIn">
             {(() => {
               const modulesList = selectedCourse.modules || [];
-              const topicsList = selectedCourse.topics || [];
+              const rawTopics = selectedCourse.topics || [];
               
               const seenTitles = new Set();
               let displaySubjects = [];
 
+              // Collect actual subject modules
               modulesList.forEach(m => {
                 const title = typeof m === 'string' ? m : (m.title || '');
                 if (title && !seenTitles.has(title.toUpperCase())) {
@@ -600,13 +655,13 @@ function CoursesPage() {
                 }
               });
 
-              topicsList.forEach(t => {
-                const title = typeof t === 'string' ? t : (t.title || '');
-                if (title && !seenTitles.has(title.toUpperCase())) {
-                  seenTitles.add(title.toUpperCase());
-                  displaySubjects.push(typeof t === 'string' ? { title: t, topics: [] } : t);
-                }
-              });
+              // If course has standalone topics without modules, gather them under a single Subject Module
+              if (displaySubjects.length === 0 && rawTopics.length > 0) {
+                displaySubjects.push({
+                  title: selectedCourse.title || "Core Subject Module",
+                  topics: rawTopics
+                });
+              }
               
               if (displaySubjects.length > 0) {
                 return displaySubjects.map((module, idx) => {
@@ -773,27 +828,71 @@ function CoursesPage() {
                           ) : (
                             <div className="flex items-center gap-2">
                               {submitAssignmentId === asg.id ? (
-                                <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-lg">
-                                  <input
-                                    type="text"
-                                    placeholder="Paste Solution URL"
-                                    value={submitFileUrl}
-                                    onChange={e => setSubmitFileUrl(e.target.value)}
-                                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 w-52"
-                                  />
-                                  <button
-                                    onClick={() => handleSubmission(asg.id)}
-                                    disabled={!submitFileUrl.trim()}
-                                    className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition"
-                                  >
-                                    Submit
-                                  </button>
-                                  <button
-                                    onClick={() => setSubmitAssignmentId("")}
-                                    className="text-xs text-slate-400 hover:underline font-bold px-2"
-                                  >
-                                    Cancel
-                                  </button>
+                                <div className="flex flex-col gap-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-xl min-w-[280px]">
+                                  {/* Toggle Modes: Upload File vs Link */}
+                                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                                    <button 
+                                      type="button"
+                                      onClick={() => { setSubmitMode("file"); setSubmitFileUrl(""); setSubmitFileName(""); }}
+                                      className={`flex-1 py-1 text-[10px] font-black uppercase rounded-lg transition ${submitMode === 'file' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                    >
+                                      📁 PC File
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      onClick={() => { setSubmitMode("link"); setSubmitFileUrl(""); setSubmitFileName(""); }}
+                                      className={`flex-1 py-1 text-[10px] font-black uppercase rounded-lg transition ${submitMode === 'link' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                    >
+                                      🔗 Link
+                                    </button>
+                                  </div>
+
+                                  {submitMode === "file" ? (
+                                    <div className="flex flex-col gap-2">
+                                      <label className="flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/50 p-2.5 rounded-xl cursor-pointer transition text-xs font-bold text-indigo-700">
+                                        <span className="truncate max-w-[180px]">{submitFileName || "Choose Assignment File..."}</span>
+                                        <input 
+                                          type="file" 
+                                          className="hidden" 
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              setSubmitFileName(file.name);
+                                              const reader = new FileReader();
+                                              reader.onload = (ev) => {
+                                                setSubmitFileUrl(ev.target.result);
+                                              };
+                                              reader.readAsDataURL(file);
+                                            }
+                                          }} 
+                                        />
+                                      </label>
+                                    </div>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      placeholder="Paste Solution / Github Link..."
+                                      value={submitFileUrl}
+                                      onChange={e => setSubmitFileUrl(e.target.value)}
+                                      className="px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                                    />
+                                  )}
+
+                                  <div className="flex items-center justify-end gap-2 mt-1">
+                                    <button
+                                      onClick={() => handleSubmission(asg.id)}
+                                      disabled={!submitFileUrl.trim()}
+                                      className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm"
+                                    >
+                                      Submit
+                                    </button>
+                                    <button
+                                      onClick={() => { setSubmitAssignmentId(""); setSubmitFileUrl(""); setSubmitFileName(""); }}
+                                      className="text-xs text-slate-400 hover:underline font-bold px-2"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
                                 </div>
                               ) : (
                                 <button
@@ -870,9 +969,13 @@ function CoursesPage() {
                         <span className="font-extrabold text-slate-800">{r.date}</span>
                         <div className="flex items-center gap-2">
                           <span className={`px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-wider ${
-                            r.status === 'Present' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                            r.status === 'Present' 
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                              : r.status === 'Late'
+                              ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                              : 'bg-rose-100 text-rose-700 border border-rose-200'
                           }`}>
-                            {r.status}
+                            {r.status === 'Present' ? '✅ Present' : r.status === 'Late' ? '⏰ Late' : '❌ Absent'}
                           </span>
                           {r.remarks && <span className="text-slate-400 italic">({r.remarks})</span>}
                         </div>

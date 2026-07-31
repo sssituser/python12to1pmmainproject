@@ -192,46 +192,55 @@ function CourseDetailsManagement() {
     };
   }, [fetchCourseDetails, fetchBatches, fetchFacultyUsers]);
 
-  // Derived Values
-  const topicsList = useMemo(() => {
+  // Derived Subject Modules & Nested Topics
+  const subjectsWithTopics = useMemo(() => {
     if (!course) return [];
-    const rawTopics = Array.isArray(course.topics) ? course.topics : [];
     const rawModules = Array.isArray(course.modules) ? course.modules : [];
+    const rawTopics = Array.isArray(course.topics) ? course.topics : [];
 
-    const seen = new Set();
-    const combined = [];
+    const modulesMap = [];
+    const assignedTopics = new Set();
 
-    rawModules.forEach(m => {
-      const title = typeof m === 'string' ? m : (m?.title || '');
-      if (title && !seen.has(title.toLowerCase())) {
-        seen.add(title.toLowerCase());
-        combined.push(title);
-      }
-      if (m && Array.isArray(m.topics)) {
-        m.topics.forEach(subT => {
-          const subTitle = typeof subT === 'string' ? subT : (subT?.title || '');
-          if (subTitle && !seen.has(subTitle.toLowerCase())) {
-            seen.add(subTitle.toLowerCase());
-            combined.push(subTitle);
-          }
-        });
-      }
+    rawModules.forEach((m, idx) => {
+      const subjectTitle = typeof m === 'string' ? m : (m?.title || `Module ${idx + 1}`);
+      const mTopics = (m && Array.isArray(m.topics)) ? m.topics.map(t => typeof t === 'string' ? t : (t?.title || '')) : [];
+      
+      mTopics.forEach(t => assignedTopics.add(t.toLowerCase()));
+
+      modulesMap.push({
+        id: m.id || idx,
+        title: subjectTitle,
+        topics: mTopics
+      });
     });
 
-    rawTopics.forEach(t => {
-      const title = typeof t === 'string' ? t : (t?.title || '');
-      if (title && !seen.has(title.toLowerCase())) {
-        seen.add(title.toLowerCase());
-        combined.push(title);
-      }
-    });
+    // Unassigned/General Topics
+    const standaloneTopics = rawTopics
+      .map(t => typeof t === 'string' ? t : (t?.title || ''))
+      .filter(t => t && !assignedTopics.has(t.toLowerCase()));
 
-    return combined;
+    if (standaloneTopics.length > 0 || modulesMap.length === 0) {
+      modulesMap.push({
+        id: "general-module",
+        title: modulesMap.length > 0 ? "General Curriculum Topics" : (course.title || "Core Subjects"),
+        topics: standaloneTopics.length > 0 ? standaloneTopics : rawTopics.map(t => typeof t === 'string' ? t : (t?.title || ''))
+      });
+    }
+
+    return modulesMap;
   }, [course]);
+
+  const topicsList = useMemo(() => {
+    let list = [];
+    subjectsWithTopics.forEach(s => {
+      list = [...list, ...s.topics];
+    });
+    return list;
+  }, [subjectsWithTopics]);
   
   const videoList = useMemo(() => {
-    if (!course || !course.custom_videos) return [];
-    const cv = course.custom_videos;
+    if (!course) return [];
+    const cv = course.custom_videos || course.customVideos || {};
     let list = [];
     if (typeof cv === 'object') {
       Object.keys(cv).forEach(key => {
@@ -788,7 +797,7 @@ function CourseDetailsManagement() {
               </span>
             </div>
 
-            {topicsList.length === 0 ? (
+            {subjectsWithTopics.length === 0 || topicsList.length === 0 ? (
               <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <BookOpen className="w-10 h-10 mx-auto text-slate-400 opacity-60" />
                 <h4 className="text-base font-bold text-slate-800">No Curriculum Topics Added Yet</h4>
@@ -801,50 +810,74 @@ function CourseDetailsManagement() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-2.5">
-                {topicsList.map((topic, index) => (
-                  <div key={index} className="p-4 bg-white border border-slate-200 hover:border-slate-300 rounded-xl flex items-center justify-between gap-3 shadow-sm transition">
-                    <div className="flex items-center gap-3 w-full">
-                      <span className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-indigo-100">
-                        {index + 1}
+              <div className="space-y-6">
+                {subjectsWithTopics.map((subject, sIdx) => (
+                  <div key={subject.id || sIdx} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                    {/* Subject Header */}
+                    <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 font-extrabold text-xs flex items-center justify-center border border-blue-400/30">
+                          {sIdx + 1}
+                        </span>
+                        <h4 className="text-sm font-extrabold tracking-wide uppercase">{subject.title}</h4>
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                        {subject.topics.length} Topic(s)
                       </span>
-
-                      {editingTopicIndex === index ? (
-                        <div className="flex items-center gap-2 w-full">
-                          <input 
-                            type="text"
-                            value={editingTopicText}
-                            onChange={(e) => setEditingTopicText(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateTopic(index); }}
-                            className="w-full px-3 py-1.5 border border-indigo-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            autoFocus
-                          />
-                          <button onClick={() => handleUpdateTopic(index)} className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Save</button>
-                          <button onClick={() => setEditingTopicIndex(null)} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">Cancel</button>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-semibold text-slate-900">{topic}</span>
-                      )}
                     </div>
 
-                    {editingTopicIndex !== index && (
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => { setEditingTopicIndex(index); setEditingTopicText(topic); }}
-                          className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                          title="Edit topic title"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTopic(index)}
-                          className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Delete topic"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
+                    {/* Sub-Topics Listing */}
+                    <div className="p-4 divide-y divide-slate-100">
+                      {subject.topics.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-3 italic">No topics assigned to this subject module yet.</p>
+                      ) : (
+                        subject.topics.map((topicTitle, tIdx) => {
+                          const globalIdx = topicsList.indexOf(topicTitle);
+                          return (
+                            <div key={tIdx} className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50/60 px-2 rounded-xl transition">
+                              <div className="flex items-center gap-3 w-full">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                {editingTopicIndex === globalIdx ? (
+                                  <div className="flex items-center gap-2 w-full">
+                                    <input 
+                                      type="text"
+                                      value={editingTopicText}
+                                      onChange={(e) => setEditingTopicText(e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateTopic(globalIdx); }}
+                                      className="w-full px-3 py-1.5 border border-indigo-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                      autoFocus
+                                    />
+                                    <button onClick={() => handleUpdateTopic(globalIdx)} className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Save</button>
+                                    <button onClick={() => setEditingTopicIndex(null)} className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">Cancel</button>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm font-medium text-slate-800">{topicTitle}</span>
+                                )}
+                              </div>
+
+                              {editingTopicIndex !== globalIdx && (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={() => { setEditingTopicIndex(globalIdx); setEditingTopicText(topicTitle); }}
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                    title="Edit topic title"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteTopic(globalIdx)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                    title="Delete topic"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

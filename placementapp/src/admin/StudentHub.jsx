@@ -2162,28 +2162,7 @@ function StudentHub({ defaultTab }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="text-xs font-semibold text-slate-600">First Name</label>
-                <input 
-                  type="text" 
-                  placeholder="John"
-                  value={addFormData.first_name}
-                  onChange={(e) => setAddFormData({...addFormData, first_name: e.target.value})}
-                  className="w-full p-2.5 mt-1 border border-slate-200 rounded-xl text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600">Last Name</label>
-                <input 
-                  type="text" 
-                  placeholder="Doe"
-                  value={addFormData.last_name}
-                  onChange={(e) => setAddFormData({...addFormData, last_name: e.target.value})}
-                  className="w-full p-2.5 mt-1 border border-slate-200 rounded-xl text-sm"
-                />
-              </div>
-            </div>
+
 
             <div className="text-sm">
               <label className="text-xs font-semibold text-slate-600">Email Address *</label>

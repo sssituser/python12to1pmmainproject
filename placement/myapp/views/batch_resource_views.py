@@ -86,7 +86,8 @@ def list_batch_resources(request, batch_id):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-    _auto_seed_batch_resources(batch)
+    # Disable auto-seeding static data
+    # _auto_seed_batch_resources(batch)
 
     resources = BatchResource.objects.filter(batch=batch, is_active=True).order_by('-uploaded_at')
     serializer = BatchResourceSerializer(resources, many=True)

@@ -253,6 +253,64 @@ function AdminPanel() {
     }
   };
 
+  // Open Edit Modal
+  const handleOpenEditModal = (faculty) => {
+    setSelectedFaculty(faculty);
+    setFormData({
+      username: faculty.username || "",
+      email: faculty.email || "",
+      first_name: faculty.first_name || "",
+      last_name: faculty.last_name || "",
+      password: "",
+      is_active: faculty.is_active ?? true
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Edit Faculty Handler
+  const handleEditFacultySubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedFaculty?.id) return;
+    setFormSubmitting(true);
+    const token = getStoredToken();
+
+    try {
+      const payload = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        is_active: formData.is_active
+      };
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      const res = await fetch(`http://${window.location.hostname}:8000/api/update-faculty/${selectedFaculty.id}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && (data.success || data.message)) {
+        toast.success("Faculty updated successfully!");
+        setIsEditModalOpen(false);
+        setSelectedFaculty(null);
+        fetchFacultyData(true);
+      } else {
+        toast.error(data.detail || data.error || "Failed to update faculty member.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error updating faculty.");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8 bg-slate-50 min-h-screen flex items-center justify-center">
@@ -519,6 +577,13 @@ function AdminPanel() {
                           <td className="p-3.5 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
+                                onClick={() => handleOpenEditModal(f)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                title="Edit Faculty Details"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
                                 onClick={() => handleDeleteFaculty(f.id)}
                                 className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                 title="Delete Faculty"
@@ -569,28 +634,6 @@ function AdminPanel() {
             </div>
 
             <form onSubmit={handleAddFacultySubmit} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">First Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.first_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 uppercase mb-1">Last Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.last_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
 
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">Username</label>
@@ -648,6 +691,120 @@ function AdminPanel() {
                   className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition shadow-sm cursor-pointer"
                 >
                   {formSubmitting ? "Creating..." : "Save Faculty"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL: EDIT FACULTY MEMBER --- */}
+      {isEditModalOpen && selectedFaculty && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 border border-slate-200 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                <Edit className="w-5 h-5 text-blue-600" /> Edit Faculty Details
+              </h3>
+              <button 
+                onClick={() => { setIsEditModalOpen(false); setSelectedFaculty(null); }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditFacultySubmit} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">First Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Username (Read Only)</label>
+                <input
+                  type="text"
+                  disabled
+                  value={formData.username}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-100 text-slate-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">New Password (Leave blank to keep current)</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter new password..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">Status</label>
+                <select
+                  value={formData.is_active ? "active" : "inactive"}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.value === "active" }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsEditModalOpen(false); setSelectedFaculty(null); }}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={formSubmitting}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold transition shadow-sm cursor-pointer"
+                >
+                  {formSubmitting ? "Updating..." : "Update Faculty"}
                 </button>
               </div>
             </form>
