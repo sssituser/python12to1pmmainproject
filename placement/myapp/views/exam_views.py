@@ -265,6 +265,197 @@ def list_placement_exams(request):
     return Response(merged)
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+@throttle_classes([AuthenticatedUserThrottle])
+def get_placement_exam_detail(request, exam_id):
+    """
+    Get detailed exam metadata and questions for student attempt.
+    Also checks if student has already completed this exam.
+    """
+    global _EXAM_STORE
+
+    user_identifier = ""
+    if request.user and request.user.is_authenticated:
+        user_identifier = request.user.email or request.user.username
+    else:
+        # Check authorization header token manually or student_email param
+        auth_hdr = request.headers.get('Authorization', '')
+        if auth_hdr.startswith('Bearer '):
+            token_str = auth_hdr.split(' ')[1]
+            try:
+                from rest_framework_simplejwt.tokens import AccessToken
+                from django.contrib.auth import get_user_model
+                token = AccessToken(token_str)
+                user_obj = get_user_model().objects.get(id=token['user_id'])
+                user_identifier = user_obj.email or user_obj.username
+            except Exception:
+                pass
+    
+    if not user_identifier:
+        user_identifier = request.query_params.get('student_email', '')
+
+    # Check if student already has a completed session for this exam
+    already_taken = False
+    if user_identifier:
+        session_exists = ExamSession.objects.filter(
+            student_email=user_identifier,
+            status='completed',
+            student_name=str(exam_id)
+        ).exists()
+        if session_exists:
+            already_taken = True
+
+    # 1. Search in-memory store
+    for e in _EXAM_STORE:
+        if str(e['id']) == str(exam_id):
+            exam_data = dict(e)
+            exam_data['already_taken'] = already_taken
+            if exam_data.get('paper_id'):
+                try:
+                    paper = ExamPaper.objects.get(id=exam_data['paper_id'])
+                    rel_qs = ExamPaperQuestionRelation.objects.filter(paper=paper).order_by('order')
+                    questions = []
+                    for r in rel_qs:
+                        q = r.question
+                        choices = list(q.choices.values_list('choice_text', flat=True))
+                        correct_idx = 0
+                        for idx, c in enumerate(q.choices.all()):
+                            if c.is_correct:
+                                correct_idx = idx
+                                break
+                        questions.append({
+                            'id': q.id,
+                            'question_text': q.question_text,
+                            'options': choices,
+                            'correct_option_index': correct_idx,
+                            'difficulty': q.difficulty,
+                            'marks': q.marks,
+                        })
+                    exam_data['questions'] = questions
+                except Exception as ex:
+                    print(f"Error fetching questions for paper: {ex}")
+            return Response(exam_data)
+
+    # 2. Fallback to AutomatedExamConfig
+    try:
+        config = AutomatedExamConfig.objects.get(id=exam_id)
+        parts = config.course_name.split("::")
+        title = parts[2] if len(parts) >= 3 else config.exam_name
+        paper = ExamPaper.objects.filter(title=title).order_by('-id').first()
+        questions = []
+        if paper:
+            rel_qs = ExamPaperQuestionRelation.objects.filter(paper=paper).order_by('order')
+            for r in rel_qs:
+                q = r.question
+                choices = list(q.choices.values_list('choice_text', flat=True))
+                correct_idx = 0
+                for idx, c in enumerate(q.choices.all()):
+                    if c.is_correct:
+                        correct_idx = idx
+                        break
+                questions.append({
+                    'id': q.id,
+                    'question_text': q.question_text,
+                    'options': choices,
+                    'correct_option_index': correct_idx,
+                    'difficulty': q.difficulty,
+                    'marks': q.marks,
+                })
+
+        exam_data = {
+            'id': config.id,
+            'title': title,
+            'exam_type': parts[1] if len(parts) >= 3 else 'daily',
+            'subject': config.subjects[0] if config.subjects else 'PYTHON',
+            'duration': config.duration,
+            'total_questions': len(questions) or config.question_count,
+            'total_marks': config.question_count * config.marks_per_question,
+            'pass_marks': config.requirement,
+            'already_taken': already_taken,
+            'questions': questions,
+            'settings': {
+                'webcam_required': False,
+                'face_detection': True,
+                'fullscreen_required': True,
+                'disable_copy_paste': True,
+                'disable_right_click': True,
+                'tab_switch_limit': 3,
+                'auto_submit': True
+            }
+        }
+        return Response(exam_data)
+    except AutomatedExamConfig.DoesNotExist:
+        return Response({"detail": "Exam not found"}, status=404)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+@throttle_classes([AuthenticatedUserThrottle])
+def submit_placement_exam(request, exam_id):
+    """
+    Save student's exam result submission and mark exam attempt as completed.
+    """
+    try:
+        data = request.data
+        user_identifier = ""
+        if request.user and request.user.is_authenticated:
+            user_identifier = request.user.email or request.user.username
+        else:
+            auth_hdr = request.headers.get('Authorization', '')
+            if auth_hdr.startswith('Bearer '):
+                token_str = auth_hdr.split(' ')[1]
+                try:
+                    from rest_framework_simplejwt.tokens import AccessToken
+                    from django.contrib.auth import get_user_model
+                    token = AccessToken(token_str)
+                    user_obj = get_user_model().objects.get(id=token['user_id'])
+                    user_identifier = user_obj.email or user_obj.username
+                except Exception:
+                    pass
+        
+        if not user_identifier:
+            user_identifier = data.get('student_email', 'anonymous@student.com')
+
+        score = data.get('score', 0)
+        total = data.get('total', 100)
+        percentage = round((score / total) * 100, 2) if total > 0 else 0
+        
+        # Record completed ExamSession for one-time enforcement
+        ExamSession.objects.create(
+            student_name=str(exam_id),
+            student_email=user_identifier,
+            start_time=timezone.now(),
+            end_time=timezone.now(),
+            status='completed',
+            score=int(score),
+            total_marks=int(total)
+        )
+
+        report_entry = {
+            'exam_id': exam_id,
+            'score': score,
+            'total': total,
+            'percentage': percentage,
+            'passed': data.get('passed', False),
+            'correct': data.get('correct', 0),
+            'wrong': data.get('wrong', 0),
+            'unattempted': data.get('unattempted', 0),
+            'time_taken': data.get('time_taken', 0),
+            'submitted_at': timezone.now().isoformat()
+        }
+        
+        return Response({
+            "status": "success",
+            "message": "Exam result saved successfully!",
+            "result": report_entry
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
 @authentication_classes([])

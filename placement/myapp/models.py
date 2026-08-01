@@ -591,6 +591,7 @@ class Playground(models.Model):
         return self.title
     
 # OTP merged above
+
 # ===============================
 # COURSE SYSTEM
 # ===============================
@@ -1355,8 +1356,8 @@ class BatchResource(models.Model):
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='resources')
     title = models.CharField(max_length=200)
     resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPES, default='material')
-    file_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to PDF / Material")
-    video_url = models.URLField(max_length=500, blank=True, null=True, help_text="Link to recorded lecture")
+    file_url = models.TextField(blank=True, null=True, help_text="Link or base64 data URL for PDF / Material")
+    video_url = models.TextField(blank=True, null=True, help_text="Link or base64 data URL for recorded lecture")
     is_active = models.BooleanField(default=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 

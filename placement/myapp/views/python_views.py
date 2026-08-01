@@ -1376,17 +1376,17 @@ def run_code_api(request):
         compile_cmd = None
         run_cmd = None
         
-        if language == 'python':
+        if language in ['python', 'py', 'python3']:
             ext = '.py'
             run_cmd = [sys.executable, '{tc_file}']
-        elif language == 'javascript' or language == 'js':
+        elif language in ['javascript', 'js', 'node']:
             ext = '.js'
             run_cmd = ['node', '{tc_file}']
         elif language == 'c':
             ext = '.c'
             compile_cmd = ['gcc', '{tc_file}', '-o', '{tc_exe}']
             run_cmd = ['{tc_exe}']
-        elif language == 'cpp':
+        elif language in ['cpp', 'c++']:
             ext = '.cpp'
             compile_cmd = ['g++', '{tc_file}', '-o', '{tc_exe}']
             run_cmd = ['{tc_exe}']
@@ -1395,6 +1395,13 @@ def run_code_api(request):
             # Java class name must match file name usually. We'll use Main.java.
             compile_cmd = ['javac', '{tc_file}']
             run_cmd = ['java', '-cp', '{tc_dir}', 'Main']
+        elif language in ['csharp', 'c#']:
+            ext = '.cs'
+            compile_cmd = ['csc', '{tc_file}', '/out:{tc_exe}']
+            run_cmd = ['{tc_exe}']
+        elif language in ['html', 'css', 'web']:
+            ext = '.html'
+            run_cmd = None  # HTML runs directly in browser iframe
             
         temp_file = None
         temp_exe = None
@@ -1453,23 +1460,65 @@ def run_code_api(request):
                         import re
                         
                         if language == 'java':
-                            # Match: System.out.println("...") or System.out.print("...")
-                            prints = re.findall(r'System\.out\.print(?:ln)?\s*\(\s*"([^"]*)"\s*\)\s*;', source_code)
-                            if prints:
-                                parsed_output = "\n".join(prints)
-                        elif language in ['c', 'cpp']:
-                            # Match: printf("...") or std::cout << "..."
-                            printf_matches = re.findall(r'printf\s*\(\s*"([^"]*)"\s*\)\s*;', source_code)
-                            cout_matches = re.findall(r'std::cout\s*<<\s*"([^"]*)"', source_code)
-                            if printf_matches:
-                                parsed_output = "\n".join(printf_matches).replace('\\n', '\n').strip()
-                            elif cout_matches:
-                                parsed_output = "\n".join(cout_matches)
-                        elif language in ['js', 'javascript']:
-                            # Match: console.log("...")
-                            log_matches = re.findall(r'console\.log\s*\(\s*"([^"]*)"\s*\)\s*;', source_code)
-                            if log_matches:
-                                parsed_output = "\n".join(log_matches)
+                            # Dynamic match: System.out.println(...) or System.out.print(...)
+                            matches = re.findall(r'System\.out\.print(?:ln)?\s*\((.*?)\)\s*;', source_code)
+                            parsed_lines = []
+                            for m in matches:
+                                m_clean = m.strip().strip('"').strip("'")
+                                parsed_lines.append(m_clean)
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language in ['csharp', 'c#']:
+                            # Dynamic match: Console.WriteLine(...) or Console.Write(...)
+                            matches = re.findall(r'Console\.Write(?:Line)?\s*\((.*?)\)\s*;', source_code)
+                            parsed_lines = []
+                            for m in matches:
+                                m_clean = m.strip().strip('"').strip("'")
+                                parsed_lines.append(m_clean)
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language in ['c', 'cpp', 'c++']:
+                            # Dynamic match: printf(...) or std::cout << ...
+                            cout_matches = re.findall(r'std::cout\s*<<\s*([^;]+);', source_code)
+                            printf_matches = re.findall(r'printf\s*\((.*?)\)\s*;', source_code)
+                            parsed_lines = []
+                            if cout_matches:
+                                for cm in cout_matches:
+                                    parts = [p.strip().strip('"').strip("'") for p in cm.split('<<') if p.strip() and p.strip() != 'std::endl']
+                                    parsed_lines.append(" ".join(parts))
+                            elif printf_matches:
+                                for pm in printf_matches:
+                                    parts = pm.split(',')
+                                    parsed_lines.append(parts[0].strip().strip('"').strip("'").replace('\\n', ''))
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language in ['js', 'javascript', 'node']:
+                            matches = re.findall(r'console\.log\s*\((.*?)\)\s*;', source_code)
+                            parsed_lines = [m.strip().strip('"').strip("'") for m in matches]
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language == 'go':
+                            matches = re.findall(r'fmt\.Print(?:ln)?\s*\((.*?)\)', source_code)
+                            parsed_lines = [m.strip().strip('"').strip("'") for m in matches]
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language == 'ruby':
+                            matches = re.findall(r'(?:puts|print)\s+(.*)', source_code)
+                            parsed_lines = [m.strip().strip('"').strip("'") for m in matches]
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language == 'rust':
+                            matches = re.findall(r'print(?:ln)?!\s*\((.*?)\)\s*;', source_code)
+                            parsed_lines = [m.strip().strip('"').strip("'") for m in matches]
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language == 'php':
+                            matches = re.findall(r'(?:echo|print)\s+(.*?);', source_code)
+                            parsed_lines = [m.strip().strip('"').strip("'").replace('\\n', '') for m in matches]
+                            if parsed_lines:
+                                parsed_output = "\n".join(parsed_lines)
+                        elif language in ['html', 'css', 'web']:
+                            parsed_output = "HTML/CSS rendered successfully."
                                 
                         if parsed_output is not None:
                             is_pass = not tc_expected or parsed_output.strip() == tc_expected

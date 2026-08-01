@@ -29,12 +29,26 @@ function PlaygroundDetail() {
     const lang = language.toLowerCase();
     if (lang === "python") {
       setCode('def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))\n');
-    } else if (lang === "javascript") {
+    } else if (lang === "javascript" || lang === "js" || lang === "node") {
       setCode('function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("World"));\n');
     } else if (lang === "java") {
       setCode('public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}\n');
-    } else if (lang === "c" || lang === "cpp") {
+    } else if (lang === "cpp" || lang === "c++") {
       setCode('#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!";\n    return 0;\n}\n');
+    } else if (lang === "c") {
+      setCode('#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}\n');
+    } else if (lang === "csharp" || lang === "c#") {
+      setCode('using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}\n');
+    } else if (lang === "go") {
+      setCode('package main\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}\n');
+    } else if (lang === "ruby") {
+      setCode('def greet(name)\n  "Hello, #{name}!"\nend\n\nputs greet("World")\n');
+    } else if (lang === "rust") {
+      setCode('fn main() {\n    println!("Hello, World!");\n}\n');
+    } else if (lang === "php") {
+      setCode('<?php\necho "Hello, World!\\n";\n?>\n');
+    } else if (lang === "html" || lang === "css") {
+      setCode('<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; text-align: center; padding: 50px; background: #0f172a; color: white; }\n  </style>\n</head>\n<body>\n  <h1>Hello, SSSIT Web Playground!</h1>\n</body>\n</html>\n');
     } else {
       setCode('// Write your code here\n');
     }
@@ -135,8 +149,12 @@ function PlaygroundDetail() {
             className="bg-white border text-sm rounded-lg px-3 py-2 font-semibold tracking-wide text-slate-700 border-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-colors shadow-sm cursor-pointer"
           >
             <option value="python">Python 3</option>
-            <option value="javascript">Node.js</option>
+            <option value="javascript">Node.js / JS</option>
             <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="csharp">C#</option>
+            <option value="html">HTML / CSS</option>
           </select>
 
           <select 
@@ -185,7 +203,13 @@ function PlaygroundDetail() {
             <Editor
               height="100%"
               width="100%"
-              language={language.toLowerCase() === 'c' || language.toLowerCase() === 'cpp' ? 'cpp' : language.toLowerCase()}
+              language={
+                language.toLowerCase() === 'c' || language.toLowerCase() === 'cpp' || language.toLowerCase() === 'c++' ? 'cpp' :
+                language.toLowerCase() === 'csharp' || language.toLowerCase() === 'c#' ? 'csharp' :
+                language.toLowerCase() === 'js' || language.toLowerCase() === 'node' ? 'javascript' :
+                language.toLowerCase() === 'html' || language.toLowerCase() === 'css' ? 'html' :
+                language.toLowerCase()
+              }
               value={code}
               theme={theme}
               loading={<div className="flex h-full items-center justify-center text-slate-400 font-mono text-sm tracking-widest uppercase animate-pulse">Initializing Environment...</div>}

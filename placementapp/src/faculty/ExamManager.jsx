@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,12 +14,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { industryCourses } from "../components/CourseData.jsx";
 import { useSEO } from "../utils/useSEO";
 
 const API_BASE = `http://${window.location.hostname}:8000/api`;
-
-const SUBJECTS = ["PYTHON","JAVA","REACT","SQL","DJANGO","SPRING BOOT","APTITUDE","REASONING","ENGLISH","C++","JAVASCRIPT","NODE JS"];
 const EXAM_TYPES = [
   { value:"daily",label:"Daily Exam",icon:"📅" },
   { value:"weekly",label:"Weekly Exam",icon:"📆" },
@@ -35,10 +33,9 @@ const STEPS = [
   {id:3,label:"Questions",icon:faKeyboard},
   {id:4,label:"Proctoring",icon:faCamera},
   {id:5,label:"Browser Lock",icon:faLock},
-  {id:6,label:"Eligibility",icon:faUsers},
-  {id:7,label:"Schedule",icon:faCalendarAlt},
-  {id:8,label:"Results",icon:faTrophy},
-  {id:9,label:"Publish",icon:faPaperPlane},
+  {id:6,label:"Schedule",icon:faCalendarAlt},
+  {id:7,label:"Results",icon:faTrophy},
+  {id:8,label:"Publish",icon:faPaperPlane},
 ];
 
 // ─── Small reusable components ─────────────────────────────────────────────
@@ -93,7 +90,9 @@ const TagSelector = ({ options, selected, onChange }) => (
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function ExamManager() {
-  useSEO("Exam Manager", "Create, schedule, and manage online exams for students using the SSSIT Faculty Exam Manager. Set questions, time limits, and eligibility.");
+  useSEO("Exam Manager", "Create, manage, and monitor assessments with proctoring & browser security.");
+  const navigate = useNavigate();
+
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState(1);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -109,10 +108,10 @@ export default function ExamManager() {
   // Step 1
   const [examTitle, setExamTitle] = useState("");
   const [examType, setExamType] = useState("daily");
-  const [subject, setSubject] = useState("PYTHON");
+  const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
-  const [course, setCourse] = useState(industryCourses[0] || "PYTHON FULL STACK");
+  const [course, setCourse] = useState("ALL COURSES");
 
   // Step 2
   const [duration, setDuration] = useState(60);
@@ -173,7 +172,59 @@ export default function ExamManager() {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [certificateEnabled, setCertificateEnabled] = useState(false);
 
-  useEffect(() => { fetchExams(); }, []);
+  const [dynamicSubjects, setDynamicSubjects] = useState([]);
+  const [dynamicCourses, setDynamicCourses] = useState([]);
+  const [customSubjectInput, setCustomSubjectInput] = useState(false);
+  const [customCourseInput, setCustomCourseInput] = useState(false);
+
+  useEffect(() => { 
+    fetchExams(); 
+    fetchDynamicCoursesAndSubjects();
+  }, []);
+
+  const fetchDynamicCoursesAndSubjects = async () => {
+    try {
+      const token = localStorage.getItem("access")?.replace(/^"|"$/g, "");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios.get(`${API_BASE}/student/courses/`, { headers });
+      if (res.data && (res.data.data || Array.isArray(res.data))) {
+        const list = res.data.data || res.data;
+        const fetchedTitles = list.map(c => typeof c === 'string' ? c : c.title).filter(Boolean);
+        if (fetchedTitles.length > 0) {
+          const uniqueCourses = Array.from(new Set(fetchedTitles));
+          setDynamicCourses(uniqueCourses);
+
+          // Extract topics / module subjects dynamically from courses
+          const derivedSubjects = [];
+          list.forEach(c => {
+            if (c.title) derivedSubjects.push(c.title.toUpperCase());
+            if (Array.isArray(c.topics)) {
+              c.topics.forEach(t => {
+                if (typeof t === 'string') derivedSubjects.push(t.toUpperCase());
+                else if (t && t.title) derivedSubjects.push(t.title.toUpperCase());
+                else if (t && t.name) derivedSubjects.push(t.name.toUpperCase());
+              });
+            }
+            if (Array.isArray(c.modules)) {
+              c.modules.forEach(m => {
+                if (typeof m === 'string') derivedSubjects.push(m.toUpperCase());
+                else if (m && m.title) derivedSubjects.push(m.title.toUpperCase());
+                else if (m && m.name) derivedSubjects.push(m.name.toUpperCase());
+              });
+            }
+          });
+
+          const uniqueSubjects = Array.from(new Set(derivedSubjects.filter(Boolean)));
+          setDynamicSubjects(uniqueSubjects);
+
+          if (uniqueSubjects.length > 0 && !subject) setSubject(uniqueSubjects[0]);
+          if (uniqueCourses.length > 0 && !course) setCourse(uniqueCourses[0]);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch dynamic courses:", e);
+    }
+  };
 
   const fetchExams = async () => {
     setLoading(true);
@@ -357,8 +408,54 @@ export default function ExamManager() {
             </div>
           </div>
           <div style={g2}>
-            <div><label style={label}>Subject *</label><select style={sel} value={subject} onChange={e=>setSubject(e.target.value)}>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></div>
-            <div><label style={label}>Target Course</label><select style={sel} value={course} onChange={e=>setCourse(e.target.value)}><option value="ALL COURSES">ALL COURSES</option>{industryCourses.map(c=><option key={c}>{c}</option>)}</select></div>
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <label style={{...label,margin:0}}>Subject *</label>
+                <button type="button" onClick={() => setCustomSubjectInput(!customSubjectInput)} style={{fontSize:10,fontWeight:700,color:"#6366f1",background:"none",border:"none",cursor:"pointer"}}>
+                  {customSubjectInput ? "Select List" : "+ Add Custom"}
+                </button>
+              </div>
+              {customSubjectInput ? (
+                <input style={inp} value={subject} onChange={e=>setSubject(e.target.value.toUpperCase())} placeholder="ENTER CUSTOM SUBJECT"/>
+              ) : (
+                <select style={sel} value={subject} onChange={e => {
+                  if (e.target.value === "__ADD_NEW__") {
+                    setCustomSubjectInput(true);
+                    setSubject("");
+                  } else {
+                    setSubject(e.target.value);
+                  }
+                }}>
+                  {dynamicSubjects.map(s=><option key={s} value={s}>{s}</option>)}
+                  <option value="__ADD_NEW__">+ Add Custom Subject...</option>
+                </select>
+              )}
+            </div>
+
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <label style={{...label,margin:0}}>Target Course</label>
+                <button type="button" onClick={() => setCustomCourseInput(!customCourseInput)} style={{fontSize:10,fontWeight:700,color:"#6366f1",background:"none",border:"none",cursor:"pointer"}}>
+                  {customCourseInput ? "Select List" : "+ Add Custom"}
+                </button>
+              </div>
+              {customCourseInput ? (
+                <input style={inp} value={course} onChange={e=>setCourse(e.target.value.toUpperCase())} placeholder="ENTER CUSTOM COURSE"/>
+              ) : (
+                <select style={sel} value={course} onChange={e => {
+                  if (e.target.value === "__ADD_NEW__") {
+                    setCustomCourseInput(true);
+                    setCourse("");
+                  } else {
+                    setCourse(e.target.value);
+                  }
+                }}>
+                  <option value="ALL COURSES">ALL COURSES</option>
+                  {dynamicCourses.map(c=><option key={c} value={c}>{c}</option>)}
+                  <option value="__ADD_NEW__">+ Add Custom Course...</option>
+                </select>
+              )}
+            </div>
           </div>
           <div><label style={label}>Topic / Chapter</label><input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Functions, OOP, Modules"/></div>
           <div><label style={label}>Instructions (Optional)</label><textarea style={ta} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Exam instructions for students..." rows={2}/></div>
@@ -556,14 +653,6 @@ export default function ExamManager() {
       );
 
       case 6: return (
-        <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          <div><label style={label}>Eligible Departments <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={DEPARTMENTS} selected={selectedDepts} onChange={setSelectedDepts}/></div>
-          <div><label style={label}>Eligible Years <span style={{color:"#94a3b8",fontWeight:500}}>(leave empty = all)</span></label><TagSelector options={YEARS} selected={selectedYears} onChange={setSelectedYears}/></div>
-          <NumInput label="Max Attempts Allowed" value={maxAttempts} onChange={setMaxAttempts} min={1} max={5} unit="times"/>
-        </div>
-      );
-
-      case 7: return (
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div style={g2}>
             <div><label style={label}>Start Date & Time</label><input type="datetime-local" style={inp} value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
@@ -578,7 +667,7 @@ export default function ExamManager() {
         </div>
       );
 
-      case 8: return (
+      case 7: return (
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <Toggle value={showResultImmediately} onChange={setShowResultImmediately} label="Show Result Immediately" desc="Students see score right after submission"/>
           <Toggle value={showCorrectAnswers} onChange={setShowCorrectAnswers} label="Show Correct Answers" desc="Reveal correct answers after submission"/>
@@ -587,14 +676,14 @@ export default function ExamManager() {
         </div>
       );
 
-      case 9: return (
+      case 8: return (
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {[
               {title:"Exam Identity",items:[["Title",examTitle||"—"],["Type",EXAM_TYPES.find(t=>t.value===examType)?.label],["Subject",subject],["Course",course]]},
               {title:"Configuration",items:[["Duration",`${duration} min`],["Questions",questions.length||totalQuestions],["Total Marks",totalMarks],["Pass Marks",`${passMarks} (${totalMarks>0?Math.round((passMarks/totalMarks)*100):0}%)`]]},
               {title:"Security",items:[["Fullscreen",fullscreenRequired?"✅ Forced":"❌ Off"],["Tab Limit",`${tabSwitchLimit} allowed`]]},
-              {title:"Access",items:[["Depts",selectedDepts.length?selectedDepts.join(", "):"All"],["Years",selectedYears.length?selectedYears.join(", "):"All"],["Start",startTime?new Date(startTime).toLocaleString():"Manual"],["End",endTime?new Date(endTime).toLocaleString():"Manual"]]},
+              {title:"Schedule",items:[["Start",startTime?new Date(startTime).toLocaleString():"Manual"],["End",endTime?new Date(endTime).toLocaleString():"Manual"]]},
             ].map(s=>(
               <div key={s.title} style={{padding:"14px 16px",background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>
                 <div style={{fontSize:10,fontWeight:800,color:"#6366f1",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>{s.title}</div>
@@ -647,6 +736,9 @@ export default function ExamManager() {
           <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
             <button onClick={openModal} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#fff",color:"#4338ca",fontWeight:800,fontSize:13,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>
               <FontAwesomeIcon icon={faPlus}/> CREATE EXAM
+            </button>
+            <button onClick={() => navigate("/faculty/stats")} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.25)",color:"#fff",fontWeight:800,fontSize:12}}>
+              <FontAwesomeIcon icon={faChartBar}/> STUDENT REPORTS
             </button>
             <button onClick={fetchExams} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.15)",color:"#fff",fontWeight:700,fontSize:12}}>
               <FontAwesomeIcon icon={faDatabase}/> REFRESH
@@ -728,6 +820,12 @@ export default function ExamManager() {
                 </td>
                 <td style={{padding:"14px 16px"}}>
                   <div style={{display:"flex",gap:8}}>
+                    <button title="View Student Reports" onClick={() => navigate("/faculty/stats")}
+                      style={{width:30,height:30,borderRadius:8,border:"1px solid #dcfce7",background:"#f0fdf4",cursor:"pointer",color:"#16a34a",transition:"all 0.15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#dcfce7";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#f0fdf4";}}>
+                      <FontAwesomeIcon icon={faChartBar} style={{fontSize:12}}/>
+                    </button>
                     <button title="View Details" onClick={() => handleViewExam(exam)}
                       style={{width:30,height:30,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b",transition:"all 0.15s"}}
                       onMouseEnter={e=>{e.currentTarget.style.background="#f1f5f9";e.currentTarget.style.color="#1e293b";}}
@@ -763,7 +861,7 @@ export default function ExamManager() {
             <div style={{padding:"18px 24px",borderBottom:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div>
                 <div style={{fontSize:16,fontWeight:900,color:"#0f172a"}}>Create New Exam</div>
-                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Step {step} of 9 — {STEPS[step-1].label}</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>Step {step} of 8 — {STEPS[step-1].label}</div>
               </div>
               <button onClick={closeModal} style={{width:32,height:32,borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#64748b",fontSize:16}}>
                 <FontAwesomeIcon icon={faTimes}/>
@@ -789,7 +887,7 @@ export default function ExamManager() {
 
             {/* Progress bar */}
             <div style={{height:3,background:"#f1f5f9"}}>
-              <div style={{height:"100%",width:`${(step/9)*100}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",transition:"width 0.3s"}}/>
+              <div style={{height:"100%",width:`${(step/8)*100}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",transition:"width 0.3s"}}/>
             </div>
 
             {/* Step body */}
@@ -799,12 +897,12 @@ export default function ExamManager() {
 
             {/* Modal Footer */}
             <div style={{padding:"14px 24px",borderTop:"1px solid #f1f5f9",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fafbff"}}>
-              <div style={{fontSize:11,color:"#94a3b8"}}>Step <strong style={{color:"#6366f1"}}>{step}</strong>/9</div>
+              <div style={{fontSize:11,color:"#94a3b8"}}>Step <strong style={{color:"#6366f1"}}>{step}</strong>/8</div>
               <div style={{display:"flex",gap:10}}>
                 {step>1&&<button onClick={()=>setStep(s=>s-1)} style={{padding:"9px 18px",borderRadius:10,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,color:"#64748b",display:"flex",alignItems:"center",gap:6}}>
                   <FontAwesomeIcon icon={faArrowLeft}/> Back
                 </button>}
-                {step<9 ? (
+                {step<8 ? (
                   <button onClick={()=>setStep(s=>s+1)} style={{padding:"9px 20px",borderRadius:10,border:"none",cursor:"pointer",background:"#6366f1",color:"#fff",fontWeight:800,fontSize:12,display:"flex",alignItems:"center",gap:6}}>
                     Next <FontAwesomeIcon icon={faArrowRight}/>
                   </button>

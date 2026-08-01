@@ -431,19 +431,52 @@ class CourseFacultySerializer(serializers.ModelSerializer):
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating and updating courses"""
+    title = serializers.CharField(required=False, default='Untitled Course')
     level = serializers.CharField(required=False, default='Beginner')
     duration = serializers.CharField(required=False, default='Self-paced')
+    topics = serializers.JSONField(required=False, default=list)
+    modules = serializers.JSONField(required=False, default=list)
+    custom_videos = serializers.JSONField(required=False, default=dict)
+    study_materials = serializers.JSONField(required=False, default=dict)
+    progress = serializers.IntegerField(required=False, default=0)
 
     class Meta:
         model = Course
         fields = ['id', 'title', 'level', 'duration', 'locked', 'topics', 'modules', 'custom_videos', 'study_materials', 'progress']
+
+    def validate_level(self, value):
+        """Sanitize level to a valid choice; default to Beginner if unrecognized"""
+        valid = {'Beginner', 'Intermediate', 'Advanced'}
+        if value in valid:
+            return value
+        # Try case-insensitive match
+        for v in valid:
+            if str(value).strip().lower() == v.lower():
+                return v
+        return 'Beginner'
 
     def validate_modules(self, value):
         """Ensure modules is always a list"""
         if value is None:
             return []
         if not isinstance(value, (list, dict)):
-            raise serializers.ValidationError("Modules must be a list or dict")
+            return []
+        return value
+
+    def validate_custom_videos(self, value):
+        """Ensure custom_videos is always a dict"""
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            return {}
+        return value
+
+    def validate_study_materials(self, value):
+        """Ensure study_materials is always a dict"""
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            return {}
         return value
 
     def create(self, validated_data):
@@ -648,6 +681,10 @@ class FacultyProfileMinimalSerializer(serializers.ModelSerializer):
 
 class BatchResourceSerializer(serializers.ModelSerializer):
     batch_name = serializers.CharField(source='batch.name', read_only=True)
+    # Use CharField (not URLField) so data URLs, base64 blobs, and regular URLs are all accepted
+    file_url = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+    video_url = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
+    resource_type = serializers.CharField(required=False, default='material')
 
     class Meta:
         model = BatchResource

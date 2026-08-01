@@ -29,10 +29,33 @@ def get_student_courses(request, student_id=None):
 
     enrollments = CourseEnrollment.objects.filter(user=target_user).select_related('course')
     
+    # Auto-ensure "Aptitude and Reasoning" is enrolled for every student
+    aptitude_course, _ = Course.objects.get_or_create(
+        title="Aptitude and Reasoning",
+        defaults={
+            'level': 'Beginner',
+            'duration': 'Self-paced',
+            'topics': ['Quantitative Aptitude', 'Logical Reasoning', 'Verbal Ability'],
+            'progress': 0,
+            'locked': False
+        }
+    )
+    enrollment_course_ids = [e.course.id for e in enrollments if e.course]
+    if aptitude_course.id not in enrollment_course_ids:
+        try:
+            CourseEnrollment.objects.get_or_create(
+                user=target_user,
+                course=aptitude_course,
+                defaults={'status': 'Active', 'progress': 0, 'completion_percentage': 0.0}
+            )
+            enrollments = CourseEnrollment.objects.filter(user=target_user).select_related('course')
+            enrollment_course_ids = [e.course.id for e in enrollments if e.course]
+        except Exception as e:
+            print(f"Error auto-enrolling Aptitude and Reasoning: {e}")
+
     # Auto-sync profile course to CourseEnrollment if not present
     profile = StudentProfile.objects.filter(user=target_user).first()
     if profile and profile.course:
-        enrollment_course_ids = [e.course.id for e in enrollments if e.course]
         if profile.course.id not in enrollment_course_ids:
             try:
                 CourseEnrollment.objects.get_or_create(

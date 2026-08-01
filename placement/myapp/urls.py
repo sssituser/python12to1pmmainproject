@@ -14,7 +14,8 @@ from .views.exam_views import (
     end_exam_session, get_exam_sessions, automated_exam_config_view,
     log_exam_violation, create_exam_question_api, auto_generate_exam_paper,
     get_exam_paper_questions, create_placement_exam, list_placement_exams,
-    import_exam_questions_file, delete_placement_exam, delete_exam_session
+    import_exam_questions_file, delete_placement_exam, delete_exam_session,
+    get_placement_exam_detail, submit_placement_exam
 )
 from .views.playground_views import create_playground, get_playground, delete_playground
 from .views.job_views import JobViewSet, AppliedJobViewSet, AdminJobViewSet, FacultyApplicationsViewSet, job_notifications_list
@@ -134,6 +135,8 @@ urlpatterns = [
     path('exams/paper/<int:paper_id>/', get_exam_paper_questions),
     path('exams/create/', create_placement_exam),
     path('exams/list/', list_placement_exams),
+    path('exams/<int:exam_id>/', get_placement_exam_detail),
+    path('exams/<int:exam_id>/submit/', submit_placement_exam),
     path('exams/delete/<int:exam_id>/', delete_placement_exam),
     path('exams/import-file/', import_exam_questions_file),
     path('exams/start/', start_exam_session),          # ✅ Alias used by DailyExam/WeeklyExam/MonthlyExam

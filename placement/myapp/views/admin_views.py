@@ -548,9 +548,26 @@ def create_student_api(request):
             student_id=processed_student_id
         )
 
-        # Handle course and batch linking
+        # Automatically ensure "Aptitude and Reasoning" course is created and enrolled for ALL students
+        from myapp.models import Course, CourseEnrollment, Batch
+        aptitude_course, _ = Course.objects.get_or_create(
+            title="Aptitude and Reasoning",
+            defaults={
+                'level': 'Beginner',
+                'duration': 'Self-paced',
+                'topics': ['Quantitative Aptitude', 'Logical Reasoning', 'Verbal Ability'],
+                'progress': 0,
+                'locked': False
+            }
+        )
+        CourseEnrollment.objects.get_or_create(
+            user=student,
+            course=aptitude_course,
+            defaults={'status': 'Active', 'progress': 0, 'completion_percentage': 0.0}
+        )
+
+        # Handle course and batch linking if specific course selected
         if course_id and str(course_id).strip() != "":
-            from myapp.models import Course, CourseEnrollment, Batch
             try:
                 course = Course.objects.get(id=course_id)
                 profile.course = course
@@ -575,6 +592,10 @@ def create_student_api(request):
                 )
             except (Course.DoesNotExist, ValueError):
                 pass
+        else:
+            # Set Aptitude and Reasoning as default primary course if none selected
+            profile.course = aptitude_course
+            profile.save()
         
         # Send email notification with password
         try:

@@ -44,6 +44,7 @@ const TopicVideo = lazy(() => import("./pages/TopicVideo"));
 const VideoPlayer = lazy(() => import("./pages/VideoPlayer"));
 const WeeklyExam = lazy(() => import("./pages/WeeklyExam"));
 const WeeklyExamReports = lazy(() => import("./pages/WeeklyExamReports"));
+const StudentExamPage = lazy(() => import("./pages/StudentExamPage"));
 
 /* 🔹 AI MODULE (LAZY) */
 const AIResumeAnalyzer = lazy(() => import("./pages/AIResumeAnalyzer"));
@@ -221,6 +222,7 @@ function App() {
 
           {/* Exams (Fullscreen, No Sidebar/Navbar) */}
 
+          <Route path="/dashboard/exam/:examId" element={<StudentExamPage />} />
           <Route path="/dashboard/daily-exam" element={<DailyExamSubjects />} />
           <Route path="/dashboard/daily-exam/:subject" element={<DailyExam />} />
           <Route path="/dashboard/python-exam" element={<Navigate to="/dashboard/daily-exam/python" replace />} />

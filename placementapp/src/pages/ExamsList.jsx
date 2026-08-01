@@ -85,9 +85,16 @@ export default function StudentExamHub() {
   const upcomingExams = exams.filter(e => getExamStatus(e) === "upcoming").length;
 
   const handleStartExam = (exam) => {
-    // Store exam config in sessionStorage for the exam engine to pick up
+    // Store exam config in sessionStorage for legacy fallbacks
     sessionStorage.setItem("active_exam_config", JSON.stringify(exam));
-    // Route to the relevant exam page based on type
+    
+    // If specific created exam ID exists, use full-featured exam engine
+    if (exam.id) {
+      navigate(`/dashboard/exam/${exam.id}`);
+      return;
+    }
+
+    // Fallbacks
     if (exam.exam_type === "daily") {
       navigate(`/dashboard/daily-exam/${exam.subject?.toLowerCase().replace(/\s+/g, "_")}`);
     } else if (exam.exam_type === "weekly") {
@@ -95,7 +102,6 @@ export default function StudentExamHub() {
     } else if (exam.exam_type === "monthly") {
       navigate("/dashboard/monthly-exam");
     } else {
-      // For placement/mock/certification — use daily exam engine with stored config
       navigate(`/dashboard/daily-exam/${exam.subject?.toLowerCase().replace(/\s+/g, "_")}`);
     }
   };

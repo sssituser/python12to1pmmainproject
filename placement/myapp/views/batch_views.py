@@ -80,16 +80,30 @@ def create_batch(request):
 
     data = request.data
     name = data.get('name')
-    code = data.get('code')
+    code = data.get('code', '').strip()
     course_id = data.get('course_id')
 
-    if not name or not code or not course_id:
-        return Response({"detail": "name, code, and course_id are required."}, status=status.HTTP_400_BAD_REQUEST)
-
-    if Batch.objects.filter(code=code).exists():
-        return Response({"detail": f"Batch code '{code}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+    if not name or not course_id:
+        return Response({"detail": "name and course_id are required."}, status=status.HTTP_400_BAD_REQUEST)
 
     course = get_object_or_404(Course, id=course_id)
+
+    # Auto-generate a unique code if not provided
+    if not code:
+        base_code = (course.title[:6].upper().replace(' ', '') + str(course_id))[:12]
+        code = base_code
+        suffix = 1
+        while Batch.objects.filter(code=code).exists():
+            code = f"{base_code}-{suffix}"
+            suffix += 1
+    else:
+        # Handle duplicate code by appending suffix
+        if Batch.objects.filter(code=code).exists():
+            base_code = code
+            suffix = 1
+            while Batch.objects.filter(code=f"{base_code}-{suffix}").exists():
+                suffix += 1
+            code = f"{base_code}-{suffix}"
 
     batch = Batch.objects.create(
         name=name,
