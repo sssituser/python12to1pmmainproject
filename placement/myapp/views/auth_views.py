@@ -564,19 +564,23 @@ def register(request):
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
 
-    # Check if a user already exists with this username OR email
-    existing_user = User.objects.filter(Q(username=username) | Q(email=email)).first()
-    if existing_user:
-        if existing_user.is_active:
-            return Response({"error": "User with this username or email already exists."}, status=400)
-        
-        # If it's an inactive faculty, we allow "re-registering" to get a new OTP
-        if existing_user.role == 'faculty':
-            user = existing_user
-            print(f"DEBUG: Allowing re-registration/OTP resend for inactive faculty {username}")
+    # Check if a user already exists with this email (Email must be unique)
+    if email:
+        existing_email_user = User.objects.filter(email__iexact=email.strip()).first()
+        if existing_email_user:
+            if existing_email_user.is_active:
+                return Response({"error": "User with this email already exists."}, status=400)
+            
+            # If it's an inactive faculty, we allow "re-registering" to get a new OTP
+            if existing_email_user.role == 'faculty':
+                user = existing_email_user
+                print(f"DEBUG: Allowing re-registration/OTP resend for inactive faculty {username}")
+            else:
+                return Response({"error": "Email already exists. Contact admin."}, status=400)
         else:
-            return Response({"error": "Username already exists. Contact admin."}, status=400)
-    else:
+            existing_email_user = None
+
+    if 'user' not in locals() or user is None:
         # Create new user if doesn't exist
         is_active = False if role == 'faculty' else True
         user = User.objects.create_user(

@@ -186,10 +186,7 @@ def create_faculty_api(request):
     """Create a new faculty user"""
     data = request.data
     
-    # Check if username or email already exists
-    if User.objects.filter(username=data['username']).exists():
-        return Response({'error': 'Username already exists'}, status=400)
-    
+    # Check if email already exists (Email must be unique)
     if User.objects.filter(email=data['email']).exists():
         return Response({'error': 'Email already exists'}, status=400)
     
@@ -345,8 +342,6 @@ def update_student_api(request, student_id):
         
         # Update user fields
         if 'username' in data:
-            if data['username'] != student.username and User.objects.filter(username=data['username']).exists():
-                return Response({'error': 'Username already exists'}, status=400)
             student.username = data['username']
 
         if 'email' in data:
@@ -502,10 +497,7 @@ def create_student_api(request):
     if not username or not email or not password:
         return Response({'error': 'Username, email, and password are required'}, status=400)
     
-    # Check if username or email already exists
-    if User.objects.filter(username=username).exists():
-        return Response({'error': 'Username already exists'}, status=400)
-    
+    # Check if email already exists (Email must be unique)
     if User.objects.filter(email=email).exists():
         return Response({'error': 'Email already exists'}, status=400)
     

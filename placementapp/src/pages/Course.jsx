@@ -123,7 +123,7 @@ function CoursesPage() {
 
   // Load dynamic batch metrics
   useEffect(() => {
-    if (!currentBatchId) {
+    if (!selectedCourse) {
       setBatchResources([]);
       setAssignments([]);
       setAttendanceRecords([]);
@@ -134,90 +134,115 @@ function CoursesPage() {
     }
 
     const token = getStoredToken("access");
-    const headers = { Authorization: `Bearer ${token}` };
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    // 1. Fetch batch resources & merge dynamic course resources
-    axios.get(`http://${window.location.hostname}:8000/api/batches/${currentBatchId}/resources/`, { headers })
-    .then(res => {
-      let apiResources = (res.data && res.data.data) ? res.data.data : [];
-      
-      // Dynamic fallback merging from selectedCourse
-      if (selectedCourse) {
-        const cVids = selectedCourse.custom_videos || selectedCourse.customVideos || {};
-        const cMats = selectedCourse.customMaterials || selectedCourse.study_materials || {};
-
-        const extraVideos = Object.keys(cVids).map((key, i) => {
-          const vObj = cVids[key];
-          const url = typeof vObj === 'string' ? vObj : (vObj?.url || vObj?.video || '');
-          return {
-            id: `course-vid-${i}`,
-            title: typeof vObj === 'object' && vObj.title ? vObj.title : key,
-            resource_type: 'video',
-            video_url: url,
-            uploaded_at: new Date().toISOString()
-          };
-        }).filter(v => v.video_url);
-
-        const extraMats = Object.keys(cMats).map((key, i) => {
-          const mObj = cMats[key];
-          const url = typeof mObj === 'string' ? mObj : (mObj?.url || '');
-          return {
-            id: `course-mat-${i}`,
-            title: typeof mObj === 'object' && mObj.title ? mObj.title : key,
-            resource_type: 'document',
-            file_url: url,
-            uploaded_at: new Date().toISOString()
-          };
-        }).filter(m => m.file_url);
-
-        // Deduplicate resources by title
-        const existingTitles = new Set(apiResources.map(r => r.title.toLowerCase()));
-        extraVideos.forEach(v => {
-          if (!existingTitles.has(v.title.toLowerCase())) {
-            apiResources.push(v);
-            existingTitles.add(v.title.toLowerCase());
+    // 1. Fetch batch resources (try currentBatchId or fetch batches for this course)
+    const fetchResources = async () => {
+      let apiResources = [];
+      try {
+        if (currentBatchId) {
+          const res = await axios.get(`http://${window.location.hostname}:8000/api/batches/${currentBatchId}/resources/`, { headers });
+          if (res.data && res.data.data) apiResources = res.data.data;
+        } else {
+          // If no specific batch assigned, find batches for this course and gather resources
+          const bRes = await axios.get(`http://${window.location.hostname}:8000/api/batches/`, { headers });
+          const allBatches = bRes.data?.data || bRes.data || [];
+          const courseBatches = Array.isArray(allBatches) ? allBatches.filter(b => 
+            (selectedCourse.id && (b.course_id === selectedCourse.id || String(b.course_id) === String(selectedCourse.id))) ||
+            (selectedCourse.title && b.course_name && b.course_name.toLowerCase() === selectedCourse.title.toLowerCase())
+          ) : [];
+          
+          for (const batch of courseBatches) {
+            try {
+              const rRes = await axios.get(`http://${window.location.hostname}:8000/api/batches/${batch.id}/resources/`, { headers });
+              if (rRes.data && rRes.data.data) {
+                apiResources = [...apiResources, ...rRes.data.data];
+              }
+            } catch (e) {}
           }
-        });
-        extraMats.forEach(m => {
-          if (!existingTitles.has(m.title.toLowerCase())) {
-            apiResources.push(m);
-            existingTitles.add(m.title.toLowerCase());
-          }
-        });
+        }
+      } catch (err) {
+        console.error("Error loading resources:", err);
       }
+
+      // Dynamic fallback merging from selectedCourse custom materials / videos
+      const cVids = selectedCourse.custom_videos || selectedCourse.customVideos || {};
+      const cMats = selectedCourse.customMaterials || selectedCourse.study_materials || {};
+
+      const extraVideos = Object.keys(cVids).map((key, i) => {
+        const vObj = cVids[key];
+        const url = typeof vObj === 'string' ? vObj : (vObj?.url || vObj?.video || '');
+        return {
+          id: `course-vid-${i}`,
+          title: typeof vObj === 'object' && vObj.title ? vObj.title : key,
+          resource_type: 'video',
+          video_url: url,
+          uploaded_at: new Date().toISOString()
+        };
+      }).filter(v => v.video_url);
+
+      const extraMats = Object.keys(cMats).map((key, i) => {
+        const mObj = cMats[key];
+        const url = typeof mObj === 'string' ? mObj : (mObj?.url || '');
+        return {
+          id: `course-mat-${i}`,
+          title: typeof mObj === 'object' && mObj.title ? mObj.title : key,
+          resource_type: 'material',
+          file_url: url,
+          uploaded_at: new Date().toISOString()
+        };
+      }).filter(m => m.file_url);
+
+      // Deduplicate resources by title/id
+      const existingTitles = new Set(apiResources.map(r => r.title.toLowerCase()));
+      extraVideos.forEach(v => {
+        if (!existingTitles.has(v.title.toLowerCase())) {
+          apiResources.push(v);
+          existingTitles.add(v.title.toLowerCase());
+        }
+      });
+      extraMats.forEach(m => {
+        if (!existingTitles.has(m.title.toLowerCase())) {
+          apiResources.push(m);
+          existingTitles.add(m.title.toLowerCase());
+        }
+      });
 
       setBatchResources(apiResources);
-    })
-    .catch(() => setBatchResources([]));
+    };
 
-    // 2. Fetch assignments
-    axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${currentBatchId}`, { headers })
-    .then(res => {
-      if (res.data && res.data.success) setAssignments(res.data.data || []);
-    })
-    .catch(() => setAssignments([]));
+    fetchResources();
 
-    // 3. Fetch attendance rate
-    axios.get(`http://${window.location.hostname}:8000/api/attendance/${currentBatchId}/`, { headers })
-    .then(res => {
-      if (res.data && res.data.success) {
-        setAttendanceRecords(res.data.data && res.data.data.length > 0 ? res.data.data : (res.data.records || []));
-        setAttendanceRate(res.data.attendance_percentage || 0);
-      }
-    })
-    .catch(() => {
-      setAttendanceRecords([]);
-      setAttendanceRate(0);
-    });
+    if (currentBatchId) {
+      // 2. Fetch assignments
+      axios.get(`http://${window.location.hostname}:8000/api/assignments/?batch_id=${currentBatchId}`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) setAssignments(res.data.data || []);
+      })
+      .catch(() => setAssignments([]));
 
-    // 4. Fetch leaderboard / batch report
-    axios.get(`http://${window.location.hostname}:8000/api/batches/${currentBatchId}/report/`, { headers })
-    .then(res => {
-      if (res.data && res.data.success) {
-        setLeaderboard(res.data.data.top_students || []);
-      }
-    })
-    .catch(() => setLeaderboard([]));
+      // 3. Fetch attendance rate
+      axios.get(`http://${window.location.hostname}:8000/api/attendance/${currentBatchId}/`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) {
+          setAttendanceRecords(res.data.data && res.data.data.length > 0 ? res.data.data : (res.data.records || []));
+          setAttendanceRate(res.data.attendance_percentage || 0);
+        }
+      })
+      .catch(() => {
+        setAttendanceRecords([]);
+        setAttendanceRate(0);
+      });
+
+      // 4. Fetch leaderboard / batch report
+      axios.get(`http://${window.location.hostname}:8000/api/batches/${currentBatchId}/report/`, { headers })
+      .then(res => {
+        if (res.data && res.data.success) {
+          setLeaderboard(res.data.data.top_students || []);
+        }
+      })
+      .catch(() => setLeaderboard([]));
+    }
 
     // 5. Fetch exams
     axios.get(`http://${window.location.hostname}:8000/api/exams/list/`, { headers })
@@ -226,7 +251,7 @@ function CoursesPage() {
     })
     .catch(() => setExamsList([]));
 
-  }, [currentBatchId]);
+  }, [currentBatchId, selectedCourse]);
 
   const handleSubmission = (assignmentId, fileDataOverride) => {
     const filePayload = fileDataOverride || submitFileUrl;
