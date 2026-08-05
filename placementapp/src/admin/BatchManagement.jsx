@@ -345,14 +345,78 @@ export default function BatchManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Batch Timing</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 9:00 AM - 11:00 AM"
-                  value={formData.timing}
-                  onChange={(e) => setFormData({ ...formData, timing: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Batch Timing (IST)</label>
+                <div className="flex items-center gap-2 p-1.5 border border-gray-300 rounded-xl bg-white focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 shadow-sm">
+                  {/* Manual Text Input */}
+                  <input
+                    type="text"
+                    placeholder="e.g. 09:00 AM - 11:00 AM IST"
+                    value={formData.timing}
+                    onChange={(e) => setFormData({ ...formData, timing: e.target.value })}
+                    className="flex-1 px-2.5 py-1 text-sm outline-none bg-transparent min-w-0 font-medium text-gray-800 placeholder-gray-400"
+                  />
+                  
+                  <div className="h-5 w-[1px] bg-gray-200" />
+                  
+                  {/* Time Pickers inside the same bar */}
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 pr-1 shrink-0">
+                    <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
+                      <span className="text-[10px] font-bold uppercase text-gray-400">Start</span>
+                      <input
+                        type="time"
+                        title="Pick Start Time (IST)"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const [h, m] = val.split(":");
+                          let hours = parseInt(h, 10);
+                          const ampm = hours >= 12 ? "PM" : "AM";
+                          hours = hours % 12 || 12;
+                          const formattedHours = hours < 10 ? `0${hours}` : hours;
+                          const formattedStart = `${formattedHours}:${m} ${ampm}`;
+                          
+                          let currentEnd = "";
+                          if (formData.timing.includes("-")) {
+                            currentEnd = formData.timing.split("-")[1].trim();
+                          }
+                          const newTiming = currentEnd ? `${formattedStart} - ${currentEnd}` : formattedStart;
+                          setFormData({ ...formData, timing: newTiming });
+                        }}
+                        className="bg-transparent text-xs font-medium text-gray-700 outline-none cursor-pointer w-16"
+                      />
+                    </div>
+
+                    <span className="text-gray-400 font-semibold">-</span>
+
+                    <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
+                      <span className="text-[10px] font-bold uppercase text-gray-400">End</span>
+                      <input
+                        type="time"
+                        title="Pick End Time (IST)"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const [h, m] = val.split(":");
+                          let hours = parseInt(h, 10);
+                          const ampm = hours >= 12 ? "PM" : "AM";
+                          hours = hours % 12 || 12;
+                          const formattedHours = hours < 10 ? `0${hours}` : hours;
+                          const formattedEnd = `${formattedHours}:${m} ${ampm}`;
+                          
+                          let currentStart = "";
+                          if (formData.timing.includes("-")) {
+                            currentStart = formData.timing.split("-")[0].trim();
+                          } else if (formData.timing.trim()) {
+                            currentStart = formData.timing.trim();
+                          }
+                          const newTiming = currentStart ? `${currentStart} - ${formattedEnd}` : formattedEnd;
+                          setFormData({ ...formData, timing: newTiming });
+                        }}
+                        className="bg-transparent text-xs font-medium text-gray-700 outline-none cursor-pointer w-16"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -377,30 +441,18 @@ export default function BatchManagement() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Max Students</label>
-                  <input
-                    type="number"
-                    value={formData.max_students}
-                    onChange={(e) => setFormData({ ...formData, max_students: parseInt(e.target.value) || 30 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Running">Running</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Running">Running</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
